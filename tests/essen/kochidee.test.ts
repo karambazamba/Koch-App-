@@ -16,7 +16,8 @@ const ideas = (talk: IdeaTalk, extra: { stock?: PantryItem[]; exclude?: string[]
 describe("Knopf auf der Essen-Kachel", () => {
   it("geplant → „Was anderes?“, frei → „Idee“ – mit VoiceOver-Satz", () => {
     expect(kochideeButton("Pasta mit Tomaten & Burrata", "Mia")).toEqual({ kind: "anders", label: "Was anderes?", aria: "Was anderes kochen? Mia schlägt Alternativen vor" });
-    expect(kochideeButton(null, "Mia")).toEqual({ kind: "idee", label: "Idee", aria: "Kochidee – Mia schlägt dir ein Gericht vor" });
+    // Tafel 134: immer die weiße Pille „Was anderes?“, nie ein oranger „Idee“-Kreis
+    expect(kochideeButton(null, "Mia")).toEqual({ kind: "idee", label: "Was anderes?", aria: "Kochidee – Mia schlägt dir ein Gericht vor" });
   });
 });
 

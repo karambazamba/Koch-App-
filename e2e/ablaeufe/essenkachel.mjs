@@ -1,43 +1,61 @@
-// Essen-Kachel: ⇄ zeigt einen Vorschlag als Bild-Kachel („Vorschlag“), Antippen
-// öffnet genau dieses Gericht, „Für heute nehmen“ plant es ein. Beispiel-Tag:
-// Antippen öffnet das Beispielgericht, erst „Nehmen“ übernimmt es.
-import { BASE, hello, seedFamily, store } from "../lib.mjs";
+// Essen-Kachel final (A-046, Tafel 134): ohne Plan zeigt sie gleich einen
+// Vorschlag („KOCHIDEE · HEUTE“), „Was anderes?“ blättert weiter (öffnet
+// nicht das Rezept), Kachel antippen = Rezept-Vorschau, „Zurück zu den
+// Ideen“ lässt denselben Vorschlag stehen, „Nehmen“ trägt ein. Beispiel-Tag:
+// Antippen öffnet die Vorschau des Beispielgerichts, erst „Nehmen“ übernimmt es.
+import { hello, seedFamily, store } from "../lib.mjs";
 
 const planTitles = async (page) => JSON.stringify((await store(page, "wasgibts.wochenplan")) ?? {});
+const kachel = (page) => page.locator("[role=tabpanel]:not([inert]) [data-essen-kachel]").first();
+const titel = async (page) => (await kachel(page).locator("[data-titel]").innerText()).trim();
 
 export const essenKachelVorschlag = async (page, check) => {
   await hello(page);
   await seedFamily(page);
-  await page.goto(BASE);
-  await page.waitForTimeout(1000);
-  const swap = page.getByRole("button", { name: "Andere Idee" }).first();
-  check(await swap.isVisible(), "⇄ auf der Essen-Kachel");
+  await page.reload();
+  await page.waitForTimeout(1200);
+  const tile = kachel(page);
+  check(/^Kochidee · Heute$/i.test((await tile.locator("[data-kopf]").innerText()).trim()), "ohne Plan gleich ein Vorschlag: „KOCHIDEE · HEUTE“");
+  check(!(await page.getByText("Ideen ansehen").count()), "kein „Ideen ansehen“");
+  const erster = await titel(page);
+  // „Was anderes?“ = neuer Vorschlag, öffnet nicht das Rezept
+  const swap = tile.getByRole("button", { name: "Andere Idee" });
+  check(await swap.isVisible(), "oben links „Was anderes?“");
   await swap.click();
-  const tile = page.getByRole("button", { name: /· Vorschlag$/ }).first();
-  check(await tile.waitFor({ timeout: 4000 }).then(() => true, () => false), "Vorschlag als Bild-Kachel");
-  const name = (await tile.getAttribute("aria-label")).split(" · ").slice(-2, -1)[0];
-  check(!(await page.getByText("Ideen ansehen").count()), "kein „Ideen ansehen“ unter einem Gericht");
-  await tile.click();
-  const sheet = page.locator("[data-gericht-fenster]");
-  check(await sheet.waitFor({ timeout: 4000 }).then(() => true, () => false), `Antippen öffnet genau „${name}“`);
-  await sheet.getByRole("button", { name: "Für heute nehmen" }).click();
-  await page.waitForTimeout(600);
-  check((await planTitles(page)).includes(name), `„${name}“ steht im Plan`);
-  check(!(await page.getByRole("button", { name: /· Vorschlag$/ }).count()), "danach geplant, kein „Vorschlag“ mehr");
+  await page.waitForTimeout(400);
+  const name = await titel(page);
+  check(name !== erster, `„Was anderes?“ zeigt einen neuen Vorschlag (${erster} → ${name})`);
+  check(!(await page.locator("[data-vorschau]").count()), "„Was anderes?“ öffnet kein Rezept");
+  // Kachel antippen = Vorschau dieses Gerichts
+  await tile.locator("[data-essen-antippen]").click();
+  const sheet = page.locator(`[data-vorschau="${name}"]`);
+  check(await sheet.waitFor({ timeout: 5000 }).then(() => true, () => false), `Antippen öffnet die Vorschau von „${name}“`);
+  check(/Kochidee · Heute/i.test(await page.locator("[data-vorschau-kopf]").innerText().catch(() => "")), "Vorschau mit Statuszeile");
+  await page.getByRole("button", { name: "Zurück zu den Ideen" }).click();
+  await page.waitForTimeout(500);
+  check((await titel(page)) === name, "„Zurück zu den Ideen“: derselbe Vorschlag steht noch da");
+  check(!(await planTitles(page)).includes(name), "noch nicht im Plan");
+  await tile.locator("[data-essen-antippen]").click();
+  await sheet.waitFor({ timeout: 5000 });
+  await page.getByRole("button", { name: "Nehmen", exact: true }).click();
+  await page.waitForTimeout(700);
+  check((await planTitles(page)).includes(name), `„Nehmen“: „${name}“ steht im Plan`);
+  check(/^Essen/i.test((await kachel(page).locator("[data-kopf]").innerText()).trim()) && (await titel(page)) === name, "danach fest geplant („ESSEN …“)");
 };
 
 export const essenKachelBeispiel = async (page, check) => {
   await hello(page);
-  const label = (await page.getByRole("button", { name: /^Essen · .* · Beispiel$|^Morgen · .* · Beispiel$/ }).first().getAttribute("aria-label")) ?? "";
+  const frame = kachel(page).locator("[data-essen-antippen]");
+  const label = (await frame.getAttribute("aria-label")) ?? "";
   const title = label.split(" · ").slice(-2, -1)[0];
-  await page.getByRole("button", { name: label }).click();
-  const sheet = page.locator("[data-gericht-fenster]");
-  check(await sheet.waitFor({ timeout: 4000 }).then(() => true, () => false), "Beispiel-Tag: Antippen öffnet das Gericht");
+  check(/· Beispiel$/.test(label), "Beispiel-Tag: Beispielgericht in der Kachel");
+  check((await kachel(page).locator("[data-woche]").count()) > 0 && !(await kachel(page).locator("[data-rezept]").count()), "Beispiel: Pille „Wochenplan ›“, kein großer Knopf");
+  await frame.click();
+  const sheet = page.locator(`[data-vorschau="${title}"]`);
+  check(await sheet.waitFor({ timeout: 5000 }).then(() => true, () => false), "Beispiel-Tag: Antippen öffnet die Vorschau");
+  check(/für \d/.test(await sheet.innerText()), "Beispiel-Rezept für die Personen des Haushalts");
   check(!(await planTitles(page)).includes(title), "noch nicht im echten Plan");
-  // Tafel 122: auch das Beispiel hat „Rezept“ und „Wochenplan“/„Woche“
-  check((await page.locator("[data-essen-kachel] [data-rezept]").count()) > 0 && (await page.locator("[data-essen-kachel] [data-woche]").count()) > 0, "Beispiel: „Rezept“ und „Wochenplan“");
-  check(/personen=\d/.test((await page.locator("[data-essen-kachel] [data-rezept]").first().getAttribute("href")) ?? ""), "Beispiel-Rezept für die Personen des Haushalts");
-  await sheet.getByRole("button", { name: /^Für (heute|morgen) nehmen$/ }).click();
+  await page.getByRole("button", { name: "Nehmen", exact: true }).click();
   await page.waitForTimeout(600);
   check((await planTitles(page)).includes(title), `„${title}“ jetzt im echten Plan`);
 };

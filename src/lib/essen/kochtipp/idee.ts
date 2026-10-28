@@ -11,11 +11,11 @@ import { germanNumber } from "@/lib/essen/leftovers/ruleParser";
 import { sameIngredient, type PantryItem } from "@/lib/vorrat/pantry";
 import type { CookCard, CookCandidate } from "@/lib/essen/kochtipp/pick";
 
-/** Knopf auf der Essen-Kachel: geplant → „Was anderes?“, frei → rundes „Idee“ */
+/** Pille oben links auf der Essen-Kachel (Tafel 134): immer „Was anderes?“ – mit Plan Alternativen dazu, ohne Plan eine Kochidee */
 export function kochideeButton(planned: string | null, name: string): { kind: "anders" | "idee"; label: string; aria: string } {
   return planned
     ? { kind: "anders", label: "Was anderes?", aria: `Was anderes kochen? ${name} schlägt Alternativen vor` }
-    : { kind: "idee", label: "Idee", aria: `Kochidee – ${name} schlägt dir ein Gericht vor` };
+    : { kind: "idee", label: "Was anderes?", aria: `Kochidee – ${name} schlägt dir ein Gericht vor` };
 }
 
 type Mood = "cremig" | "leicht" | "deftig" | "scharf";

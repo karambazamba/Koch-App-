@@ -1,22 +1,20 @@
 "use client";
 
 // ESSEN im Beispiel-Tag: das Beispielgericht in derselben Bild-Kachel wie das
-// echte Gericht (`DishTile`, Tafel 122: "ESSEN · 18:30", sonntags 12:30, Name,
-// "25 Min · alles im Haus", Knöpfe „Rezept“ und „Wochenplan“). Nach dem Essen (18:30 + 90 Min) das zweite Beispielgericht
-// für morgen ("MORGEN · Do · 18:30"). Antippen = genau dieses Gericht (Fenster mit „Für heute
-// nehmen“ bzw. „Für morgen nehmen“ – erst dieser Knopf übernimmt es in den echten Plan; „Rezept
-// ansehen ›“ zeigt das Beispiel-Rezept). (Das Schild BEISPIEL steht nur einmal oben.)
+// echte Gericht (`DishTile`, Tafel 134: „ESSEN · 18:30“, sonntags 12:30, Name,
+// „25 Min“ / „alles im Haus“, unten rechts „Wochenplan ›“). Nach dem Essen
+// (18:30 + 90 Min) das zweite Beispielgericht für morgen („MORGEN · Do · 18:30“).
+// Antippen = Rezept-Vorschau genau dieses Gerichts (A-038/A-046) – erst
+// „Nehmen“ übernimmt es in den echten Plan. (Das Schild BEISPIEL steht nur einmal oben.)
 
 import Link from "next/link";
-import { useState } from "react";
-import { GerichtSheet } from "@/components/essen/GerichtSheet";
-import { essenUnterzeile, takeLabel } from "@/lib/heute/essenKachel";
+import { useVorschau } from "@/components/essen/vorschau/useVorschau";
+import { essenUnterzeilen } from "@/lib/heute/essenKachel";
 import type { RecipeCategory } from "@/lib/essen/cookbook";
 import { demoDishAt } from "@/lib/essen/demoDish";
 import { tomorrowLabel } from "@/lib/kalender/model";
 import { addDays } from "@/lib/core/now";
 import { DishPicture } from "@/components/essen/DishPicture";
-import { BookOpen } from "lucide-react";
 import { DishTile } from "@/components/essen/DishTile";
 import { KochideeKnopf } from "@/components/essen/kochtipp/KochideeKnopf";
 import { DemoBadge } from "@/components/heute/DemoBits";
@@ -51,34 +49,24 @@ export function DemoFoodTile({
 }) {
   const d = demoMeal(today, minutes, "Essen");
   const r = d.recipe;
-  const id = encodeURIComponent(r.id);
-  const [open, setOpen] = useState(false);
+  const vorschau = useVorschau();
+  // Antippen = Rezept-Vorschau des Beispiels (A-046); erst „Nehmen“ übernimmt es in den echten Plan
+  const zeigen = () =>
+    vorschau.zeigen({ title: r.title, category: r.category, minutes: r.prepMinutes, recipeId: r.id, rezept: r, needs: [], persons, kopf: d.when }, onTake ? () => onTake({ title: r.title, category: r.category }, d.tomorrow) : null);
   return (
     <>
-    <DishTile
-      kopf={d.when}
-      title={r.title}
-      sub={essenUnterzeile({ minutes: r.prepMinutes, needs: [] })}
-      picture={{ photo: d.photo, title: r.title }}
-      open={onTake ? () => setOpen(true) : `/kochbuch/rezept?id=${id}`}
-      half={half}
-      label={`${d.when} · ${r.title} · Beispiel`}
-      corner={hat && <KochideeKnopf name={hat} planned={r.title} demo />}
-      links={{ label: "Rezept", icon: BookOpen, open: `/kochbuch/rezept?id=${id}&personen=${persons}`, data: "rezept" }}
-      rechts={half ? "Woche" : "Wochenplan"}
-    />
-    {open && onTake && (
-      <GerichtSheet
-        dish={{ title: r.title, category: r.category, minutes: r.prepMinutes, photo: d.photo }}
-        take={takeLabel(d.tomorrow ? "morgen" : "heute")}
-        onTake={() => {
-          setOpen(false);
-          onTake({ title: r.title, category: r.category }, d.tomorrow);
-        }}
-        onClose={() => setOpen(false)}
-        recipeHref={`/kochbuch/rezept?id=${id}`}
+      <DishTile
+        kopf={d.when}
+        title={r.title}
+        sub={essenUnterzeilen({ minutes: r.prepMinutes, needs: [] }, half ? "S" : "M")}
+        picture={{ photo: d.photo, title: r.title }}
+        open={zeigen}
+        half={half}
+        label={`${d.when} · ${r.title} · Beispiel`}
+        corner={hat && <KochideeKnopf name={hat} planned={r.title} demo />}
+        pille={{ label: "Wochenplan ›", open: "/?seite=essen&zu=woche", data: "woche" }}
       />
-    )}
+      {vorschau.fenster}
     </>
   );
 }

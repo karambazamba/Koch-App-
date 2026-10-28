@@ -3322,3 +3322,31 @@ Fehler in `docs/aufraeumen-nachher.md`.
 
 ## Einladungsseite ohne Leiste (v0.149.0)
 - Fehler: Auf der Einladungsseite (`/e/…`, `/einladung`) lag die Leiste unten unsichtbar unter dem Anmelde-Fenster, das Wischen vom Rand war aktiv. Wer zu schnell weitertippte, brach das Beitreten ab und landete ohne Familie – die App legte dann still eine eigene an. Jetzt ohne Leiste und Mia-Knopf (`core/leiste.ts`, Test). Ursache des Konto-Durchklicks, der auf main meist rot war.
+
+## Essen-Kachel final (v0.150.0, A-045 + A-046, Tafel 133/134)
+- Problem (Screenshot 21:03): in der S-Kachel „Rez…“ / „Wo…“, „Würstc…“,
+  „Eier, …“; oranger „Idee“-Kreis sah aus wie ein zweiter Mia-Knopf. Dann
+  A-046: die großen Knöpfe ganz weg, die Kachel selbst öffnet das Rezept.
+- Essen-Kachel: oben links nur noch die weiße Pille „⇄ Was anderes?“,
+  unten links Statuszeile („KOCHIDEE · MORGEN DO“, „ESSEN · 18:30“,
+  „ESSEN · JETZT“), Name (S 19, M 22 px, nie „…“), S zweizeilig „30 Min“ /
+  „auf die Liste: Eier +3“, M „30 Min · auf die Liste: Eier, Limette +2“;
+  unten rechts „Wochenplan ›“ bzw. „Weiter kochen ›“. Ohne Plan gleich ein
+  Vorschlag, sonst „Was gibt’s heute?“.
+- Antippen: Vorschlag → Rezept-Vorschau (A-038) mit „Zurück zu den Ideen“
+  und „Nehmen“, fest geplant → Rezeptseite, beim Kochen → Kochmodus am
+  Schritt, frei → Ideen des Tages. Beispiel-Tag: Vorschau, erst „Nehmen“
+  übernimmt. `GerichtSheet` und die großen Kachel-Knöpfe sind weg.
+- Grundregel für alle Kacheln: kein sichtbarer Text endet auf „…“ (außer
+  frei Eingegebenem, `data-freitext`). Knopftexte über Stufen (Symbol weg →
+  12–13 px → kurze Form, `lib/heute/kachelKnopf.ts`, `ui/KachelKnopf`), Namen
+  der Essen-Kachel für 320 px berechnet (`TITEL_BREITE` 116/264), Zutaten
+  höchstens 2 + „+N“ (`zutatenKurz`, auch auf der Rezeptseite), Im Haus:
+  Name vor Schild, Schild 10,5 px, sonst Umbruch. Wetter, Einkauf, Sport,
+  Spendentopf, Tipps brechen um statt abzuschneiden; Notizen-Kachel leer
+  „Schnell was aufschreiben.“.
+- Prüfung: Durchklick `nichtsAbgeschnitten` (Beispiel-Tag, Familie, langer
+  Name „Gemüselasagne mit Béchamel“, abends) auf iPhone SE (320 px), 15 Pro,
+  Pixel 7, jede Kachel in S/M/L; Abläufe `essenkachel`/`kochmodus` für
+  Antippen je Zustand, Pillen, „Zurück zu den Ideen“, „Nehmen“.
+- Kein neuer Speicher, keine Migration.

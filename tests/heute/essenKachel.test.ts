@@ -2,7 +2,7 @@
 // „MORGEN · MO – Bibimbap – 3 Ideen ansehen“ ohne Bild, nicht auswählbar).
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { KACHEL_VERLAUF, TITEL_BREITE, essenKnoepfe, essenUnterzeile, foodTileView, kachelBild, kachelVerlaufCss, kochSchrittText, kontrastWeiss, rezeptVorratZeile, takeLabel, titelAnzeige, titelPx, titelZeilen, verlaufAlpha } from "@/lib/heute/essenKachel";
+import { KACHEL_VERLAUF, TITEL_BREITE, essenKopf, essenPille, essenTippen, essenUnterzeile, essenUnterzeilen, kachelZustand, foodTileView, kachelBild, kachelVerlaufCss, kochSchrittText, kontrastWeiss, rezeptVorratZeile, titelPx, titelZeilen, verlaufAlpha, zutatenKurz } from "@/lib/heute/essenKachel";
 import { GERICHTE } from "@/lib/essen/gerichte";
 import { BUILTIN_COOK } from "@/lib/essen/kochen";
 import { DEMO_RECIPES } from "@/lib/essen/demoDish";
@@ -17,7 +17,7 @@ describe("Was zeigt die Essen-Kachel?", () => {
   });
 
   it("abends ohne Plan für morgen: frei mit Ideen; mit ⇄ ein Vorschlag für morgen", () => {
-    expect(foodTileView({ ...base, over: true })).toEqual({ kind: "frei", title: "Noch frei", ideen: true });
+    expect(foodTileView({ ...base, over: true })).toEqual({ kind: "frei", title: "Was gibt’s morgen?", ideen: true });
     expect(foodTileView({ ...base, over: true, idea: "Linsensuppe" })).toEqual({ kind: "vorschlag", title: "Linsensuppe", takeFor: "morgen" });
   });
 
@@ -31,10 +31,6 @@ describe("Was zeigt die Essen-Kachel?", () => {
     expect(foodTileView({ ...base, away: "Kein Kochtag", ideas: 0 })).toEqual({ kind: "frei", title: "Kein Kochtag", ideen: false });
   });
 
-  it("Knopf im Gericht-Fenster", () => {
-    expect(takeLabel("heute")).toBe("Für heute nehmen");
-    expect(takeLabel("morgen")).toBe("Für morgen nehmen");
-  });
 });
 
 describe("Nehmen: heute und morgen", () => {
@@ -60,28 +56,29 @@ describe("Kachel und Beispiel-Tag", () => {
   const tile = readFileSync("src/components/heute/HomeTiles.tsx", "utf8");
   const demo = readFileSync("src/components/essen/DemoFoodTile.tsx", "utf8");
 
-  it("jeder Zustand ist eine Bild-Kachel; „Ideen ansehen“ nur ohne Gericht", () => {
+  it("jeder Zustand ist eine Bild-Kachel; ohne Plan gleich ein Vorschlag (Tafel 134)", () => {
     const food = tile.slice(tile.indexOf("export function FoodTile"), tile.indexOf("/** Eine Zeile der Einkauf-Kachel"));
     // genau ein return mit <DishTile – kein Zweig ohne Bild mehr
     expect(food.match(/return \(/g)).toHaveLength(1);
     expect(food).toMatch(/return \(\s*<>\s*<DishTile/);
     expect(food).toMatch(/picture=\{picture\}/);
-    expect(food).toMatch(/view\.kind === "frei" \? \(view\.ideen \? `\$\{Math\.min\(3, list\.length\)\} Ideen ansehen`/);
-    expect(food).toMatch(/const sub = view\.kind === "vorschlag" \? "Vorschlag"/);
+    expect(food).toMatch(/alt !== null \? list\[alt % list\.length\] : geplantTitel \? null : list\[0\]/);
+    // keine großen Knöpfe mehr, nur die zwei Pillen
+    expect(food).not.toMatch(/links=|rechts=|label: "Rezept"/);
+    expect(food).toMatch(/pille=\{\{ label: pille/);
   });
 
-  it("Antippen: Vorschlag → Fenster, geplant → Tagesansicht (TagFenster), „Rezept“ → Rezept bzw. Fenster ohne Rezept", () => {
-    expect(tile).toMatch(/view\.kind === "vorschlag" \? \(\) => setChosen\(idea\) : view\.kind === "geplant" && day \? \(\) => setTag\(true\) : onOpen/);
+  it("Antippen: Vorschlag → Vorschau (A-038), geplant → Rezept bzw. Fenster ohne Rezept, kocht → Kochmodus, frei → Ideen des Tages", () => {
+    expect(tile).toMatch(/tippen === "vorschau" \? zeigen : tippen === "rezept" \? \(rezeptHref \?\? \(\(\) => setOhneRezept\(true\)\)\) : tippen === "kochmodus" && kochHref \? kochHref : day && !day\.away \? \(\) => setTag\(true\) : onOpen/);
+    expect(tile).toMatch(/vorschau\.zeigen\(\{ title: idea\.title[^\n]*\(rezeptId\) => take\(idea, rezeptId\)\)/);
     expect(tile).toMatch(/<TagFenster data=\{data\} day=\{day\}/);
-    expect(tile).toMatch(/label: "Rezept", icon: BookOpen, open: rezeptHref \?\? \(\(\) => setOhneRezept\(true\)\)/);
     // Wochenkarten-Gerichte ohne recipeId finden ihr eingebautes Rezept über den Titel
     expect(tile).toMatch(/entry\.recipeId \?\? rezeptIdFuer\(entry\.title\)/);
-    expect(tile).toMatch(/<GerichtSheet dish=\{chosen\} take=\{takeLabel\(over \? "morgen" : "heute"\)\}/);
   });
 
-  it("Beispiel-Tag: Antippen öffnet das Fenster, erst „Nehmen“ übernimmt in den echten Plan", () => {
-    expect(demo).toMatch(/open=\{onTake \? \(\) => setOpen\(true\)/);
-    expect(demo).toMatch(/onTake\(\{ title: r\.title, category: r\.category \}, d\.tomorrow\)/);
+  it("Beispiel-Tag: Antippen öffnet die Vorschau, erst „Nehmen“ übernimmt in den echten Plan", () => {
+    expect(demo).toMatch(/open=\{zeigen\}/);
+    expect(demo).toMatch(/onTake \? \(\) => onTake\(\{ title: r\.title, category: r\.category \}, d\.tomorrow\) : null/);
     expect(readFileSync("src/components/heute/TodayPage.tsx", "utf8")).toMatch(/takeDish\(data, d, tomorrow \? addDays\(data\.todayIso, 1\) : data\.todayIso\) && clearDemoTile\("essen"\)/);
   });
 });
@@ -113,14 +110,14 @@ describe("Sofort-Kachel: nie ohne Bild", () => {
     expect(kachelBild(zustaende.geplant, recipe)).toEqual({ title: "Lasagne", ingredients: ["Nudeln", "Tomaten"], category: "vegetarisch" });
     expect(kachelBild(zustaende["kocht gerade"], recipe)).toEqual(kachelBild(zustaende.geplant, recipe));
     expect(kachelBild(zustaende.vorschlag)).toEqual({ title: "Pfannkuchen", ingredients: undefined, category: null });
-    expect(kachelBild(zustaende.frei)).toEqual({ title: "Noch frei", leer: true });
+    expect(kachelBild(zustaende.frei)).toEqual({ title: "Was gibt’s heute?", leer: true });
     expect(kachelBild(zustaende["kein Kochtag"])).toEqual({ title: "Kein Kochtag", leer: true });
     expect(kachelBild(zustaende.gegessen).leer).toBe(true);
   });
 
-  it("Kopfzeile bricht nie um, keine „Personen“ auf der Essen-Kachel", () => {
+  it("Statuszeile darf umbrechen, nichts mit „…“ gekürzt (A-045), keine „Personen“ auf der Essen-Kachel", () => {
     const dishTile = readFileSync("src/components/essen/DishTile.tsx", "utf8");
-    expect(dishTile).toMatch(/truncate whitespace-nowrap[^"]*" data-kopf/);
+    expect(dishTile).not.toMatch(/\btruncate\b|line-clamp|text-ellipsis/);
     expect(readFileSync("src/components/heute/HomeTiles.tsx", "utf8")).not.toMatch(/"Personen?"/);
   });
 
@@ -135,7 +132,13 @@ describe("Sofort-Kachel: nie ohne Bild", () => {
 describe("Tafel 122: Name groß, zwei Knöpfe, Unterzeile", () => {
   it("Unterzeile: Minuten · auf die Liste bzw. alles im Haus, ohne Vorrat-Daten nur Minuten, beim Kochen der Schritt", () => {
     expect(essenUnterzeile({ minutes: 90, needs: ["Karotte"] })).toBe("90 Min · auf die Liste: Karotte");
-    expect(essenUnterzeile({ minutes: 90, needs: ["Karotte", "Lauch", "Sahne"] })).toBe("90 Min · auf die Liste: Karotte, Lauch …");
+    expect(essenUnterzeile({ minutes: 90, needs: ["Karotte", "Lauch", "Sahne"] })).toBe("90 Min · auf die Liste: Karotte, Lauch +1");
+    // Tafel 133: S zwei Zeilen, eine Zutat + „+N“; M eine Zeile mit zwei
+    expect(essenUnterzeilen({ minutes: 30, needs: ["Eier", "Limette", "Koriander", "Erdnüsse"] }, "S")).toEqual(["30 Min", "auf die Liste: Eier +3"]);
+    expect(essenUnterzeilen({ minutes: 30, needs: ["Eier", "Limette", "Koriander", "Erdnüsse"] }, "M")).toEqual(["30 Min · auf die Liste: Eier, Limette +2"]);
+    expect(essenUnterzeilen({ minutes: 25, needs: [] }, "S")).toEqual(["25 Min", "alles im Haus"]);
+    expect(essenUnterzeilen({ minutes: null, needs: null }, "S")).toEqual([]);
+    expect(essenUnterzeilen({ minutes: 30, needs: ["X"], schritt: "Schritt 2 von 3" }, "S")).toEqual(["Schritt 2 von 3"]);
     expect(essenUnterzeile({ minutes: 90, needs: [] })).toBe("90 Min · alles im Haus");
     expect(essenUnterzeile({ minutes: 90, needs: null })).toBe("90 Min");
     expect(essenUnterzeile({ minutes: null, needs: null })).toBe("");
@@ -145,41 +148,53 @@ describe("Tafel 122: Name groß, zwei Knöpfe, Unterzeile", () => {
     for (const t of [essenUnterzeile({ minutes: 9, needs: ["X"] }), rezeptVorratZeile(9, ["X"])]) expect(t).not.toMatch(/fehlt|offen|überfällig/i);
   });
 
-  it("Knöpfe: Rezept bzw. Weiter kochen, Vorschlag ohne Gericht, nichts bei Kein Kochtag; rechts Wochenplan (S: Woche)", () => {
+  it("A-046: Statuszeile, Pille und Antippen je Zustand", () => {
     const geplant = foodTileView({ ...base, today: "Lasagne" });
-    expect(essenKnoepfe(geplant, { kocht: false, half: true })).toEqual({ links: "rezept", rechts: "Woche" });
-    expect(essenKnoepfe(geplant, { kocht: true, half: false })).toEqual({ links: "weiter", rechts: "Wochenplan" });
-    expect(essenKnoepfe(foodTileView({ ...base, over: true, tomorrow: "Curry" }), { kocht: true, half: false }).links).toBe("rezept");
-    expect(essenKnoepfe(foodTileView({ ...base }), { kocht: false, half: false }).links).toBe("vorschlag");
-    expect(essenKnoepfe(foodTileView({ ...base, idea: "Curry" }), { kocht: false, half: false }).links).toBe("vorschlag");
-    expect(essenKnoepfe(foodTileView({ ...base, away: "Kein Kochtag", ideas: 0 }), { kocht: false, half: true }).links).toBeNull();
+    const vorschlag = foodTileView({ ...base, idea: "Pad Thai" });
+    const frei = foodTileView({ ...base, ideas: 0 });
+    const o = { over: false, clock: "18:30", morgen: "Do" };
+    expect(kachelZustand(geplant, false)).toBe("geplant");
+    expect(kachelZustand(geplant, true)).toBe("kocht");
+    expect(kachelZustand(foodTileView({ ...base, over: true, tomorrow: "Curry" }), true)).toBe("geplant");
+    expect(kachelZustand(vorschlag, true)).toBe("vorschlag");
+    expect(essenKopf("vorschlag", o)).toBe("Kochidee · Heute");
+    expect(essenKopf("vorschlag", { ...o, over: true })).toBe("Kochidee · Morgen Do");
+    expect(essenKopf("geplant", o)).toBe("Essen · 18:30");
+    expect(essenKopf("geplant", { ...o, over: true })).toBe("Morgen · Do");
+    expect(essenKopf("kocht", o)).toBe("Essen · Jetzt");
+    expect(essenKopf("frei", { ...o, clock: null })).toBe("Essen");
+    expect(essenPille("kocht")).toBe("Weiter kochen ›");
+    for (const z of ["vorschlag", "geplant", "frei"] as const) expect(essenPille(z)).toBe("Wochenplan ›");
+    expect(essenTippen("vorschlag")).toBe("vorschau");
+    expect(essenTippen("geplant")).toBe("rezept");
+    expect(essenTippen("kocht")).toBe("kochmodus");
+    expect(essenTippen(kachelZustand(frei, false))).toBe("ideen");
+    expect(frei.title).toBe("Was gibt’s heute?");
   });
 
-  it("Name: S 20 px, M 24 px – nur wenn er sonst nicht passt, kleiner; nie mitten im Wort", () => {
-    expect(titelPx("Lasagne", "S")).toBe(20);
-    expect(titelPx("Lasagne", "M")).toBe(24);
-    // „Gemüselasagne“ ist bei 20 px breiter als S auf dem SE → 18 px, zwei Zeilen
-    expect(titelZeilen("Gemüselasagne mit Béchamel", 20, TITEL_BREITE.S)).toBeNull();
-    expect(titelPx("Gemüselasagne mit Béchamel", "S")).toBe(18);
-    expect(titelPx("Gemüselasagne mit Béchamel", "M")).toBe(22);
-    // sehr lang: an einer Wortgrenze gekürzt, nie mitten im Wort
-    expect(titelAnzeige("Rahmspinat mit Spiegelei und Kartoffeln", "S").text).toMatch(/^Rahmspinat mit Spiegelei( und)? …$/);
-    expect(titelAnzeige("Rahmspinat mit Spiegelei und Kartoffeln", "M").text).toBe("Rahmspinat mit Spiegelei und Kartoffeln");
-    expect(titelZeilen("Donaudampfschifffahrtsgesellschaft", 20, 143)).toBeNull();
+  it("Name: S 19 px, M 22 px – nur wenn er sonst nicht passt, kleiner; nie mitten im Wort, nie „…“", () => {
+    // Tafel 134: S 19 px, M 22 px
+    expect(titelPx("Lasagne", "S")).toBe(19);
+    expect(titelPx("Lasagne", "M")).toBe(22);
+    // „Gemüselasagne“ ist bei 19 px breiter als S auf dem SE (320 px) → kleiner, 2 Zeilen
+    expect(titelZeilen("Gemüselasagne mit Béchamel", 19, TITEL_BREITE.S)).toBeNull();
+    expect(titelPx("Gemüselasagne mit Béchamel", "S")).toBeLessThan(19);
+    expect(titelZeilen("Gemüselasagne mit Béchamel", titelPx("Gemüselasagne mit Béchamel", "S"), TITEL_BREITE.S)).toBeLessThanOrEqual(2);
+    expect(titelZeilen("Donaudampfschifffahrtsgesellschaft", 20, 116)).toBeNull();
+    // SE 1. Gen.: 320 − 2 × 16 Rand, 8 Abstand, 2 × 12 Innenrand
+    expect(TITEL_BREITE).toEqual({ S: 116, M: 264 });
   });
 
-  it("alle 150 Gerichte und alle eingebauten Rezepte passen auf dem iPhone SE in S und M (≤ 2 Zeilen, kein Wort geteilt)", () => {
+  it("alle 150 Gerichte und alle eingebauten Rezepte passen auf dem iPhone SE (320 px) ganz: S ≤ 3, M ≤ 2 Zeilen, kein Wort geteilt", () => {
     const titel = [...new Set([...GERICHTE.map((g) => g.title), ...BUILTIN_COOK.map((r) => r.title), ...DEMO_RECIPES.map((r) => r.title)])];
     for (const t of titel) {
       for (const size of ["S", "M"] as const) {
-        const { px, text } = titelAnzeige(t, size);
-        const n = titelZeilen(text, px, TITEL_BREITE[size]);
-        // gekürzt nur an einer Wortgrenze: alles vor „ …“ ist ein Anfang des Namens aus ganzen Wörtern
-        if (text !== t) expect(`${t} `.startsWith(`${text.replace(/ …$/, "")} `), `${size}: ${t} → ${text}`).toBe(true);
-        if (size === "M") expect(text, "M zeigt den ganzen Namen").toBe(t);
+        const px = titelPx(t, size);
+        const n = titelZeilen(t, px, TITEL_BREITE[size]);
         expect(n, `${size}: ${t} (${px} px)`).not.toBeNull();
-        expect(n!, `${size}: ${t}`).toBeLessThanOrEqual(2);
-        expect(px, `${size}: ${t}`).toBeGreaterThanOrEqual(15);
+        // Tafel 134: bis 2 Zeilen; nur auf dem SE (320 px) für sehr lange Namen 3, nie „…“
+        expect(n!, `${size}: ${t}`).toBeLessThanOrEqual(size === "S" ? 3 : 2);
+        expect(px, `${size}: ${t}`).toBeGreaterThanOrEqual(14);
       }
     }
   });
@@ -199,15 +214,35 @@ describe("Tafel 122: Name groß, zwei Knöpfe, Unterzeile", () => {
     expect(readFileSync("src/components/essen/DishTile.tsx", "utf8")).toMatch(/dish-tile-shade/);
   });
 
-  it("Knöpfe unten: je 44 px hoch, gleich breit (zwei Spalten), Emojis nie in Knöpfen (Linien-Icons)", () => {
+  it("A-046: keine großen Knöpfe, unten rechts eine weiße Pille (32 px, Tippfläche 44 px), keine Emojis", () => {
     const dishTile = readFileSync("src/components/essen/DishTile.tsx", "utf8");
-    expect(dishTile).toMatch(/const KNOPF = "flex h-11 /);
-    expect(dishTile).toMatch(/grid-cols-2/);
-    const tile = readFileSync("src/components/heute/HomeTiles.tsx", "utf8");
-    expect(tile).toMatch(/label: "Weiter kochen", icon: ChefHat/);
-    expect(tile).toMatch(/label: "Vorschlag", icon: Lightbulb/);
+    const knopf = readFileSync("src/components/ui/KachelKnopf.tsx", "utf8");
+    expect(knopf).toMatch(/"flex h-11 /);
+    expect(knopf).toMatch(/flex h-8 /);
+    expect(knopf).toMatch(/\[12\.5, 12\]/);
+    expect(dishTile).not.toMatch(/grid-cols-2|data-kachel-knoepfe/);
+    expect(dishTile).toMatch(/text-\[10\.5px\][^"]*" data-kopf/);
     expect(dishTile).not.toMatch(/⏱|⇄/);
+    // Bereich immer „Essen …“ (VoiceOver, Fehler: „Kochidee · Heute“ fand niemand mehr als Essen)
+    expect(dishTile).toMatch(/const bereich = \/\^Essen\/i\.test\(kopf\) \? kopf : `Essen · \$\{kopf\}`/);
+    const tile = readFileSync("src/components/heute/HomeTiles.tsx", "utf8");
     const food = tile.slice(tile.indexOf("export function FoodTile"), tile.indexOf("/** Eine Zeile der Einkauf-Kachel"));
-    expect(food).not.toMatch(/⏱|⇄/);
+    expect(food).not.toMatch(/⏱|⇄|"Woche"|BookOpen/);
+  });
+});
+
+describe("A-045 (Tafel 133): Zutaten nie mit „…“", () => {
+  it("höchstens zwei Namen, der Rest als „+N“", () => {
+    expect(zutatenKurz([])).toBe("");
+    expect(zutatenKurz(["Eier"])).toBe("Eier");
+    expect(zutatenKurz(["Eier", "Limette"])).toBe("Eier, Limette");
+    expect(zutatenKurz(["Eier", "Limette", "Koriander", "Erdnüsse"])).toBe("Eier, Limette +2");
+    expect(zutatenKurz(["Eier", "Limette", "Koriander", "Erdnüsse"], 1)).toBe("Eier +3");
+    expect(zutatenKurz(["Eier", "Limette"], 0)).toBe("Eier +1");
+    for (const n of [1, 2, 3, 7]) expect(zutatenKurz(Array.from({ length: n }, (_, i) => `Z${i}`))).not.toMatch(/…|\.\.\./);
+  });
+
+  it("Rezeptseite: „alles im Haus bis auf Karotte, Lauch +1“", () => {
+    expect(rezeptVorratZeile(90, ["Karotte", "Lauch", "Sahne"])).toBe("90 Min · alles im Haus bis auf Karotte, Lauch +1");
   });
 });

@@ -48,12 +48,12 @@ function MiniZettel({ item, tone: forced, household, lines, demo, link = true, c
           <span className="text-[15px] font-extrabold tabular-nums">▶ {formatDauer(item.memo.data.dauer)}</span>
         ) : (
           item.pin.data.text && (
-            <span className={`overflow-hidden whitespace-pre-line break-words font-extrabold leading-tight ${foto ? "text-[11px]" : "text-[14px]"}`} style={{ display: "-webkit-box", WebkitBoxOrient: "vertical", WebkitLineClamp: foto ? 1 : lines }}>
+            <span className={`overflow-hidden whitespace-pre-line break-words font-extrabold leading-tight ${foto ? "text-[11px]" : "text-[14px]"}`} style={{ display: "-webkit-box", WebkitBoxOrient: "vertical", WebkitLineClamp: foto ? 1 : lines }} data-freitext>
               {item.pin.data.text}
             </span>
           )
         )}
-        <span className="truncate text-[11px] font-bold text-fridge-soft">{e.data.author}</span>
+        <span className="truncate text-[11px] font-bold text-fridge-soft" data-freitext>{e.data.author}</span>
       </span>
       {e.data.erledigt && !demo && (
         <span className="pointer-events-none absolute bottom-1 right-1 z-10 flex h-[18px] w-[18px] items-center justify-center rounded-full bg-accent text-on-accent" style={{ animation: "check-pop 0.4s ease-out" }} data-haken aria-hidden>

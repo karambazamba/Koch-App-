@@ -23,11 +23,15 @@ jeweils als Baustein (`src/lib/core/features.ts`), alles Neue zuerst aus.
   `BausteinSections.tsx`, `SwapSheet.tsx` (das eine Fenster „Was koche ich?“),
   `useMeals.ts`, `DemoFoodTile.tsx` (Beispielgericht), `DishPicture.tsx`.
 - Startseite: `FoodTile` in `src/components/heute/HomeTiles.tsx` mit
-  `DishTile.tsx` (Tafel 122: Bild, Name groß, „Rezept“ | „Wochenplan“; beim
-  Kochen „Weiter kochen“), `OhneRezeptSheet.tsx` („Mia schreibt dir ein
-  Rezept dazu“), `AutoCooked.tsx` (im Layout: nach dem Essen als gekocht
-  vermerken). Reine Logik `lib/heute/essenKachel.ts` (Knöpfe, Unterzeile,
-  Namensgröße `titelAnzeige`, Verlauf/Kontrast).
+  `DishTile.tsx` (final Tafel 134: Bild, oben „Was anderes?“, unten
+  Statuszeile + Name + Zeile(n), rechts Pille „Wochenplan ›“ bzw. „Weiter
+  kochen ›“; Kachel antippen = Vorschau/Rezept/Kochmodus), Pillen
+  `ui/KachelPille.tsx` und `ui/KachelKnopf.tsx`, `OhneRezeptSheet.tsx` („Mia
+  schreibt dir ein Rezept dazu“), `AutoCooked.tsx` (im Layout: nach dem Essen
+  als gekocht vermerken). Reine Logik `lib/heute/essenKachel.ts`
+  (`kachelZustand`, `essenKopf`, `essenPille`, `essenTippen`,
+  `essenUnterzeilen`, `zutatenKurz`, Namensgröße `titelPx`, Verlauf/Kontrast)
+  und `lib/heute/kachelKnopf.ts` (Stufen statt „…“).
 - Wochenplan: `src/lib/essen/mealPlan.ts` (Woche zusammensetzen, reine
   Änderungen, Speicher), `weekPlan.ts` (Planungswoche, Wochen-Vorgaben,
   Wunschtag), `templates.ts` (Lieblingswochen). Oberfläche
@@ -330,11 +334,12 @@ Ideen“. Verschwindet mit dem ersten eigenen Gericht oder dem Beispiel-Tag.
 - Für Nutzer heißt es „Kochidee“; intern bleibt `kochtipp` (Ordner,
   Speicher `wasgibts.kochtipp`, `app_befehl`-Erkennung `isKochtippRequest`,
   die jetzt auch „Kochidee“ versteht).
-- Knopf oben rechts in der Essen-Kachel (`KochideeKnopf.tsx`, Text über
-  `kochideeButton`): heute geplant → weiße Pille „⇄ Was anderes?“ (30 px hoch,
-  Tippfläche 44 px; VoiceOver „Was anderes kochen? Mia schlägt Alternativen
-  vor“), sonst rundes orangenes Abzeichen 47 px mit Mütze und „Idee“
-  („Kochidee – Mia schlägt dir ein Gericht vor“). Mit Knopf kein ⇄. Ab dem 3.
+- Pille oben links in der Essen-Kachel (`KochideeKnopf.tsx` über
+  `ui/KachelPille`, Text über `kochideeButton`): immer die weiße Pille
+  „⇄ Was anderes?“ (12 px, 30 px hoch, Tippfläche 44 px; seit A-046 kein
+  oranger „Idee“-Kreis mehr). VoiceOver: heute geplant „Was anderes kochen?
+  Mia schlägt Alternativen vor“, sonst „Kochidee – Mia schlägt dir ein
+  Gericht vor“. Mit Kochidee keine zweite Pille. Ab dem 3.
   Nutzungstag (wie bisher, `hatVisible`); beim ersten Mal wippt er einmal und
   zeigt EINMAL „Neu: Kochidee“ (`kochtipp-muetze` in hints). Am Beispiel-Tag
   steht die Pille ohne Blase.
@@ -456,6 +461,9 @@ Ideen“. Verschwindet mit dem ersten eigenen Gericht oder dem Beispiel-Tag.
 - Löschen über `ConfirmDialog` + „Gelöscht · Rückgängig“ (kein `window.confirm`). Kochmodus mit `&personen=N` (`personsParam`, `scaledAmount`). Variante `hackbraten` (Scheiben vom Laib). Herz in der Infozeile. „Kochmodus ›“, „Unsere Rezepte“, Kochmodus ohne Emojis. „Rezept erzählen“ ohne eigenes Mikro. Rezept-Links nur über `recipeHref` (nur wenn es das Rezept gibt). Tests `tests/essen/essenOhneFehler.test.ts`.
 
 ## Essen-Kachel „Rezept“ und Kochmodus (Tafel 122, A-025)
+
+> Der Kachel-Teil hier ist ersetzt durch „Essen-Kachel final (A-045 +
+> A-046, Tafel 133/134)“ weiter unten; Rezeptseite und Kochmodus gelten weiter.
 
 Ersetzt den Kachel-Nachtrag „Ich koche jetzt“ (Tafel 121) und die eigene
 Koch-Kachel (`CookingTile` ist weg).
@@ -585,3 +593,53 @@ stehen, gilt dasselbe: Karte antippen (überall außer „Nehmen“) = Rezept-Vo
 - Tests: `tests/essen/vorschau.test.ts`; Durchklick `vorschau.mjs`
   (`vorschauBuehne`, `vorschauEssen`). Prüfstand +1 („Schreib mir ein Rezept
   für Kürbisrisotto. Nur das Rezept, ohne Tag.“).
+
+## Essen-Kachel final (A-045 + A-046, Tafel 133/134)
+
+Wortlaut `docs/auftraege/A-045-kachel-ganz.md` und
+`docs/auftraege/A-046-essen-kachel-final.md`. Ersetzt die Kachel-Teile aus
+Tafel 121/122/133.
+
+**Aufbau (S und M gleich, M mit mehr Bild, `DishTile`)**
+- Bild füllt die Kachel, Verlauf `--app-dish-tile-shade` (weiße Schrift
+  ≥ 4,5:1). Die Kachel wächst mit dem Text (kein festes Raster für den Text).
+- Oben links EINE weiße Pille „⇄ Was anderes?“ (`ui/KachelPille`, 12 px fett,
+  orange Schrift): ohne Kochidee nächste Idee (`naechsteIdee`), mit Kochidee
+  (ab dem 3. Tag) Mias Kochidee. Kein oranger „Idee“-Kreis, keine anderen
+  Abzeichen.
+- Unten links: Statuszeile 10,5 px in Großbuchstaben (`essenKopf`):
+  Vorschlag „KOCHIDEE · HEUTE“ / „KOCHIDEE · MORGEN DO“, fest geplant
+  „ESSEN · 18:30“ / „MORGEN · DO“, beim Kochen „ESSEN · JETZT“. Darunter der
+  Name (S 19 px, M 22 px, `titelPx`; passt er nicht in 2 Zeilen, kleiner bis
+  14 px, nur auf dem iPhone SE bei sehr langen Namen 3 Zeilen – nie „…“, nie
+  mitten im Wort). Dann `essenUnterzeilen`: S zweizeilig „30 Min“ / „auf die
+  Liste: Eier +3“ bzw. „alles im Haus“, M einzeilig „30 Min · auf die Liste:
+  Eier, Limette +2“ (`zutatenKurz`: höchstens 2, in S 1 Name, Rest „+N“),
+  beim Kochen „Schritt 3 von 6“.
+- Unten rechts weiße Pille „Wochenplan ›“ (`ui/KachelKnopf`, 12,5 px, 32 px
+  hoch, Tippfläche 44 px) → „Die nächsten 7 Tage“; beim Kochen „Weiter
+  kochen ›“ → Kochmodus am Schritt (`essenPille`). Keine großen Knöpfe
+  „Rezept“/„Woche“ mehr; `GerichtSheet` ist weg.
+- Nichts geplant: gleich der erste Vorschlag des Tages als Kochidee. Gibt es
+  keinen (oder Kein Kochtag/Pause): „Was gibt’s heute?“ (abends „Was gibt’s
+  morgen?“) bzw. „Kein Kochtag“ mit leerem Teller.
+
+**Antippen (`essenTippen`)** – ganze Kachel außer den zwei Pillen:
+- Vorschlag → Rezept-Vorschau (A-038, `useVorschau`) mit Statuszeile im Bild,
+  Zutaten, „So geht’s“ (Kurz | Ausführlich), unten „Zurück zu den Ideen“
+  (derselbe Vorschlag bleibt stehen) und „Nehmen“ (trägt für heute bzw.
+  abends für morgen ein, `takeDish`; was fehlt, kommt wie bisher über den
+  Plan auf die Einkaufsliste – das Wochenplan-Angebot aus Tafel 127 gibt es
+  auf diesem Stand noch nicht).
+- Fest geplant → Rezeptseite mit „Los, Schritt für Schritt“ (ohne Rezept:
+  `OhneRezeptSheet`).
+- Beim Kochen → Kochmodus am aktuellen Schritt.
+- Frei → die Ideen des Tages (`TagFenster`), Kein Kochtag → Essen-Seite.
+- Beispiel-Tag: Antippen = Vorschau des Beispielgerichts (Personen des
+  Haushalts), erst „Nehmen“ übernimmt es in den echten Plan.
+
+**Grundregel (alle Kacheln):** kein sichtbarer Text endet auf „…“ – siehe
+`docs/design.md`. Tests: `tests/heute/essenKachel.test.ts`,
+`tests/heute/kachelKnopf.test.ts`, `tests/essen/kochidee.test.ts`;
+Durchklick `nichtsAbgeschnitten` (`e2e/ablaeufe/abgeschnitten.mjs`),
+`essenkachel.mjs`, `kochmodus.mjs`.

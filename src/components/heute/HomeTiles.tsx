@@ -6,12 +6,12 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { BookOpen, ChefHat, Lightbulb, Pin, PenLine, Refrigerator, ShoppingCart, Shuffle, StickyNote } from "lucide-react";
+import { ChefHat, Pin, PenLine, Refrigerator, ShoppingCart, Shuffle, StickyNote } from "lucide-react";
 import { TILE, TILE_LABEL } from "@/components/ui/styles";
 import { QuickButton } from "@/components/ui/QuickButton";
 import { QuickAddButton } from "@/components/einkauf/QuickAdd";
 import { clockLabel } from "@/lib/kalender/answers";
-import { tomorrowLabel } from "@/lib/kalender/model";
+import { weekdayShort } from "@/lib/kalender/model";
 import type { TileSize } from "@/lib/core/homeLayout";
 import { addDays, todayIso } from "@/lib/core/now";
 import { useWeekShoppingList } from "@/lib/einkauf/useWeekShoppingList";
@@ -23,10 +23,10 @@ import { symbolFor } from "@/lib/einkauf/kacheln/symbols";
 import type { PlanDay } from "@/lib/essen/mealPlan";
 import { usePantry } from "@/lib/vorrat/pantry";
 import { takeDish } from "@/components/heute/takeDish";
-import { essenKnoepfe, essenUnterzeile, foodTileView, kachelBild, kochSchrittText, naechsteIdee, takeLabel } from "@/lib/heute/essenKachel";
+import { essenKopf, essenPille, essenTippen, essenUnterzeilen, foodTileView, kachelBild, kachelZustand, kochSchrittText, naechsteIdee } from "@/lib/heute/essenKachel";
+import { useVorschau } from "@/components/essen/vorschau/useVorschau";
 import { merkeGezeigt } from "@/lib/essen/ideenGezeigt";
 import type { Idea } from "@/lib/essen/ideas";
-import { GerichtSheet } from "@/components/essen/GerichtSheet";
 import { useTodayIdeas } from "@/lib/essen/useIdeas";
 import { useStock } from "@/lib/essen/useStock";
 import { findRecipe, recipeHref } from "@/lib/essen/baking";
@@ -45,36 +45,43 @@ import type { HomeData } from "@/components/heute/useHomeData";
 import { dishOf, useMeals } from "@/components/essen/useMeals";
 import { KochideeKnopf } from "@/components/essen/kochtipp/KochideeKnopf";
 import { DishTile } from "@/components/essen/DishTile";
+import { KachelPille } from "@/components/ui/KachelPille";
 import { helperName } from "@/lib/einstellungen/profile";
 
 const HALF = `${TILE} flex min-h-[92px] flex-col p-3.5`;
 const HALF_LABEL = `flex min-w-0 items-center gap-1.5 ${TILE_LABEL}`;
 
 /**
- * ESSEN (Tafel 122) – immer eine Bild-Kachel (`DishTile`): Name groß in der
- * Mitte, unten „Rezept“ (bzw. „Vorschlag“ ohne Gericht, „Weiter kochen“ beim
- * Kochen) und „Wochenplan“ (S: „Woche“). Rest antippen: geplant → Tagesansicht
- * (`TagFenster`), Vorschlag → `GerichtSheet`, frei → Essen-Seite.
- * `hat`: Kochidee-Knopf oben links – `null` = keiner, sonst ob sein Hinweis gerade still sein soll.
+ * ESSEN final (A-046, Tafel 134) – immer eine Bild-Kachel (`DishTile`) ohne
+ * große Knöpfe: oben links „Was anderes?“ (neuer Vorschlag bzw. Mias
+ * Kochidee), unten links Statuszeile, Name und Zeit/Zutaten, unten rechts
+ * „Wochenplan ›“ (beim Kochen „Weiter kochen ›“). Ohne Plan zeigt sie gleich
+ * einen Vorschlag; gibt es keinen, „Was gibt’s heute?“. Ganze Kachel
+ * antippen (`essenTippen`): Vorschlag → Rezept-Vorschau (A-038, „Nehmen“
+ * trägt ein), fest geplant → Rezeptseite, beim Kochen → Kochmodus am
+ * Schritt, frei → die Ideen des Tages.
+ * `hat`: Kochidee-Pille oben links – `null` = keine, sonst ob ihr Hinweis gerade still sein soll.
  */
 export function FoodTile({ data, dish, over, dishClock, onOpen, size = "S", hat = null }: { data: HomeData; dish: string | null; over: boolean; dishClock: string | null; onOpen: () => void; size?: TileSize; hat?: { quiet: boolean } | null }) {
   const ideas = useTodayIdeas([], { tomorrow: over });
   const stock = useStock();
   const session = useCooking(data.todayIso);
   const tage = useMeals(data.todayIso, 7);
+  const vorschau = useVorschau();
   const [alt, setAlt] = useState<number | null>(null);
-  const [chosen, setChosen] = useState<Idea | null>(null);
   const [tag, setTag] = useState(false);
   const [ohneRezept, setOhneRezept] = useState(false);
   const list = ideas?.ideas ?? [];
-  const idea = alt !== null && list.length ? list[alt % list.length] : null;
-  // Gezeigte Idee merken (rückt an den nächsten Tagen nach hinten, wenn sie nicht genommen wird)
-  const ideaTitle = idea?.title ?? null;
+  const day: PlanDay | undefined = over ? data.tomorrow : data.day;
+  const away = day?.away ? (day.paused ? "Pause" : "Kein Kochtag") : null;
+  const geplantTitel = over ? dishOf(data.tomorrow) : dish;
+  // Nichts geplant: gleich der erste Vorschlag; „Was anderes?“ blättert weiter
+  const idea = !list.length || away ? null : alt !== null ? list[alt % list.length] : geplantTitel ? null : list[0];
+  // Selbst weitergeblätterte Idee merken (rückt an den nächsten Tagen nach hinten, wenn sie nicht genommen wird)
+  const ideaTitle = alt !== null ? (idea?.title ?? null) : null;
   useEffect(() => {
     if (ideaTitle) merkeGezeigt([ideaTitle], todayIso());
   }, [ideaTitle]);
-  const day: PlanDay | undefined = over ? data.tomorrow : data.day;
-  const away = day?.away ? (day.paused ? "Pause" : "Kein Kochtag") : null;
   const view = foodTileView({ over, today: dish, tomorrow: dishOf(data.tomorrow), idea: idea?.title ?? null, away, ideas: away ? 0 : list.length });
   const entry = day && !day.away ? day.slot.entry : null;
   // Jedes Gericht hat ein Rezept: eigenes bzw. eingebautes über den Titel (auch Wochenkarten-Gerichte)
@@ -85,49 +92,37 @@ export function FoodTile({ data, dish, over, dishClock, onOpen, size = "S", hat 
   const needs = recipe && stock && realStock(stock).length ? matchStock(recipe.ingredients.map((i) => i.name), stock, todayIso()).needs : null;
   // Kocht gerade: Kochmodus heute geöffnet bzw. „Ich koche jetzt“ (nicht nach „Gegessen“)
   const at = recipe ? session?.at[recipe.id] : undefined;
-  const kocht = view.kind === "geplant" && view.when === "heute" && Boolean(recipe) && (at !== undefined || Boolean(session?.manualAt));
-  // Für „Was anderes?“ zählt nur ein heute geplantes Gericht (nach dem Abendessen: frei für morgen)
-  const planned = over ? null : dish;
-  /** Vorschlag nehmen – tagsüber für heute, nach dem Essen für morgen */
-  const take = (it: Idea) => {
-    if (!takeDish(data, it, over ? addDays(todayIso(), 1) : todayIso())) return;
-    setAlt(null);
-    setChosen(null);
-  };
-  const kopf = over ? tomorrowLabel(addDays(todayIso(), 1)) : `Essen${dish && dishClock ? ` · ${clockLabel(dishClock)}` : ""}`;
-  const corner = hat && <KochideeKnopf name={helperName(data.profile)} planned={planned} quiet={hat.quiet} />;
-  // „Was anderes?“ wechselt die Idee (nicht bei einem heute geplanten Gericht und nicht neben dem Kochidee-Knopf)
-  const swap = list.length > 0 && !hat && !(view.kind === "geplant" && view.when === "heute") && (
-    <button
-      type="button"
-      aria-label="Andere Idee"
-      onClick={(e) => {
-        e.stopPropagation();
-        setAlt((a) => naechsteIdee(list.map((i) => i.title), a, view.title) ?? a);
-      }}
-      className="hit absolute left-2.5 top-2.5 z-10 flex items-center active:scale-95"
-    >
-      <span className="flex h-[30px] items-center gap-1.5 rounded-full bg-on-color px-3 text-[12.5px] font-extrabold text-on-photo-ink shadow-float">
-        <Shuffle className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
-        Was anderes?
-      </span>
-    </button>
-  );
-  const knoepfe = essenKnoepfe(view, { kocht, half: size === "S" });
   const kochHref = recipe ? `/kochbuch/kochen?id=${encodeURIComponent(recipe.id)}${persons ? `&personen=${persons}` : ""}` : null;
-  const vorschlag = idea ?? list[0] ?? null;
-  const links =
-    knoepfe.links === "rezept"
-      ? { label: "Rezept", icon: BookOpen, open: rezeptHref ?? (() => setOhneRezept(true)), data: "rezept" }
-      : knoepfe.links === "weiter" && kochHref
-        ? { label: "Weiter kochen", icon: ChefHat, open: kochHref, data: "weiter-kochen" }
-        : knoepfe.links === "vorschlag"
-          ? { label: "Vorschlag", icon: Lightbulb, open: vorschlag ? () => setChosen(vorschlag) : onOpen, data: "vorschlag" }
-          : null;
+  const kocht = view.kind === "geplant" && view.when === "heute" && Boolean(kochHref) && (at !== undefined || Boolean(session?.manualAt));
+  const zustand = kachelZustand(view, kocht);
+  const morgen = weekdayShort(addDays(todayIso(), 1));
+  const kopf = essenKopf(zustand, { over, clock: dish && dishClock ? clockLabel(dishClock) : null, morgen });
+  /** Vorschlag nehmen – tagsüber für heute, nach dem Essen für morgen (fehlende Zutaten kommen wie immer über den Plan auf die Liste) */
+  const take = (it: Idea, rezeptId?: string) => {
+    if (takeDish(data, rezeptId ? { ...it, recipeId: rezeptId } : it, over ? addDays(todayIso(), 1) : todayIso())) setAlt(null);
+  };
+  // Für „Was anderes?“ bei Mias Kochidee zählt nur ein heute geplantes Gericht (nach dem Abendessen: frei für morgen)
+  const corner = hat ? (
+    <KochideeKnopf name={helperName(data.profile)} planned={over ? null : dish} quiet={hat.quiet} />
+  ) : (
+    list.length > 0 && !away && <KachelPille label="Was anderes?" icon={Shuffle} aria="Andere Idee" onClick={() => setAlt((a) => naechsteIdee(list.map((i) => i.title), a, view.title) ?? a)} />
+  );
   const schritt = kocht && recipe && at !== undefined ? kochSchrittText(at, recipe.steps.length) : null;
-  const sub = view.kind === "vorschlag" ? "Vorschlag" : view.kind === "frei" ? (view.ideen ? `${Math.min(3, list.length)} Ideen ansehen` : undefined) : essenUnterzeile({ minutes: recipe?.prepMinutes ?? null, needs, schritt }) || undefined;
-  // Rest der Kachel: geplant → Tagesansicht, Vorschlag → Fenster, frei → Essen-Seite
-  const open = view.kind === "vorschlag" ? () => setChosen(idea) : view.kind === "geplant" && day ? () => setTag(true) : onOpen;
+  const groesse = size === "S" ? "S" : "M";
+  const sub =
+    view.kind === "vorschlag" && idea
+      ? essenUnterzeilen({ minutes: idea.minutes, needs: idea.needs }, groesse)
+      : view.kind === "geplant"
+        ? essenUnterzeilen({ minutes: recipe?.prepMinutes ?? null, needs, schritt }, groesse)
+        : undefined;
+  const tippen = essenTippen(zustand);
+  const zeigen = () => {
+    if (!idea) return;
+    vorschau.zeigen({ title: idea.title, category: idea.category, minutes: idea.minutes, recipeId: idea.recipeId, needs: idea.needs, unsure: idea.unsure, persons, kopf }, (rezeptId) => take(idea, rezeptId));
+  };
+  const open =
+    tippen === "vorschau" ? zeigen : tippen === "rezept" ? (rezeptHref ?? (() => setOhneRezept(true))) : tippen === "kochmodus" && kochHref ? kochHref : day && !day.away ? () => setTag(true) : onOpen;
+  const pille = essenPille(zustand);
   const picture = kachelBild(view, view.kind === "vorschlag" ? { category: idea?.category } : { ingredients: recipe?.ingredients.map((i) => i.name), category: recipe?.category ?? entry?.category });
   return (
     <>
@@ -139,11 +134,10 @@ export function FoodTile({ data, dish, over, dishClock, onOpen, size = "S", hat 
         open={open}
         half={size === "S"}
         label={`${kopf} · ${view.title}${view.kind === "vorschlag" ? " · Vorschlag" : ""}`}
-        corner={corner || swap}
-        links={links}
-        rechts={knoepfe.rechts}
+        corner={corner}
+        pille={{ label: pille, open: pille === "Weiter kochen ›" && kochHref ? kochHref : "/?seite=essen&zu=woche", data: pille === "Weiter kochen ›" ? "weiter-kochen" : "woche" }}
       />
-      {chosen && <GerichtSheet dish={chosen} take={takeLabel(over ? "morgen" : "heute")} onTake={() => take(chosen)} onClose={() => setChosen(null)} recipeHref={recipeHref(data.recipes, chosen.recipeId) ?? undefined} />}
+      {vorschau.fenster}
       {tag && day && <TagFenster data={data} day={day} tage={tage ? [...tage.values()] : [day]} onClose={() => setTag(false)} />}
       {ohneRezept && entry && <OhneRezeptSheet title={entry.title} category={entry.category} name={helperName(data.profile)} onClose={() => setOhneRezept(false)} />}
     </>
@@ -165,7 +159,7 @@ function ShopRow({ shop, label, names, count, href, products, demo }: { shop: st
         data-laden-zeile
       >
         <span className="absolute inset-y-0 left-0 w-1" style={{ background: tone }} aria-hidden />
-        <span className="min-w-0 flex-1 truncate text-[14px] font-bold">{label}</span>
+        <span className="min-w-0 flex-1 break-words text-[14px] font-bold leading-tight">{label}</span>
         {names.slice(0, 2).map((n, i) => (
           <ItemSymbol key={`${n}-${i}`} id={symbolFor(n, products)} name={n} className="h-5 w-5 shrink-0" />
         ))}
@@ -195,7 +189,7 @@ function ShopRows({ rows, rest, ohne, mine, products, demo = false }: TileRows &
         {!mine && ohne.length > 0 && <ShopRow shop={null} label="Liste" names={ohne} count={ohne.length} href="/einkaufsliste" products={products} demo={demo} />}
       </ul>
       {rest && (
-        <Link href="/einkaufsliste" className="flex min-h-[30px] items-center truncate text-[12.5px] font-semibold text-muted" data-zeile>
+        <Link href="/einkaufsliste" className="flex min-h-[30px] items-center text-[12.5px] font-semibold leading-tight text-muted" data-zeile>
           {rest}
         </Link>
       )}
@@ -262,7 +256,7 @@ export function ShoppingTile({ size = "S", demo = false }: { half: boolean; size
  * NOTIZEN je Größe: S = die neueste bzw. angeheftete Notiz (Titel + Anfang,
  * 2 Zeilen), M = 3 Notizen als Zeilen „Titel · Anfang“, L = bis 5
  * (angeheftete zuerst). Ohne Notizen die Schnellnotiz bzw. „Schnell was
- * aufschreiben …“. Kopf = Notizen-Seite, Zeile = genau diese Notiz, Stift =
+ * aufschreiben.“ (A-045: Kachel ohne „…“). Kopf = Notizen-Seite, Zeile = genau diese Notiz, Stift =
  * Schnellnotiz.
  */
 export function NotesTile({ size = "M" }: { size?: TileSize }) {
@@ -277,18 +271,18 @@ export function NotesTile({ size = "M" }: { size?: TileSize }) {
             <StickyNote className="h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden />
             Notizen
           </span>
-          {!rows.length && <span className="text-[13px] text-muted">Schnell was aufschreiben …</span>}
+          {!rows.length && <span className="text-[13px] text-muted">Schnell was aufschreiben.</span>}
         </Link>
         <span className="absolute right-3.5 top-3">
           <QuickButton icon={PenLine} label="Schnellnotiz schreiben" onClick={() => openQuick({ kind: "notiz" })} />
         </span>
         {size === "S" && top && (
           <Link href={`/notizen/bearbeiten?id=${top.id}`} className="-mt-1 flex min-h-[30px] flex-col text-[13px] leading-[1.35]" data-zeile data-notiz-zeile>
-            <span className="flex items-center gap-1 truncate font-bold">
+            <span className="flex items-center gap-1 font-bold">
               {top.pinned && <Pin className="h-3 w-3 shrink-0 text-tile-accent" strokeWidth={2.25} aria-hidden />}
-              <span className="truncate">{top.title}</span>
+              <span className="truncate" data-freitext>{top.title}</span>
             </span>
-            {top.line && <span className="truncate text-muted">{top.line}</span>}
+            {top.line && <span className="truncate text-muted" data-freitext>{top.line}</span>}
           </Link>
         )}
         {size !== "S" && rows.length > 0 && (
@@ -297,7 +291,7 @@ export function NotesTile({ size = "M" }: { size?: TileSize }) {
               <li key={r.id}>
                 <Link href={`/notizen/bearbeiten?id=${r.id}`} className="flex min-h-[30px] items-center gap-1.5 text-[13.5px]" data-zeile data-notiz-zeile>
                   {r.pinned ? <Pin className="h-3.5 w-3.5 shrink-0 text-tile-accent" strokeWidth={2.25} aria-hidden /> : <StickyNote className="h-3.5 w-3.5 shrink-0 text-tile-accent" strokeWidth={2} aria-hidden />}
-                  <span className="min-w-0 flex-1 truncate">
+                  <span className="min-w-0 flex-1 truncate" data-freitext>
                     <span className="font-semibold">{r.title}</span>
                     {r.line && <span className="text-muted"> · {r.line}</span>}
                   </span>
@@ -326,16 +320,19 @@ export function PantryTile({ size = "S" }: { size?: TileSize }) {
       <Link href="/vorrat" className="flex min-w-0 flex-col gap-1" data-zeile>
         <span className={HALF_LABEL}>
           <Refrigerator className="h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden />
-          <span className="truncate">Im Haus</span>
+          <span>Im Haus</span>
         </span>
         {tile.items.length ? (
           <>
             <span className="text-[13px] font-semibold text-muted">{tile.soon ? "Bald aufbrauchen" : "Zuletzt eingekauft"}</span>
             {tile.items.map(({ item, badge }) => (
-              <span key={item.id} className="flex h-[30px] min-w-0 items-center gap-1.5">
+              <span key={item.id} className="flex min-h-[30px] min-w-0 items-center gap-1.5" data-im-haus-zeile>
                 <ItemSymbol id={symbolFor(item.name)} name={item.name} className="h-6 w-6 shrink-0 text-base" />
-                <span className="min-w-0 flex-1 truncate text-[14.5px] font-bold">{item.name}</span>
-                {badge && <span className={`shrink-0 rounded-full px-1.5 text-[11px] font-bold ${badge.tone === "orange" ? "bg-accent-soft text-accent-strong" : "bg-warn-soft text-warn-ink"}`}>{badge.text}</span>}
+                {/* Name vor Schild (Tafel 133): der Name steht immer ganz, passt das Schild nicht daneben, rutscht es in die nächste Zeile */}
+                <span className="flex min-w-0 flex-1 flex-wrap items-center gap-x-1.5">
+                  <span className="min-w-0 hyphens-auto break-words text-[14.5px] font-bold leading-tight">{item.name}</span>
+                  {badge && <span className={`ml-auto whitespace-nowrap rounded-full px-1.5 text-[10.5px] font-bold leading-[16px] ${badge.tone === "orange" ? "bg-accent-soft text-accent-strong" : "bg-warn-soft text-warn-ink"}`}>{badge.text}</span>}
+                </span>
               </span>
             ))}
           </>

@@ -35,7 +35,7 @@ export function SpendentopfTile() {
       <Link href="/spendentopf" className="flex items-center gap-3" aria-label="Spendentopf öffnen">
         <PotGraphic size={52} empty={!pot} />
         <span className="flex min-w-0 flex-1 flex-col">
-          <span className={`${TILE_LABEL} truncate`}>
+          <span className={`${TILE_LABEL} break-words`}>
             Spendentopf · {preview ? "bald" : (pot?.name ?? region?.name ?? "Region wählen")}
           </span>
           {pot ? (
@@ -46,7 +46,7 @@ export function SpendentopfTile() {
           ) : (
             <span className="text-[15px] font-bold leading-snug">Bescheid geben oder mithelfen</span>
           )}
-          <span className="truncate text-[13px] font-semibold text-muted">{status}</span>
+          <span className="text-[13px] font-semibold leading-snug text-muted">{status}</span>
         </span>
       </Link>
       {voting && (

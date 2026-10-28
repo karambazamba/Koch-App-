@@ -82,9 +82,9 @@ describe("Hackbraten als Scheiben vom Laib", () => {
 });
 
 describe("Wortwahl", () => {
-  it("Kachel beim Kochen „Weiter kochen“ (Tafel 122) statt „Rezept groß öffnen“", () => {
+  it("Kachel beim Kochen „Weiter kochen ›“ (Tafel 134) statt „Rezept groß öffnen“", () => {
     const src = read("src/components/heute/HomeTiles.tsx");
-    expect(src).toContain('label: "Weiter kochen"');
+    expect(read("src/lib/heute/essenKachel.ts")).toContain('"Weiter kochen ›"');
     expect(src).not.toMatch(/Rezept groß öffnen/);
   });
 

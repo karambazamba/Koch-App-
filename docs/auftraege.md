@@ -16,7 +16,8 @@ Status: offen · in Arbeit · fertig vX.Y · zurückgestellt (Grund)
   (v0.143), Fenster-Zurück ohne Wettlauf (v0.144, Fehler hinter dem
   schwankenden Ablauf `erinnerungFrage`), Pinnwand-Nachtrag (v0.145), Essen-Kachel „Rezept“ + Vorschau vor „Nehmen“ (v0.146), Erledigte Aufgaben nur
   12 Stunden (v0.147), Familie verbinden + Namen statt Mail (v0.148), Einladungsseite ohne Leiste (v0.149,
-  Ursache des roten Konto-Durchklicks).
+  Ursache des roten Konto-Durchklicks), Essen-Kachel final + nichts
+  abgeschnitten (A-045/A-046, v0.150).
 - **Merge-Reihenfolge (Sortier-Auftrag 28.10., je bauen → testen → PR → mergen,
   dann der nächste auf dem neuesten `main`):**
   1. A-027 Erster Start rund (mit A-031 Zugangscode nachsichtig, 10 Versuche)
@@ -94,6 +95,8 @@ Status: offen · in Arbeit · fertig vX.Y · zurückgestellt (Grund)
 | A-041 | Abhaken wie Aufgaben, Mia merkt sich den Laden („wie immer ⌄“, „Oft bei …“, „Was ich mir gemerkt hab“) + Ergänzung „Einkaufsliste stellt sich vor“ | `tafel-128.png` | gebaut, wartet (mit A-040) |
 | A-042 | SOFORT: „Familie verbinden“ klarer + Namen statt Mail-Adresse + Einladungslink verständlich (Bilder 1/2 nicht angekommen) | – | fertig v0.148 |
 | A-043 | SOFORT: Erledigte Aufgaben nur 12 Stunden („Erledigt ⌄“ zugeklappt ohne Zahl, danach still weg per Lösch-Markierung auf allen Geräten, Serien nur die Runde, Mia nur die letzten 12 h; Wortlaut `docs/auftraege/A-043-erledigt-12h.md`) | – | fertig v0.147 |
+| A-045 | SOFORT: Essen-Kachel S – nichts abgeschnitten (Knöpfe ohne „…“, Stufen Symbol → 13 px → Kurzform, „Idee“ als Pille, Im-Haus-Namen ganz, Zutaten 2 + „+N“, Prüf-Ablauf `nichtsAbgeschnitten`; Wortlaut `docs/auftraege/A-045-kachel-ganz.md`) | `tafel-133.png` | fertig v0.150 (Essen-Teil durch A-046 ersetzt, Grundregel bleibt) |
+| A-046 | Essen-Kachel final – Bild antippen = Rezept (keine großen Knöpfe, „Was anderes?“ oben, „Wochenplan ›“ unten, Statuszeile, Antippen je Zustand; Wortlaut `docs/auftraege/A-046-essen-kachel-final.md`) | `tafel-134.png` | fertig v0.150 (mit A-045; „Nehmen“ ohne Wochenplan-Angebot aus Tafel 127, das kommt mit A-040) |
 
 ## Offene Punkte (ohne eigenen Auftrag)
 

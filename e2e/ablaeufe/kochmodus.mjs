@@ -1,7 +1,7 @@
-// Essen-Kachel „Rezept“ und Kochmodus (Tafel 122): „Rezept“ öffnet das
-// richtige Rezept (auch Wochenkarten-Gericht ohne recipeId), eigener Eintrag
-// ohne Rezept = Fenster „Mia schreibt dir ein Rezept dazu“, „Wochenplan“ →
-// „Die nächsten 7 Tage“. Kochmodus: Timer läuft beim Blättern weiter, ✕ merkt
+// Essen-Kachel und Kochmodus (Tafel 122, final Tafel 134): Kachel antippen
+// öffnet das richtige Rezept (auch Wochenkarten-Gericht ohne recipeId),
+// eigener Eintrag ohne Rezept = Fenster „Mia schreibt dir ein Rezept dazu“,
+// Pille „Wochenplan ›“ → „Die nächsten 7 Tage“ (nicht das Rezept). Kochmodus: Timer läuft beim Blättern weiter, ✕ merkt
 // den Schritt (Kachel „Weiter kochen · Schritt 2 von 3“), „Gegessen“ setzt
 // die Kachel um. Rezeptseite: Kurz | Ausführlich gemerkt, Timer-Chip,
 // Schritt durchstreichen. (Mi 21.10.2026, 10:30)
@@ -25,11 +25,12 @@ export const essenKachelRezept = async (page, check) => {
   await mitPlan(page, "Spaghetti Bolognese");
   const tile = kachel(page);
   check(await tile.locator("[data-titel]").innerText().then((t) => t.includes("Spaghetti") && !t.includes("…")), "Name ganz zu sehen");
-  const [rezept, woche] = [tile.locator("[data-rezept]"), tile.locator("[data-woche]")];
-  const a = await rezept.boundingBox();
+  check(/^Essen · \d/i.test(await tile.locator("[data-kopf]").innerText()), "Statuszeile „ESSEN · 18:30“");
+  check(!(await tile.locator("[data-rezept]").count()), "Tafel 134: kein großer Knopf „Rezept“ mehr");
+  const woche = tile.locator("[data-woche]");
   const b = await woche.boundingBox();
-  check(a && b && a.height >= 44 && b.height >= 44 && Math.abs(a.width - b.width) < 2 && a.x + a.width <= b.x, "zwei gleich breite Knöpfe ≥ 44 px, nicht überlappend");
-  await rezept.tap();
+  check(b && b.height >= 44 && (await woche.innerText()).trim() === "Wochenplan ›", "unten rechts Pille „Wochenplan ›“, Tippfläche ≥ 44 px");
+  await tile.locator("[data-essen-antippen]").tap();
   await page.waitForURL(/\/kochbuch\/rezept\?id=k%3Abolognese/, { timeout: 5000 }).catch(() => {});
   check(page.url().includes("k%3Abolognese"), "„Rezept“ öffnet das eingebaute Rezept zum Wochenkarten-Gericht");
   check(/Heute · .* · für 3/i.test(await page.locator("[data-rezept-kopf]").innerText()), "„HEUTE · 18:30 · FÜR 3“ (Haushalt)");
@@ -38,7 +39,7 @@ export const essenKachelRezept = async (page, check) => {
 
 export const essenKachelOhneRezept = async (page, check) => {
   await mitPlan(page, "Omas Spezialeintopf");
-  await kachel(page).locator("[data-rezept]").tap();
+  await kachel(page).locator("[data-essen-antippen]").tap();
   const sheet = page.locator("[data-ohne-rezept]");
   check(await sichtbar(sheet), "ohne Rezept: kurzes Fenster statt Fehler");
   check(await sheet.getByText(/schreibt dir ein Rezept dazu/).isVisible(), "„Mia schreibt dir ein Rezept dazu“");
@@ -82,11 +83,18 @@ export const kochmodusTimerUndSchritt = async (page, check) => {
   await page.goto(BASE + "/");
   await page.waitForTimeout(1200);
   const tile = kachel(page);
-  check(await tile.locator("[data-weiter-kochen]").isVisible(), "Kachel: „Weiter kochen“");
+  check(await tile.locator("[data-weiter-kochen]").isVisible(), "Kachel: „Weiter kochen ›“");
+  check(/^Essen · Jetzt$/i.test((await tile.locator("[data-kopf]").innerText()).trim()), "Statuszeile „ESSEN · JETZT“");
   check((await tile.locator("[data-unterzeile]").innerText()) === "Schritt 2 von 3", "Kachel: „Schritt 2 von 3“");
   await tile.locator("[data-weiter-kochen]").tap();
-  check(await sichtbar(page.locator("[data-kochmodus]")), "„Weiter kochen“ öffnet den Kochmodus");
+  check(await sichtbar(page.locator("[data-kochmodus]")), "„Weiter kochen ›“ öffnet den Kochmodus");
   check((await page.locator("[data-koch-schritt]").innerText()) === "Schritt 2 von 3", "steigt beim gemerkten Schritt ein");
+  // Tafel 134: auch die Kachel selbst führt beim Kochen in den Kochmodus am Schritt
+  await page.goto(BASE + "/");
+  await page.waitForTimeout(1200);
+  await kachel(page).locator("[data-essen-antippen]").tap();
+  check(await sichtbar(page.locator("[data-kochmodus]")), "Kachel antippen beim Kochen = Kochmodus");
+  check((await page.locator("[data-koch-schritt]").innerText()) === "Schritt 2 von 3", "am aktuellen Schritt");
 };
 
 export const kochmodusGegessen = async (page, check) => {
@@ -101,7 +109,7 @@ export const kochmodusGegessen = async (page, check) => {
   check(await page.getByText(/schmecken\./).first().isVisible(), "nur ein kurzer Satz von Mia");
   const tile = kachel(page);
   check(!(await tile.locator("[data-weiter-kochen]").count()), "Kachel nicht mehr „Weiter kochen“");
-  check(/morgen/i.test((await tile.getAttribute("aria-label")) ?? "") || (await tile.locator("[data-vorschlag]").count()) > 0, "Kachel zeigt morgen bzw. den Vorschlag");
+  check(/morgen|Vorschlag/i.test((await tile.locator("[data-essen-antippen]").getAttribute("aria-label")) ?? ""), "Kachel zeigt morgen bzw. den Vorschlag");
 };
 
 export const rezeptSchnellanleitung = async (page, check) => {
