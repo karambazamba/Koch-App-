@@ -3278,7 +3278,7 @@ Fehler in `docs/aufraeumen-nachher.md`.
   koche ich?“, Wochenkarte, Mias Wochenplan-Vorschlag. Einmal „Antippen zum
   Reinschauen.“.
 
-## Erledigte Aufgaben nur 12 Stunden (A-043)
+## Erledigte Aufgaben nur 12 Stunden (v0.147.0, A-043)
 - Wunsch (28.10.): Erledigtes stand bisher 14 Tage unter „Erledigte
   anzeigen“. Jetzt höchstens 12 Stunden nach dem Abhaken, danach still weg.
   Kein Archiv, keine Zahl.
