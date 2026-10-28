@@ -90,6 +90,8 @@ export const imHaus = async (page, check) => {
   await page.locator("[data-was-noch]").fill("Brot");
   await page.locator("[data-was-noch]").press("Enter");
   await page.getByRole("checkbox", { name: "Brot abhaken" }).tap();
+  // erst gleitet Brot in „Schon im Wagen“ (1 s + 0,8 s), dann steht der Knopf still
+  await page.waitForTimeout(2000);
   await page.locator("[data-einkauf-fertig]").tap();
   check(await page.getByText("Fertig. Liegt jetzt bei Im Haus.").waitFor({ timeout: 5000 }).then(() => true, () => false), "„Einkauf fertig“ → „Fertig. Liegt jetzt bei Im Haus.“");
   await page.waitForURL(/\/einkaufsliste$/, { timeout: 5000 }).catch(() => {});
