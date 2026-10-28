@@ -178,7 +178,7 @@ export function JetztPlaceholder() {
   return (
     <div className="flex h-[78px] shrink-0 flex-col justify-center rounded-card border-2 border-dashed border-line px-4 text-muted" aria-label="Jetzt-Karte (fester Platz)">
       <span className="text-[15px] font-bold text-ink">Jetzt-Karte</span>
-      <span className="text-[13px] leading-snug">passt sich automatisch an – fester Platz oben, nicht verschiebbar</span>
+      <span className="text-[13px] leading-snug">passt sich automatisch an, fester Platz oben, nicht verschiebbar</span>
     </div>
   );
 }

@@ -322,6 +322,8 @@
   --app-boeen-ink: #1f1b16;
   /* Look „Schlicht“: weiße Kacheln mit feinem Rand, Innen-Kärtchen sehr hell */
   --app-schlicht-inner: #f9f6f1;
+  /* Wasserzeichen der Sport-/Im-Haus-Kachel (Tafel 124 A): Deckkraft im Kachel-Akzent, Schlicht in Grau */
+  --app-wasserzeichen: 0.125; --app-wasserzeichen-haus: 0.09; --app-wasserzeichen-schlicht: 0.06;
   --app-karamba: #d6336c;
   /* Tipps aus der Region: Lila (nie für Termine) */
   --app-tipp: #8a63d2;
@@ -481,6 +483,7 @@
   --app-szene-sonne: #e8b443; --app-szene-tropfen: #9fb2cc; --app-szene-mond: #e8d58f; --app-szene-wolke-schlicht: #454d5b;
  
   --app-schlicht-inner: #1d2024;
+  --app-wasserzeichen: 0.1; --app-wasserzeichen-haus: 0.07; --app-wasserzeichen-schlicht: 0.06;
   --app-jetzt-from: #3b2a1f;
   --app-jetzt-to: #2b211b;
   --app-jetzt-hint: #c9a088;
@@ -636,6 +639,7 @@
     --app-szene-sonne: #e8b443; --app-szene-tropfen: #9fb2cc; --app-szene-mond: #e8d58f; --app-szene-wolke-schlicht: #454d5b;
    
     --app-schlicht-inner: #1d2024;
+    --app-wasserzeichen: 0.1; --app-wasserzeichen-haus: 0.07; --app-wasserzeichen-schlicht: 0.06;
     --app-jetzt-from: #3b2a1f;
     --app-jetzt-to: #2b211b;
     --app-jetzt-hint: #c9a088;
@@ -1118,6 +1122,15 @@ body {
   --tile-inner: var(--app-schlicht-inner);
 }
 [data-look="schlicht"] .bg-tile { box-shadow: inset 0 0 0 1px var(--app-line); }
+/* Wasserzeichen (Tafel 124 A): großes Linien-Symbol unten rechts, angeschnitten,
+   hinter dem Inhalt (Kachel = isolate, Zeichen z -1), still, nie antippbar.
+   Farbe = Kachel-Akzent (folgt data-tone/data-farbe), Schlicht = Grau. */
+.kachel-wasserzeichen { color: var(--tile-ac); opacity: var(--app-wasserzeichen); }
+.kachel-wasserzeichen[data-art="haus"] { opacity: var(--app-wasserzeichen-haus); }
+[data-look="schlicht"] .kachel-wasserzeichen { color: var(--app-muted); opacity: var(--app-wasserzeichen-schlicht); }
+/* Leiser Text über dem Wasserzeichen (grau, orange) bekommt die Kachel-Fläche als
+   enge Freistellung: sein Kontrast bleibt genau wie ohne Wasserzeichen. */
+.kachel-frei { background: var(--tile-bg); -webkit-box-decoration-break: clone; box-decoration-break: clone; }
 /* Einkauf-Kachel: Laden-Zeilen schlicht weiß mit feinem Rand, nur Strich und Zahl farbig */
 [data-look="schlicht"] [data-laden-zeile] { background: var(--app-surface); box-shadow: inset 0 0 0 1px var(--app-line); }
 

@@ -98,7 +98,7 @@ describe("Jetzt-Karte: Wetter nur mit Plan", () => {
     expect(first(tafelTag(H(14), { planWeather: rain, upcoming: [termin("Mathis Fußball", "17:00", { outdoor: true })], pin: null, shop: null, dish: null }))).toMatchObject({
       kind: "wetter",
       title: "Regen um 17 Uhr",
-      detail: "Mathis Fußball – lieber drinnen?",
+      detail: "Mathis Fußball · lieber drinnen?",
     });
     expect(kinds(tafelTag(H(14), { planWeather: null }))).not.toContain("wetter");
   });

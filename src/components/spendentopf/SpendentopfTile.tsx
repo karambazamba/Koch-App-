@@ -24,7 +24,7 @@ export function SpendentopfTile() {
   const voting = Boolean(pot) && potPhase(today) === "abstimmen" && !state.votes[today.slice(0, 4)];
   const left = voteDaysLeft(today);
   const status = !pot
-    ? `${region?.name ?? "Eure Region"} – noch kein Topf`
+    ? `${region?.name ?? "Eure Region"} · noch kein Topf`
     : voting
       ? `Abstimmen: noch ${left} ${left === 1 ? "Tag" : "Tage"}`
       : state.pledge

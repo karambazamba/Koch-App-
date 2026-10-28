@@ -249,7 +249,7 @@ export function jetztTopics(x: JetztInput): JetztTopic[] {
   // Wetter NUR mit Planbezug: Regen/Sturm/Glätte zur Zeit eines Draußen-Termins
   if (x.planWeather && !night) {
     const h = Number(x.planWeather.time.slice(0, 2));
-    add({ id: `wetter:${x.planWeather.key}`, kind: "wetter", title: x.planWeather.head ?? `${x.planWeather.word} um ${h} Uhr`, detail: x.planWeather.detail ?? `${x.planWeather.title} – lieber drinnen?`, score: 74, target: { href: dayHref }, button: "Öffnen", gentle: true });
+    add({ id: `wetter:${x.planWeather.key}`, kind: "wetter", title: x.planWeather.head ?? `${x.planWeather.word} um ${h} Uhr`, detail: x.planWeather.detail ?? `${x.planWeather.title} · lieber drinnen?`, score: 74, target: { href: dayHref }, button: "Öffnen", gentle: true });
   }
 
   // Neu von der Familie

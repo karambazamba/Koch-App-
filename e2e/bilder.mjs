@@ -243,6 +243,35 @@ for (const device of DEVICES) {
         n++;
       }
     }
+    // Sport und Im Haus mit Wasserzeichen (Tafel 124 A): erlaubte Größen S + XS je Kachel,
+    // in allen 8 Kachel-Farben, Farbig und Schlicht (hell/dunkel über die äußere Schleife)
+    for (const farbe of ["lavendel", "mint", "salbei", "rose", "vanille", "aqua", "flieder", "sand"]) {
+      for (const look of ["farbig", "schlicht"]) {
+        await page.evaluate(({ farbe, look }) => {
+          const key = "familienkueche.haushaltsprofil";
+          localStorage.setItem(key, JSON.stringify({ ...JSON.parse(localStorage.getItem(key) || "{}"), look }));
+          const fn = JSON.parse(localStorage.getItem("wasgibts.funktionen") || '{"version":2,"on":[]}');
+          localStorage.setItem("wasgibts.funktionen", JSON.stringify({ ...fn, on: [...new Set([...(fn.on || []), "sport", "vorrat"])] }));
+          const tiles = [
+            { id: "sport", visible: true, size: "S", farbe },
+            { id: "vorrat", visible: true, size: "S", farbe },
+            { id: "sport", visible: true, size: "XS", farbe },
+            { id: "vorrat", visible: true, size: "XS", farbe },
+          ];
+          // Eine Kachel-Id gibt es nur einmal: S oben, XS in einer zweiten Aufnahme
+          localStorage.setItem("wasgibts.startseite", JSON.stringify({ version: 9, tiles: tiles.slice(0, 2), tipSeen: true }));
+          sessionStorage.setItem("bilder.wasserzeichen.xs", JSON.stringify({ version: 9, tiles: tiles.slice(2), tipSeen: true }));
+        }, { farbe, look });
+        for (const size of ["S", "XS"]) {
+          if (size === "XS") await page.evaluate(() => localStorage.setItem("wasgibts.startseite", sessionStorage.getItem("bilder.wasserzeichen.xs")));
+          await page.goto(BASE);
+          await page.locator('[aria-label^="Sport"]').first().waitFor({ timeout: 6000 }).catch(() => {});
+          await settle(page);
+          await page.locator("[data-raster]").screenshot({ path: `${dir}/wasserzeichen-${farbe}-${size}-${look}-${tag}.png` });
+          n++;
+        }
+      }
+    }
     await page.context().close();
     // Fenster, die nur nach einer Handlung erscheinen (Szenen)
     for (const [name, run] of SCENES) {

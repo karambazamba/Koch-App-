@@ -48,6 +48,7 @@ import { dishOf, useMeals } from "@/components/essen/useMeals";
 import { KochideeKnopf } from "@/components/essen/kochtipp/KochideeKnopf";
 import { DishTile } from "@/components/essen/DishTile";
 import { helperName } from "@/lib/einstellungen/profile";
+import { KachelWasserzeichen, WASSERZEICHEN_STRICH } from "@/components/ui/KachelWasserzeichen";
 
 const HALF = `${TILE} flex h-full flex-col overflow-hidden p-3`;
 /** XS: Kopf oben, EINE Zeile unten */
@@ -359,7 +360,8 @@ export function NotesTile({ size = "XS", demo = false }: { size?: TileSize; demo
  * IM HAUS (Baustein): XS = EINE Zeile („Hähnchen · heute“: das Erste aus
  * „Bald aufbrauchen“, sonst das zuletzt Eingekaufte); S = bis 3 Zeilen à
  * 30 px (Symbol, Name, Schild) und unten „Was koch ich daraus?“ = Spontan
- * kochen (wie unter Essen). Leer: ein freundlicher Satz.
+ * kochen (wie unter Essen). Leer: ein freundlicher Satz. In S hinten still
+ * ein Kühlschrank als Wasserzeichen (9 %, passt zur Sport-Kachel, Tafel 124 A).
  */
 export function PantryTile({ size = "XS", demo = false }: { size?: TileSize; demo?: boolean }) {
   const pantry = usePantry();
@@ -384,33 +386,47 @@ export function PantryTile({ size = "XS", demo = false }: { size?: TileSize; dem
     );
   }
   return (
-    <section className={`${HALF} gap-1`} aria-label="Im Haus" data-groesse={size}>
+    <section className={`${HALF} isolate gap-1`} aria-label="Im Haus" data-groesse={size}>
+      <KachelWasserzeichen art="haus">
+        <Refrigerator strokeWidth={WASSERZEICHEN_STRICH} aria-hidden />
+      </KachelWasserzeichen>
       <KleinKopf icon={Refrigerator} label="Im Haus" href="/vorrat" />
       <Link href="/vorrat" className="flex min-w-0 flex-col" data-zeile>
         {showDemo ? (
-          <span className="flex h-[30px] min-w-0 items-center gap-1.5">
-            <ItemSymbol id={symbolFor(DEMO_HAUS.name)} name={DEMO_HAUS.name} className="h-6 w-6 shrink-0 text-base" />
-            <span className="min-w-0 flex-1 truncate text-[14.5px] font-bold">{DEMO_HAUS.name}</span>
-            <span className="shrink-0 rounded-full bg-accent-soft px-1.5 text-[11px] font-bold text-accent-strong">{DEMO_HAUS.badge}</span>
-          </span>
+          <HausZeile name={DEMO_HAUS.name} badge={{ text: DEMO_HAUS.badge, tone: "orange" }} />
         ) : tile.items.length ? (
           tile.items.map(({ item, badge }) => (
-            <span key={item.id} className="flex h-[30px] min-w-0 items-center gap-1.5">
-              <ItemSymbol id={symbolFor(item.name)} name={item.name} className="h-6 w-6 shrink-0 text-base" />
-              <span className="min-w-0 flex-1 truncate text-[14.5px] font-bold">{item.name}</span>
-              {badge && <span className={`shrink-0 rounded-full px-1.5 text-[11px] font-bold ${badge.tone === "orange" ? "bg-accent-soft text-accent-strong" : "bg-warn-soft text-warn-ink"}`}>{badge.text}</span>}
-            </span>
+            <HausZeile key={item.id} name={item.name} badge={badge} />
           ))
         ) : (
-          <span className="mt-1 text-[14px] font-semibold leading-snug text-muted">Sag mir, was da ist, dann schlag ich was vor.</span>
+          <span className="mt-1 text-[14px] font-semibold leading-snug text-muted">
+            <span className="kachel-frei">Sag mir, was da ist, dann schlag ich was vor.</span>
+          </span>
         )}
       </Link>
       {(tile.items.length > 0 || showDemo) && (
-        <button type="button" onClick={() => openHelper("spontan")} className="hit mt-auto flex min-h-[30px] items-center gap-1 self-start text-left text-[13px] font-bold leading-tight text-accent-strong">
+        <button type="button" onClick={() => openHelper("spontan")} className="hit kachel-frei -ml-1 mt-auto flex min-h-[30px] items-center gap-1 self-start rounded-full px-1 text-left text-[13px] font-bold leading-tight text-accent-strong">
           <ChefHat className="h-3.5 w-3.5 shrink-0" strokeWidth={2.25} aria-hidden />
           Was koch ich daraus?
         </button>
       )}
     </section>
+  );
+}
+
+/**
+ * Eine Zeile „Im Haus“ (S): Symbol 20 px, Name 14 px in voller Länge (nie
+ * „Würstc…“), Schild 10,5 px rechts daneben; passt beides nicht in eine
+ * Zeile, rutscht nur das Schild in die Zeile darunter.
+ */
+function HausZeile({ name, badge }: { name: string; badge: { text: string; tone: string } | null | undefined }) {
+  return (
+    <span className="flex min-h-[30px] min-w-0 items-center gap-1.5" data-haus-zeile>
+      <ItemSymbol id={symbolFor(name)} name={name} className="h-5 w-5 shrink-0 text-[15px]" />
+      <span className="flex min-w-0 flex-1 flex-wrap items-center gap-x-1.5">
+        <span className="min-w-0 break-words text-[14px] font-bold leading-tight" data-haus-name>{name}</span>
+        {badge && <span className={`ml-auto shrink-0 rounded-full px-1.5 text-[10.5px] font-bold leading-[1.5] ${badge.tone === "orange" ? "bg-accent-soft text-accent-strong" : "bg-warn-soft text-warn-ink"}`}>{badge.text}</span>}
+      </span>
+    </span>
   );
 }

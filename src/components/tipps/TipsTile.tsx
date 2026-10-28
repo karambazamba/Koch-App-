@@ -36,7 +36,7 @@ export function TipsTile({ size, today }: { size: TileSize; today: string }) {
         </div>
       ) : list.length === 0 ? (
         <Link href="/tipps" className={`${TILE_INNER} px-3 py-3 text-[14px] font-semibold text-muted`}>
-          Gerade nichts in eurer Nähe – Umkreis ansehen
+          Gerade nichts in eurer Nähe. Umkreis ansehen
         </Link>
       ) : (
         <ul className="grid grid-cols-2 gap-2">

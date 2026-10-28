@@ -6,7 +6,9 @@
 // allein (Tafel 119): „2 von 3 diese Woche“. „Als Nächstes“: Icon, „Sa 18:00 · Laufen
 // · 45 Min“, Wetter zur Trainingszeit – antippen öffnet das Training. Jeder
 // Tag öffnet sein Fenster, „+“ = Training planen (mit Tageswahl, oder „Schon
-// trainiert? Eintragen“), das Label öffnet die Sport-Seite.
+// trainiert? Eintragen“), das Label öffnet die Sport-Seite. In S steht hinten
+// still ein großes Wasserzeichen (Tafel 124 A): Sportart des nächsten
+// Trainings, sonst des letzten, sonst Laufschuh; in XS keins (eine Zeile, zu eng).
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -26,13 +28,15 @@ import { WeatherSymbol } from "@/components/wetter/WeatherSymbol";
 import { buzz } from "@/components/heute/actions";
 import { SportAddSheet } from "@/components/sport/SportAddSheet";
 import { SportIcon } from "@/components/sport/SportIcon";
+import { KachelWasserzeichen, WASSERZEICHEN_STRICH } from "@/components/ui/KachelWasserzeichen";
+import { wasserzeichenSport } from "@/lib/sport/wasserzeichen";
 import dynamic from "next/dynamic";
 
 // Fenster erst beim Öffnen laden (hält die Seite beim Start klein)
 const SportDaySheet = dynamic(() => import("@/components/sport/SportDaySheet").then((m) => m.SportDaySheet), { ssr: false });
 const SportPlanForm = dynamic(() => import("@/components/sport/SportPlanForm").then((m) => m.SportPlanForm), { ssr: false });
 
-const BOX = `${TILE} flex flex-col gap-2.5 p-3.5`;
+const BOX = `${TILE} isolate flex flex-col gap-2.5 p-3.5`;
 
 /** Beispiel-Tag (allein): Zeile der Sport-Kachel – nie in echten Speichern */
 const DEMO_SPORT = "2 von 3 diese Woche";
@@ -56,9 +60,15 @@ export function SportTile({ size = "S", entries, today, minutes, me, demo = fals
   const weatherAt = next && hour !== null ? forecast?.hours.find((h) => h.date === next.date && h.hour === hour) : undefined;
   const showDemo = demo && !hasOwn;
   const zeile = showDemo ? DEMO_SPORT : next ? `${whenLabel(next, today)} · ${next.title}` : "Diese Woche frei";
+  const zeichen = wasserzeichenSport(next?.title ?? null, recent);
   return (
     <>
-      <section className={`${size === "XS" ? `${TILE} flex flex-col justify-between px-3 py-2.5` : BOX} h-full overflow-hidden`} aria-label={showDemo ? "Sport · Beispiel" : "Sport"} data-groesse={size}>
+      <section className={`${size === "XS" ? `${TILE} flex flex-col justify-between px-3 py-2.5` : BOX} h-full overflow-hidden`} aria-label={showDemo ? "Sport · Beispiel" : "Sport"} data-groesse={size} data-wasserzeichen={size === "XS" ? undefined : zeichen}>
+        {size !== "XS" && (
+          <KachelWasserzeichen>
+            <SportIcon sport={zeichen} strokeWidth={WASSERZEICHEN_STRICH} className="h-full w-full" />
+          </KachelWasserzeichen>
+        )}
         <Link href="/sport" className="flex items-center pr-8" aria-label="Sport öffnen">
           <span className={TILE_LABEL}>Sport</span>
         </Link>
@@ -97,7 +107,9 @@ export function SportTile({ size = "S", entries, today, minutes, me, demo = fals
             )}
           </button>
         ) : (
-          <p className="text-[14px] font-semibold leading-snug text-muted">Diese Woche noch nichts geplant – einfach Plus tippen.</p>
+          <p className="text-[14px] font-semibold leading-snug text-muted">
+            <span className="kachel-frei">Diese Woche ist noch frei. Plus tippen.</span>
+          </p>
         )}
       </section>
       {sheet === "planen" && (
