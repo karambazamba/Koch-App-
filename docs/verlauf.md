@@ -3544,3 +3544,22 @@ Fehler in `docs/aufraeumen-nachher.md`.
 - Bildvergleich: Szenen Sport/Im Haus in 8 Farben × hell/dunkel ×
   Farbig/Schlicht (`e2e/bilder.mjs`).
 
+## Wasserzeichen für alle Kacheln ohne Bild (A-036, Tafel 124 A/125)
+
+- Auftrag A-036, Tafel 125 nur als Text. EINE Komponente
+  `ui/KachelWasserzeichen` für alle: Termine Calendar, Aufgaben CircleCheck,
+  Einkauf ShoppingCart, Sport Sportart des nächsten Trainings, Im Haus
+  Refrigerator, Notizen StickyNote, Timer Timer; dazu Tipps MapPin und Post
+  (bald) Mail. Ohne: Wetter, Essen, Pinnwand, Spendentopf (eigenes Bild),
+  Jetzt-Karte. Zuordnung als `Record` über alle Kachel-IDs plus Test: eine
+  neue Kachel ohne Symbol oder Grund scheitert. Eine Wochenplan-Kachel gibt es
+  nicht (CalendarDays bleibt für später).
+- 150 px, Strich 1,3, unten rechts 30 px angeschnitten, −8° gedreht, Farbe =
+  Akzent der gewählten Kachel-Farbe. Deckkraft hell 12,5 % / dunkel 10 %, mit
+  freiem Text (`frei`) 9 % / 8 % (`--app-wasserzeichen-frei` ersetzt
+  `-haus`). Look „Schlicht“: keine Wasserzeichen (vorher Grau 6 %). XS ohne.
+- Kachel `isolate`; Fenster (Termin-Möglichkeiten, Tipp, Einkauf „Mehr
+  Details“) stehen neben der `<section>`, damit sie nicht unter späteren
+  Kacheln liegen. Leiser Text über dem Zeichen mit `kachel-frei`.
+- Bildvergleich: Familie-Beispiel auch in „Schlicht“, alle Wasserzeichen-
+  Kacheln in den 8 Farben × Farbig/Schlicht × hell/dunkel (`e2e/bilder.mjs`).

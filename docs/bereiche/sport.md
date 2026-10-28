@@ -83,8 +83,9 @@ Pastell-Grün; Standard nur bei „allein“, Tafel 119):
   Trainings, sonst des letzten, sonst Laufschuh (`SportShoe`;
   `lib/sport/wasserzeichen.ts`, `wasserzeichenSport`); eigene Sportarten
   `Activity`. Farbe = Kachel-Akzent (`--tile-ac`, folgt der gewählten Farbe),
-  Deckkraft `--app-wasserzeichen` (hell 12,5 %, dunkel 10 %); Schlicht: Grau
-  (`--app-muted`) mit `--app-wasserzeichen-schlicht` (6 %). XS ohne
+  Deckkraft `--app-wasserzeichen` (hell 12,5 %, dunkel 10 %), mit freiem
+  Text (Beispiel, „noch frei“) `--app-wasserzeichen-frei` (9 %/8 %);
+  Schlicht: keins (A-036). XS ohne
   Wasserzeichen (eine Zeile, zu eng, ruhiger). Die Kachel trägt
   `data-wasserzeichen="<sportart>"`.
 

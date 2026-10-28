@@ -48,7 +48,7 @@ import { dishOf, useMeals } from "@/components/essen/useMeals";
 import { KochideeKnopf } from "@/components/essen/kochtipp/KochideeKnopf";
 import { DishTile } from "@/components/essen/DishTile";
 import { helperName } from "@/lib/einstellungen/profile";
-import { KachelWasserzeichen, WASSERZEICHEN_STRICH } from "@/components/ui/KachelWasserzeichen";
+import { KachelWasserzeichen } from "@/components/ui/KachelWasserzeichen";
 
 const HALF = `${TILE} flex h-full flex-col overflow-hidden p-3`;
 /** XS: Kopf oben, EINE Zeile unten */
@@ -202,7 +202,7 @@ function ShopRows({ rows, ohne, mine, products, demo = false }: TileRows & { min
       </ul>
       {mine && ohne.length > 0 && (
         <Link href="/einkaufsliste#ohne-laden" className="flex min-h-[30px] flex-wrap items-center gap-x-1 py-0.5 text-[12.5px] font-semibold leading-tight text-muted" data-zeile data-ohne-laden-zeile>
-          <span className="whitespace-nowrap">{ohneLadenZeile(ohne.length)} ·</span> <span className="whitespace-nowrap font-bold text-accent-strong">Sortieren ›</span>
+          <span className="kachel-frei whitespace-nowrap">{ohneLadenZeile(ohne.length)} ·</span> <span className="kachel-frei whitespace-nowrap font-bold text-accent-strong">Sortieren ›</span>
         </Link>
       )}
     </>
@@ -254,18 +254,24 @@ export function ShoppingTile({ size = "S", demo = false }: { half: boolean; size
   const rows = showDemo ? tileRows(DEMO_ITEMS, DEMO_ORDER, 3) : tileRows(open, myShops, ohneDa ? 2 : 3);
   // Nichts zu kaufen: freundlicher Satz statt lauter Nullen
   const empty = !showDemo && open.length === 0;
+  // Wasserzeichen: leiser, sobald Text ohne eigene Fläche dasteht (leere Liste, „ohne Laden“)
+  const frei = empty || rows.ohne.length > 0;
+  // Der Plus-Knopf steht neben der <section>: sein Fenster („Mehr Details“) darf nicht in der Ebene der Kachel (isolate) gefangen sein
   return (
-    <section className={HALF} aria-label={showDemo ? "Einkaufsliste · Beispiel" : "Einkaufsliste"} data-groesse={size}>
-      <ShoppingHead more={rows.restZahl} />
-      {empty ? (
-        <Link href="/einkaufsliste" className="mt-1 flex-1 text-[14px] font-semibold leading-snug text-muted">
-          Liste ist leer. Sag mir einfach, was ihr braucht.
-        </Link>
-      ) : (
-        <ShopRows {...rows} mine={showDemo || myShops.length > 0} products={shopping.settings.products} demo={showDemo} />
-      )}
+    <div className="relative h-full min-h-0 min-w-0" data-einkauf-kachel>
+      <section className={`${HALF} isolate`} aria-label={showDemo ? "Einkaufsliste · Beispiel" : "Einkaufsliste"} data-groesse={size}>
+        <KachelWasserzeichen kachel="einkauf" size={size} frei={frei} />
+        <ShoppingHead more={rows.restZahl} />
+        {empty ? (
+          <Link href="/einkaufsliste" className="mt-1 flex-1 text-[14px] font-semibold leading-snug text-muted">
+            <span className="kachel-frei">Liste ist leer. Sag mir einfach, was ihr braucht.</span>
+          </Link>
+        ) : (
+          <ShopRows {...rows} mine={showDemo || myShops.length > 0} products={shopping.settings.products} demo={showDemo} />
+        )}
+      </section>
       <QuickAddButton weekStart={shopping.weekStart} settings={shopping.settings} quick className="absolute right-0.5 top-0.5" />
-    </section>
+    </div>
   );
 }
 
@@ -331,7 +337,8 @@ export function NotesTile({ size = "XS", demo = false }: { size?: TileSize; demo
     );
   }
   return (
-    <section className={`${HALF} gap-1`} aria-label={showDemo ? "Notizen · Beispiel" : "Notizen"} data-notizen-groesse={size} data-groesse={size}>
+    <section className={`${HALF} isolate gap-1`} aria-label={showDemo ? "Notizen · Beispiel" : "Notizen"} data-notizen-groesse={size} data-groesse={size}>
+      <KachelWasserzeichen kachel="notizen" size={size} frei />
       <KleinKopf icon={StickyNote} label="Notizen" href="/notizen" more={more} knopf={pen} />
       {rows.length ? (
         <ul className="flex flex-col" aria-label="Notizen">
@@ -341,7 +348,7 @@ export function NotesTile({ size = "XS", demo = false }: { size?: TileSize; demo
                 {r.pinned ? <Pin className="h-3.5 w-3.5 shrink-0 text-tile-accent" strokeWidth={2.25} aria-hidden /> : <StickyNote className="h-3.5 w-3.5 shrink-0 text-tile-accent" strokeWidth={2} aria-hidden />}
                 <span className="min-w-0 flex-1 truncate">
                   <span className="font-semibold">{r.title}</span>
-                  {r.line && <span className="text-muted"> · {r.line}</span>}
+                  {r.line && <span className="kachel-frei text-muted"> · {r.line}</span>}
                 </span>
               </Link>
             </li>
@@ -349,7 +356,7 @@ export function NotesTile({ size = "XS", demo = false }: { size?: TileSize; demo
         </ul>
       ) : (
         <button type="button" onClick={() => openQuick({ kind: "notiz" })} className="flex min-h-11 items-center text-left text-[13.5px] text-muted">
-          Schnell was aufschreiben …
+          <span className="kachel-frei">Schnell was aufschreiben …</span>
         </button>
       )}
     </section>
@@ -361,7 +368,7 @@ export function NotesTile({ size = "XS", demo = false }: { size?: TileSize; demo
  * „Bald aufbrauchen“, sonst das zuletzt Eingekaufte); S = bis 3 Zeilen à
  * 30 px (Symbol, Name, Schild) und unten „Was koch ich daraus?“ = Spontan
  * kochen (wie unter Essen). Leer: ein freundlicher Satz. In S hinten still
- * ein Kühlschrank als Wasserzeichen (9 %, passt zur Sport-Kachel, Tafel 124 A).
+ * ein Kühlschrank als Wasserzeichen (freier Text: 9 %, Tafel 124 A/125).
  */
 export function PantryTile({ size = "XS", demo = false }: { size?: TileSize; demo?: boolean }) {
   const pantry = usePantry();
@@ -387,9 +394,7 @@ export function PantryTile({ size = "XS", demo = false }: { size?: TileSize; dem
   }
   return (
     <section className={`${HALF} isolate gap-1`} aria-label="Im Haus" data-groesse={size}>
-      <KachelWasserzeichen art="haus">
-        <Refrigerator strokeWidth={WASSERZEICHEN_STRICH} aria-hidden />
-      </KachelWasserzeichen>
+      <KachelWasserzeichen kachel="vorrat" size={size} frei />
       <KleinKopf icon={Refrigerator} label="Im Haus" href="/vorrat" />
       <Link href="/vorrat" className="flex min-w-0 flex-col" data-zeile>
         {showDemo ? (

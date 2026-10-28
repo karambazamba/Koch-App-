@@ -35,6 +35,7 @@ import {
 import { changeTimers, useTimers } from "@/lib/timer/store";
 import { startTimer, stopwatch } from "@/lib/timer/actions";
 import { buzz } from "@/components/heute/actions";
+import { KachelWasserzeichen } from "@/components/ui/KachelWasserzeichen";
 
 const QUICK = [5, 10, 15];
 
@@ -84,7 +85,8 @@ export function TimerTile({ size = "M" }: { size?: TileSize }) {
   if (size === "S") {
     return (
       <>
-        <section className={`${TILE} flex h-full flex-col overflow-hidden p-3.5`} aria-label="Timer" data-groesse="S">
+        <section className={`${TILE} isolate flex h-full flex-col overflow-hidden p-3.5`} aria-label="Timer" data-groesse="S">
+          <KachelWasserzeichen kachel="timer" size="S" frei />
           <button type="button" onClick={() => (main || sw ? setOpen(true) : setCustom(10))} className="flex flex-1 flex-col items-start gap-1 text-left">
             <span className={`flex items-center gap-1.5 ${TILE_LABEL}`}>
               <TimerIcon className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
@@ -95,7 +97,7 @@ export function TimerTile({ size = "M" }: { size?: TileSize }) {
                 <span className="text-[22px] font-extrabold tabular-nums leading-none" role="timer" aria-label={`${main.name}: ${isExpired(main, nowMs) ? "fertig" : formatLeft(leftMs(main, nowMs))}`}>
                   {isExpired(main, nowMs) ? "fertig" : formatLeft(leftMs(main, nowMs))}
                 </span>
-                <span className="truncate text-[13px] text-muted" data-freitext>{main.name}</span>
+                <span className="kachel-frei truncate text-[13px] text-muted" data-freitext>{main.name}</span>
               </span>
             ) : sw ? (
               <span className="text-[20px] font-extrabold tabular-nums">{formatLeft(stopwatchMs(sw, nowMs))}</span>

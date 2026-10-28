@@ -118,8 +118,8 @@ weiter Vorrat (`src/lib/vorrat/`, `/vorrat`, `wasgibts.vorrat`).
   schlag ich was vor.“ Zeilen in S (`HausZeile`, Tafel 124 A): Symbol 20 px,
   Name 14 px immer ganz (nie „Würstc…“), Schild 10,5 px rechts; passt beides
   nicht in eine Zeile, rutscht nur das Schild darunter. In S hinten still
-  ein Kühlschrank als Wasserzeichen wie bei Sport (`--app-wasserzeichen-haus`:
-  hell 9 %, dunkel 7 %, Schlicht Grau 6 %); XS ohne.
+  ein Kühlschrank als Wasserzeichen (A-036, freier Text:
+  `--app-wasserzeichen-frei`, hell 9 %, dunkel 8 %; Schlicht keins); XS ohne.
 - **Mia denkt mit**: beim ersten Besuch der Essen-Seite einmal „Sag mir, was
   im Kühlschrank ist, dann koch ich mit dir spontan.“ (eigener Schlüssel
   `seite:essen-imhaus`, also auch für alle, die Essen schon kannten).

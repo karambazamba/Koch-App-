@@ -36,7 +36,7 @@ import dynamic from "next/dynamic";
 const SportDaySheet = dynamic(() => import("@/components/sport/SportDaySheet").then((m) => m.SportDaySheet), { ssr: false });
 const SportPlanForm = dynamic(() => import("@/components/sport/SportPlanForm").then((m) => m.SportPlanForm), { ssr: false });
 
-const BOX = `${TILE} isolate flex flex-col gap-2.5 p-3.5`;
+const BOX = `${TILE} flex flex-col gap-2.5 p-3.5`;
 
 /** Beispiel-Tag (allein): Zeile der Sport-Kachel – nie in echten Speichern */
 const DEMO_SPORT = "2 von 3 diese Woche";
@@ -63,12 +63,11 @@ export function SportTile({ size = "S", entries, today, minutes, me, demo = fals
   const zeichen = wasserzeichenSport(next?.title ?? null, recent);
   return (
     <>
-      <section className={`${size === "XS" ? `${TILE} flex flex-col justify-between px-3 py-2.5` : BOX} h-full overflow-hidden`} aria-label={showDemo ? "Sport · Beispiel" : "Sport"} data-groesse={size} data-wasserzeichen={size === "XS" ? undefined : zeichen}>
-        {size !== "XS" && (
-          <KachelWasserzeichen>
-            <SportIcon sport={zeichen} strokeWidth={WASSERZEICHEN_STRICH} className="h-full w-full" />
-          </KachelWasserzeichen>
-        )}
+      <section className={`${size === "XS" ? `${TILE} flex flex-col justify-between px-3 py-2.5` : BOX} isolate h-full overflow-hidden`} aria-label={showDemo ? "Sport · Beispiel" : "Sport"} data-groesse={size} data-wasserzeichen={size === "XS" ? undefined : zeichen}>
+        {/* Freier Text (Beispiel, „noch frei“) = leise Deckkraft; das Kärtchen „Als Nächstes“ deckt ab */}
+        <KachelWasserzeichen kachel="sport" size={size} frei={showDemo || !next}>
+          <SportIcon sport={zeichen} strokeWidth={WASSERZEICHEN_STRICH} className="h-full w-full" />
+        </KachelWasserzeichen>
         <Link href="/sport" className="flex items-center pr-8" aria-label="Sport öffnen">
           <span className={TILE_LABEL}>Sport</span>
         </Link>

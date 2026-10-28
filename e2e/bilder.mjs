@@ -190,6 +190,15 @@ for (const device of DEVICES) {
     await hello(first);
     await settle(first);
     await first.screenshot({ path: `${dir}/beispieltag-${tag}.png`, fullPage: true });
+    // Familie-Beispiel im Look „Schlicht“ (A-036: Wasserzeichen nur in „Farbig“)
+    await first.evaluate(() => {
+      const key = "familienkueche.haushaltsprofil";
+      localStorage.setItem(key, JSON.stringify({ ...JSON.parse(localStorage.getItem(key) || "{}"), look: "schlicht" }));
+    });
+    await first.reload();
+    await settle(first);
+    await first.screenshot({ path: `${dir}/beispieltag-schlicht-${tag}.png`, fullPage: true });
+    n++;
     await first.context().close();
     // Beispiel-Tag je Haushalt (Tafel 119): zu zweit und allein
     for (const [name, wahl] of [["zuzweit", "Für uns zwei"], ["allein", "Nur für mich"]]) {
@@ -270,6 +279,23 @@ for (const device of DEVICES) {
           await page.locator("[data-raster]").screenshot({ path: `${dir}/wasserzeichen-${farbe}-${size}-${look}-${tag}.png` });
           n++;
         }
+      }
+    }
+    // Wasserzeichen aller Kacheln ohne Bild (A-036, Tafel 125): Termine, Aufgaben, Notizen, Timer
+    // und Einkauf in S, alle in derselben der 8 Farben, Farbig und Schlicht
+    for (const farbe of ["lavendel", "mint", "salbei", "rose", "vanille", "aqua", "flieder", "sand"]) {
+      for (const look of ["farbig", "schlicht"]) {
+        await page.evaluate(({ farbe, look }) => {
+          const key = "familienkueche.haushaltsprofil";
+          localStorage.setItem(key, JSON.stringify({ ...JSON.parse(localStorage.getItem(key) || "{}"), look }));
+          const tiles = ["termine", "aufgaben", "notizen", "timer", "essen", "einkauf"].map((id) => ({ id, visible: true, size: "S", ...(id === "essen" ? {} : { farbe }) }));
+          localStorage.setItem("wasgibts.startseite", JSON.stringify({ version: 9, tiles, tipSeen: true }));
+        }, { farbe, look });
+        await page.goto(BASE);
+        await page.locator('[aria-label="Termine"]').first().waitFor({ timeout: 6000 }).catch(() => {});
+        await settle(page);
+        await page.locator("[data-raster]").screenshot({ path: `${dir}/wasserzeichen-alle-${farbe}-${look}-${tag}.png` });
+        n++;
       }
     }
     await page.context().close();

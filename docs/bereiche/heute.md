@@ -180,10 +180,19 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
   Schrift der Kachel, deren Standard der Ton ist. „Schlicht“: weiß, der Ton
   nur in Überschrift/Symbol. „Wie am Anfang“ setzt auch die Farben zurück.
   Beispiel-Tag nutzt dieselbe Anordnung, also dieselben Farben.
-- Wasserzeichen (Tafel 124 A): Sport und Im Haus tragen in S ein großes,
-  stilles Linien-Symbol unten rechts im Kachel-Akzent (`ui/KachelWasserzeichen`,
-  `.kachel-wasserzeichen`, Tokens `--app-wasserzeichen*`; Schlicht Grau 6 %,
-  XS keins). Kachel-Texte ohne „ – “ (Test `tests/app/kachelTexte.test.ts`).
+- Wasserzeichen (Tafel 124 A/125, A-036): jede Kachel ohne eigenes Bild
+  trägt in S/M ein großes, stilles Linien-Symbol unten rechts im
+  Kachel-Akzent (`ui/KachelWasserzeichen`, `.kachel-wasserzeichen`, Tokens
+  `--app-wasserzeichen*`): Termine Calendar, Aufgaben CircleCheck, Einkauf
+  ShoppingCart, Sport Sportart des nächsten Trainings, Im Haus Refrigerator,
+  Notizen StickyNote, Timer Timer, Tipps MapPin, Post (bald) Mail. Keins bei
+  Wetter (Himmel), Essen (Foto), Pinnwand (Zettel), Spendentopf (Topf), der
+  Jetzt-Karte, in XS und im Look „Schlicht“. Tabelle `WASSERZEICHEN_SYMBOL`
+  (`Record` über alle Kachel-IDs, neue Kachel = Eintrag oder Grund in
+  `OHNE_WASSERZEICHEN`, Test `tests/app/wasserzeichen.test.ts`). Freier Text
+  ohne weißes Kärtchen → `frei` (9 %, dunkel 8 %), leiser Text dort mit
+  `kachel-frei`. Kachel = `isolate`, ihre Fenster stehen neben der
+  `<section>`. Kachel-Texte ohne „ – “ (Test `tests/app/kachelTexte.test.ts`).
 - `HOME_TILES` in Standard-Reihenfolge (erlaubte Größen, Standard fett im
   Code): Pinnwand S/M, Wetter XS/S/M, Notizen XS/S/M, Termine S/M, Aufgaben
   S/M, Essen S/M, Einkauf S/M, Spendentopf nur M, Tipps nur M (Baustein),

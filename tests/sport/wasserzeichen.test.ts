@@ -1,8 +1,8 @@
 // Sport-Kachel mit Wasserzeichen (Tafel 124 A): Symbol = Sportart des
 // nächsten Trainings, sonst des letzten, sonst Laufschuh; nur in S, hinter dem
-// Inhalt, nicht antippbar, aria-hidden; Deckkraft als Tokens (hell/dunkel/
-// Schlicht); Schrift bleibt ≥ 4,5:1 auch über dem Wasserzeichen. Im Haus (S)
-// mit Kühlschrank, Namen nie abgeschnitten.
+// Inhalt, nicht antippbar, aria-hidden; Deckkraft als Tokens (hell/dunkel,
+// Schlicht ohne); Schrift bleibt ≥ 4,5:1 auch über dem Wasserzeichen. Im Haus
+// (S) mit Kühlschrank, Namen nie abgeschnitten. Alle Kacheln: A-036.
 import { readFileSync } from "node:fs";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -60,6 +60,10 @@ describe("Sport-Kachel", () => {
     expect(mark).toContain("-bottom-[30px]");
     expect(mark).toContain("-right-[30px]");
     expect(mark).toContain("h-[150px]");
+    expect(mark).toContain("-rotate-[8deg]");
+    expect(mark).toContain('data-kachel="sport"');
+    // Kärtchen „Als Nächstes“ deckt ab: volle Deckkraft
+    expect(mark).not.toContain("data-art");
     expect(mark).toContain('aria-hidden="true"');
     expect(html).toMatch(/kachel-wasserzeichen[\s\S]*?stroke-width="1.3"[^>]*data-sport-symbol="schwimmen"/);
     expect(html).toContain("isolate");
@@ -95,9 +99,9 @@ async function pantryTile(items: PantryItem[], size: "XS" | "S" = "S") {
 const sache = (name: string, i: number): PantryItem => ({ id: `p${i}`, name, addedAt: TODAY, place: "kuehlschrank" });
 
 describe("Im-Haus-Kachel", () => {
-  it("S: Kühlschrank als Wasserzeichen (eigene Deckkraft), XS ohne", async () => {
+  it("S: Kühlschrank als Wasserzeichen (freier Text: leise Deckkraft), XS ohne", async () => {
     const html = await pantryTile([sache("Würstchen", 1)]);
-    expect(html).toMatch(/<span class="kachel-wasserzeichen[^"]*" data-art="haus" aria-hidden="true"><svg[^>]*lucide-refrigerator/);
+    expect(html).toMatch(/<span class="kachel-wasserzeichen[^"]*" data-kachel="vorrat" data-art="frei" aria-hidden="true"><svg[^>]*lucide-refrigerator/);
     expect(await pantryTile([sache("Würstchen", 1)], "XS")).not.toContain("kachel-wasserzeichen");
   });
 
@@ -137,20 +141,19 @@ const mix = (top: string, bottom: string, a: number) =>
   "#" + [1, 3, 5].map((i) => Math.round(parseInt(top.slice(i, i + 2), 16) * a + parseInt(bottom.slice(i, i + 2), 16) * (1 - a)).toString(16).padStart(2, "0")).join("");
 
 describe("Tokens (Tafel 124 A)", () => {
-  it("Deckkraft hell 12,5 %, Im Haus 9 %, dunkel 10 %, Schlicht 6 %; Dunkel und Automatisch gleich", () => {
+  it("Deckkraft hell 12,5 % (frei 9 %), dunkel 10 % (frei 8 %); Dunkel und Automatisch gleich", () => {
     const [h, d, a] = Object.values(THEMES).map((s) => zahlen(block(s)));
-    expect(h).toEqual({ wasserzeichen: 0.125, "wasserzeichen-haus": 0.09, "wasserzeichen-schlicht": 0.06 });
-    expect(d.wasserzeichen).toBe(0.1);
-    expect(d["wasserzeichen-schlicht"]).toBe(0.06);
+    expect(h).toEqual({ wasserzeichen: 0.125, "wasserzeichen-frei": 0.09 });
+    expect(d).toEqual({ wasserzeichen: 0.1, "wasserzeichen-frei": 0.08 });
     expect(d).toEqual(a);
   });
 
-  it("CSS: Farbe = Kachel-Akzent (folgt data-farbe), Schlicht Grau; nur var(--app-…), keine Hex", () => {
+  it("CSS: Farbe = Kachel-Akzent (folgt data-farbe), Schlicht ohne; nur var(--app-…), keine Hex", () => {
     const regeln = css.slice(css.indexOf(".kachel-wasserzeichen {"), css.indexOf("}", css.indexOf('[data-look="schlicht"] .kachel-wasserzeichen')) + 1);
     expect(regeln).toContain("color: var(--tile-ac)");
     expect(regeln).toContain("opacity: var(--app-wasserzeichen)");
-    expect(regeln).toContain('[data-art="haus"] { opacity: var(--app-wasserzeichen-haus)');
-    expect(regeln).toContain("color: var(--app-muted); opacity: var(--app-wasserzeichen-schlicht)");
+    expect(regeln).toContain('[data-art="frei"] { opacity: var(--app-wasserzeichen-frei)');
+    expect(regeln).toContain('[data-look="schlicht"] .kachel-wasserzeichen { display: none; }');
     expect(regeln).not.toMatch(/#[0-9a-f]{3,6}|var\(--color-/i);
     const komp = readFileSync("src/components/ui/KachelWasserzeichen.tsx", "utf8");
     expect(komp).not.toMatch(/#[0-9a-f]{6}|style=/i);
@@ -159,18 +162,16 @@ describe("Tokens (Tafel 124 A)", () => {
   // Der Kopf (Label, Plus) steht oben, das Zeichen beginnt erst 120 px über der
   // Unterkante: über dem Zeichen liegt nur dunkle Schrift (ink), Kärtchen und
   // Schilder mit eigener Fläche oder leiser Text mit Freistellung (`kachel-frei`).
-  it.each(Object.entries(THEMES))("%s: Schrift bleibt ≥ 4,5:1 auch über dem Wasserzeichen, in allen 8 Farben und Schlicht", (_, start) => {
+  it.each(Object.entries(THEMES))("%s: Schrift bleibt ≥ 4,5:1 auch über dem Wasserzeichen, in allen 8 Farben", (_, start) => {
     const t = hexes(block(start));
     const z = zahlen(block(start));
     for (const f of KACHEL_FARBEN) {
       const bg = t[`tile-${f.kachel}`];
       const ac = t[`tile-${f.kachel}-ac`];
-      for (const a of [z.wasserzeichen, z["wasserzeichen-haus"]]) {
+      for (const a of [z.wasserzeichen, z["wasserzeichen-frei"]]) {
         expect(contrast(t.ink, mix(ac, bg, a)), `${f.id} ink`).toBeGreaterThanOrEqual(4.5);
       }
     }
-    // Schlicht: Grau über Weiß bzw. dunkler Karte
-    expect(contrast(t.ink, mix(t.muted, t.surface, z["wasserzeichen-schlicht"]))).toBeGreaterThanOrEqual(4.5);
   });
 
   it("leiser Text über dem Zeichen trägt die Freistellung (Kontrast genau wie ohne Wasserzeichen)", async () => {
