@@ -123,7 +123,7 @@ describe("Im Laden abhaken: „Schon im Wagen“", () => {
     expect(laden).toMatch(/\{wagenOffen && <ul/);
     expect(laden).toMatch(/einkaufFertig\(weekStart, imWagen, todayIso, imHausAn\)/);
     expect(laden).toMatch(/undoneText: "Wieder im Wagen"/);
-    expect(laden).toMatch(/goBack\("\/einkaufsliste"\);\n  \};/);
+    expect(laden).toMatch(/if \(previousUrl\(\) === "\/einkaufsliste"\) goBack\("\/einkaufsliste"\);\s*else \{\s*expectReplace\(\);\s*router\.replace\("\/einkaufsliste"\);/);
     expect(laden).toMatch(/changeTrips\(\(t\) => finishTrip\(t, id, nowIso\(\), count\)\)/);
     expect(laden).toMatch(/useFeature\("vorrat"\) === true/);
     // „Steh grad davor“ und „Neu von …“ bleiben

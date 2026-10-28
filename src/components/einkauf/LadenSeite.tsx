@@ -16,7 +16,7 @@
 // erscheint gelb mit „Steh grad davor“, „Einkauf fertig“ meldet es.
 
 import { useEffect, useRef, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowUp, Check, ChevronDown } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { CARD, INPUT_BASE, PAGE_MAIN, SECTION_TITLE, buttonClass, chipClass } from "@/components/ui/styles";
@@ -24,6 +24,7 @@ import { addManualItem, noteShopCheck, removeManualItem, renameItem, sectionFor,
 import { useWeekShoppingList } from "@/lib/einkauf/useWeekShoppingList";
 import { toIsoDate, useToday } from "@/lib/essen/weekPlan";
 import { useGoBack } from "@/lib/core/useGoBack";
+import { expectReplace, previousUrl } from "@/lib/core/navigation";
 import { now, nowIso } from "@/lib/core/now";
 import { showDeleted, showToast } from "@/lib/core/toast";
 import { dueStaples } from "@/lib/einkauf/staples";
@@ -61,6 +62,7 @@ export function LadenSeite() {
   const data = useWeekShoppingList(woche);
   const today = useToday();
   const goBack = useGoBack();
+  const router = useRouter();
   // Gerade abgehakt: bleibt kurz stehen (`bleibt`), gleitet dann nach unten (`gleitet`)
   const [bleibt, setBleibt] = useState<string[]>([]);
   const [gleitet, setGleitet] = useState<string[]>([]);
@@ -139,7 +141,12 @@ export function LadenSeite() {
       const { text, undo } = einkaufFertig(weekStart, imWagen, todayIso, imHausAn);
       showToast({ text, undo, undoneText: "Wieder im Wagen", seconds: 4, small: true });
     } else showToast({ text: "Fertig.", seconds: 2, small: true });
-    goBack("/einkaufsliste");
+    // Zurück zur Übersicht „Einkauf“ (kam man von dort: eine Ebene zurück, sonst dorthin statt der Laden-Seite)
+    if (previousUrl() === "/einkaufsliste") goBack("/einkaufsliste");
+    else {
+      expectReplace();
+      router.replace("/einkaufsliste");
+    }
   };
 
   const stopp = (key: string) => {
@@ -241,7 +248,7 @@ export function LadenSeite() {
                     buzz();
                     if (add(v)) showToast({ text: "Steht drin.", seconds: 2, small: true });
                   }}
-                  className={`${chipClass(false)} hit`}
+                  className={`${chipClass(false)} hit min-h-11`}
                   data-vorschlag={v}
                 >
                   {v}

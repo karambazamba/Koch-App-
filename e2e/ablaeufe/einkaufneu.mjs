@@ -191,7 +191,9 @@ export const ladenLeer = async (page, check) => {
 // „Einkauf fertig“ → Im Haus, zurück zur Übersicht, Rückgängig
 export const imWagen = async (page, check) => {
   await laeden(page);
-  await page.goto(BASE + "/einkaufsliste/laden?name=Rewe");
+  await page.goto(BASE + "/einkaufsliste");
+  await page.locator('[data-laden-karte="Rewe"]').tap();
+  await page.waitForURL(/\/einkaufsliste\/laden\?name=Rewe/, { timeout: 5000 }).catch(() => {});
   for (const n of ["Milch", "Brot"]) {
     await page.locator("[data-was-noch]").fill(n);
     await page.locator("[data-was-noch]").press("Enter");
