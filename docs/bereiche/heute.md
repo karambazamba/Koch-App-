@@ -221,9 +221,9 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
 - Aufgaben (Tafel 103/104): gleiche Regeln wie die Aufgaben-Seite – alles
   heute, EINE Reihenfolge (dringend → neu → Erstellungszeit, ohne in Listen
   Geparktes), keine Etiketten pro Zeile; Kreis (Tippfläche 44 × 30), Titel,
-  „!“ bei dringend, rechts nur „von Lisa“ und das kleine blaue Schild
-  „Geschäftlich“. Ruht die Arbeit (`view.hideWork`: Feierabend mit Ruhe, freie
-  Tage), fehlt sie und unten steht leise „Geschäftlich · 5 für morgen“ (Link zur
+  „!“ bei dringend, rechts nur „von Lisa“, das kleine graue Schloss („Ich“)
+  bzw. das blaue Schild „Arbeit“ (A-034). Ruht die Arbeit (`view.hideWork`: Feierabend mit Ruhe, freie
+  Tage), fehlt sie und unten steht leise „Arbeit · 5 für morgen“ (Link zur
   Seite). Abhaken:
   1,5 s durchgestrichen (`LEAVE_MS`, überall gleich), dann weich weg – auch am
   Beispiel-Tag.
@@ -379,9 +379,9 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
   hervorgehoben und in Sicht gescrollt (`topicSpot`), mit dem Hinweis der
   Karte; „Erledigt“ nur bei Vorbereiten/Packliste/Geburtstag/Erinnerung.
   Leerer Tag: „Heute ist nichts geplant. Genieß es.“ Ab 22 Uhr Umschalter
-  „Morgen · Do“. Eintrag antippen = öffnen. „Geschäftlich“
-  trägt ein blaues Schild, Uhrzeit und Strich in Raumfarbe (A-021; fremdes
-  Geschäftliches kommt per RLS nie aufs Gerät, also auch nie zu Lisa). Ausnahme: laufender Timer
+  „Morgen · Do“. Eintrag antippen = öffnen. „Ich“ trägt ein graues
+  Schloss, „Arbeit“ ein blaues Schild, Uhrzeit und Strich in Raumfarbe (A-034;
+  fremdes Ich und Arbeit kommt per RLS nie aufs Gerät, also auch nie zu Lisa). Ausnahme: laufender Timer
   öffnet den Timer.
 - Mia: „Was steht heute an?“ / „Wie sieht mein Tag aus?“ (`isDayQuestion`)
   → 2 Sätze (`daySummary`), dann öffnet sich „Dein Tag“ (`openDeinTag`).

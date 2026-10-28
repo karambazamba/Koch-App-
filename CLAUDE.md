@@ -111,20 +111,20 @@ Die frühere Lieblingsfarbe ist „Meine Farbe im Kalender“ (Profil
   korrigiert nur, wenn sie etwas anderes versteht. Keine Regel darf einen Zustand hinterlassen, der weitere Nachrichten abfängt.
 
 ## 3. Räume
-- Genau zwei Räume (A-021): „Familie“ = alle im Haushalt (Orange `bg-accent`,
-  zu zweit „Wir“), „Geschäftlich“ = nur ich, nach Feierabend aus (Blau
-  `bg-work`); kein „Ich“, kein „Privat“, nie „Haushalt“; intern familie/arbeit
-  (`core/haushalt.ts`). Ohne Angabe Familie; Mia erkennt ihn aus dem Inhalt.
-- Mit Konto teilt der Haushalt „Familie“; „Geschäftlich“ sieht nur der Besitzer,
-  nie andere (Abgleich/RLS, Push, Pinnwand, Heute, Mia; `nurBesitzer`). Konto
-  erst, wenn man teilen will; Einladen per Link (/e/…).
-  Ohne Konto bleibt alles auf dem Gerät – die App geht immer auch ohne.
-- Aufgaben gehören standardmäßig der Person, die sie anlegt; geteilt wird nur
-  durch Abgeben („An … geben“, beim Empfänger „von Felix“, zurück mit „Passt
-  gerade nicht“; `kalender/abgeben`). Für Absprachen ist die Pinnwand da.
-- Aufgaben und Termine: derselbe Schalter „Familie | Geschäftlich“ (letzte
-  Wahl), nur „Geschäftlich“ als blaues Schild, Chips „Alle · Familie ·
-  Geschäftlich“ nur damit; abends „Geschäftlich · 5 für morgen“ (`kalender/aufgaben.ts`).
+- Drei Räume für Termine und Aufgaben (A-034): „Familie“ = alle im Haushalt
+  (Orange, zu zweit „Wir“, allein „Privat“), „Ich“ = nur ich (Grau, Schloss),
+  „Arbeit“ = nur ich, nach Feierabend aus (Blau); allein entfällt „Ich“; nie
+  „Haushalt“/„Geschäftlich“ (`core/haushalt.ts`). Vorauswahl Termine Familie,
+  Aufgaben Ich; Mia rät aus dem Satz und lernt aus Korrekturen (`kalender/raum/`).
+- Mit Konto teilt der Haushalt „Familie“ (auch Aufgaben: jeder hakt ab,
+  „erledigt von Lisa“); „Ich“/„Arbeit“ sieht nur der Besitzer (RLS, Push, Mia;
+  `nurBesitzer`). Konto erst zum Teilen, Einladen per Link (/e/…). Ohne Konto
+  bleibt alles auf dem Gerät. Abgeben bleibt („An … geben“, `kalender/abgeben`).
+- EINE Raum-Wahl `ui/RaumChips` („Familie · Ich · Arbeit“) überall: ＋, Mias
+  Bestätigung („Familie ⌄“), Detail, Bearbeiten; lange drücken auf eine Zeile
+  → „Für Familie / Nur ich / Arbeit“, mit Rückgängig. Listen und Kalender:
+  Familie ohne Kennzeichen, Ich Schloss, Arbeit blaues Schild; Filter-Chips nur
+  mit ≥ 2 Räumen; abends „Arbeit · 5 für morgen“ (`kalender/aufgaben.ts`).
 
 ## 4. Ohne Druck
 - Keine Streaks, keine Zähler, keine roten Badges, keine Aufgaben-Stapel.

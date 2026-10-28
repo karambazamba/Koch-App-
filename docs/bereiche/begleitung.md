@@ -24,7 +24,7 @@
 - **Mia denkt mit:** höchstens EINE ungefragte Karte am Tag (Regler „Wie
   gesprächig?“: Ruhig nur Muster, Gesprächig zwei), nie 22–7 Uhr, Pause oder
   Ruhe, nur wenn kein anderer Hinweis steht; jede Frage nur einmal, alles in
-  „Was ich mir merke“ löschbar. Spruch nur statt „Alles ruhig“. Texte je
+  „Was ich mir gemerkt hab“ löschbar. Spruch nur statt „Alles ruhig“. Texte je
   Seite in `mia/denktmit/seiten/`. → `docs/bereiche/begleitung.md`
 - **Mias Stimme und Ohr (ElevenLabs):** `ELEVENLABS_API_KEY` nur in Vercel
   (Sensitive), nie im Repo, Client, Log oder Chat; fehlt er, alles wie bisher
@@ -231,7 +231,7 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
   `kann_ich_noch_nicht` → „Kann ich noch nicht.“; der Server zählt den Wunsch
   anonym in `mia_wuensche` (nur Text + Datum, RLS ohne Policies, nur der
   geheime Schlüssel schreibt; `wishStore.ts`). Wünsche gehen nie an die App.
-- Prüfstand (`pruefstand/`): 132 Alltagssätze mit erwarteter Aktion, Bewertung
+- Prüfstand (`pruefstand/`): 216 Alltagssätze (davon 35 zur Raum-Wahl, `raeume.ts`) mit erwarteter Aktion, Bewertung
   (Aktion, Datum/Uhrzeit/Person, Floskeln/Striche, Zeit). Fair: je Satz eine
   passende Ausgangslage (`Lage` in `haushalt.ts`: ohne Zahnarzt, ohne Steuer,
   Turnen Fr 16 Uhr, Gerichte im Plan, laufender Kochmodus) und eine feste
@@ -866,7 +866,7 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
   Speicher `store.ts` (`wasgibts.miadenkt` v1, in der Sicherung).
   Oberfläche `components/begleitung/denktmit/` (`useMiaDenkt`, `MiaKarte`,
   `SeitenTipp`, `ErsterBesuch`), Einstellungen → Mia „Wie gesprächig?“ und
-  `/profil/mia-merkt` („Was ich mir merke“, einzeln löschbar).
+  `/profil/mia-merkt` („Was ich mir gemerkt hab“, einzeln löschbar).
 - Regeln: höchstens EINE ungefragte Karte am Tag (Gesprächig zwei), nie
   22–7 Uhr, nie in Pause oder Ruhe nach Feierabend, nur wenn kein anderer
   Hinweis unter der Jetzt-Karte steht. Ruhig = nur Muster-Fragen. Beispiel-Tag

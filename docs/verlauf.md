@@ -3211,33 +3211,6 @@ Fehler in `docs/aufraeumen-nachher.md`.
   „Felix · gest…“ wurde abgeschnitten – Name · Zeit bricht jetzt lieber
   um, der Haken-Kreis behält seinen Platz.
 
-## Termine – Raum Familie / Geschäftlich (vX, A-021)
-- Problem: Beim Anlegen eines Termins zeigte der Chip nur „Privat“ (so hieß
-  der gemeinsame Raum allein), bei Aufgaben gab es eine andere Auswahl. Es
-  gibt aber nur zwei Räume: „Familie“ (gemeinsam, Lisa sieht alles) und
-  „Geschäftlich“ (nur Felix). Gilt vor A-020: der Raum „Ich“ ist wieder raus.
-- Termine und Aufgaben: derselbe Schalter „Familie | Geschäftlich“
-  (`EintragZeile`, `RAUM_WAHL`, Punkt in Raumfarbe), Start = zuletzt gewählter
-  Raum, nach Feierabend Familie; auch allein (dort heißt der Raum jetzt
-  „Familie“ statt „Privat“, zu zweit weiter „Wir“). „Arbeit“ heißt in der
-  Oberfläche überall „Geschäftlich“ (Schild, Filter, „Geschäftlich · 5 für
-  morgen“, Notizen, Kalender-Links, Übernahme-Karte, Tagesablauf, Rechtstexte).
-- Kalender: Filter „Alle · Familie · Geschäftlich“ nur mit geschäftlichen
-  Terminen; im Tag Strich, Uhrzeit und Schild in Raumfarbe, in Woche/Liste
-  Punkt und Uhrzeit. Raum ändern: Termin öffnen → Schalter antippen.
-- Mia und Sofort-Weg erkennen den Raum aus dem Inhalt (Tohuus, KARAMBA Eis,
-  Lieferant, Personal, Großhandel … → Geschäftlich; Kinder, Arzt, Kita,
-  Schule … → Familie; gelernte Arbeits-Stichworte). Nur wenn beides drin ist,
-  fragt Mia mit zwei Knöpfen. Prüfstand +6 Termin-Sätze mit Raum, die 7
-  Raum-Sätze aus A-020 auf Familie/Geschäftlich umgestellt; Sofort-Prüfstand
-  mit Raum-Prüfung.
-- Migration: Speicher v4 – Etikett „Privat“ (Wochencheck, lag als Arbeit) wird
-  Familie, wenn es nur auf dem Gerät liegt; mit Konto bleibt es beim Besitzer
-  (nie ungefragt sichtbar machen). Etikett bleibt gespeichert, wird nie gezeigt.
-- Sichtbarkeit mit Tests festgehalten: Felix’ Geschäftliches erreicht Lisa
-  weder im Abgleich noch in Push, Neuigkeiten/Pinnwand, Heute, Kalender oder
-  Mias Kontext.
-
 ## Essen-Kachel „Rezept“ und Kochmodus (v0.146.0, Tafel 122, A-025)
 - Problem: Die Essen-Kachel hatte zu viele Wege („Ich koche jetzt ›“, „Woche
   ›“, Antippen = Rezept, eigene Koch-Kachel mit „Gegessen“). Ersetzt den
@@ -3381,3 +3354,63 @@ Fehler in `docs/aufraeumen-nachher.md`.
 - Mia: „nur für mich“/„privat“ → Ich, „für alle“/„Familie“ → Familie,
   Arbeit/Büro und gelernte Arbeits-Stichworte (Laden, Café …, aus früheren
   Arbeits-Einträgen) → Arbeit. Prüfstand +7 Sätze mit Raum-Prüfung.
+
+## Termine – Raum Familie / Geschäftlich (vX, A-021)
+- Problem: Beim Anlegen eines Termins zeigte der Chip nur „Privat“ (so hieß
+  der gemeinsame Raum allein), bei Aufgaben gab es eine andere Auswahl. Es
+  gibt aber nur zwei Räume: „Familie“ (gemeinsam, Lisa sieht alles) und
+  „Geschäftlich“ (nur Felix). Gilt vor A-020: der Raum „Ich“ ist wieder raus.
+- Termine und Aufgaben: derselbe Schalter „Familie | Geschäftlich“
+  (`EintragZeile`, `RAUM_WAHL`, Punkt in Raumfarbe), Start = zuletzt gewählter
+  Raum, nach Feierabend Familie; auch allein (dort heißt der Raum jetzt
+  „Familie“ statt „Privat“, zu zweit weiter „Wir“). „Arbeit“ heißt in der
+  Oberfläche überall „Geschäftlich“ (Schild, Filter, „Geschäftlich · 5 für
+  morgen“, Notizen, Kalender-Links, Übernahme-Karte, Tagesablauf, Rechtstexte).
+- Kalender: Filter „Alle · Familie · Geschäftlich“ nur mit geschäftlichen
+  Terminen; im Tag Strich, Uhrzeit und Schild in Raumfarbe, in Woche/Liste
+  Punkt und Uhrzeit. Raum ändern: Termin öffnen → Schalter antippen.
+- Mia und Sofort-Weg erkennen den Raum aus dem Inhalt (Tohuus, KARAMBA Eis,
+  Lieferant, Personal, Großhandel … → Geschäftlich; Kinder, Arzt, Kita,
+  Schule … → Familie; gelernte Arbeits-Stichworte). Nur wenn beides drin ist,
+  fragt Mia mit zwei Knöpfen. Prüfstand +6 Termin-Sätze mit Raum, die 7
+  Raum-Sätze aus A-020 auf Familie/Geschäftlich umgestellt; Sofort-Prüfstand
+  mit Raum-Prüfung.
+- Migration: Speicher v4 – Etikett „Privat“ (Wochencheck, lag als Arbeit) wird
+  Familie, wenn es nur auf dem Gerät liegt; mit Konto bleibt es beim Besitzer
+  (nie ungefragt sichtbar machen). Etikett bleibt gespeichert, wird nie gezeigt.
+- Sichtbarkeit mit Tests festgehalten: Felix’ Geschäftliches erreicht Lisa
+  weder im Abgleich noch in Push, Neuigkeiten/Pinnwand, Heute, Kalender oder
+  Mias Kontext.
+
+## Räume Familie · Ich · Arbeit für Termine und Aufgaben (vX, A-034)
+- Nachtrag zu A-020, gilt vor A-021: „Ich“ ist zurück, „Geschäftlich“ heißt
+  wieder „Arbeit“. Drei Räume, für Termine und Aufgaben gleich: Familie (alle
+  im Haushalt, Orange; zu zweit „Wir“, allein „Privat“), Ich (nur ich, Grau,
+  kleines Schloss), Arbeit (nur ich, Blau, Schild). Allein entfällt „Ich“.
+- Vorauswahl: Termine Familie, Aufgaben Ich; Mia rät aus dem Satz
+  (`kalender/raum/raten.ts`: Schule/Kinder/Oma/Geburtstag → Familie,
+  Meeting/Kunde/Lieferant/Büro → Arbeit, Arzt/Friseur → Ich), der Chip ist
+  schon aktiv. Beim allerersten Mal „Hab Familie gewählt. Tippen zum Ändern.“
+- EINE Raum-Wahl `ui/RaumChips` statt des Schalters: Schnelleingabe,
+  Detail-Fenster (Menü beim Antippen), Bearbeiten, Wochencheck-Karte und als
+  Chip „Familie ⌄“ unter Mias Bestätigung (mit und ohne KI). Lange drücken
+  auf eine Zeile (Aufgaben-Seite, Kalender) → „Für Familie / Nur ich /
+  Arbeit“. Ändern immer mit Rückgängig. Die „letzte Wahl“ (`wasgibts.eintragraum`)
+  und der Feierabend-Start sind weg.
+- Mia lernt: Korrektur → Stichwort des Titels → Raum
+  (`wasgibts.raumgedaechtnis`, nur Gerät, in der Sicherung), geht als
+  „Gelernte Räume“ in Mias Kontext, löschbar unter „Was ich mir gemerkt hab“
+  (früher „Was ich mir merke“). Raum per Satz ändern auch ohne KI („Mach den
+  Zahnarzt nur für mich“, `raumBefehl`); Werkzeuge mit `raum: familie|ich|arbeit`.
+- Familien-Aufgaben sehen alle, jeder darf abhaken („erledigt von Lisa“,
+  `doneBy`); „An … geben“ bleibt.
+- Datenbank: Migration `raeume_ich` (Raum „ich“, Ich/Arbeit nur Besitzer,
+  Familien-Aufgaben für alle, Ändern nur wenn danach sichtbar, bestehende
+  Aufgaben einmalig „ich“). Dabei behoben (Verdacht aus A-028):
+  `entry_visible` suchte `fuer`/`zurueck` oben in `data`, die App lädt sie
+  unter `data.data` – abgegebene Aufgaben kamen beim Empfänger nie an
+  (`entry_holder`, auch im Test-Backend).
+- Speicher v5: bestehende Aufgaben → „Ich“, Etikett „Privat“ → „Ich“,
+  Termine bleiben; Abgleich hebt v2–v4 auf v5.
+- Prüfstand: 35 Raum-Sätze (Termin und Aufgabe, alle drei Räume) im großen
+  Prüfstand; ohne KI 35/35.
