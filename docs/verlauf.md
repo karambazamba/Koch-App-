@@ -2942,7 +2942,7 @@ Fehler in `docs/aufraeumen-nachher.md`.
 ## Neue Adresse mia.karamba-eis.de (v0.140.0, A-030)
 - Feste Adresse `APP_URL` (keine Weiterleitung); Einladungslinks zeigen immer dorthin, Mail-Vorlage lädt das Logo von dort. Supabase-Redirects werden von Hand angepasst (siehe `docs/bereiche/konten.md`).
 
-## Mia-Zubehör: Sonne das ganze Jahr (v0.142.0, A-033)
+## Mia-Zubehör: Sonne das ganze Jahr (v0.140.0, A-033)
 - `wetter()` in `src/lib/mia/zubehoer.ts`: Regen bald → Schirm (Vorrang);
   jetzt sonnig ab 18 °C → Sonnenbrille, ganzjährig (vorher nur > 22 °C im
   Sommer); sonnig unter 18 °C → neues Zubehör „sonne“. Sonne und Sonnenbrille
