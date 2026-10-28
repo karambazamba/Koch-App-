@@ -130,7 +130,8 @@ Gelöscht wird nur von Hand. Die frühere 24-Stunden-Regel ist weg.
   Pin) und der große Knopf „Anpinnen“ → „Angepinnt · Rückgängig“.
 - Foto: Kamera oder Galerie, vor dem Speichern verkleinert, Zeile darunter
   freiwillig. Sprachnachricht: Mikro antippen (oder halten), ➤ sendet, das
-  Fenster schließt.
+  Fenster schließt. Beim Halten bleibt das Mikro unter dem Finger stehen
+  (`holdsMic`), bis losgelassen (= senden) oder hochgeschoben wird.
 - Der „Für alle“-Knopf der Tafel fehlt bewusst: an der Pinnwand ist jeder
   Zettel für alle im Haushalt.
 
@@ -146,6 +147,9 @@ Gelöscht wird nur von Hand. Die frühere 24-Stunden-Regel ist weg.
   „Erster Zettel?“ und „Oder 🎙 Sprachnachricht“ (lucide Mikro: nimmt gleich
   auf – EINE Aufnahme-Leiste, gesendet nur über ➤).
 - Tipp auf einen Zettel = Pinnwand mit diesem Zettel hervorgehoben.
+  Im Fächer (S) liegen die Zettel übereinander: der ganze Fächer ist EIN
+  Link (`faecherLabel`, vorderster zuerst), der Zettel unter dem Finger
+  bestimmt das Ziel (`faecherZiel`) – verdeckte Zettel sind keine Knöpfe.
 
 ### Baustein
 - Pinnwand ist ein Baustein (`features.ts`, „Mehr Funktionen“): bei „Nur für
