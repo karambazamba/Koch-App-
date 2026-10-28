@@ -17,7 +17,8 @@ Status: offen · in Arbeit · fertig vX.Y · zurückgestellt (Grund)
   schwankenden Ablauf `erinnerungFrage`), Pinnwand-Nachtrag (v0.145), Essen-Kachel „Rezept“ + Vorschau vor „Nehmen“ (v0.146), Erledigte Aufgaben nur
   12 Stunden (v0.147), Familie verbinden + Namen statt Mail (v0.148), Einladungsseite ohne Leiste (v0.149,
   Ursache des roten Konto-Durchklicks), Essen-Kachel final + nichts
-  abgeschnitten (A-045/A-046, v0.150).
+  abgeschnitten (A-045/A-046, v0.150), Neue Aufgabe & Termin mit Räumen
+  Familie · Ich · Arbeit und Ergebnis-Karten (A-020, A-021, A-034, A-037, v0.151).
 - **Merge-Reihenfolge (Sortier-Auftrag 28.10., je bauen → testen → PR → mergen,
   dann der nächste auf dem neuesten `main`):**
   1. A-027 Erster Start rund (mit A-031 Zugangscode nachsichtig, 10 Versuche)
@@ -46,7 +47,10 @@ Status: offen · in Arbeit · fertig vX.Y · zurückgestellt (Grund)
   Lasagne einplanen (Packungen statt 250 ml), „Zucchini“ zweimal = eine Zeile. Mia: kurze Befehle („Milch auf die Liste“)
   kommen sofort, beim Sprechen erscheint der Text live, Mias Stimme bleibt im
   Gespräch (bei wackeligem Netz erst nach 2 Fehlern die Handy-Stimme).
-  Pinnwand: Zettel abhaken → 1 s stehen, dann ins Archiv.
+  Pinnwand: Zettel abhaken → 1 s stehen, dann ins Archiv. Räume: „Zahnarzt Freitag 10 Uhr“
+  (wird Ich), „Elternabend Dienstag“ (Familie), Chip antippen zum Ändern, Mia
+  merkt sich die Korrektur; „Freitag 16 Uhr Zahnarzt mit Jonne. Und wir
+  brauchen Milch.“ → zwei Karten, nach dem Schließen leuchten die Kacheln kurz.
 
 ## Liste
 
@@ -71,8 +75,8 @@ Status: offen · in Arbeit · fertig vX.Y · zurückgestellt (Grund)
 | A-017 | Kachel-Farben neu + einfach wählbar | `tafel-108.png` | fertig v0.139 |
 | A-018 | Einkauf neu – einsprechen oder aussuchen, Läden wie die Kachel, Ohne-Laden reinziehen (+ Nachtrag Aussuchen in Abschnitten; + Nachtrag Laden leer, „Schon im Wagen“, Doppelte zusammenfassen, Rezeptmengen; ersetzt „Einkauf so einfach wie die Kachel“ und „Einkaufs-Diktat“) | `tafel-111.png`, Tafel 110 (kein Bild) | fertig v0.142 |
 | A-019 | Mia im Gespräch deutlich schneller und flüssiger (Messen, Stille 1,2 s, Sofort-Weg, eine Runde, sofort sprechen, „Mhm“, schlanker Kontext, ElevenLabs schnell; Nachtrag: Sofort-Regeln für Kurzsätze ≥ 40 Prüfstand-Sätze/98 %, Mikro-Wachhund höchstens ein Neustart + „Mikro ist gerade belegt“) | – | fertig v0.143 |
-| A-020 | Neue Aufgabe & Termin – ein Feld, ein Fenster je Art (Raum „Ich“ durch A-021 ersetzt; ersetzt „Neue Aufgabe / neuer Termin – ein Feld, fertig“ und beide Nachträge) | `tafel-114.png` | gebaut, wartet |
-| A-021 | Termine – Raumauswahl Familie / Geschäftlich wie bei Aufgaben (ersetzt Raum „Ich“ aus A-020; selbst wieder ersetzt durch A-034: „Ich“ kommt zurück, „Arbeit“ statt „Geschäftlich“) | – | gebaut, wird mit A-034 umgebaut |
+| A-020 | Neue Aufgabe & Termin – ein Feld, ein Fenster je Art (Raum „Ich“ durch A-021 ersetzt; ersetzt „Neue Aufgabe / neuer Termin – ein Feld, fertig“ und beide Nachträge) | `tafel-114.png` | fertig v0.151 |
+| A-021 | Termine – Raumauswahl Familie / Geschäftlich wie bei Aufgaben (ersetzt Raum „Ich“ aus A-020; selbst wieder ersetzt durch A-034: „Ich“ kommt zurück, „Arbeit“ statt „Geschäftlich“) | – | fertig v0.151 (Räume durch A-034 ersetzt) |
 | A-022 | Mias Wundertüte – eine Kachel, die jeden Tag anders heißt (ersetzt „Kachel Angeberwissen“; Wortlaut in `docs/auftraege/A-022-wundertuete.md`) | `tafel-116.png` | gebaut, wartet (Punkt 9a; Pool 459 Einträge) |
 | A-023 | Startseite im festen Raster XS · S · M + Standard-Anordnung je Haushalt + Wetter mit Himmel (ersetzt „Raster S/M/L“, „… XS · S · M“ und Nachträge) | `tafel-118.png`, `tafel-119.png`, `tafel-120.png` | gebaut, wartet |
 | A-024 | Pinnwand-Nachtrag: Wörter klarer („Aufhängen“, „Bleibt hängen“), abhaken wie Aufgaben/Einkauf (Häkchen, 1 s stehen, dann weich ins Archiv), Archiv 30 Tage | – | fertig v0.145 |
@@ -85,10 +89,10 @@ Status: offen · in Arbeit · fertig vX.Y · zurückgestellt (Grund)
 | A-031 | SOFORT: Zugangscode nachsichtig prüfen (Groß/klein, Leerzeichen egal; 10 Versuche je Adresse) | – | fertig v0.141 (mit A-027) |
 | A-032 | Im-Haus-Kachel / Essen-Kachel – Entscheidung | – | zurückgestellt (offen bei Felix, nach Launch) |
 | A-033 | Mia-Zubehör: Sonne das ganze Jahr (Sonnenbrille ab 18 °C, sonst kleine Sonne tagsüber; nie nachts; nicht am Logo; Wortlaut `docs/auftraege/A-033-zubehoer-sonne.md`) | – | fertig v0.140 |
-| A-034 | Nachtrag A-020: gleiche Räume Familie · Ich · Arbeit für Termine und Aufgaben, Vorauswahl (Termin = Familie, Aufgabe = Ich), Familien-Aufgaben für alle („erledigt von …“), RLS Ich/Arbeit nur Besitzer, `ui/RaumChips` überall, Mia rät und lernt, Raum per Lang-Drücken ändern, Prüfstand ≥ 30 Sätze (ersetzt A-021 teilweise; Wortlaut `docs/auftraege/A-034-raeume.md`) | – | gebaut, wartet (Durchklick zwei Konten noch nicht gelaufen) |
+| A-034 | Nachtrag A-020: gleiche Räume Familie · Ich · Arbeit für Termine und Aufgaben, Vorauswahl (Termin = Familie, Aufgabe = Ich), Familien-Aufgaben für alle („erledigt von …“), RLS Ich/Arbeit nur Besitzer, `ui/RaumChips` überall, Mia rät und lernt, Raum per Lang-Drücken ändern, Prüfstand ≥ 30 Sätze (ersetzt A-021 teilweise; Wortlaut `docs/auftraege/A-034-raeume.md`) | – | fertig v0.151 |
 | A-035 | Nachtrag A-019: Mias Stimme bleibt Mias Stimme (Status einmal holen und merken, erste Silbe 2,5 s mit „Mhm“, nie im Gespräch springen, erst nach 2 Fehlern Handy-Stimme mit Hinweis, Vorwärmen, Ersatz mit Grund im Mikro-Protokoll) | – | fertig v0.143 |
 | A-036 | Wasserzeichen für alle Kacheln ohne eigenes Bild (eine Komponente, Zuordnung je Kachel, nicht bei Wetter/Essen/Pinnwand/Jetzt-Karte, nicht im Look „Schlicht“) | Tafel 124 A (kein Bild), Tafel 125 (kein Bild) | gebaut, wartet (mit A-029) |
-| A-037 | Mias Ergebnis-Karten wie im Clip + Aufleuchten in der Kachel (Wortlaut `docs/auftraege/A-037-ergebniskarten.md`) | `tafel-126.png` | in Arbeit (nach A-034) |
+| A-037 | Mias Ergebnis-Karten wie im Clip + Aufleuchten in der Kachel (Wortlaut `docs/auftraege/A-037-ergebniskarten.md`) | `tafel-126.png` | fertig v0.151 |
 | A-038 | SOFORT: Vorschläge erst anschauen, dann nehmen (Rezept-Vorschau als Fenster, überall wo Gerichte zur Auswahl stehen; Wortlaut `docs/auftraege/A-038-vorschau.md`) | `tafel-122-essen-rezept.png` | fertig v0.146 |
 | A-039 | Monatlich: Mias Wundertüte nachfüllen (Pool von 459 Richtung ~845, nur geprüfte Fakten, Quellen gegenprüfen) | – | offen (nach A-022) |
 | A-040 | Einkaufsliste nur mit Namen: Wochenplan als Angebot oben, Liste nur Symbol + Name, „wofür“ erst im Fenster (nur Tafel, Auftragstext nicht angekommen) | `tafel-127.png` | gebaut, wartet (nach A-037) |

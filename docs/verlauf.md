@@ -3323,7 +3323,8 @@ Fehler in `docs/aufraeumen-nachher.md`.
   Pixel 7, jede Kachel in S/M/L; Abläufe `essenkachel`/`kochmodus` für
   Antippen je Zustand, Pillen, „Zurück zu den Ideen“, „Nehmen“.
 - Kein neuer Speicher, keine Migration.
-## Neue Aufgabe & Termin: ein Feld, Familie · Ich · Arbeit (vX, Tafel 114)
+
+## Neue Aufgabe & Termin: ein Feld, Familie · Ich · Arbeit (v0.151.0, A-020, Tafel 114)
 - Problem (Screenshot 28.10. 09:11): ＋ bei Aufgaben zeigte erst „privat“ +
   „Mehr Details“, dann ein Formular mit 9 Bausteinen; für Persönliches, das
   nicht Arbeit ist, gab es keinen Platz.
@@ -3355,7 +3356,7 @@ Fehler in `docs/aufraeumen-nachher.md`.
   Arbeit/Büro und gelernte Arbeits-Stichworte (Laden, Café …, aus früheren
   Arbeits-Einträgen) → Arbeit. Prüfstand +7 Sätze mit Raum-Prüfung.
 
-## Termine – Raum Familie / Geschäftlich (vX, A-021)
+## Termine – Raum Familie / Geschäftlich (v0.151.0, A-021)
 - Problem: Beim Anlegen eines Termins zeigte der Chip nur „Privat“ (so hieß
   der gemeinsame Raum allein), bei Aufgaben gab es eine andere Auswahl. Es
   gibt aber nur zwei Räume: „Familie“ (gemeinsam, Lisa sieht alles) und
@@ -3382,7 +3383,7 @@ Fehler in `docs/aufraeumen-nachher.md`.
   weder im Abgleich noch in Push, Neuigkeiten/Pinnwand, Heute, Kalender oder
   Mias Kontext.
 
-## Räume Familie · Ich · Arbeit für Termine und Aufgaben (vX, A-034)
+## Räume Familie · Ich · Arbeit für Termine und Aufgaben (v0.151.0, A-034)
 - Nachtrag zu A-020, gilt vor A-021: „Ich“ ist zurück, „Geschäftlich“ heißt
   wieder „Arbeit“. Drei Räume, für Termine und Aufgaben gleich: Familie (alle
   im Haushalt, Orange; zu zweit „Wir“, allein „Privat“), Ich (nur ich, Grau,
@@ -3415,7 +3416,7 @@ Fehler in `docs/aufraeumen-nachher.md`.
 - Prüfstand: 35 Raum-Sätze (Termin und Aufgabe, alle drei Räume) im großen
   Prüfstand; ohne KI 35/35.
 
-## Ergebnis-Karten wie im Clip + Aufleuchten (A-037, Tafel 126)
+## Ergebnis-Karten wie im Clip + Aufleuchten (v0.151.0, A-037, Tafel 126)
 - Vorlage: Clip-Bild „Einfach erzählen. Mia sortiert.“ (`docs/tafeln/tafel-126.png`).
 - Die Text-Übersicht `MiaDoneCard` (Gruppen mit „·“) ist weg. Nach jedem
   Satz, mit dem Mia etwas anlegt, steht pro Eintrag eine weiße Karte unter

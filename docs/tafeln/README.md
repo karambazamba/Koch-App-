@@ -16,7 +16,7 @@ Jede Vorlage aus einem Auftrag liegt hier als `tafel-<nr>.png`; der Auftrag in
 | 120 | `tafel-120.png` | A-023 Wetter-Kachel mit Himmel |
 | 122 | `tafel-122-essen-rezept.png` | A-025 Essen-Kachel „Rezept“ und Kochmodus |
 | 123 | `tafel-123.png` | A-028 Pinnwand: aufgeräumt, Größe, Ordnen, „Nur für mich“ |
-| 126 | `tafel-126.png` | A-037 Ergebnis-Karten wie im Clip („Einfach erzählen. Mia sortiert.“) |
+| 126 | `tafel-126.png` | A-037 Ergebnis-Karten wie im Clip („Einfach erzählen. Mia sortiert.“) + Aufleuchten in der Kachel |
 | 133 | `tafel-133.png` | A-045 Essen-Kachel S: nichts abgeschnitten |
 | 134 | `tafel-134.png` | A-046 Essen-Kachel final: Bild antippen = Rezept |
 
