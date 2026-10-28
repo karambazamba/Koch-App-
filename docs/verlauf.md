@@ -3305,6 +3305,8 @@ Fehler in `docs/aufraeumen-nachher.md`.
 
 ## Familie verbinden klarer + Namen statt Mail-Adresse (A-042)
 
+## Familie verbinden klarer + Namen statt Mail-Adresse (v0.147.0, A-042)
+
 - Vorher stand ohne Profilnamen der Teil vor dem @ als Anzeigename und
   „Familie <mail>“ als Haushaltsname im Konto. Jetzt: Name aus dem Profil,
   sonst einmal „Wie sollen dich die anderen sehen?“ (vorausgefüllt aus der
