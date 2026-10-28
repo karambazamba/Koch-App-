@@ -36,10 +36,10 @@ Status: offen · in Arbeit · fertig vX.Y · zurückgestellt (Grund)
 | A-013 | Windsack nur bei Wind, ein Hinweis-Stil, Jetzt-Karte morgens | – | fertig v0.136 |
 | A-014 | Aufgaben – alles ist heute, eine Liste, Arbeit als Schild | Tafel 103/104 (kein Bild) | fertig v0.137 |
 | A-015 | Arbeitsweise: Warteschlange, Tafeln, Pakete, gestaffelte Tests, CLAUDE.md schlank | – | fertig (dieser PR) |
-| A-016 | Pinnwand als Kühlschranktür – Zettel, die bleiben, Kachel als Fächer (ersetzt „Pinnwand – nichts verschwindet ungefragt“; nebenbei Einkauf-Kachel-Kopf) | `tafel-106.png`, `tafel-107.png` | in Arbeit |
+| A-016 | Pinnwand als Kühlschranktür – Zettel, die bleiben, Kachel als Fächer (ersetzt „Pinnwand – nichts verschwindet ungefragt“; nebenbei Einkauf-Kachel-Kopf) | `tafel-106.png`, `tafel-107.png` | in Arbeit (gebaut, wartet auf A-014/A-015) |
 | A-017 | Kachel-Farben neu + einfach wählbar | `tafel-108.png` | in Arbeit (gebaut, wartet auf A-016) |
 | A-018 | Einkauf neu – einsprechen oder aussuchen, Läden wie die Kachel, Ohne-Laden reinziehen (+ Nachtrag Aussuchen in Abschnitten; ersetzt „Einkauf so einfach wie die Kachel“ und „Einkaufs-Diktat“) | `tafel-111.png`, Tafel 110 (kein Bild) | in Arbeit |
-| A-019 | Mia im Gespräch deutlich schneller und flüssiger (Messen, Stille 1,2 s, Sofort-Weg, eine Runde, sofort sprechen, „Mhm“, schlanker Kontext, ElevenLabs schnell) | – | in Arbeit |
+| A-019 | Mia im Gespräch deutlich schneller und flüssiger (Messen, Stille 1,2 s, Sofort-Weg, eine Runde, sofort sprechen, „Mhm“, schlanker Kontext, ElevenLabs schnell; Nachtrag: Sofort-Regeln für Kurzsätze ≥ 40 Prüfstand-Sätze/98 %, Mikro-Wachhund höchstens ein Neustart + „Mikro ist gerade belegt“) | – | in Arbeit |
 
 ## Offene Punkte (ohne eigenen Auftrag)
 
