@@ -40,7 +40,7 @@ export const einkaufSeite = async (page, check) => {
   // Karte = Laden-Seite, „Was noch bei Edeka?“ landet bei Edeka
   await page.locator('[data-laden-karte="Edeka"]').tap();
   await page.waitForURL(/\/einkaufsliste\/laden\?name=Edeka/, { timeout: 5000 }).catch(() => {});
-  check(await page.locator("[data-laden-kopf]").isVisible(), "Karte öffnet die Laden-Seite (große Laden-Karte)");
+  check(await page.locator("[data-laden-kopf]").isVisible(), "Karte öffnet die Laden-Seite (Titel mit Strich in Ladenfarbe)");
   await page.locator("[data-was-noch]").fill("Quark");
   await page.locator("[data-was-noch]").press("Enter");
   await page.waitForTimeout(400);
@@ -187,8 +187,8 @@ export const ladenLeer = async (page, check) => {
 };
 
 // Nachtrag A-018, Punkt 2: Abhaken im Laden – Häkchen orange, 1 s stehen,
-// nochmal tippen = doch nicht, dann „Schon im Wagen“ (zugeklappt, ohne Zahl),
-// „Einkauf fertig“ → Im Haus, zurück zur Übersicht, Rückgängig
+// nochmal tippen = doch nicht, dann „Im Wagen ⌄“ (A-041: zugeklappt, ohne
+// Zahl, unter der Liste), „Einkauf fertig“ → Im Haus, zurück zur Übersicht, Rückgängig
 export const imWagen = async (page, check) => {
   await laeden(page);
   await page.goto(BASE + "/einkaufsliste");
@@ -199,7 +199,7 @@ export const imWagen = async (page, check) => {
     await page.locator("[data-was-noch]").press("Enter");
   }
   const hinweis = page.locator("[data-wagen-hinweis]");
-  check(await hinweis.waitFor({ timeout: 3000 }).then(() => true, () => false), "einmal oben: „Abhaken, was im Wagen liegt.“");
+  check(await hinweis.waitFor({ timeout: 3000 }).then(() => true, () => false), "oben: „Abhaken, was im Wagen liegt.“");
   const milch = page.getByRole("checkbox", { name: /^Milch/ });
   await milch.tap();
   await page.waitForTimeout(300);
@@ -212,10 +212,13 @@ export const imWagen = async (page, check) => {
   await milch.tap();
   await page.waitForTimeout(2100);
   const wagen = page.locator("[data-wagen]");
-  check(await wagen.isVisible(), "nach 1 s gleitet Milch in „Schon im Wagen“");
-  check((await wagen.innerText()).trim() === "Schon im Wagen", "zugeklappt, ohne Zahl");
-  check(!(await hinweis.count()), "der Satz oben kommt nur einmal");
-  await wagen.getByRole("button", { name: "Schon im Wagen" }).tap();
+  check(await wagen.isVisible(), "nach 1 s gleitet Milch in „Im Wagen“");
+  check((await wagen.innerText()).trim() === "Im Wagen", "zugeklappt, ohne Zahl");
+  const liste = await page.getByRole("list", { name: "Rewe" }).boundingBox();
+  const wagenBox = await wagen.boundingBox();
+  check(liste && wagenBox && wagenBox.y > liste.y + liste.height - 1, "„Im Wagen“ steht unter der Liste");
+  check(!(await page.getByRole("list", { name: "Rewe" }).getByText("Milch").count()), "die Liste wird kürzer: Milch ist oben weg");
+  await wagen.getByRole("button", { name: "Im Wagen" }).tap();
   check(await wagen.getByText("Milch").isVisible(), "antippen = aufklappen");
   await page.locator("[data-einkauf-fertig]").tap();
   check(await page.getByText("Fertig. Liegt jetzt bei Im Haus.").waitFor({ timeout: 4000 }).then(() => true, () => false), "„Fertig. Liegt jetzt bei Im Haus.“");

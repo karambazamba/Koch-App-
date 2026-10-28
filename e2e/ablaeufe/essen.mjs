@@ -47,9 +47,9 @@ export const einkauf = async (page, check) => {
   await milch.tap();
   await page.waitForTimeout(2200);
   check(await done(), "Kreis hakt ab");
-  const wagen = page.getByRole("region", { name: "Schon im Wagen" });
-  check((await wagen.isVisible()) && !(await wagen.getByText("Milch").isVisible()), "abgehakt → „Schon im Wagen“ (zugeklappt)");
-  await wagen.getByRole("button", { name: "Schon im Wagen" }).tap();
+  const wagen = page.getByRole("region", { name: "Im Wagen" });
+  check((await wagen.isVisible()) && !(await wagen.getByText("Milch").isVisible()), "abgehakt → „Im Wagen“ (zugeklappt)");
+  await wagen.getByRole("button", { name: "Im Wagen" }).tap();
   check(await wagen.getByText("Milch").isVisible(), "aufklappen: Milch im Wagen");
   // Lange drücken = „Wo kaufst du das?“ (anderer Laden, Ändern, Löschen)
   const brot = page.locator('[data-laden-zeile="Brot"]');
@@ -90,7 +90,7 @@ export const imHaus = async (page, check) => {
   await page.locator("[data-was-noch]").fill("Brot");
   await page.locator("[data-was-noch]").press("Enter");
   await page.getByRole("checkbox", { name: "Brot abhaken" }).tap();
-  // erst gleitet Brot in „Schon im Wagen“ (1 s + 0,8 s), dann steht der Knopf still
+  // erst gleitet Brot in „Im Wagen“ (1 s + 0,8 s), dann steht der Knopf still
   await page.waitForTimeout(2000);
   await page.locator("[data-einkauf-fertig]").tap();
   check(await page.getByText("Fertig. Liegt jetzt bei Im Haus.").waitFor({ timeout: 5000 }).then(() => true, () => false), "„Einkauf fertig“ → „Fertig. Liegt jetzt bei Im Haus.“");

@@ -72,13 +72,13 @@ export const einsortieren = async (page, check) => {
   // Laden-Seite: der Kreis = im Wagen (zu Hause wie im Laden)
   await page.locator('[data-laden-karte="Rewe"]').tap();
   await page.waitForURL(/\/einkaufsliste\/laden\?name=Rewe/, { timeout: 5000 }).catch(() => {});
-  check(await page.locator("[data-laden-kopf]").getByText(/Rewe\s*· 1 Sache/).isVisible(), "Laden-Seite „Rewe · 1 Sache“");
+  check((await page.locator("[data-laden-kopf]").getAttribute("aria-label")) === "Rewe · 1 Sache", "Laden-Seite „Rewe · 1 Sache“");
   await page.getByRole("checkbox", { name: "Spinat abhaken" }).tap();
   await page.waitForTimeout(400);
   check(Object.values((await store(page, KEY)).weeks).some((w) => w.manual.some((m) => m.name === "Spinat" && m.done)), "Kreis hakt ab");
   await page.waitForTimeout(1900);
-  const wagen = page.getByRole("region", { name: "Schon im Wagen" });
-  check(await wagen.isVisible(), "nach 1 s gleitet es nach unten in „Schon im Wagen“");
-  await wagen.getByRole("button", { name: "Schon im Wagen" }).tap();
+  const wagen = page.getByRole("region", { name: "Im Wagen" });
+  check(await wagen.isVisible(), "nach 1 s gleitet es weg in „Im Wagen“");
+  await wagen.getByRole("button", { name: "Im Wagen" }).tap();
   check(await wagen.getByText("Spinat").isVisible(), "aufklappen: Spinat im Wagen");
 };
