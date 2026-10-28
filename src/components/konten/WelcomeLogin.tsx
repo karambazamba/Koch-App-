@@ -167,7 +167,8 @@ export function WelcomeLogin({ code: linkCode = "", einladung = "", inviter = ""
     const r = face.current?.getBoundingClientRect();
     if (!profile) {
       setHelloFlight(r ? { x: r.left, y: r.top, size: r.width } : null);
-      startFresh();
+      // Profil entsteht erst hier: die Antwort auf die Namensfrage gleich mit hinein
+      startFresh("farbig", "familie", askedName.current);
     }
     // Einladungs-Weg: Mail-Code → Startseite; der Zugangscode erst beim ersten KI-Versuch
     if (einladung) codeErstBeimKiVersuch();

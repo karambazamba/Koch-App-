@@ -83,7 +83,7 @@ export const konten = async (page, check, device) => {
   try {
     await hello(pageB);
     const vorschlag = await joinViaLink(pageB, link, `lisa-${tag}@example.com`, "Lisa");
-    check(vorschlag === null || (!vorschlag.includes("@") && !/\d/.test(vorschlag) && /^[A-ZÄÖÜ]/.test(vorschlag)), `Name vorausgefüllt aus der Mail: ${vorschlag}`);
+    check(vorschlag !== null && (!vorschlag.includes("@") && !/\d/.test(vorschlag) && /^[A-ZÄÖÜ]/.test(vorschlag)), `Name vorausgefüllt aus der Mail: ${vorschlag}`);
     await pageB.goto(BASE + "/konto");
     await familyReady(pageB);
     check(await pageB.getByRole("listitem").filter({ hasText: "(du)" }).isVisible(), "B ist per Link in der Familie");
@@ -286,8 +286,11 @@ export const begruessung = async (page, check, device) => {
   await page.getByRole("button", { name: "Zurück" }).click();
   check(await page.getByRole("heading", { name: "Willkommen zurück" }).isVisible(), "Zurück geht einen Schritt zurück");
   await codeFromHello(page, email);
-  await page.getByRole("tab", { name: "Heute", selected: true }).waitFor();
-  check(new URL(page.url()).pathname === "/", "ohne Frage direkt die Startseite");
+  // A-042: ohne Namen im Profil einmal „Wie sollen dich die anderen sehen?“, vorausgefüllt aus der Mail
+  const vorschlag = await nameFrageOderStart(page, "Felix");
+  check(/^Felix-Hallo-[A-Z][a-z]+$/.test(vorschlag ?? ""), `Namensfrage vorausgefüllt aus der Mail: ${vorschlag}`);
+  check(new URL(page.url()).pathname === "/", "nach der Namensfrage direkt die Startseite");
+  check((await page.evaluate(() => JSON.parse(localStorage.getItem("familienkueche.haushaltsprofil") ?? "null")?.persons?.[0]?.name)) === "Felix", "Name landet im Profil (nie zweimal fragen)");
   check(Boolean(await page.evaluate(() => localStorage.getItem("familienkueche.haushaltsprofil"))), "Profil angelegt (wie „Los geht’s“)");
   const familyId = await page.evaluate(() => JSON.parse(localStorage.getItem("wasgibts.haushalt") ?? "null")?.household?.id ?? null);
   check(Boolean(familyId), "Familie still angelegt");
@@ -302,9 +305,9 @@ export const begruessung = async (page, check, device) => {
     await serverMitCode(pageB);
     await pageB.goto(link);
     check(await pageB.getByRole("heading", { name: /lädt dich ein\./ }).waitFor({ timeout: 8000 }).then(() => true, () => false), "Einladungsseite: „… lädt dich ein.“");
-    check(await pageB.getByText("Termine, Einkauf und Pinnwand – gemeinsam.").isVisible(), "„Termine, Einkauf und Pinnwand – gemeinsam.“");
+    check(await pageB.getByText("Termine, Einkauf und Pinnwand gemeinsam.").isVisible(), "„Termine, Einkauf und Pinnwand gemeinsam.“");
     await codeFromHello(pageB, `lisa-hallo-${tag}@example.com`);
-    await pageB.getByRole("tab", { name: "Heute", selected: true }).waitFor();
+    check((await nameFrageOderStart(pageB, "Lisa")) !== null, "Einladung ohne Profilnamen: einmal die Namensfrage");
     check((await pageB.evaluate(() => JSON.parse(localStorage.getItem("wasgibts.haushalt") ?? "null")?.household?.id ?? null)) === familyId, "B ist per Link in derselben Familie");
     await pageB.waitForTimeout(1500);
     check(!(await pageB.locator("[data-code-screen]").count()), "Einladung: nach dem Mail-Code die Startseite, noch kein Zugangscode");
@@ -397,6 +400,8 @@ export const memosTeilen = async (page, check, device) => {
   const tag = device.replace(/\W/g, "").toLowerCase() + Date.now();
   await hello(page);
   await login(page, `anna-memo-${tag}@example.com`);
+  // ohne Namen im Profil: einmal fragen, dann still die Familie anlegen (A-042)
+  check((await nameFrageOderStart(page, "Anna", { ziel: "konto" })) !== null, "A: Namensfrage vor dem Anlegen");
   await familyReady(page);
   const link = await invite(page);
   await page.evaluate(MEMO_AUF_GERAET, "Anna");

@@ -38,10 +38,12 @@ function finishWelcome(state: WelcomeState, look: AppLook = "farbig") {
  * eine Frage nach dem Look – Standard „Farbig“): sonst Standardwerte, die Standard-Startseite (Pinnwand + Wetter klein
  * nebeneinander, Termine, Aufgaben, Essen + Einkauf) und die Beispiele darin.
  */
-export function startFresh(look: AppLook = "farbig", haushalt: Haushalt = "familie") {
+export function startFresh(look: AppLook = "farbig", haushalt: Haushalt = "familie", name = "") {
   finishWelcome(startState(), look);
   const profile = loadProfile();
-  if (profile) saveProfile({ ...profile, householdType: HOUSEHOLD_FOR[haushalt] });
+  // Name aus „Wie sollen dich die anderen sehen?“ (Anmelden ohne Profil, A-042): gleich ins neue Profil, nie zweimal fragen
+  const eigener = name.trim().slice(0, 40);
+  if (profile) saveProfile({ ...profile, householdType: HOUSEHOLD_FOR[haushalt], persons: eigener ? profile.persons.map((p, i) => (i === 0 ? { ...p, name: eigener } : p)) : profile.persons });
   // Allein: Pinnwand aus (Baustein und Kachel, zuschaltbar), zu zweit und Familie an
   saveHomeTiles(haushalt === "allein" ? DEFAULT_HOME.map((t) => (t.id === "pinnwand" ? { ...t, visible: false } : t)) : DEFAULT_HOME);
   setFeature("pinnwand", haushalt !== "allein");
