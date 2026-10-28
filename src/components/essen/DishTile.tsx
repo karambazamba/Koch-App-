@@ -96,7 +96,7 @@ export function DishTile({
   const frame = `relative block h-full w-full overflow-hidden rounded-card text-left shadow-card ${half ? "min-h-[168px]" : "min-h-[180px]"}`;
   const knoepfe = [links, rechts ? { label: rechts, icon: CalendarDays, open: "/?seite=essen&zu=woche", data: "woche" } : null].filter((k): k is KachelKnopf => Boolean(k));
   return (
-    <section className="relative h-full" aria-label={kopf}>
+    <section className="relative h-full" aria-label={kopf} data-essen-kachel>
       {typeof open === "string" ? (
         <Link href={open} aria-label={label} className={frame}>
           {body}
