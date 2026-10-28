@@ -54,8 +54,8 @@ Die frühere Lieblingsfarbe ist „Meine Farbe im Kalender“ (Profil
 - Termin = feste Uhrzeit, Aufgabe = steht jetzt an (ohne Tag heute, mit
   genanntem Tag ab dem Tag, bis dahin „Geplant“), Notiz = nur festhalten.
   Leerer Kalender = Angebot „Kalender mitbringen“ (Apple/Google/Outlook).
-- Startseite = Kacheln in EINER gespeicherten Anordnung, die sich nie von
-  selbst ändert; Bearbeiten direkt dort (Details in `docs/bereiche/heute.md`).
+- Startseite = EINE gespeicherte Anordnung (ändert sich nie von selbst) im festen
+  Raster XS · S · M (Tafel 118), Standard je Haushalt (Tafel 119); `docs/bereiche/heute.md`.
 - Auf der Startseite gibt es genau zwei Mias: das eckige Logo (BrandMark,
   nicht antippbar) und den runden Mia-Knopf rechts in der Leiste (= reden).
   Einzige Ausnahme: das kleine Gesicht in Mias Tipp-Karte („Mia stellt vor“,
@@ -167,7 +167,7 @@ Die frühere Lieblingsfarbe ist „Meine Farbe im Kalender“ (Profil
 ## 7. Design
 - Warmes Off-White, Kacheln auf der Startseite im Look „Farbig“ (Pastell,
   gleich hell und kräftig, Tokens `--app-tile-<id>`/`-ac`, Schrift ≥ 4,5:1,
-  Innen-Kärtchen weiß, Wetter als Himmel `--app-sky-*`, Essen mit Bild) oder
+  Innen-Kärtchen weiß, Wetter als Himmel mit Szene (Tafel 120), Essen mit Bild) oder
   „Schlicht“ (weiß mit feinem Rand, Farbe nur in Überschrift, Symbol, Uhrzeit,
   Termin-Strich; `data-look` am `<html>`); Kachel-Farbe aus 8 festen Tönen (Tafel 108,
   `docs/design.md`). Weiße Karten auf Unterseiten, EINE Akzentfarbe (Orange) nur für Knöpfe und die Begleitung, Pastell nie für

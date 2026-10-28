@@ -38,9 +38,10 @@ ziehen) und unten die Ecke „Nur für mich“.
   auf 1600 px, Bucket „fotos“ nur für den Haushalt). Antippen/lange drücken =
   Menü (Erledigt, Antworten, In Notizen, Bleibt hängen, Löschen nur eigene); Mia
   fragt EINMAL je Zettel „Klingt nach Notiz …“. Kachel = Fächer (S drei,
-  M drei nebeneinander, L bis 6; gerade Abgehaktes 1 s mit Häkchen, dann
-  weich weg; leer gestrichelter Zettel). Seiten-Tipp: „Kurze Zettel für alle. Abhaken räumt auf, ‚Bleibt
-  hängen‘ bleibt.“
+  M drei nebeneinander, beide in der festen Fläche des Rasters; gerade
+  Abgehaktes 1 s mit Häkchen, dann weich weg; leer gestrichelter Zettel).
+  Seiten-Tipp: „Kurze Zettel für alle. Abhaken räumt auf, ‚Bleibt hängen‘
+  bleibt.“
 - **Größe, Ordnen, „Nur für mich“ (Tafel 123):** klein = halbe Breite
   (Standard, auch Fotos), groß = volle Breite. Lange drücken hebt an
   (Schatten, 1,06), loslassen = Fenster (Titel = Zettel in „…“, Klein |
@@ -131,7 +132,7 @@ ziehen) und unten die Ecke „Nur für mich“.
   `notizFrage`.
 - Farbe = Person: Reihenfolge im Haushalt (Person 1 Gelb, 2 Rosa, 3 Grün,
   4 Blau, 5 Lila), sonst aus dem Namen; beim Schreiben wählbar, dann am
-  Zettel gespeichert. Mias Orange gibt es nur im Beispiel.
+  Zettel gespeichert.
 - Ton in IndexedDB `wasgibts-memos`, Bilder in `wasgibts-fotos` – beide nicht
   in „Daten sichern“ (Fotos aus einer Sicherung zeigen einen leisen
   Platzhalter). Mit Konto liegen Ton und Bilder zusätzlich im Haushalt
@@ -218,13 +219,14 @@ ziehen) und unten die Ecke „Nur für mich“.
 ### Kachel (Tafel 107, Variante 1 „Fächer“)
 - Bleibt rosa (`--app-tile-pinnwand`), Kopf „PINNWAND“ + ＋ (= „Neuer
   Zettel“); Look „Schlicht“: Kachel weiß, die Zettel behalten ihre Farbe.
-- S (156 px, so hoch wie das Wetter): die drei neuesten
+- S (feste Fläche im Raster, Tafel 118 – quadratisch, nach „Fertig“ nie ein
+  Streifen): die drei neuesten
   Zettel aufgefächert (−10°, −2°, +7°), der neueste vorn gut lesbar (bis 3
   Zeilen), darunter klein der Name; Sprachnachricht als „▶ 0:12“, Foto als
   Mini-Polaroid. „Bleibt hängen“ zählt nur, wenn weniger als 3 neue da
   sind. Gerade Abgehaktes (Seite, Mia, Familie) steht wie an der Tür 1 s
   mit orangem Häkchen und gleitet dann weich weg, der nächste rückt nach.
-  M: drei nebeneinander. L: bis 6 im Raster.
+  M: drei nebeneinander (L gibt es nicht mehr).
 - Leer (Variante 4): gestrichelter Zettel mit Magnet und ＋, darunter
   „Erster Zettel?“ und „Oder 🎙 Sprachnachricht“ (lucide Mikro: nimmt gleich
   auf – EINE Aufnahme-Leiste, gesendet nur über ➤).
@@ -240,9 +242,10 @@ ziehen) und unten die Ecke „Nur für mich“.
   die Pinnwand, schaltet sie sie frei.
 
 ### Beispiel-Tag
-- Kachel und Seite zeigen vorne Mias orangen Zettel „Moin! Hier hängen eure
-  Zettel.“, dahinter „Ole: Gummistiefel!“ (grün) und eine
-  Beispiel-Sprachnachricht (rosa, 0:08), klein „Beispiel“. Nichts davon in
+- Kachel und Seite zeigen je Haushalt (Tafel 119) vorne Felix „Bin um 18 Uhr
+  da“ (gelb), dahinter Mathis’ Sprachnachricht (rosa, 0:08) und Lisa „Ole:
+  Gummistiefel!“ (grün); zu zweit Anna „Brot kaufen?“, Toms Sprachnachricht,
+  Tom „Wäsche ist durch“; klein „Beispiel“. Nichts davon in
   echten Speichern, Push, KI oder Sicherung; der erste echte Zettel ersetzt
   das Beispiel (`clearDemoTile("pinnwand")`).
 

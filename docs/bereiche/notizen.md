@@ -130,7 +130,7 @@ Sammel-Schnellnotiz wird in einzelne Notizen geteilt.
   Sammel-Schnellnotiz samt Sicherung und Abgleich, Autosave, Leeres fällt weg,
   Listen, Teilen, Mehrzeilen-Feld, Pinnwand-Absätze, Mia).
 - `tests/notizen/notizen.test.ts` (Modell, Gespräch ohne KI, Schnellnotiz,
-  Speicher), `tests/core/sKacheln.test.ts` (Kachel S/M/L).
+  Speicher), `tests/heute/raster.test.ts` (Kachel XS/S/M).
 - `tests/begleitung/werkzeugeNotizen.test.ts`, `tests/core/sortierung.test.ts`
   („Notizen, Pinnwand, Tipps“).
 - Durchklick `e2e/ablaeufe/notizen.mjs`: Schnellfeld (Return = neue Zeile,

@@ -191,6 +191,18 @@ for (const device of DEVICES) {
     await settle(first);
     await first.screenshot({ path: `${dir}/beispieltag-${tag}.png`, fullPage: true });
     await first.context().close();
+    // Beispiel-Tag je Haushalt (Tafel 119): zu zweit und allein
+    for (const [name, wahl] of [["zuzweit", "Für uns zwei"], ["allein", "Nur für mich"]]) {
+      const hp = await newPage(browser, device, { dark });
+      await hp.goto(BASE);
+      await hp.getByRole("button", { name: "Los geht’s" }).click();
+      await hp.getByRole("button", { name: wahl }).click();
+      await hp.getByRole("tab", { name: "Heute", selected: true }).waitFor();
+      await settle(hp);
+      await hp.screenshot({ path: `${dir}/beispieltag-${name}-${tag}.png`, fullPage: true });
+      n++;
+      await hp.context().close();
+    }
     // Eigene Familie
     const page = await newPage(browser, device, { dark });
     await hello(page);
@@ -214,6 +226,23 @@ for (const device of DEVICES) {
     await settle(page);
     await page.screenshot({ path: `${dir}/heute-schlicht-${tag}.png`, fullPage: true });
     n++;
+    // Wetter mit Himmel (Tafel 120): je Testmodus-Wetter eine Größe, Farbig und Schlicht
+    for (const [sz, size] of [["regen", "XS"], ["klar", "S"], ["wolkig", "M"], ["sturm", "XS"], ["schnee", "S"], ["gewitter", "M"]]) {
+      for (const look of ["farbig", "schlicht"]) {
+        await page.evaluate(({ sz, size, look }) => {
+          sessionStorage.setItem("wasgibts.wetterszenario", sz);
+          localStorage.removeItem("wasgibts.wetterdaten");
+          const key = "familienkueche.haushaltsprofil";
+          localStorage.setItem(key, JSON.stringify({ ...JSON.parse(localStorage.getItem(key) || "{}"), look }));
+          localStorage.setItem("wasgibts.startseite", JSON.stringify({ version: 9, tiles: [{ id: "pinnwand", visible: true, size: "S" }, { id: "wetter", visible: true, size }, { id: "notizen", visible: true, size: "XS" }], tipSeen: true }));
+        }, { sz, size, look });
+        await page.goto(BASE);
+        await page.locator("[data-szene]").first().waitFor({ timeout: 6000 }).catch(() => {});
+        await settle(page);
+        await page.locator("[data-raster]").screenshot({ path: `${dir}/wetter-${sz}-${size}-${look}-${tag}.png` });
+        n++;
+      }
+    }
     await page.context().close();
     // Fenster, die nur nach einer Handlung erscheinen (Szenen)
     for (const [name, run] of SCENES) {

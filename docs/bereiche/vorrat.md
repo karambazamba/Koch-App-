@@ -111,8 +111,9 @@ weiter Vorrat (`src/lib/vorrat/`, `/vorrat`, `wasgibts.vorrat`).
   Spontan-Ideen steht dann die alte Karte „Spontan kochen“).
 - **Bald aufbrauchen**: nur Frisches im letzten Drittel seiner Zeit, Schild
   „heute“/„morgen“ (Orange) bzw. „bis Sa“ (Gelb), nie rot.
-- **Kachel** (S/M, nur über die Auswahl, nicht im Standard): „Bald
-  aufbrauchen“ (S 3, M 6 Zeilen à 30 px), sonst „Zuletzt eingekauft“; unten
+- **Kachel** (XS/S im festen Raster; Standard nur bei „allein“, sonst über die
+  Auswahl): XS = EINE Zeile („Hähnchen · heute“), S = „Bald aufbrauchen“
+  (2 Zeilen à 30 px), sonst „Zuletzt eingekauft“; unten
   „Was koch ich daraus?“ → Spontan kochen; leer „Sag mir, was da ist, dann
   schlag ich was vor.“
 - **Mia denkt mit**: beim ersten Besuch der Essen-Seite einmal „Sag mir, was
@@ -175,7 +176,7 @@ Einmal pro Woche statt Pflegen: Sonntag ab 17 Uhr steht in der Jetzt-Karte
   Abgleich.
 - `tests/vorrat/imHausEssen.test.ts` – Einkauf abhaken → Im Haus, Gegessen →
   raus, „… ist alle“ → raus + Liste, „Hab noch Hack“, Bereich unter Essen
-  (Reihe, höchstens 8, „Was koch ich daraus?“ mit diesen Sachen), Kachel S/M,
+  (Reihe, höchstens 8, „Was koch ich daraus?“ mit diesen Sachen), Kachel XS/S,
   Mia stellt es einmal vor. Übernahme für 1.0: `tests/core/launch.test.ts`.
 - `tests/vorrat/kuehlcheck.test.ts` – Kurz-Check: Sonntag 16:59/17:00,
   Samstag, Baustein, leer, einmal pro Woche, Nacht/Pause/Ruhe/Beispiel,

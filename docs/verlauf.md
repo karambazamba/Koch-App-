@@ -3502,3 +3502,26 @@ Fehler in `docs/aufraeumen-nachher.md`.
   (Durchklick `pinnwandOrdnen` prüft es ab 390 px). Durchklick-Helfer
   `halten` rollt den Zettel vorher in die Mitte (vorher drückte er unter Mias
   Hinweis-Blase bzw. außerhalb des Bildschirms).
+
+## Startseite XS · S · M, Standard je Haushalt, Wetter mit Himmel (vX, Tafel 118–120, A-023)
+
+- Problem (Video 28.10. 11:49): Kacheln waren je Inhalt unterschiedlich hoch,
+  Pinnwand S neben Wetter S passte nicht, Wetter in M hatte eine andere Höhe,
+  und nach „Fertig“ schrumpfte die Pinnwand-S auf einen Streifen (feste
+  `h-[156px]` gegen das Strecken der Zeile, im Bearbeiten Einzug + Knöpfe
+  unter der Kachel = andere Flächen).
+- Festes Raster (`lib/heute/raster.ts`): 2 Spalten, Grund-Zeile = halbe
+  S-Höhe aus der Breite; XS 1 × 1, S 1 × 2 (quadratisch), M 2 × 2; L entfällt
+  (alte L → M). Dicht und stabil in der gespeicherten Reihenfolge, zwei XS als
+  Paar (übereinander bzw. nebeneinander vor etwas Breitem), Lücken nur ohne
+  Partner (im Bearbeiten „＋ Kachel“, statt „freie Hälfte“). Bearbeiten =
+  Fertig-Ansicht (Knöpfe in der Kachel). Erlaubte Größen je Kachel wie Tafel
+  118; jede Kachel füllt ihre Fläche, Rest als „+n“.
+- Standard je Haushalt (Tafel 119) für neue Nutzer und Beispiel-Tag; Timer
+  ohne festen Platz (XS oben, solange er läuft); Haushaltswechsel überschreibt
+  keine eigene Anordnung. Beispiel-Inhalte wie Tafel 119 (Räume nach A-021:
+  „Arbeit“ = Schild „Geschäftlich“, „Ich“ = Familie ohne Schild).
+- Wetter mit Himmel (Tafel 120): kleine stille Szene je Wetterlage rechts
+  oben (ersetzt Muster und Windsack auf der Kachel), kurzer Satz ≤ 22 Zeichen.
+- Speicher: Startseite v9 (Migration L → M, nicht erlaubte Größen auf die
+  nächste erlaubte, keine Kachel verschwindet).

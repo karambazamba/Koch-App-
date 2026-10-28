@@ -66,12 +66,13 @@ Ohne Zähler in der Oberfläche:
   Woche rund.“, montags „Neue Woche, neues Glück.“ bzw. „Letzte Woche lief
   richtig gut – auf ein Neues.“, sonst „Die Woche ist bereit für dich.“
 
-Kachel `sport` (Größen S/M/L, Standard M, Pastell-Grün, standardmäßig aus):
-- S: nur „Als Nächstes“ (Icon, „Fr 17:00“, Titel). M: Woche + „Als
-  Nächstes“ (`nextLine`: „Sa 18:00 · Laufen · 45 Min“, Wetter zur
-  Trainingszeit; antippen = Tag-Fenster des Trainings). L zusätzlich die
-  letzten 3 Trainings. Ohne geplantes Training: „Diese Woche noch nichts
-  geplant – einfach Plus tippen.“ Der Wochensatz steht nur noch auf `/sport`.
+Kachel `sport` (Größen XS/S im festen Raster, Tafel 118, Standard XS,
+Pastell-Grün; Standard nur bei „allein“, Tafel 119):
+- XS: EINE Zeile („Heute 18:00 · Yoga“, ohne Plan „Diese Woche frei“). S: „Als
+  Nächstes“ (Icon, „Fr 17:00“, Titel; antippen = Tag-Fenster des Trainings).
+  Ohne geplantes Training: „Diese Woche noch nichts geplant – einfach Plus
+  tippen.“ Die Woche als Kreise und der Wochensatz stehen auf `/sport`.
+  Beispiel-Tag: „2 von 3 diese Woche“ (bis zum ersten eigenen Training).
 - „+“ = „Training planen“ (`SportPlanForm` mit Tag-Chips für 7 Tage, Start
   = erster freier Tag) und darunter „Schon trainiert? Eintragen“ →
   `SportAddSheet`. Kachel-Label → `/sport`. Jeder Kreis → `SportDaySheet`.

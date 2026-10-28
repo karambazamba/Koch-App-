@@ -92,13 +92,13 @@ export const fertigTippen = async (page, check) => {
   await kopf.getByRole("button", { name: "Fertig" }).click();
   await page.waitForTimeout(400);
 
-  // S/M/L beendet nicht
+  // XS · S · M beendet nicht
   await openEdit(page);
   const size = page.getByRole("radio", { name: /mittel$/ }).first();
   const sb = await size.boundingBox();
   await tap(page, sb.x + sb.width / 2, sb.y + sb.height / 2);
   await page.waitForTimeout(400);
-  check(await editing(page), "Tipp auf S/M/L beendet nicht");
+  check(await editing(page), "Tipp auf XS · S · M beendet nicht");
 
   // Festhalten hebt an, Loslassen beendet nicht
   const t2 = await page.locator("[data-unit]").nth(1).boundingBox();
