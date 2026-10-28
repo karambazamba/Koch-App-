@@ -141,8 +141,11 @@ describe("„Nehmen“ aus der Vorschau = „Nehmen“ auf der Karte", () => {
     const { toList, date } = takeOutcome(card, null, false, "2026-10-21", "2026-10-22");
     expect(date).toBe("2026-10-21");
     expect(toList).toEqual(["Hokkaido"]);
-    expect(listenMenge("Hokkaido", geladenFuer("Kürbisrisotto")!.rezept, 2)).toBe("250 g");
-    expect(listenMenge("Hokkaido", undefined, 2)).toBe("");
+    expect(listenMenge("Hokkaido", geladenFuer("Kürbisrisotto")!.rezept, 2)).toEqual({ amount: "250 g" });
+    expect(listenMenge("Hokkaido", undefined, 2)).toEqual({ amount: "" });
+    // Über Einkauf neu: auf die Packung gerundet, Rezeptmenge als Hinweis
+    const milch = { ...geladenFuer("Kürbisrisotto")!.rezept, servings: 2, ingredients: [{ id: "m", amount: 250, unit: "ml", name: "Milch" }] };
+    expect(listenMenge("Milch", milch, 2)).toEqual({ amount: "", rezeptMenge: "250 ml" });
   });
 });
 

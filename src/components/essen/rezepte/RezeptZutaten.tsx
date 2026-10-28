@@ -16,6 +16,7 @@ import { matchStock, realStock } from "@/lib/essen/dishIdeas";
 import { toggleZutat, useCooking } from "@/lib/essen/kochSession";
 import { useStock } from "@/lib/essen/useStock";
 import { addManualItem, removeManualItems } from "@/lib/einkauf/listEdits";
+import { alsEinkauf } from "@/lib/einkauf/zusammen/packung";
 import { sectionFor } from "@/lib/einkauf/sections";
 import { useWeekShoppingList } from "@/lib/einkauf/useWeekShoppingList";
 import { sameIngredient } from "@/lib/vorrat/pantry";
@@ -27,9 +28,10 @@ export function RezeptZutaten({ recipe, scaleTo, kopfRechts, vorschau = false }:
   const done = session?.zutaten[recipe.id] ?? [];
   const needs = stock && realStock(stock).length ? matchStock(recipe.ingredients.map((i) => i.name), stock, todayIso()).needs : [];
   const onList = (name: string) => Boolean(shopping?.list.items.some((i) => !i.checked && !i.hidden && sameIngredient(i.name, name)));
-  const aufDieListe = (name: string, amount: string) => {
+  // Wie Einkauf neu: Menge auf die Packung gerundet, Rezeptmenge als Hinweis
+  const aufDieListe = (name: string, menge: number | null, unit: string) => {
     if (!shopping) return;
-    const id = addManualItem(shopping.weekStart, { name, amount, section: sectionFor(name), dish: recipe.title });
+    const id = addManualItem(shopping.weekStart, { name, ...alsEinkauf(name, menge, unit), section: sectionFor(name), dish: recipe.title });
     pushUndo(`${name} auf die Liste`, () => removeManualItems(shopping.weekStart, [id]));
   };
   return (
@@ -43,7 +45,8 @@ export function RezeptZutaten({ recipe, scaleTo, kopfRechts, vorschau = false }:
       ) : (
         <ul className="divide-y divide-line">
           {recipe.ingredients.map((i) => {
-            const amount = [formatAmount(scaledAmount(i.amount, recipe.servings, scaleTo)), i.unit].filter(Boolean).join(" ");
+            const menge = scaledAmount(i.amount, recipe.servings, scaleTo);
+            const amount = [formatAmount(menge), i.unit].filter(Boolean).join(" ");
             const checked = done.includes(i.id);
             const missing = !checked && needs.includes(i.name.trim());
             if (vorschau)
@@ -70,7 +73,7 @@ export function RezeptZutaten({ recipe, scaleTo, kopfRechts, vorschau = false }:
                   (onList(i.name) ? (
                     <span className="shrink-0 text-[13px] font-semibold text-muted">auf der Liste</span>
                   ) : (
-                    <button type="button" onClick={() => aufDieListe(i.name, amount)} aria-label={`${i.name} auf die Liste`} className="hit flex h-8 shrink-0 items-center gap-0.5 rounded-full bg-accent-soft px-2.5 text-[13px] font-bold text-accent-strong active:scale-95" data-plus-liste>
+                    <button type="button" onClick={() => aufDieListe(i.name, menge, i.unit)} aria-label={`${i.name} auf die Liste`} className="hit flex h-8 shrink-0 items-center gap-0.5 rounded-full bg-accent-soft px-2.5 text-[13px] font-bold text-accent-strong active:scale-95" data-plus-liste>
                       <Plus className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
                       Liste
                     </button>
