@@ -35,7 +35,11 @@ export type LiveSocket = {
   onclose: (() => void) | null;
 };
 
-export type LiveMikro = { stoppen: () => void };
+export type LiveMikro = {
+  stoppen: () => void;
+  /** Läuft die Ton-Verarbeitung? (false = vom Browser angehalten, kein Mikro-Problem) */
+  laeuft?: () => boolean;
+};
 
 export type LiveDeps = {
   /** Einmal-Schlüssel vom eigenen Server (null = geht nicht) */
@@ -232,7 +236,12 @@ export function ohrLiveStarten(rueck: LiveRueck, d: LiveDeps): LiveRunde {
     .then((m) => {
       if (vorbei) return m.stoppen();
       mikro = m;
-      stell("wache", LIVE_WACHE_MS, () => !tonDa && fehler("mikro", "belegt"));
+      stell("wache", LIVE_WACHE_MS, () => {
+        if (tonDa) return;
+        // Angehaltene Ton-Verarbeitung ist kein belegtes Mikro: dann lieber über den Browser
+        if (m.laeuft?.() === false) fehler("verbindung", "ton");
+        else fehler("mikro", "belegt");
+      });
     })
     .catch((e: unknown) => fehler("mikro", e instanceof Error ? e.name : "Error"));
 

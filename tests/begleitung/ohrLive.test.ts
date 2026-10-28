@@ -175,7 +175,7 @@ class FakeSocket implements LiveSocket {
   }
 }
 
-function runde(o: { token?: { token: string; modell: string } | null; mikroFehler?: string; ohneTon?: boolean } = {}) {
+function runde(o: { token?: { token: string; modell: string } | null; mikroFehler?: string; ohneTon?: boolean; angehalten?: boolean } = {}) {
   let ton: ((w: Float32Array, rate: number) => void) | null = null;
   const sockets: FakeSocket[] = [];
   const logs: string[] = [];
@@ -187,7 +187,7 @@ function runde(o: { token?: { token: string; modell: string } | null; mikroFehle
       ton = t;
       // Ein erstes Stück Ton kommt sofort (sonst greift der Mikro-Wachhund)
       if (!o.ohneTon) t(new Float32Array(4800).fill(0.1), 48_000);
-      return { stoppen: mikroAus };
+      return { stoppen: mikroAus, laeuft: () => !o.angehalten };
     },
     socket: (url) => {
       const s = new FakeSocket(url);
@@ -376,6 +376,10 @@ describe("Ersatz-Kette: Schlüssel/Verbindung → Browser → Aufnahme", () => {
     c.sock().oeffnen();
     await warte(LIVE_WACHE_MS);
     expect(c.ev.fehler).toEqual([]);
+    // Vom Browser angehaltene Ton-Verarbeitung ist kein belegtes Mikro → Browser-Erkennung
+    const d = runde({ ohneTon: true, angehalten: true });
+    await warte(LIVE_WACHE_MS);
+    expect(d.ev.fehler).toEqual(["verbindung:ton"]);
   });
 
   it("Reihenfolge der Wege", () => {
