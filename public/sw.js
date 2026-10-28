@@ -12,6 +12,7 @@ const PRECACHE_URLS = [
   "/",
   "/aufgaben",
   "/einkaufsliste",
+  "/einkaufsliste/aussuchen",
   "/einkaufsliste/laden",
   "/kochbuch",
   "/konto",

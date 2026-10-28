@@ -1,9 +1,8 @@
-// Einkauf: erst einsortieren, dann einkaufen (Tafel 99). Zu Hause heißt
-// Antippen „Wo kaufst du das?“ – ein Laden aus „Meine Läden“, bewusst „Egal
-// wo“ oder (Häkchen) eine feste Regel „immer bei“. Abgehakt wird nur im
-// Einkaufsmodus oder über „Schon gekauft“.
+// Einkauf: einsortieren (Tafel 99/110/111). Ein Artikel kommt in einen Laden
+// – per „Wo kaufst du das?“, Ziehen auf eine Laden-Karte oder in „Aussuchen“;
+// bewusst „Egal wo“ oder als feste Regel „immer bei“.
 // Drei Zustände je Artikel: Laden · bewusst „Egal wo“ (gemerkter leerer
-// Laden) · noch ohne Laden (nichts bekannt) → Zone „Noch ohne Laden“.
+// Laden) · noch ohne Laden (nichts bekannt) → Bereich „Noch ohne Laden“.
 // „Mia sortiert“ ordnet ein, was aus dem Gelernten bekannt ist; Unbekanntes
 // bleibt. Alles mit Rückgängig (stellt nur die berührten Artikel wieder her).
 
@@ -86,9 +85,6 @@ export function miaSortiert(items: ListItem[]): { count: number; undo: () => voi
 }
 
 const sachen = (n: number) => `${n} ${n === 1 ? "Sache" : "Sachen"}`;
-
-/** Mia-Zeile über der Zone: „6 Sachen noch ohne Laden.“ */
-export const ohneLadenSatz = (n: number) => `${sachen(n)} noch ohne Laden.`;
 
 /** Meldung nach „Mia sortiert“: „5 einsortiert“ */
 export const sortiertText = (n: number) => `${n} einsortiert`;

@@ -32,9 +32,8 @@ import { useStock } from "@/lib/essen/useStock";
 import { recipeHref } from "@/lib/essen/baking";
 import { DEMO_SHOPS, clearDemoTile } from "@/lib/core/demo";
 import { ohneLadenZeile, shopTone, tileRows, type TileRows } from "@/lib/einkauf/shopGroups";
-import { setShopChip } from "@/lib/einkauf/shopMode";
 import { useMeineLaeden } from "@/lib/einkauf/meineLaeden";
-import type { ShopChip } from "@/lib/einkauf/kacheln/view";
+import { ladenHref } from "@/lib/einkauf/seite/karten";
 import { useNotes } from "@/lib/notizen";
 import { openQuick } from "@/lib/core/schnelleingabe";
 import { notizZeilen } from "@/lib/heute/notizenKachel";
@@ -119,20 +118,14 @@ export function FoodTile({ data, dish, over, dishClock, onOpen, size = "S", onCo
   );
 }
 
-/** Laden-Zeile antippen: Einkaufsliste genau auf diesen Laden gefiltert („Egal wo“ = ohne Laden) */
-const chipFor = (shop: string | null): ShopChip => (shop ? `laden:${shop}` : "ohne");
-
-/** Eine Zeile der Einkauf-Kachel: Strich links in Ladenfarbe, Name, 2 Symbole, Zahl (mit 0 nur Name + 0) */
-function ShopRow({ shop, label, names, count, chip, products, demo }: { shop: string | null; label: string; names: string[]; count: number; chip: ShopChip; products: Record<string, string>; demo: boolean }) {
+/** Eine Zeile der Einkauf-Kachel: Strich links in Ladenfarbe, Name, 2 Symbole, Zahl (mit 0 nur Name + 0); Tipp = Laden-Seite */
+function ShopRow({ shop, label, names, count, href, products, demo }: { shop: string | null; label: string; names: string[]; count: number; href: string; products: Record<string, string>; demo: boolean }) {
   const tone = shop ? `var(--app-shop-${shopTone(shop)})` : "var(--app-faint)";
   return (
     <li>
       <Link
-        href="/einkaufsliste"
-        onClick={(e) => {
-          e.stopPropagation();
-          setShopChip(chip);
-        }}
+        href={href}
+        onClick={(e) => e.stopPropagation()}
         className="relative flex min-h-[30px] min-w-0 items-center gap-1.5 overflow-hidden rounded-field py-1 pl-3 pr-2"
         style={{ background: shop ? `var(--app-shop-${shopTone(shop)}-soft)` : "var(--app-fill)" }}
         aria-label={`${label}: ${count} ${count === 1 ? "Sache" : "Sachen"}${demo ? " · Beispiel" : ""}`}
@@ -157,7 +150,7 @@ function ShopRow({ shop, label, names, count, chip, products, demo }: { shop: st
  * eine Zeile – helle Ladenfarbe, Strich links, Name fett, rechts 2 Symbole
  * der ersten Sachen (ohne eigene Zeichnung das Symbol der Abteilung, nie ein
  * Buchstabe) und die Zahl, auch mit 0. Darunter leise „6 noch ohne Laden ·
- * Sortieren ›“ (öffnet die Liste an der Zone). Ohne „Meine Läden“: eine
+ * Sortieren ›“ (öffnet „Einkauf“ bei „Noch ohne Laden“). Ohne „Meine Läden“: eine
  * neutrale Zeile „Liste“ mit allem ohne Laden. Keine Logos, keine Emojis.
  */
 function ShopRows({ rows, rest, ohne, mine, products, demo = false }: TileRows & { mine: boolean; products: Record<string, string>; demo?: boolean }) {
@@ -165,17 +158,17 @@ function ShopRows({ rows, rest, ohne, mine, products, demo = false }: TileRows &
     <>
       <ul className="mt-1 flex flex-col gap-1" aria-label="Nach Laden">
         {rows.map((r) => (
-          <ShopRow key={r.shop ?? "egal"} shop={r.shop} label={r.shop ?? "Egal wo"} names={r.names} count={r.count} chip={chipFor(r.shop)} products={products} demo={demo} />
+          <ShopRow key={r.shop ?? "egal"} shop={r.shop} label={r.shop ?? "Egal wo"} names={r.names} count={r.count} href={demo ? "/einkaufsliste" : ladenHref(r.shop ?? "")} products={products} demo={demo} />
         ))}
-        {!mine && ohne.length > 0 && <ShopRow shop={null} label="Liste" names={ohne} count={ohne.length} chip="alle" products={products} demo={demo} />}
+        {!mine && ohne.length > 0 && <ShopRow shop={null} label="Liste" names={ohne} count={ohne.length} href="/einkaufsliste" products={products} demo={demo} />}
       </ul>
       {rest && (
-        <Link href="/einkaufsliste" onClick={() => setShopChip("alle")} className="flex min-h-[30px] items-center truncate text-[12.5px] font-semibold text-muted" data-zeile>
+        <Link href="/einkaufsliste" className="flex min-h-[30px] items-center truncate text-[12.5px] font-semibold text-muted" data-zeile>
           {rest}
         </Link>
       )}
       {mine && ohne.length > 0 && (
-        <Link href="/einkaufsliste#ohne-laden" onClick={() => setShopChip("alle")} className="flex min-h-[30px] flex-wrap items-center gap-x-1 py-0.5 text-[12.5px] font-semibold leading-tight text-muted" data-zeile data-ohne-laden-zeile>
+        <Link href="/einkaufsliste#ohne-laden" className="flex min-h-[30px] flex-wrap items-center gap-x-1 py-0.5 text-[12.5px] font-semibold leading-tight text-muted" data-zeile data-ohne-laden-zeile>
           <span className="whitespace-nowrap">{ohneLadenZeile(ohne.length)} ·</span> <span className="whitespace-nowrap font-bold text-accent-strong">Sortieren ›</span>
         </Link>
       )}
@@ -186,7 +179,7 @@ function ShopRows({ rows, rest, ohne, mine, products, demo = false }: TileRows &
 /** Kopf der Einkauf-Kachel „EINKAUF“ – kurz, damit er auch halb breit nie abgeschnitten wird; die übrige Fläche öffnet die ganze Liste („Alle“) */
 function ShoppingHead() {
   return (
-    <Link href="/einkaufsliste" onClick={() => setShopChip("alle")} className="mr-8 flex min-h-11 items-start" aria-label="Einkaufsliste öffnen">
+    <Link href="/einkaufsliste" className="mr-8 flex min-h-11 items-start" aria-label="Einkaufsliste öffnen">
       <span className={HALF_LABEL}>
         <ShoppingCart className="h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden />
         <span className="whitespace-nowrap">Einkauf</span>
@@ -222,7 +215,7 @@ export function ShoppingTile({ size = "S", demo = false }: { half: boolean; size
     <section className={HALF} aria-label={showDemo ? "Einkaufsliste · Beispiel" : "Einkaufsliste"}>
       <ShoppingHead />
       {empty ? (
-        <Link href="/einkaufsliste" onClick={() => setShopChip("alle")} className="-mt-3 flex-1 text-[14px] font-semibold leading-snug text-muted">
+        <Link href="/einkaufsliste" className="-mt-3 flex-1 text-[14px] font-semibold leading-snug text-muted">
           Liste ist leer. Sag mir einfach, was ihr braucht.
         </Link>
       ) : (

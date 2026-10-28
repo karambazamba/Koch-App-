@@ -1,11 +1,10 @@
 // Schnell etwas auf die Liste (quickAdd.ts), Sätze zerlegen (shoppingParse.ts),
-// Einkaufsmodus (shopMode.ts) und Läden-Gruppen (shopGroups.ts).
+// Laden-Seite unterwegs (shopMode.ts) und Läden-Gruppen (shopGroups.ts).
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { parseQuickAdd } from "@/lib/einkauf/quickAdd";
 import { isShoppingRequest, parseProductStatement, parseShoppingText } from "@/lib/einkauf/shoppingParse";
-import { knownShop, shopModeHref, shopModeLists, shopModeRequest } from "@/lib/einkauf/shopMode";
+import { knownShop, shopModeHref, shopModeRequest } from "@/lib/einkauf/shopMode";
 import { shopGroups, shopTone, shopType, SHOP_TYPE_ICON } from "@/lib/einkauf/shopGroups";
-import type { ListItem } from "@/lib/einkauf/listModel";
 import { fakeWindow } from "../helpers";
 
 const SETTINGS = { products: { butter: "Alsan" }, itemShops: { "lieblingskram": "dm" }, staples: [{ id: "s", name: "Hausmarke", amount: "", section: "sonstiges" as const, purchases: [], intervalDays: 7, active: true }], shops: ["Hofladen"] };
@@ -27,6 +26,12 @@ describe("Sätze für die Einkaufsliste", () => {
       { name: "Kartoffeln", amount: "2 kg", shop: "" },
       { name: "Windeln", amount: "", shop: "dm" },
     ]);
+    // „Tomaten und Gurke bei Rewe“: der Laden am Ende gilt für beide (Einkauf neu, Punkt 9) – mit Komma nur fürs Letzte
+    expect(parseShoppingText("Tomaten und Gurke bei Rewe")).toEqual([
+      { name: "Tomaten", amount: "", shop: "Rewe" },
+      { name: "Gurke", amount: "", shop: "Rewe" },
+    ]);
+    expect(parseShoppingText("Milch, Windeln und Müsli von Rossmann").map((i) => i.shop)).toEqual(["", "", "Rossmann"]);
     expect(parseShoppingText("Wir brauchen Eier (Hofladen) sowie Brot vom Bäcker", ["Hofladen"])).toEqual([
       { name: "Eier", amount: "", shop: "Hofladen" },
       { name: "Brot", amount: "", shop: "Bäcker" },
@@ -60,22 +65,9 @@ describe("Schnell-Plus", () => {
   });
 });
 
-describe("Einkaufsmodus", () => {
-  const item = (name: string, shop: string, over: Partial<ListItem> = {}): ListItem => ({ key: name, name, originalName: name, amount: "", section: "sonstiges", dishes: [], days: [], shop, checked: false, hidden: false, ...over });
-
-  it("hier, egal wo, andere Läden, im Korb", () => {
-    const lists = shopModeLists(
-      [item("Milch", "REWE"), item("Brot", ""), item("Zahnpasta", "dm"), item("Seife", "dm"), item("Eier", "Lidl"), item("Butter", "rewe", { checked: true }), item("Salz", "", { checked: true }), item("Käse", "REWE", { hidden: true })],
-      "Rewe",
-    );
-    expect(lists.here.map((i) => i.name)).toEqual(["Milch"]);
-    expect(lists.anywhere.map((i) => i.name)).toEqual(["Brot"]);
-    expect(lists.elsewhere).toEqual([{ shop: "dm", names: ["Zahnpasta", "Seife"] }, { shop: "Lidl", names: ["Eier"] }]);
-    expect(lists.done.map((i) => i.name)).toEqual(["Butter", "Salz"]);
-  });
-
+describe("Laden-Seite unterwegs", () => {
   it("Laden erkennen und Link", () => {
-    expect(shopModeHref("Bäcker Möller")).toBe("/einkaufsliste/laden?name=B%C3%A4cker%20M%C3%B6ller");
+    expect(shopModeHref("Bäcker Möller")).toBe("/einkaufsliste/laden?name=B%C3%A4cker%20M%C3%B6ller&unterwegs=1");
     expect(knownShop("dem Rewe", ["Rewe"])).toBe("Rewe");
     expect(knownShop("Rewe City", ["Rewe"])).toBe("Rewe");
     expect(knownShop(" ", ["Rewe"])).toBeNull();
@@ -85,7 +77,7 @@ describe("Einkaufsmodus", () => {
     expect(shopModeRequest("Hallo", ["Aldi"])).toBeNull();
   });
 
-  it("Chip wird pro Gerät gemerkt", async () => {
+  it("aktiver Laden in „Aussuchen“ wird pro Gerät gemerkt (gleiches Format wie früher der Chip)", async () => {
     vi.resetModules();
     const w = fakeWindow();
     const { setShopChip } = await import("@/lib/einkauf/shopMode");

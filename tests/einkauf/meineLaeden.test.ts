@@ -28,10 +28,12 @@ describe("Erster Besuch", () => {
   });
 
   it("Später: nie wieder fragen, keine Läden – Liste wie bisher", async () => {
-    const { laterShops, shopRow } = await ml();
+    const { laterShops } = await ml();
+    const { ladenKarten, ohneLadenListe } = await import("@/lib/einkauf/seite/karten");
     laterShops();
     expect(saved()).toMatchObject({ shopsAsked: true, myShops: [] });
-    expect(shopRow([item("Milch")], []).map((c) => c.label)).toEqual(["Alle"]);
+    expect(ladenKarten([item("Milch")], [])).toEqual([]);
+    expect(ohneLadenListe([item("Milch")]).map((i) => i.name)).toEqual(["Milch"]);
   });
 
   it("bestehende Nutzer: Läden an Artikeln sind vorgewählt (meistgenutzt zuerst)", async () => {
@@ -66,26 +68,23 @@ describe("Frage nach Tafel 91 und Sortieren", () => {
   });
 });
 
-describe("Laden-Reihe", () => {
-  it("meine Läden immer da, auch mit 0; andere mit offenen Sachen; „Ohne Laden“ nur wenn nötig", async () => {
-    const { shopRow } = await ml();
-    const row = shopRow([item("Milch", "Lidl"), item("Brot", "Bäcker"), item("Salz")], ["Rossmann", "Lidl"]);
-    expect(row.map((c) => `${c.label}:${c.count}`)).toEqual(["Alle:3", "Rossmann:0", "Lidl:1", "Bäcker:1", "Ohne Laden:1"]);
-    expect(shopRow([], ["Rossmann"]).map((c) => `${c.label}:${c.count}`)).toEqual(["Alle:0", "Rossmann:0"]);
-    expect(shopRow([item("Salz")], ["Rossmann"]).map((c) => c.label)).toEqual(["Alle", "Rossmann"]);
+describe("Laden-Karten (Einkauf neu, Tafel 110)", () => {
+  it("meine Läden immer da, auch mit 0; andere mit Sachen (meiste zuerst); „Egal wo“ nur bewusst; ohne Laden extra", async () => {
+    const { ladenKarten, ohneLadenListe } = await import("@/lib/einkauf/seite/karten");
+    const open = [item("Milch", "Lidl"), item("Brot", "Bäcker"), item("Salz"), { ...item("Tee"), anywhere: true }, item("Eier", "Hofladen"), item("Honig", "Hofladen")];
+    expect(ladenKarten(open, ["Rossmann", "Lidl"]).map((k) => `${k.shop || "Egal wo"}:${k.items.length}`)).toEqual(["Rossmann:0", "Lidl:1", "Hofladen:2", "Bäcker:1", "Egal wo:1"]);
+    expect(ladenKarten([], ["Rossmann"]).map((k) => `${k.shop}:${k.items.length}`)).toEqual(["Rossmann:0"]);
+    expect(ohneLadenListe(open).map((i) => i.name)).toEqual(["Salz"]);
   });
 
-  it("gemerkter Reiter bleibt auch ohne Artikel; verschwundener Laden → Alle", async () => {
-    const { shopRow, chipIn } = await ml();
-    const row = shopRow([], ["Rossmann"]);
-    expect(chipIn(row, "laden:Rossmann")).toBe("laden:Rossmann");
-    expect(chipIn(row, "laden:Aldi")).toBe("alle");
-    expect(chipIn(shopRow([item("Milch", "Lidl")], ["Rossmann"]), "meist")).toBe("laden:Lidl");
-  });
-
-  it("Knopftext Einkaufsmodus", async () => {
-    const { shopModeLabel } = await ml();
-    expect(shopModeLabel("Lidl")).toBe("Bei Lidl einkaufen");
+  it("Zeile unter dem Namen, Anzahl, Link zur Laden-Seite", async () => {
+    const { ersteSachen, sachenText, ladenHref } = await import("@/lib/einkauf/seite/karten");
+    expect(ersteSachen([item("Milch"), item("Brot"), item("Butter"), item("Eier")])).toBe("Milch, Brot, Butter …");
+    expect(ersteSachen([])).toBe("Noch nichts drauf");
+    expect(sachenText(1)).toBe("1 Sache");
+    expect(sachenText(3)).toBe("3 Sachen");
+    expect(ladenHref("Bäcker Möller")).toBe("/einkaufsliste/laden?name=B%C3%A4cker%20M%C3%B6ller");
+    expect(ladenHref("")).toBe("/einkaufsliste/laden?name=");
   });
 
   it("eigenen Laden dazu und wieder weg; Laden am Artikel kommt zu Meine Läden", async () => {

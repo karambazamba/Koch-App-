@@ -58,7 +58,7 @@ describe("Kachel und Beispiel-Tag", () => {
   const demo = readFileSync("src/components/essen/DemoFoodTile.tsx", "utf8");
 
   it("jeder Zustand ist eine Bild-Kachel; „Ideen ansehen“ nur ohne Gericht", () => {
-    const food = tile.slice(tile.indexOf("export function FoodTile"), tile.indexOf("const chipFor"));
+    const food = tile.slice(tile.indexOf("export function FoodTile"), tile.indexOf("/** Eine Zeile der Einkauf-Kachel"));
     // genau ein return mit <DishTile – kein Zweig ohne Bild mehr
     expect(food.match(/return \(/g)).toHaveLength(1);
     expect(food).toMatch(/return \(\s*<>\s*<DishTile/);

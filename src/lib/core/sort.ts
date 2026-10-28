@@ -127,6 +127,9 @@ export const SHOPPING: Cmp<ShoppingLike>[] = [
 export const SHOP_GROUPS: Cmp<{ shop: string | null; count: number }>[] = [first((g) => g.shop), descNum((g) => g.count), byName((g) => g.shop)];
 
 /** Läden (Auswahl, Einstellungen): meistgenutzt → Name */
+/** Aussuchen „Oft bei <Laden>“: im Drogerie-Laden Drogerie zuerst (`vorn`), dann was ihr dort am meisten kauft */
+export const OFT_BEI: Cmp<{ score: number; vorn: boolean }>[] = [first((x) => x.vorn), descNum((x) => x.score)];
+
 export const SHOPS: Cmp<{ name: string; uses: number }>[] = [descNum((s) => s.uses), byName((s) => s.name)];
 
 // --- Vorrat -----------------------------------------------------------------------

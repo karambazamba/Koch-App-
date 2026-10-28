@@ -5,7 +5,7 @@
 import { readFileSync } from "node:fs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ListItem, ShoppingListStore } from "@/lib/einkauf/listModel";
-import { abteilungsGruppen, grundsachen, ladenGruppen } from "@/lib/einkauf/kacheln/gruppen";
+import { grundsachen } from "@/lib/einkauf/kacheln/gruppen";
 import { isShopOverviewQuestion, parseShopRule, shopForItem, shopOverview, shopRuleReply } from "@/lib/einkauf/shopRules";
 import { PRUEFSAETZE } from "@/lib/begleitung/pruefstand/saetze";
 import { kontext, letzte, rufe } from "../begleitung/werkzeugKontext";
@@ -23,17 +23,13 @@ beforeEach(() => {
 });
 
 describe("Liste aufgeräumt", () => {
-  it("„Alle“ nach Laden in der Reihenfolge von „Meine Läden“, „Egal wo“ zuletzt", () => {
-    const g = ladenGruppen([item("Milch", "Rewe"), item("Brot"), item("Äpfel", "Edeka"), item("Seife", "Rossmann"), item("Käse", "edeka")], ["Edeka", "Rewe"]);
-    expect(g.map((x) => [x.label, x.items.length])).toEqual([["Edeka", 2], ["Rewe", 1], ["Rossmann", 1], ["Egal wo", 1]]);
+  it("Karten nach Laden in der Reihenfolge von „Meine Läden“, andere danach (Einkauf neu)", async () => {
+    const { ladenKarten } = await import("@/lib/einkauf/seite/karten");
+    const k = ladenKarten([item("Milch", "Rewe"), item("Brot"), item("Äpfel", "Edeka"), item("Seife", "Rossmann"), item("Käse", "edeka")], ["Edeka", "Rewe"]);
+    expect(k.map((x) => [x.shop, x.items.length])).toEqual([["Edeka", 2], ["Rewe", 1], ["Rossmann", 1]]);
   });
 
-  it("Laden gewählt: nach Abteilung im Laufweg, leere Abteilungen fallen weg", () => {
-    const g = abteilungsGruppen([item("Milch", "", "kuehlregal"), item("Äpfel", "", "obst-gemuese"), item("Wasser", "", "getraenke")]);
-    expect(g.map((x) => x.label)).toEqual(["Obst & Gemüse", "Kühlregal", "Getränke"]);
-  });
-
-  it("Grundsachen aus Rezepten in die Karte, selbst Eingetragenes und „immer auf die Liste“ nicht", () => {
+  it("Grundsachen aus Rezepten stehen nicht herum (unter Aussuchen · Für eure Woche), selbst Eingetragenes und „immer auf die Liste“ nicht", () => {
     const r = grundsachen([item("Salz"), item("Pfeffer", "", "vorrat", { manualId: "m1" }), item("Mehl"), item("Tomaten")], ["mehl"]);
     expect(r.karte.map((i) => i.name)).toEqual(["Salz"]);
     expect(r.liste.map((i) => i.name)).toEqual(["Pfeffer", "Mehl", "Tomaten"]);

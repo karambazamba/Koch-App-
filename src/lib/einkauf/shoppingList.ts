@@ -37,6 +37,6 @@ export {
   updateManualItem,
 } from "@/lib/einkauf/listEdits";
 export { SHOP_SUGGESTIONS, addShop, allShops, clearItemShop, removeShop, setItemShop } from "@/lib/einkauf/shops";
-export { learnQuestion, noteShopCheck, removeShopRule, rulesByShop, setShopRule, shopForItem } from "@/lib/einkauf/shopRules";
+export { noteShopCheck, removeShopRule, rulesByShop, setShopRule, shopForItem } from "@/lib/einkauf/shopRules";
 export { addStaple, dueStaples, isStaple, removeStaple, rhythmLabel, stapleInterval } from "@/lib/einkauf/staples";
 export { buildShoppingList, shoppingListText } from "@/lib/einkauf/buildList";

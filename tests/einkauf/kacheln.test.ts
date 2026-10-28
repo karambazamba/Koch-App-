@@ -1,10 +1,11 @@
-// Einkauf wie Bring (Tafel 35): Symbole, Chips, Laufweg, Katalog, gemerkter Chip.
+// Einkauf wie Bring (Tafel 35): Symbole, Laufweg, „Zuletzt gekauft“, gemerkter Laden.
+// (Chips, Filter und der alte Katalog sind mit „Einkauf neu“ weg – Aussuchen: tests/einkauf/aussuchen.test.ts.)
 import { describe, expect, it } from "vitest";
 import { SYMBOLS, symbolFor } from "@/lib/einkauf/kacheln/symbols";
-import { BASICS } from "@/lib/einkauf/kacheln/basics";
-import { COMPACT_FROM, catalog, filterByChip, isCompact, recentBought, resolveChip, shopChips, walkOrder } from "@/lib/einkauf/kacheln/view";
+import { KATALOG_ALLE } from "@/lib/einkauf/aussuchen/katalog";
+import { recentBought, walkOrder } from "@/lib/einkauf/kacheln/view";
 import { migrateShopView } from "@/lib/einkauf/shopMode";
-import type { ListItem, Section, Staple } from "@/lib/einkauf/shoppingList";
+import type { ListItem, Section } from "@/lib/einkauf/shoppingList";
 
 const item = (name: string, more: Partial<ListItem> = {}): ListItem => ({
   key: `k-${name}`,
@@ -19,7 +20,14 @@ const item = (name: string, more: Partial<ListItem> = {}): ListItem => ({
   hidden: false,
   ...more,
 });
-const staple = (name: string, section: Section, active = true): Staple => ({ id: name, name, amount: "", section, purchases: [], intervalDays: 7, active });
+
+/** Grundsortiment mit eigener Zeichnung (früher kacheln/basics.ts) */
+const GRUNDSORTIMENT = [
+  "Milch", "Käse", "Butter", "Joghurt", "Quark", "Eier", "Sahne", "Brot", "Brötchen", "Toast", "Kuchen",
+  "Äpfel", "Bananen", "Zitronen", "Orangen", "Trauben", "Beeren", "Avocado", "Tomaten", "Gurke", "Zucchini", "Paprika", "Karotten", "Zwiebeln", "Knoblauch", "Kartoffeln", "Salat", "Brokkoli", "Champignons", "Petersilie",
+  "Hähnchen", "Hackfleisch", "Wurst", "Aufschnitt", "Lachs", "Nudeln", "Reis", "Mehl", "Zucker", "Öl", "Salz", "Pfeffer", "Dosentomaten", "Müsli", "Kaffee", "Tee", "Schokolade", "Kekse", "Honig",
+  "Wasser", "Saft", "Bier", "Wein", "Eis", "Pizza", "Klopapier", "Küchenrolle", "Windeln", "Spülmittel", "Waschmittel", "Zahnpasta", "Shampoo",
+];
 
 describe("Symbole", () => {
   it("kennt die häufigsten Artikel", () => {
@@ -53,42 +61,15 @@ describe("Symbole", () => {
     expect(symbolFor("  ")).toBeNull();
   });
 
-  it("jedes Grundsortiment hat ein Symbol, jedes Symbol wird gebraucht", () => {
-    const used = new Set(BASICS.map((b) => symbolFor(b.name)));
-    expect(BASICS.filter((b) => !symbolFor(b.name)).map((b) => b.name)).toEqual([]);
+  it("jedes Grundsortiment hat ein Symbol und steht im Katalog, jedes Symbol wird gebraucht", () => {
+    expect(GRUNDSORTIMENT.filter((n) => !symbolFor(n))).toEqual([]);
+    expect(GRUNDSORTIMENT.filter((n) => !KATALOG_ALLE.includes(n))).toEqual([]);
+    const used = new Set(KATALOG_ALLE.map((n) => symbolFor(n)));
     expect(SYMBOLS.filter((s) => !used.has(s))).toEqual([]);
   });
 });
 
-describe("Chips und Filter", () => {
-  const open = [item("Milch", { shop: "Rewe" }), item("Brot", { shop: "Rewe" }), item("Windeln", { shop: "dm" }), item("Äpfel")];
-
-  it("Alle + Läden (meiste zuerst) + Ohne Laden", () => {
-    expect(shopChips(open).map((c) => `${c.label} ${c.count}`)).toEqual(["Alle 4", "Rewe 2", "dm 1", "Ohne Laden 1"]);
-  });
-
-  it("ohne Läden nur „Alle“", () => {
-    expect(shopChips([item("Milch")]).map((c) => c.id)).toEqual(["alle"]);
-  });
-
-  it("Läden mit anderer Schreibweise zählen zusammen", () => {
-    expect(shopChips([item("A", { shop: "Rewe" }), item("B", { shop: "rewe " })])[1]).toMatchObject({ label: "Rewe", count: 2 });
-  });
-
-  it("filtert nach Chip", () => {
-    expect(filterByChip(open, "alle")).toHaveLength(4);
-    expect(filterByChip(open, "ohne").map((i) => i.name)).toEqual(["Äpfel"]);
-    expect(filterByChip(open, "laden:REWE").map((i) => i.name)).toEqual(["Milch", "Brot"]);
-  });
-
-  it("gemerkter Chip: alter „Nach Laden“ = meiste Sachen, verschwundener Laden = Alle", () => {
-    expect(resolveChip("meist", open)).toBe("laden:Rewe");
-    expect(resolveChip("meist", [item("Milch")])).toBe("alle");
-    expect(resolveChip("laden:dm", open)).toBe("laden:dm");
-    expect(resolveChip("laden:Aldi", open)).toBe("alle");
-    expect(resolveChip("ohne", open)).toBe("ohne");
-  });
-
+describe("Gemerkter Laden (pro Gerät)", () => {
   it("Speicher v1 → v2 ohne Verlust", () => {
     expect(migrateShopView({ version: 1, view: "laden" })).toEqual({ version: 2, chip: "meist" });
     expect(migrateShopView({ version: 1, view: "abteilung" })).toEqual({ version: 2, chip: "alle" });
@@ -105,32 +86,8 @@ describe("Kacheln", () => {
     expect(walkOrder(items).map((i) => i.name)).toEqual(["Äpfel", "Milch", "Wasser"]);
   });
 
-  it("ab 24 Artikeln kleinere Kacheln", () => {
-    expect(isCompact(COMPACT_FROM - 1)).toBe(false);
-    expect(isCompact(COMPACT_FROM)).toBe(true);
-  });
-
   it("Zuletzt gekauft: nur Abgehaktes, ohne Doppelte", () => {
     const weeks = [[item("Milch", { checked: true }), item("Brot")], [item("milch", { checked: true }), item("Käse", { checked: true })]];
     expect(recentBought(weeks).map((i) => i.name)).toEqual(["Milch", "Käse"]);
-  });
-});
-
-describe("Katalog „Mehr hinzufügen“", () => {
-  const basics = [
-    { name: "Milch", section: "kuehlregal" as Section },
-    { name: "Äpfel", section: "obst-gemuese" as Section },
-    { name: "Kaffee", section: "vorrat" as Section },
-  ];
-
-  it("Oft gekauft zuerst, dann Laufweg; auf der Liste = ausgewählt", () => {
-    const list = catalog({ staples: [staple("Kaffee", "vorrat"), staple("Alt", "vorrat", false)], recent: [item("Brot", { section: "brot", checked: true })], open: [item("Milch")], basics });
-    expect(list.map((e) => `${e.name}${e.often ? "*" : ""}${e.on ? "✓" : ""}`)).toEqual(["Kaffee*", "Brot*", "Äpfel", "Milch✓"]);
-  });
-
-  it("Suche nach Namensteil", () => {
-    expect(catalog({ staples: [], recent: [], open: [], basics, query: "ApF" }).map((e) => e.name)).toEqual([]);
-    expect(catalog({ staples: [], recent: [], open: [], basics, query: "äpf" }).map((e) => e.name)).toEqual(["Äpfel"]);
-    expect(catalog({ staples: [], recent: [], open: [], basics, query: "kaf" }).map((e) => e.name)).toEqual(["Kaffee"]);
   });
 });

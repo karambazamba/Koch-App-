@@ -347,11 +347,11 @@ export function shopRuleRule(ctx: RuleContext, t: string): boolean {
   return true;
 }
 
-/** „Ich bin bei REWE“, „Ich geh zu Lidl einkaufen“ → Einkaufsmodus für diesen Laden */
+/** „Ich bin bei REWE“, „Ich geh zu Lidl einkaufen“ → Laden-Seite, der Einkauf beginnt */
 export function shopModeRule(ctx: RuleContext, t: string): boolean {
   const shop = shopModeRequest(t, allShops(loadShoppingSettings()));
   if (!shop) return false;
-  localReplyOf(ctx)(t, `Viel Spaß bei ${shop}. Ich zeig dir, was es dort gibt, und merk mir, was du mitnimmst.`);
+  localReplyOf(ctx)(t, `Viel Spaß bei ${shop}. Hier ist, was du dort holen wolltest.`);
   ctx.router.push(shopModeHref(shop));
   ctx.onClose();
   return true;

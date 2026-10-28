@@ -6,9 +6,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ListItem, ShoppingListStore } from "@/lib/einkauf/listModel";
 import { buildShoppingList } from "@/lib/einkauf/buildList";
 import { migrateStore } from "@/lib/einkauf/listMigration";
-import { einsortiertText, ohneLaden, ohneLadenSatz, sortiertText, sortierVorschlaege } from "@/lib/einkauf/einsortieren";
+import { einsortiertText, ohneLaden, sortiertText, sortierVorschlaege } from "@/lib/einkauf/einsortieren";
 import { ladenMerken } from "@/lib/einkauf/meineLaeden";
-import { shopModeLists } from "@/lib/einkauf/shopMode";
 import { at, fakeWindow } from "../helpers";
 
 const KEY = "wasgibts.einkaufsliste";
@@ -24,27 +23,18 @@ beforeEach(() => {
   w = fakeWindow();
 });
 
-describe("Zwei klare Momente", () => {
-  it("Antippen in der Liste öffnet „Wo kaufst du das?“ und ändert nie den gekauft-Status", () => {
-    const src = readFileSync("src/components/einkauf/ShoppingListView.tsx", "utf8");
-    expect(src).toMatch(/onTap=\{\(\) => setSorting\(\{ item, week \}\)\}/);
-    expect(src).not.toMatch(/onTap=\{\(\) => toggle/);
-    // Keine Häkchen-Kachel (role=checkbox) in der Liste: abgehakte Sachen nur blass
-    expect(src).not.toMatch(/checked=\{item\.checked\}/);
-    expect(src).toMatch(/faded=\{item\.checked\}/);
-    // Abhaken zu Hause nur über „Schon gekauft“ im Fenster
-    expect(src).toMatch(/onBought=\{\(\) => \{\s*toggle\(sorting\.week, sorting\.item\)/);
-    expect(src).toContain("Antippen: Laden wählen. Abhaken im Laden.");
-    expect(src).not.toContain("Antippen: gekauft");
+describe("Zwei klare Momente (seit „Einkauf neu“: Laden-Seite statt Einkaufsmodus)", () => {
+  it("„Noch ohne Laden“: Antippen öffnet „Wo kaufst du das?“ und ändert nie den gekauft-Status", () => {
+    const src = readFileSync("src/components/einkauf/EinkaufSeite.tsx", "utf8");
+    expect(src).toMatch(/onTap=\{\(item\) => !zeigBeispiel && setSorting\(item\)\}/);
+    expect(src).not.toMatch(/toggleChecked/);
   });
 
-  it("Einkaufsmodus: Antippen = gekauft (wie bisher)", () => {
-    const src = readFileSync("src/components/einkauf/ShopMode.tsx", "utf8");
-    expect(src).toMatch(/onToggle=\{\(\) => tick\(item\)\}/);
-    expect(src).toMatch(/toggleChecked\(data\.weekStart, item, todayIso\)/);
-    const lists = shopModeLists([item("Spinat", { shop: "Rewe" }), item("Brot"), item("Salz", { anywhere: true }), item("Seife", { shop: "dm" })], "Rewe");
-    expect(lists.here.map((i) => i.name)).toEqual(["Spinat"]);
-    expect(lists.anywhere.map((i) => i.name)).toEqual(["Brot", "Salz"]);
+  it("Laden-Seite: der Kreis = gekauft, zu Hause wie im Laden", () => {
+    const src = readFileSync("src/components/einkauf/LadenSeite.tsx", "utf8");
+    expect(src).toMatch(/onTick=\{\(\) => tick\(item\)\}/);
+    expect(src).toMatch(/toggleChecked\(weekStart, item, todayIso\)/);
+    expect(src).toMatch(/role="checkbox"/);
   });
 });
 
@@ -155,28 +145,23 @@ describe("Mia sortiert", () => {
     expect(sortierVorschlaege([item("Bio Cherrytomaten")], { itemShops: { tomaten: "Rewe", cherrytomaten: "Lidl" } })).toEqual([]);
   });
 
-  it("Texte ohne Druck", () => {
-    expect(ohneLadenSatz(6)).toBe("6 Sachen noch ohne Laden.");
-    expect(ohneLadenSatz(1)).toBe("1 Sache noch ohne Laden.");
-  });
 });
 
 describe("Oberfläche", () => {
-  it("Zone „Noch ohne Laden“ oben, Mia-Zeile nur, wenn sie etwas kennt; Fenster über ui/Sheet", () => {
-    const src = readFileSync("src/components/einkauf/Einsortieren.tsx", "utf8");
-    expect(src).toMatch(/import \{ Sheet \} from "@\/components\/ui\/Sheet"/);
-    expect(src).toContain("Antippen = Laden wählen");
-    expect(src).toMatch(/sortierbar > 0 &&/);
-    expect(src).toMatch(/\{helper\} sortiert/);
-    expect(src).toContain("Schon gekauft");
-    const view = readFileSync("src/components/einkauf/ShoppingListView.tsx", "utf8");
-    expect(view.indexOf("<OhneLadenZone")).toBeLessThan(view.indexOf('section("Jetzt mitnehmen"'));
+  it("„Noch ohne Laden“ unter den Läden, „Mia sortiert“ nur, wenn sie etwas kennt; Fenster über ui/Sheet", () => {
+    expect(readFileSync("src/components/einkauf/Einsortieren.tsx", "utf8")).toMatch(/import \{ Sheet \} from "@\/components\/ui\/Sheet"/);
+    const zone = readFileSync("src/components/einkauf/seite/OhneLaden.tsx", "utf8");
+    expect(zone).toMatch(/\{sortierer && \(/);
+    expect(zone).toMatch(/\{sortierer\} sortiert/);
+    expect(zone).toContain('id="ohne-laden"');
+    const view = readFileSync("src/components/einkauf/EinkaufSeite.tsx", "utf8");
+    expect(view.indexOf("<LadenKarteView")).toBeLessThan(view.indexOf("<OhneLadenZone"));
+    expect(view).toMatch(/sortierer=\{kennt && !zeigBeispiel \? helperName\(profile\) : null\}/);
   });
 
-  it("Startseiten-Kachel: „Sortieren ›“ öffnet die Liste an der Zone", () => {
+  it("Startseiten-Kachel: „n ohne Laden“ öffnet „Einkauf“ bei „Noch ohne Laden“", () => {
     const src = readFileSync("src/components/heute/HomeTiles.tsx", "utf8");
     expect(src).toContain('href="/einkaufsliste#ohne-laden"');
     expect(src).toContain("Sortieren ›");
-    expect(readFileSync("src/components/einkauf/Einsortieren.tsx", "utf8")).toContain('id="ohne-laden"');
   });
 });

@@ -279,7 +279,7 @@ export function jetztTopics(x: JetztInput): JetztTopic[] {
   // Heimweg-Einkauf (vor dem Kochen): ohne Zahl, nur der Laden und was fürs Essen fehlt
   const forDish = dishLater && x.dish && !x.dish.ready ? x.dish.missing.filter((m) => !x.shop?.names.some((n) => n.toLowerCase() === m.toLowerCase())) : [];
   if (x.shop && x.shop.names.length + forDish.length >= 2 && x.minutes >= 15 * 60 && x.minutes < 19 * 60 + 30)
-    add({ id: `einkauf:${x.today}:${x.shop.shop}`, kind: "einkauf", title: `Auf dem Heimweg bei ${x.shop.shop}?`, detail: [...x.shop.names.slice(0, 3), ...forDish.map((m) => `${m} fürs Essen`)].join(", "), score: dishLater ? 86 : 58, target: { href: x.demo ? "/einkaufsliste" : `/einkaufsliste/laden?name=${encodeURIComponent(x.shop.shop)}` }, button: "Liste", gentle: true });
+    add({ id: `einkauf:${x.today}:${x.shop.shop}`, kind: "einkauf", title: `Auf dem Heimweg bei ${x.shop.shop}?`, detail: [...x.shop.names.slice(0, 3), ...forDish.map((m) => `${m} fürs Essen`)].join(", "), score: dishLater ? 86 : 58, target: { href: x.demo ? "/einkaufsliste" : `/einkaufsliste/laden?name=${encodeURIComponent(x.shop.shop)}&unterwegs=1` }, button: "Liste", gentle: true });
 
   // Absprache bei Abendterminen (ab 18 Uhr) mit Kindern im Haushalt
   if (x.kids && x.minutes >= 12 * 60 && !night)

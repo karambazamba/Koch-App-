@@ -162,9 +162,6 @@ export function noteShopCheck(item: string, shop: string): "frage" | null {
   return ask ? "frage" : null;
 }
 
-/** „Butter kaufst du meist bei Lidl. Soll ich mir das merken?“ */
-export const learnQuestion = (item: string, shop: string) => `${cap(item.trim())} kaufst du meist bei ${shop.trim()}. Soll ich mir das merken?`;
-
 /** Ohne KI: „Tomaten kaufe ich immer bei Rewe“, „Butter nur bei Lidl“ → Regel; „… nicht mehr bei Rewe“, „Milch egal wo“ → weg */
 export function parseShopRule(text: string): { item: string; shop: string } | null {
   const t = text.trim().replace(/[.!]+$/, "");

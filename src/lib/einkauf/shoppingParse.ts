@@ -67,6 +67,10 @@ export function parseShoppingText(text: string, shops: string[] = []): ParsedSho
     const amount = parsed && parsed.amount !== null ? `${String(parsed.amount).replace(".", ",")}${parsed.unit ? ` ${parsed.unit}` : ""}` : parsed?.unit ?? "";
     items.push({ name, amount, shop });
   }
+  // „Tomaten und Gurke bei Rewe“: ein Laden ganz am Ende gilt für alles davor (nur ohne Komma –
+  // „Milch, Windeln und Müsli von Rossmann“ bleibt nur das Müsli)
+  const last = items[items.length - 1];
+  if (items.length > 1 && last.shop && !core.includes(",") && items.slice(0, -1).every((i) => !i.shop)) return items.map((i) => ({ ...i, shop: last.shop }));
   return items;
 }
 

@@ -1,7 +1,7 @@
-import { ShoppingListView } from "@/components/einkauf/ShoppingListView";
+import { EinkaufSeite } from "@/components/einkauf/EinkaufSeite";
 
-export const metadata = { title: "Einkaufsliste" };
+export const metadata = { title: "Einkauf" };
 
-export default function EinkaufslistePage() {
-  return <ShoppingListView />;
+export default function EinkaufPage() {
+  return <EinkaufSeite />;
 }

@@ -1,24 +1,21 @@
 "use client";
 
-// Einkauf: erst einsortieren, dann einkaufen (Tafel 99). Das Fenster „Wo
-// kaufst du das?“ (Antippen eines Artikels zu Hause – nie „gekauft“): Kopf mit
+// Das Fenster „Wo kaufst du das?“ (Tafel 99/110): Chip in „Noch ohne Laden“
+// antippen bzw. auf der Laden-Seite lange drücken („anderer Laden“). Kopf mit
 // Symbol, Name, Menge · für Gericht; „Meine Läden“ als große Knöpfe (2
 // Spalten, Farbpunkt, aktueller bzw. vorgeschlagener Laden hervorgehoben),
 // bewusst „Egal wo“, Häkchen „<Artikel> immer bei <Laden>“; unten klein
-// „Schon gekauft · Ändern · Löschen“. Dazu die Zone „Noch ohne Laden“ mit der
-// Mia-Zeile „6 Sachen noch ohne Laden.“ + „Mia sortiert“.
+// „Schon gekauft · Ändern“ (nur Laden-Seite) und „Löschen“.
 
-import { useState, type ReactNode } from "react";
+import { useState } from "react";
 import { X } from "lucide-react";
 import { Sheet } from "@/components/ui/Sheet";
-import { ICON_BUTTON, SECTION_TITLE, buttonClass } from "@/components/ui/styles";
+import { ICON_BUTTON } from "@/components/ui/styles";
 import { ShopDot } from "@/components/einkauf/MeineLaeden";
 import { ItemSymbol } from "@/components/einkauf/kacheln/ItemSymbol";
-import { BegleitungAvatar } from "@/components/begleitung/BegleitungAvatar";
 import { symbolFor } from "@/lib/einkauf/kacheln/symbols";
 import { shopTone } from "@/lib/einkauf/shopGroups";
 import { FRAGE_LAEDEN } from "@/lib/einkauf/meineLaeden";
-import { ohneLadenSatz } from "@/lib/einkauf/einsortieren";
 import type { ListItem } from "@/lib/einkauf/shoppingList";
 
 const lower = (s: string) => s.trim().toLowerCase();
@@ -44,8 +41,10 @@ export function WoKaufstDuSheet({
   vorschlag: string | null;
   products: Record<string, string>;
   onPick: (shop: string, immer: boolean) => void;
-  onBought: () => void;
-  onEdit: () => void;
+  /** „Schon gekauft“ (Laden-Seite) */
+  onBought?: () => void;
+  /** „Ändern“ (Laden-Seite) */
+  onEdit?: () => void;
   remove: { label: string; onClick: () => void };
   onClose: () => void;
 }) {
@@ -108,43 +107,20 @@ export function WoKaufstDuSheet({
         {current ? `${item.name} immer bei ${current}` : `${item.name} immer dort`}
       </label>
       <div className="flex gap-2 pb-2">
-        <button type="button" onClick={onBought} className={SMALL} data-schon-gekauft>
-          {item.checked ? "Doch kaufen" : "Schon gekauft"}
-        </button>
-        <button type="button" onClick={onEdit} className={SMALL}>
-          Ändern
-        </button>
+        {onBought && (
+          <button type="button" onClick={onBought} className={SMALL} data-schon-gekauft>
+            {item.checked ? "Doch kaufen" : "Schon gekauft"}
+          </button>
+        )}
+        {onEdit && (
+          <button type="button" onClick={onEdit} className={SMALL}>
+            Ändern
+          </button>
+        )}
         <button type="button" onClick={remove.onClick} className={SMALL}>
           {remove.label}
         </button>
       </div>
     </Sheet>
-  );
-}
-
-/** Zone „Noch ohne Laden“ (gestrichelt, warm), darüber die Mia-Zeile mit „Mia sortiert“ (nur, wenn sie etwas kennt) */
-export function OhneLadenZone({ count, sortierbar, helper, onSort, children }: { count: number; sortierbar: number; helper: string; onSort: () => void; children: ReactNode }) {
-  if (!count) return null;
-  return (
-    <>
-      {sortierbar > 0 && (
-        <div className="flex items-center gap-2.5 rounded-card bg-surface px-3 py-2 shadow-card" data-mia-sortiert-zeile>
-          <BegleitungAvatar size={26} zustand="ruhig" />
-          <p className="min-w-0 flex-1 text-[15px] font-semibold">{ohneLadenSatz(count)}</p>
-          <button type="button" onClick={onSort} className={`${buttonClass("primary", "sm")} shrink-0`} data-mia-sortiert>
-            {helper} sortiert
-          </button>
-        </div>
-      )}
-      <section id="ohne-laden" aria-label="Noch ohne Laden" className="flex scroll-mt-4 flex-col gap-2 rounded-card border-2 border-dashed border-accent/50 bg-accent-soft/40 p-3" data-ohne-laden>
-        <div className="flex items-baseline gap-2 px-1">
-          <h2 className={`${SECTION_TITLE} min-w-0 truncate`}>
-            Noch ohne Laden <span className="font-semibold text-muted tabular-nums">{count}</span>
-          </h2>
-          <span className="ml-auto shrink-0 text-[13px] font-bold text-accent-strong">Antippen = Laden wählen</span>
-        </div>
-        {children}
-      </section>
-    </>
   );
 }
