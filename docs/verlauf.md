@@ -3519,8 +3519,8 @@ Fehler in `docs/aufraeumen-nachher.md`.
   118; jede Kachel füllt ihre Fläche, Rest als „+n“.
 - Standard je Haushalt (Tafel 119) für neue Nutzer und Beispiel-Tag; Timer
   ohne festen Platz (XS oben, solange er läuft); Haushaltswechsel überschreibt
-  keine eigene Anordnung. Beispiel-Inhalte wie Tafel 119 (Räume nach A-021:
-  „Arbeit“ = Schild „Geschäftlich“, „Ich“ = Familie ohne Schild).
+  keine eigene Anordnung. Beispiel-Inhalte wie Tafel 119 („Arbeit“ = blaues
+  Schild, „Ich“ = Familie ohne Schild).
 - Wetter mit Himmel (Tafel 120): kleine stille Szene je Wetterlage rechts
   oben (ersetzt Muster und Windsack auf der Kachel), kurzer Satz ≤ 22 Zeichen.
 - Speicher: Startseite v9 (Migration L → M, nicht erlaubte Größen auf die

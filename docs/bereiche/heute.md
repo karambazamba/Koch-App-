@@ -231,7 +231,7 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
   weißes Feld je Kachel, feine Trennlinien, Zeilen 30 px (`data-zeile`, die
   ganze Zeile ist tippbar), Titel 13,5 px, Uhrzeit 13,5 px fett in fester
   Breite (tabular-nums), Nebeninfo 11 px. S und M sind gleich hoch: je 3
-  Zeilen (`ROW_COUNT`), mit „Geschäftlich · 5 für morgen“ 2; Rest „+N weitere“
+  Zeilen (`ROW_COUNT`), mit „Arbeit · 5 für morgen“ 2; Rest „+N weitere“
   (halb breit „+N“). Kopf auf allen Kacheln gleich (26 px, Titel 11 px,
   „+N weitere“ 12,5 px neben dem Plus), unten nichts; Abstand der Kacheln 8 px.
 - Termine (`lib/heute/termineKachel.ts`, `termineTile`): ganztägige oben, dann
@@ -459,7 +459,7 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
 
   Nur was heute noch kommt; weniger als 2 → Beispiele für morgen mit dem Plan
   von morgen („Morgen · Sa“). Drei Beispiel-Aufgaben je Haushalt (Tafel 119;
-  die mittlere mit Schild „Geschäftlich“: Elternbrief unterschreiben ·
+  die mittlere mit Schild „Arbeit“: Elternbrief unterschreiben ·
   Steuerberater anrufen · Geschenk für Oma; zu zweit Urlaub buchen ·
   Präsentation fertig · Mama anrufen; allein Steuererklärung · Bericht
   schicken · Jana zurückrufen; am Wochenende/Feiertag „diese Woche“, nie

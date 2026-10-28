@@ -189,7 +189,7 @@ export function demoDay(date: string, haushalt: Haushalt = "familie"): DemoTermi
   return haushalt === "familie" ? DEMO_DAYS[art] : DEMO_DAYS_FOR[haushalt][art];
 }
 
-/** Beispiel-Aufgaben je Haushalt (Tafel 119): die mittlere ist geschäftlich (Schild „Geschäftlich“) */
+/** Beispiel-Aufgaben je Haushalt (Tafel 119): die mittlere ist geschäftlich (Schild „Arbeit“) */
 const DEMO_AUFGABEN: Record<Haushalt, [string, string, string]> = {
   familie: ["Elternbrief unterschreiben", "Steuerberater anrufen", "Geschenk für Oma"],
   paar: ["Urlaub buchen", "Präsentation fertig", "Mama anrufen"],
