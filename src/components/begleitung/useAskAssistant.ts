@@ -11,6 +11,7 @@ import { useState, type Dispatch, type SetStateAction } from "react";
 import { askAssistant, BegleitungUnavailable, commitOps, runInstantOps, unavailableText } from "@/lib/begleitung/client";
 import { isSafeOp, noteMiaDone } from "@/lib/begleitung/miaDone";
 import { isImHausFrage } from "@/lib/vorrat/reinsprechen";
+import { isEinkaufFrage } from "@/lib/einkauf/einsprechen";
 import { doneCount, doneGroups, doneSummary, shortDoneReply, type DoneGroup } from "@/lib/begleitung/uebersicht";
 import { queueForLater } from "@/lib/begleitung/nachholen";
 import type { AssistantErrorCode } from "@/lib/begleitung/protocol";
@@ -112,8 +113,8 @@ export function useAskAssistant({ data, today, ready, chat, setChat, setInput, s
       let done: (() => void) | null = null;
       // Mehreres auf einmal: nur „Erledigt.“ + kompakte Übersicht (die KI bekommt die Liste im Verlauf)
       let overview: DoneGroup[] | null = null;
-      // „Was ist da?“ (Tafel 102): Im Haus erst als „Hab ich so verstanden:“, nie sofort
-      if (result.ops.length && !chat.proposal && !isImHausFrage(question) && result.ops.every(isSafeOp)) {
+      // „Was ist da?“ (Tafel 102) und „Einsprechen“ (Tafel 110): erst als Vorschau, nie sofort
+      if (result.ops.length && !chat.proposal && !isEinkaufFrage(question) && !isImHausFrage(question) && result.ops.every(isSafeOp)) {
         const committed = commitOps(data, result.ops, new Set(result.ops.map((op) => op.id)), question);
         noteMiaDone(result.ops, committed.undo);
         done = committed.undo;

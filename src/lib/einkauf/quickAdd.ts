@@ -25,6 +25,14 @@ function knownInHousehold(name: string, settings: Pick<ShoppingSettings, "produc
   );
 }
 
+/** Sicher eine Sache für die Liste: Lebensmittel, Abteilungs-Stichwort, Drogerie/Haushalt oder schon bekannt */
+export function istEinkaufSache(name: string, settings: Pick<ShoppingSettings, "products" | "itemShops" | "staples">): boolean {
+  if (MORE_PRODUCTS.test(name) || findFood(name) || sectionFor(name) !== "sonstiges" || knownInHousehold(name, settings)) return true;
+  const recognized = recognizeFood(name);
+  // Zusammengesetzt mit bekanntem Ende ("Kirschtomaten")
+  return recognized.known && recognized.match === null;
+}
+
 /** Text zerlegen: sicher erkannte Artikel und unsichere (mit Vorschlag) */
 export function parseQuickAdd(
   text: string,
@@ -35,16 +43,11 @@ export function parseQuickAdd(
   for (const parsed of parseShoppingText(text, settings.shops)) {
     const name = parsed.name;
     const section = sectionFor(name);
-    if (MORE_PRODUCTS.test(name) || findFood(name) || section !== "sonstiges" || knownInHousehold(name, settings)) {
+    if (istEinkaufSache(name, settings)) {
       items.push({ ...parsed, section });
       continue;
     }
     const recognized = recognizeFood(name);
-    // Zusammengesetzt mit bekanntem Ende ("Kirschtomaten") → so übernehmen
-    if (recognized.known && recognized.match === null) {
-      items.push({ ...parsed, section });
-      continue;
-    }
     const suggestion = recognized.known ? recognized.match!.food.singular : recognized.suggestion?.singular ?? null;
     unsure.push({ ...parsed, suggestion: suggestion && suggestion.toLowerCase() !== name.toLowerCase() ? suggestion : null });
   }

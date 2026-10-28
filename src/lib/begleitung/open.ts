@@ -5,12 +5,13 @@
 // "spontan" = Spontan kochen (mit dem, was da ist; früher "reste"),
 // "voice" = Mikrofon startet direkt; "wochencheck" = Wochencheck (eigenes
 // Fenster, Tafel 36); "imhaus" = „Was ist da?“ (Mia hört zu und sortiert in
-// „Im Haus“ ein, Tafel 102); `ask` = gleich fragen. Ein „＋“ holt nie Mia, sondern
+// „Im Haus“ ein, Tafel 102); "einkauf" = „Einsprechen“ (Mia hört zu und macht
+// die Einkaufsliste daraus, Tafel 110); `ask` = gleich fragen. Ein „＋“ holt nie Mia, sondern
 // die Schnelleingabe (`core/schnelleingabe`).
 
 import { unlockSpeech } from "@/lib/begleitung/speech";
 
-type HelperMode = "spontan" | "voice" | "wochencheck" | "kochtipp" | "imhaus";
+type HelperMode = "spontan" | "voice" | "wochencheck" | "kochtipp" | "imhaus" | "einkauf";
 
 type Detail = { mode?: HelperMode; ask?: string; filters?: string[] };
 

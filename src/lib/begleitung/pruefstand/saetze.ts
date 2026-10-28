@@ -35,6 +35,10 @@ export type PruefSatz = {
   laden?: string;
   /** Kein Name einer Sache (Im Haus, Einkauf) darf das enthalten – Satzteile sind keine Sachen (Tafel 102) */
   nieName?: string;
+  /** Genau so viele Einkaufs-Sachen (Einsprechen: nichts Falsches auf die Liste, Doppeltes einmal) */
+  anzahl?: number;
+  /** Eine Einkaufs-Sache trägt diese Menge („zwei Milch“ → „2“) */
+  menge?: string;
 };
 
 const S = (text: string, ops: string[], extra: Omit<PruefSatz, "text" | "ops"> = {}): PruefSatz => ({ text, ops, ...extra });
@@ -177,6 +181,19 @@ export const PRUEFSAETZE: PruefSatz[] = [
   S("[Im Haus] Gar nicht im Haus: Zucchini und Sahne", ["use_pantry"], { nieName: "im haus|nicht" }),
   S("[Im Haus] Wir haben noch Joghurt im Kühlschrank, aber kein Brot mehr", ["add_pantry", "use_pantry"], { alle: true, nieName: "kein|kühlschrank" }),
   S("[Im Haus] Äpfel, Bananen und zwei Gurken sind da", ["add_pantry"], { nieName: "sind da|zwei" }),
+  // Einkauf einsprechen (Tafel 110): nur Lebensmittel und Verbrauchsartikel, Füllwörter/Abbrüche/Smalltalk/Namen raus, Korrekturen, Mengen
+  S("[Einkauf] Äh Milch, Brot und ähm Eier", EINKAUF, { anzahl: 3, nieName: "äh" }),
+  S("[Einkauf] Milch, M…, Käse", EINKAUF, { anzahl: 2, nieName: "…|^m$" }),
+  S("[Einkauf] Sahne, Butter, nee, keine Sahne", EINKAUF, { anzahl: 1, nieName: "sahne|kein|nee" }),
+  S("[Einkauf] Milch, nee Hafermilch", EINKAUF, { anzahl: 1, nieName: "^milch$|nee" }),
+  S("[Einkauf] Zwei Milch und drei Joghurt", EINKAUF, { anzahl: 2, menge: "2", nieName: "zwei|drei" }),
+  S("[Einkauf] Klopapier, Windeln und Spülmittel", EINKAUF, { anzahl: 3 }),
+  S("[Einkauf] Brot, was noch, weiß ich nicht mehr, Butter", EINKAUF, { anzahl: 2, nieName: "weiß|noch" }),
+  S("[Einkauf] Mathis wollte Joghurt, und schönes Wetter heute übrigens", EINKAUF, { anzahl: 1, nieName: "mathis|wetter" }),
+  S("[Einkauf] Tomaten und Gurke bei Rewe", EINKAUF, { anzahl: 2, laden: "Rewe" }),
+  S("[Einkauf] Milch, Brot und noch mal Milch", EINKAUF, { anzahl: 2 }),
+  S("[Einkauf] Bananen, Äpfel, also das war's eigentlich", EINKAUF, { anzahl: 2, nieName: "war|eigentlich" }),
+  S("[Einkauf] Wir haben keine Windeln mehr und Kaffee ist alle", EINKAUF, { anzahl: 2, nieName: "kein|alle|mehr" }),
   S("Was anderes als Spaghetti bitte", ["app_command", "set_meal"]),
   S("Mach heute was Schnelles, wir haben wenig Zeit", ["set_meal", "app_command"]),
   S("Lisa mag keine Pilze mehr in Soßen, merk dir das", ["set_dislike", "antwort"]),
