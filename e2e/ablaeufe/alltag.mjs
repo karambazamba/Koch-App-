@@ -28,9 +28,10 @@ export const kalender = async (page, check) => {
 
 export const pinnwand = async (page, check) => {
   await family(page, "/pinnwand");
-  check(await page.getByText("Bin um 20 Uhr da").isVisible(), "Nachricht von Felix");
+  check(await page.getByRole("region", { name: "Kühlschranktür" }).isVisible(), "Kühlschranktür");
+  check(await page.getByText("Bin um 20 Uhr da").isVisible(), "Zettel von Felix (von gestern – bleibt)");
   await pinnwandSchreiben(page, "Pizza ist im Ofen");
-  check(await page.getByText("Pizza ist im Ofen", { exact: true }).first().isVisible(), "eigene Nachricht angeheftet");
+  check(await page.getByText("Pizza ist im Ofen", { exact: true }).first().isVisible(), "eigener Zettel angepinnt");
 };
 
 export const wetter = async (page, check) => {

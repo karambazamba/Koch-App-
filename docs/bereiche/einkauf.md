@@ -111,7 +111,8 @@ Einkaufsmodus für den Laden. Immer sichtbar (kein Baustein).
     man es antippt (`ladenMerken`).
   - Startseiten-Kachel: IMMER die Läden aus „Meine Läden“ als Zeilen
     (Streifen, 2 Symbole, Zahl; mit 0 nur Name + 0), S/M bis 3 + „+ Rossmann
-    1“, L alle; darunter leise „6 noch ohne Laden · Sortieren ›“ (öffnet die
+    1“, L alle; Kopf kurz „EINKAUF“ (nie abgeschnitten); darunter leise
+    „16 ohne Laden · Sortieren ›“, vollständig, notfalls zweizeilig (öffnet die
     Liste an der Zone, `#ohne-laden`). Der Symbol-Haufen (Variante A) ist
     weg. Ohne „Meine Läden“: eine neutrale Zeile „Liste“ mit allem ohne
     Laden; leere Liste: „Liste ist leer. …“ statt lauter Nullen.

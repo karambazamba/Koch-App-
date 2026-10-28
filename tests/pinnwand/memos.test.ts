@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addMemo, createMemo, formatDauer, householdNames, memoAlive, memoPlayRequest, memoToPlay, memoUnheard, pickMemoMime, pruneMemos, resample, sanitizeMemo, setMemoHeard, toggleMemoReaction, visibleMemos, WAVE_BARS } from "@/lib/pinnwand";
+import { addMemo, createMemo, formatDauer, householdNames, memoAlive, memoPlayRequest, memoToPlay, memoUnheard, pickMemoMime, resample, updateMemo, archivedMemos, sanitizeMemo, setMemoHeard, toggleMemoReaction, visibleMemos, WAVE_BARS } from "@/lib/pinnwand";
 import { migratePinStore } from "@/lib/pinnwand/store";
 import { backupSummary, createBackup, parseBackup, restoreBackup } from "@/lib/core/backup";
 import { now } from "@/lib/core/now";
@@ -11,23 +11,29 @@ const memoAt = (iso: string, author = "Lisa", dauer = 12.4) => {
   return createMemo({ author, dauer, mime: "audio/mp4", wave: [0.1, 0.5, 0.9] });
 };
 
-describe("Sprachnachrichten: Verschwinden", () => {
+describe("Sprachnachrichten: bleiben (Kühlschranktür)", () => {
   const household = ["Felix", "Lisa", "Jonne"];
 
-  it("ungehört nach 24 Std. weg (ab der Aufnahme)", () => {
+  it("ungehört nach 24 Std. noch da – erst nach 7 Tagen leise ins Archiv", () => {
     const m = memoAt("2026-10-20T09:00");
     const t0 = new Date(m.erstellt).getTime();
-    expect(memoAlive(m, t0 + 23 * H + 59 * 60_000)).toBe(true);
-    expect(memoAlive(m, t0 + 24 * H)).toBe(false);
+    expect(memoAlive(m, t0 + 25 * H)).toBe(true);
+    expect(memoAlive(m, t0 + 7 * 24 * H - 1)).toBe(true);
+    expect(memoAlive(m, t0 + 7 * 24 * H)).toBe(false);
+    expect(archivedMemos([m], t0 + 7 * 24 * H).map((x) => x.id)).toEqual([m.id]);
   });
 
-  it("„alle gehört“ verlängert nichts und verkürzt nichts – 24 Std. ab der Aufnahme", () => {
+  it("angehört + Erledigt: 24 Std. blass, dann ins Archiv; „alle gehört“ allein räumt nichts weg", () => {
     const m = memoAt("2026-10-20T09:00");
-    const list = setMemoHeard(setMemoHeard([m], m.id, "Felix", true, household, "2026-10-20T10:00:00.000Z"), m.id, "Jonne", true, household, "2026-10-20T10:00:00.000Z");
+    let list = setMemoHeard(setMemoHeard([m], m.id, "Felix", true, household, "2026-10-20T10:00:00.000Z"), m.id, "Jonne", true, household, "2026-10-20T10:00:00.000Z");
     expect(list[0].data.alleGehoertAm).toBe("2026-10-20T10:00:00.000Z");
     const t0 = new Date(m.erstellt).getTime();
-    expect(memoAlive(list[0], t0 + 23 * H)).toBe(true);
-    expect(pruneMemos(list, t0 + 24 * H)).toEqual([]);
+    expect(visibleMemos(list, t0 + 48 * H)).toHaveLength(1);
+    list = updateMemo(list, m.id, { erledigt: { von: "Felix", am: "2026-10-20T11:00:00.000Z" } }, "2026-10-20T11:00:00.000Z");
+    const done = Date.parse("2026-10-20T11:00:00.000Z");
+    expect(visibleMemos(list, done + 23 * H)).toHaveLength(1);
+    expect(visibleMemos(list, done + 24 * H)).toHaveLength(0);
+    expect(list).toHaveLength(1);
   });
 
   it("Häkchen wieder weg → Frist läuft nicht mehr", () => {
@@ -53,11 +59,11 @@ describe("Sprachnachrichten: Verschwinden", () => {
 });
 
 describe("Sprachnachrichten: Daten", () => {
-  it("Migration v1 → v3: Nachrichten bleiben, Memos leer", () => {
+  it("Migration v1 → v4: Nachrichten bleiben, Memos leer", () => {
     at("2026-10-20T09:00");
     const v1 = { version: 1, messages: [{ id: "a", typ: "pinnwand", raum: "familie", besitzer: "lokal", erstellt: "2026-10-20T07:00:00.000Z", geaendert: "2026-10-20T07:00:00.000Z", data: { text: "Bin um 20 Uhr da", author: "Lisa", reactions: {}, readBy: ["Lisa"], pinned: false } }] };
     const v2 = migratePinStore(v1);
-    expect(v2?.version).toBe(3);
+    expect(v2?.version).toBe(4);
     expect(v2?.messages.map((m) => m.data.text)).toEqual(["Bin um 20 Uhr da"]);
     expect(v2?.memos).toEqual([]);
     expect(migratePinStore({ version: 7 })).toBeNull();

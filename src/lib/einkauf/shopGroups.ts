@@ -65,7 +65,8 @@ export function tileRows(items: { name: string; shop: string; anywhere?: boolean
 }
 
 /** Leise Zeile unter den Läden: „6 noch ohne Laden“ */
-export const ohneLadenZeile = (n: number) => `${n} noch ohne Laden`;
+/** Zeile unter den Läden der Kachel: „16 ohne Laden“ (vollständig, notfalls zweizeilig) */
+export const ohneLadenZeile = (n: number) => `${n} ohne Laden`;
 
 const TONES = 8;
 /** Bekannte Läden: passender Farbton (rot, gelb, blau …) – sonst aus dem Namen */

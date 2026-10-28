@@ -12,7 +12,7 @@ import { CALENDAR_IMPORT_REPLY, isCalendarImportRequest } from "@/lib/kalender/i
 import { anbieterIn, openMitbringen } from "@/lib/kalender/mitbringen/angebot";
 import { einladenWunsch } from "@/lib/konten/einladenHinweis";
 import { changeHome, describeHomeChange, requestHomeEdit, unlockHomeTile } from "@/lib/core/homeLayout";
-import { addPin, changeMemos, changePins, createPin, formatDauer, householdNames, isPinboardQuery, loadMemos, loadPins, memoPlayRequest, memoToPlay, pinWriteCommand, setMemoHeard, visibleMemos, visiblePins } from "@/lib/pinnwand";
+import { addPin, changeMemos, changePins, createPin, formatDauer, householdNames, isPinboardQuery, loadMemos, loadPins, memoPlayRequest, memoToPlay, pinWriteCommand, setMemoHeard, activeMemos, activePins } from "@/lib/pinnwand";
 import { playMemo } from "@/lib/pinnwand/memoPlayer";
 import { dayAnswer, umbrellaAnswer, weatherQuestion } from "@/lib/wetter/forecast";
 import { windAnswer, type Wind } from "@/lib/wetter/wind";
@@ -163,6 +163,7 @@ export function boardRule(ctx: RuleContext, t: string): boolean {
     const pin = createPin(write, me);
     if (!pin) return false;
     pushUndo("die Pinnwand-Nachricht", changePins((all) => addPin(all, pin)));
+    setFeature("pinnwand", true);
     const shown = unlockHomeTile("pinnwand");
     say(`Hängt an der Pinnwand ✓ „${pin.data.text}“${shown ? " Die Pinnwand steht jetzt oben auf der Startseite." : ""}`);
     return true;
@@ -171,8 +172,8 @@ export function boardRule(ctx: RuleContext, t: string): boolean {
     setInput("");
     const nowMs = now().getTime();
     const items = [
-      ...visiblePins(loadPins(), nowMs).map((m) => ({ at: m.erstellt, who: m.data.author, line: `„${m.data.text}“` })),
-      ...visibleMemos(loadMemos(), nowMs).map((m) => ({ at: m.erstellt, who: m.data.author, line: `Sprachnachricht (${formatDauer(m.data.dauer)})` })),
+      ...activePins(loadPins(), nowMs).map((m) => ({ at: m.erstellt, who: m.data.author, line: m.data.text ? `„${m.data.text}“` : "ein Foto" })),
+      ...activeMemos(loadMemos(), nowMs).map((m) => ({ at: m.erstellt, who: m.data.author, line: `Sprachnachricht (${formatDauer(m.data.dauer)})` })),
     ].sort((a, b) => b.at.localeCompare(a.at));
     say(items.length ? `Auf der Pinnwand: ${items.slice(0, 4).map((m) => `${m.who === me ? "Du" : m.who}: ${m.line}`).join(" · ")}` : "Auf der Pinnwand steht gerade nichts.");
     return true;

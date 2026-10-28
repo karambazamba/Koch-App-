@@ -49,7 +49,7 @@ describe("Launch-Schnitt", () => {
     f.setFeature("sport", false);
     f.launchUebernahme();
     expect(f.featureOn("sport")).toBe(false);
-    expect(JSON.parse(w.localStorage.getItem("wasgibts.funktionen")!)).toMatchObject({ version: 5, launch: true, imHaus: true });
+    expect(JSON.parse(w.localStorage.getItem("wasgibts.funktionen")!)).toMatchObject({ version: 6, launch: true, imHaus: true });
   });
 
   it("neue Nutzer starten ohne die ausgeblendeten Bausteine, mit Notizen", async () => {
@@ -64,12 +64,12 @@ describe("Launch-Schnitt", () => {
     expect(f.featureOn("notizen")).toBe(false);
   });
 
-  it("Update v3 → v5: Notizen einmal an, wer sie danach abschaltet, behält das", async () => {
+  it("Update v3 → v6: Notizen (und die Pinnwand) einmal an, wer sie danach abschaltet, behält das", async () => {
     const w = fakeWindow({ "wasgibts.funktionen": JSON.stringify({ version: 3, on: ["rezepte"], launch: true }) });
     const f = await import("@/lib/core/features");
     expect(f.featureOn("notizen") && f.featureOn("rezepte")).toBe(true);
     f.setFeature("notizen", false);
-    expect(JSON.parse(w.localStorage.getItem("wasgibts.funktionen")!)).toEqual({ version: 5, on: ["rezepte"], launch: true, imHaus: false });
+    expect(JSON.parse(w.localStorage.getItem("wasgibts.funktionen")!)).toEqual({ version: 6, on: ["rezepte", "pinnwand"], launch: true, imHaus: false });
     vi.resetModules();
     const again = await import("@/lib/core/features");
     expect(again.featureOn("notizen")).toBe(false);
@@ -97,7 +97,7 @@ describe("Launch-Schnitt", () => {
     const f = await import("@/lib/core/features");
     f.launchUebernahme();
     expect(JSON.parse(w.localStorage.getItem("wasgibts.startseite")!).tiles[0]).toMatchObject({ id: "vorrat", visible: true, size: "M" });
-    expect(JSON.parse(w.localStorage.getItem("wasgibts.funktionen")!)).toEqual({ version: 5, on: ["notizen", "vorrat"], launch: true, imHaus: true });
+    expect(JSON.parse(w.localStorage.getItem("wasgibts.funktionen")!)).toEqual({ version: 6, on: ["notizen", "vorrat", "pinnwand"], launch: true, imHaus: true });
   });
 
   it("alte Bausteine (v2) bleiben erhalten", async () => {

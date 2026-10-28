@@ -135,7 +135,7 @@ describe("Absätze überall", () => {
     expect(createPin("Hallo\nWelt", "Felix")?.data.text).toBe("Hallo\nWelt");
     const old = createPin("Bin um 20 Uhr da", "Lisa")!;
     expect(sanitizePin(JSON.parse(JSON.stringify(old)))?.data.text).toBe("Bin um 20 Uhr da");
-    expect(readFileSync("src/components/pinnwand/PinboardView.tsx", "utf8")).toMatch(/whitespace-pre-line[^"]*">\{pin\.data\.text\}/);
+    expect(readFileSync("src/components/pinnwand/Zettel.tsx", "utf8")).toMatch(/whitespace-pre-line[^>]*>\{item\.pin\.data\.text\}/);
     expect(readFileSync("src/components/notizen/NotesView.tsx", "utf8")).toMatch(/whitespace-pre-line/);
   });
 });

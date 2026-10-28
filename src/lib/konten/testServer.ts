@@ -36,7 +36,7 @@ type State = {
   /** Haushalt → Einträge */
   entries: Map<string, Map<string, CloudDoc & { besitzer: string }>>;
   rev: number;
-  /** Ton der Sprachnachrichten: Pfad <haushalt>/<datei> → Inhalt (wie Bucket „memos“) */
+  /** Ton der Sprachnachrichten und Bilder der Foto-Zettel: Pfad <haushalt>/<datei> → Inhalt (wie Buckets „memos“ und „fotos“) */
   files: Map<string, { data: string; mime: string; at: number }>;
   /** Mails an Mia (wie mail_addresses / mail_items / mail_senders) */
   mailAddresses: Map<string, { householdId: string; userId: string | null; room: Room; active: boolean }>;
@@ -76,6 +76,9 @@ function visible(d: { typ: string; raum: string; besitzer: string; data: unknown
 /** Wie `memo_household` in der Datenbank: Haushalt aus dem Pfad, sonst null */
 const MEMO_PATH = /^([0-9a-f-]{36})\/[A-Za-z0-9_-]{1,80}\.(m4a|webm|ogg)$/;
 const memoHousehold = (path: unknown) => (typeof path === "string" ? (MEMO_PATH.exec(path)?.[1] ?? null) : null);
+/** Wie `foto_household`: nur <haushalt>/<datei>.jpg */
+const FOTO_PATH = /^([0-9a-f-]{36})\/[A-Za-z0-9_-]{1,80}\.jpg$/;
+const fotoHousehold = (path: unknown) => (typeof path === "string" ? (FOTO_PATH.exec(path)?.[1] ?? null) : null);
 
 function householdOf(s: State, userId: string): HouseholdInfo | null {
   const mine = s.members.find((m) => m.userId === userId);
@@ -95,7 +98,7 @@ function removeMember(s: State, userId: string) {
   if (mine && !s.members.some((m) => m.householdId === mine.householdId)) {
     s.households.delete(mine.householdId);
     s.entries.delete(mine.householdId);
-    for (const p of s.files.keys()) if (memoHousehold(p) === mine.householdId) s.files.delete(p);
+    for (const p of s.files.keys()) if ((memoHousehold(p) ?? fotoHousehold(p)) === mine.householdId) s.files.delete(p);
     for (const [code, inv] of s.invites) if (inv.householdId === mine.householdId) s.invites.delete(code);
     for (const [token, l] of s.links) if (l.householdId === mine.householdId) s.links.delete(token);
     for (const [local, a] of s.mailAddresses) if (a.householdId === mine.householdId) s.mailAddresses.delete(local);
@@ -271,15 +274,17 @@ export function testKonten(body: Record<string, unknown>, nowMs = Date.now()): R
       const f = hh && memoHousehold(body.path) === hh ? s.files.get(body.path as string) : undefined;
       return f ? { data: f.data, mime: f.mime } : { error: "nicht_gefunden" };
     }
-    case "list_memos": {
+    case "upload_foto": {
       const hh = s.members.find((m) => m.userId === user.id)?.householdId;
-      if (!hh || body.householdId !== hh) return { files: [] };
-      return { files: [...s.files].filter(([p]) => memoHousehold(p) === hh).map(([name, f]) => ({ name, createdAt: new Date(f.at).toISOString() })) };
-    }
-    case "remove_memos": {
-      const hh = s.members.find((m) => m.userId === user.id)?.householdId;
-      for (const p of Array.isArray(body.paths) ? body.paths : []) if (hh && memoHousehold(p) === hh) s.files.delete(p as string);
+      const data = str(body.data, 2_200_000);
+      if (!hh || fotoHousehold(body.path) !== hh || !data || data.length > 2_100_000) return { error: "nicht_erlaubt" };
+      s.files.set(body.path as string, { data, mime: "image/jpeg", at: nowMs });
       return { ok: true };
+    }
+    case "download_foto": {
+      const hh = s.members.find((m) => m.userId === user.id)?.householdId;
+      const f = hh && fotoHousehold(body.path) === hh ? s.files.get(body.path as string) : undefined;
+      return f ? { data: f.data, mime: f.mime } : { error: "nicht_gefunden" };
     }
     case "mail_address": {
       const me = s.members.find((m) => m.userId === user.id);

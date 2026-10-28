@@ -42,8 +42,9 @@ export function startFresh(look: AppLook = "farbig", haushalt: Haushalt = "famil
   finishWelcome(startState(), look);
   const profile = loadProfile();
   if (profile) saveProfile({ ...profile, householdType: HOUSEHOLD_FOR[haushalt] });
-  // Allein: Pinnwand-Kachel aus (zuschaltbar), zu zweit und Familie wie bisher
+  // Allein: Pinnwand aus (Baustein und Kachel, zuschaltbar), zu zweit und Familie an
   saveHomeTiles(haushalt === "allein" ? DEFAULT_HOME.map((t) => (t.id === "pinnwand" ? { ...t, visible: false } : t)) : DEFAULT_HOME);
+  setFeature("pinnwand", haushalt !== "allein");
   startDemo();
 }
 

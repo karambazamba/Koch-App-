@@ -153,10 +153,20 @@ export const memoAntippen = async (_page, check, device) => {
     await seedFamily(page);
     await page.goto(BASE + "/pinnwand");
     await page.waitForTimeout(900);
-    const mic = page.getByRole("button", { name: "Aufnahme starten" });
+    // Kühlschranktür (Tafel 106): Sprachnachricht über „Neuer Zettel“ → „Sprachnachricht“;
+    // nach dem Senden schließt das Fenster, darum je Schritt neu öffnen
+    const micBox = async () => {
+      const sheet = page.getByRole("dialog", { name: "Neuer Zettel" });
+      if (!(await sheet.count())) {
+        await page.getByRole("button", { name: "Neuer Zettel" }).first().click();
+        await sheet.waitFor({ timeout: 5000 });
+        await sheet.getByRole("radio", { name: "Sprachnachricht" }).click();
+      }
+      return sheet.getByRole("button", { name: "Aufnahme starten" }).boundingBox();
+    };
 
     // Antippen → 3 s → Senden
-    const box = await mic.boundingBox();
+    let box = await micBox();
     await tap(page, box.x + box.width / 2, box.y + box.height / 2);
     await page
       .getByRole("button", { name: "Senden" })
@@ -186,6 +196,7 @@ export const memoAntippen = async (_page, check, device) => {
     check((await memoCount(page)) === 1, "antippen → senden: Memo da");
 
     // Antippen → Verwerfen
+    box = await micBox();
     await tap(page, box.x + box.width / 2, box.y + box.height / 2);
     await page
       .getByRole("button", { name: "Verwerfen" })
@@ -196,6 +207,7 @@ export const memoAntippen = async (_page, check, device) => {
     check((await memoCount(page)) === 1, "antippen → verwerfen: kein Memo");
 
     // Halten → loslassen = senden
+    box = await micBox();
     await swipe(page, {
       x: box.x + box.width / 2,
       y: box.y + box.height / 2,
@@ -208,6 +220,7 @@ export const memoAntippen = async (_page, check, device) => {
     check((await memoCount(page)) === 2, "halten → loslassen: gesendet");
 
     // Halten → hochschieben = frei sprechen
+    box = await micBox();
     await swipe(page, {
       x: box.x + box.width / 2,
       y: box.y + box.height / 2,

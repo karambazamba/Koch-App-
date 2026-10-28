@@ -7,7 +7,7 @@
   ziehen, „–“, S/M/L); jede S ist halb breit, zwei S nebeneinander, jede
   S-fähige Kachel mit jeder anderen (eine einzelne S bleibt halb, im Bearbeiten
   zeigt die freie Hälfte „＋ Kachel“); Essen + Einkauf sind ein festes Paar. Größe ändert nur die Menge (S ≤ M ≤ L). Standard für
-  neue Nutzer: Pinnwand + Wetter (S), Termine, Aufgaben, Essen + Einkauf,
+  neue Nutzer: Pinnwand + Wetter (S; allein ohne Pinnwand), Termine, Aufgaben, Essen + Einkauf,
   Notizen („Im Haus“ nur über die Kachel-Auswahl). Jede Kachel öffnet ihre Seite.
 - Die Jetzt-Karte zeigt höchstens 3 Themen zum Wischen und öffnet wie jede
   Kachel per Antippen – ohne eigenen Knopf – die Seite „Dein Tag“ (Ausnahme:
@@ -118,6 +118,9 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
   Aufgaben (M), Essen (S), Einkauf (S), Spendentopf (nur M), Tipps (M/L,
   Baustein), Timer (S/M), Sport, Notizen, Vorrat (S/M, Baustein),
   Post („bald“, nie sichtbar).
+- Pinnwand ist ein Baustein (Kühlschranktür): Kachel nur mit Baustein
+  (Filter in `TodayPage`); „Nur für mich“ startet ohne, sonst an. Kachel
+  „Fächer“ siehe `pinnwand.md`.
 - `DEFAULT_HOME` zeigt Pinnwand, Wetter, Termine, Aufgaben, Essen, Einkauf,
   Spendentopf und Vorrat; Vorrat erscheint nur mit Baustein, Tipps nur mit
   Quelle und Baustein (Filter in `TodayPage`).
@@ -362,7 +365,9 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
 
   Nur was heute noch kommt; weniger als 2 → Beispiele für morgen mit dem Plan
   von morgen („Morgen · Sa“). Fünf Beispiel-Aufgaben (am Wochenende/Feiertag
-  alle „diese Woche“, keine dringend), Pinnwand-Gruß, Einkauf `DEMO_SHOPS`,
+  alle „diese Woche“, keine dringend), Pinnwand (Kachel und Seite: Mias
+  oranger Zettel „Moin! Hier hängen eure Zettel.“, Ole „Gummistiefel!“,
+  Sprachnachricht 0:08, klein „Beispiel“; `pinnwand/beispiel.ts`), Einkauf `DEMO_SHOPS`,
   Beispielgericht je Tag (`demoDishAt(heute, minuten)`: werktags Pasta 18:30,
   samstags Lasagne 18:30, sonntags Ofen-Hähnchen 12:30; danach das von morgen).
   Wechselt der Tag, wechselt der Plan von selbst (alles aus Datum und Uhrzeit).

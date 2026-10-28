@@ -41,7 +41,7 @@ describe("Einkauf-Kachel (Variante C2)", () => {
     expect(names(r)).toEqual(["Edeka 0", "Rewe 0", "Lidl 0"]);
     expect(r.rest).toBeNull();
     expect(r.ohne).toEqual(["Milch", "Brot"]);
-    expect(ohneLadenZeile(r.ohne.length)).toBe("2 noch ohne Laden");
+    expect(ohneLadenZeile(r.ohne.length)).toBe("2 ohne Laden");
     const l = tileRows([{ name: "Zahnpasta", shop: "Rossmann" }], ["Edeka", "Rewe", "Lidl", "Rossmann"], "M");
     expect(l.rest).toBe("+ Rossmann 1");
     expect(names(tileRows([], ["Edeka", "Rewe", "Lidl", "Rossmann"], "L"))).toEqual(["Edeka 0", "Rewe 0", "Lidl 0", "Rossmann 0"]);
@@ -70,5 +70,19 @@ describe("Einkauf-Kachel (Variante C2)", () => {
     expect([shopTone("REWE"), shopTone("EDEKA"), shopTone("Lidl")]).toEqual([1, 2, 4]);
     expect(shopTone("Netto")).not.toBe(shopTone("Edeka"));
     expect(shopTone("Kaufland")).not.toBe(shopTone("Rewe"));
+  });
+});
+
+describe("Fehler: Kopf und Sortieren-Zeile der Einkauf-Kachel wurden abgeschnitten", () => {
+  it("Kopf „EINKAUF“ ohne Abschneiden, „16 ohne Laden · Sortieren ›“ vollständig (notfalls zweizeilig)", async () => {
+    const { readFileSync } = await import("node:fs");
+    const src = readFileSync("src/components/heute/HomeTiles.tsx", "utf8");
+    const head = src.slice(src.indexOf("function ShoppingHead"), src.indexOf("/** Beispiel-Einkauf"));
+    expect(head).toContain('<span className="whitespace-nowrap">Einkauf</span>');
+    expect(head).not.toMatch(/truncate|pr-6/);
+    const line = src.slice(src.indexOf("{mine && ohne.length > 0 && ("), src.lastIndexOf("Sortieren ›") + 20);
+    expect(line).toMatch(/flex-wrap/);
+    expect(line).not.toMatch(/\btruncate\b/);
+    expect(ohneLadenZeile(16)).toBe("16 ohne Laden");
   });
 });

@@ -1,28 +1,27 @@
 "use client";
 
-// Was man mit einer Nachricht auf der Pinnwand tun kann – überall gleich
-// (Wischen, Lange-Drücken-Menü, VoiceOver-Aktionen): löschen (nur eigene,
-// „Gelöscht · Rückgängig“), reagieren (eine je Person), antworten
-// (Schnelleingabe, die Antwort trägt ein Zitat), an Mia weiterleiten.
+// Was man mit einem Zettel an der Kühlschranktür tun kann – überall gleich
+// (Menü nach langem Drücken bzw. Antippen, Haken-Kreis, VoiceOver): Erledigt
+// (an/aus), Antworten (neuer Zettel mit Bezug), In Notizen (eigene Notiz,
+// Zettel ins Archiv), Anheften, Löschen
+// (nur eigene, „Gelöscht · Rückgängig“), reagieren (eine je Person).
 
 import { now } from "@/lib/core/now";
-import { showDeleted } from "@/lib/core/toast";
+import { showDeleted, showToast } from "@/lib/core/toast";
 import { pushUndo } from "@/lib/core/undo";
-import { canDelete, changeMemos, changePins, removeMemo, removePin, toggleMemoReaction, toggleReaction, type PinQuote, type Reaction } from "@/lib/pinnwand";
-import { quoteOf } from "@/lib/pinnwand/schreiben";
+import { canDelete, changeMemos, changePins, doneValue, removeMemo, removePin, setPinPinned, toggleMemoReaction, toggleReaction, updateMemo, updatePin, type Reaction } from "@/lib/pinnwand";
+import { archivePin, noteOfPin } from "@/lib/pinnwand/notizBruecke";
+import { changeNotes, upsertNote } from "@/lib/notizen";
 import { forgetMemo, stopMemo } from "@/lib/pinnwand/memoPlayer";
-import { openHelper } from "@/lib/begleitung/open";
-import { openQuick } from "@/lib/core/schnelleingabe";
 import { buzz } from "@/components/heute/actions";
-import type { BoardItem } from "@/components/pinnwand/useBoard";
+import { entryOf, type BoardItem } from "@/components/pinnwand/useBoard";
 
 const stamp = () => now().toISOString();
 
-const authorOf = (item: BoardItem) => (item.kind === "pin" ? item.pin.data.author : item.memo.data.author);
-export const reactionsOf = (item: BoardItem) => (item.kind === "pin" ? item.pin.data.reactions : item.memo.data.reactions);
-export const mayDelete = (item: BoardItem, me: string) => canDelete({ data: { author: authorOf(item) } }, me);
+export const reactionsOf = (item: BoardItem) => entryOf(item).data.reactions;
+export const mayDelete = (item: BoardItem, me: string) => canDelete(entryOf(item), me);
 
-/** Eigene Nachricht löschen – mit „Gelöscht · Rückgängig“ (3 s) */
+/** Eigenen Zettel löschen – mit „Gelöscht · Rückgängig“ (3 s); das Einzige, was etwas entfernt */
 export function deleteItem(item: BoardItem, me: string): boolean {
   if (!mayDelete(item, me)) return false;
   buzz();
@@ -31,9 +30,19 @@ export function deleteItem(item: BoardItem, me: string): boolean {
     forgetMemo(item.id);
     showDeleted(pushUndo("das Löschen der Sprachnachricht", changeMemos((all) => removeMemo(all, item.id))));
   } else {
-    showDeleted(pushUndo("das Löschen der Nachricht", changePins((all) => removePin(all, item.id))));
+    // Das Bild bleibt auf dem Gerät, bis das Aufräumen beim nächsten Start es wegnimmt (Rückgängig geht so immer)
+    showDeleted(pushUndo("das Löschen des Zettels", changePins((all) => removePin(all, item.id))));
   }
   return true;
+}
+
+/** Erledigt an/aus: blass und durchgestrichen, nach 24 Std. ins Archiv */
+export function toggleDone(item: BoardItem, me: string) {
+  buzz();
+  const s = stamp();
+  const erledigt = doneValue(entryOf(item), me, s);
+  if (item.kind === "memo") changeMemos((all) => updateMemo(all, item.id, { erledigt }, s));
+  else changePins((all) => updatePin(all, item.id, { erledigt }, s));
 }
 
 /** Reaktion setzen, tauschen oder entfernen */
@@ -43,14 +52,18 @@ export function reactTo(item: BoardItem, reaction: Reaction, me: string) {
   else changePins((all) => toggleReaction(all, item.id, reaction, me, stamp()));
 }
 
-/** Antworten: Schnelleingabe „NACHRICHT AN ALLE“, die neue Nachricht zitiert diese */
-export function replyTo(item: BoardItem, me: string, openForm: (text: string, quote: PinQuote) => void) {
-  const quote = quoteOf(item.kind === "pin" ? item.pin : { id: item.id, data: { author: item.memo.data.author } });
-  openQuick({ kind: "pinnwand", me, quote, more: (text) => openForm(text, quote) });
+export function togglePinned(item: BoardItem) {
+  if (item.kind === "pin") changePins((all) => setPinPinned(all, item.id, !item.pin.data.pinned, stamp()));
 }
 
-/** An Mia weiterleiten: sie macht daraus z. B. einen Termin oder eine Aufgabe (Vorschau mit „Übernehmen“) */
-export function forwardToMia(item: BoardItem) {
-  if (item.kind !== "pin") return;
-  openHelper(undefined, `Mach daraus bitte einen Termin oder eine Aufgabe: „${item.pin.data.text}“ (von ${item.pin.data.author})`);
+/** „In Notizen“: der Text wird eine eigene Notiz, der Zettel geht ins Archiv (Rückgängig nimmt beides zurück) */
+export function moveToNotes(item: BoardItem): boolean {
+  if (item.kind !== "pin") return false;
+  const note = noteOfPin(item.pin);
+  if (!note) return false;
+  const undoNote = changeNotes((all) => upsertNote(all, note));
+  const undoPin = changePins((all) => archivePin(all, item.id, stamp()));
+  const undo = pushUndo("In Notizen", () => (undoPin(), undoNote()));
+  showToast({ text: "Liegt bei den Notizen", undo, undoneText: "Hängt wieder", seconds: 4, small: true });
+  return true;
 }

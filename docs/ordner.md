@@ -10,7 +10,7 @@ Gleiche Bereichsnamen in `src/lib/<bereich>` (Logik, rein wo möglich),
 | `essen` | Essen-Reiter, Wochenplan (`essen/plan`), Rezepte (`essen/rezepte`), Ideen, Bilder, Kochmodus |
 | `einkauf` | Einkaufsliste, Läden, Stammartikel |
 | `vorrat` | „Im Haus“: was da ist (ohne Mengen), Orte, vergisst von selbst |
-| `pinnwand` | Nachrichten und Sprachnachrichten |
+| `pinnwand` | Kühlschranktür: Zettel, Fotos, Sprachnachrichten, Archiv, Fächer-Kachel |
 | `notizen` | Notizen (jede Schnellnotiz eine eigene), Bearbeiten im Vollbild |
 | `wetter` | Wetter-Server, Kachel, Seite |
 | `sport` | Trainings, Wochenziel |

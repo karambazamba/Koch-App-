@@ -229,7 +229,7 @@ const TOOLS: BegleitungTool[] = [
     area: "alltag",
     definition: {
       name: "pinnwand_schreiben",
-      description: "Kurze Nachricht an die Familien-Pinnwand (Zettel am Kühlschrank, bis 140 Zeichen, verschwindet nach 24 Stunden): 'Schreib an die Pinnwand: Bin um 20 Uhr da' → text 'Bin um 20 Uhr da'. Sprachnachrichten ([Sprachnachricht 0:12]) nimmt die Familie selbst auf; ihren Inhalt kennst du nicht und du schreibst nie welche ('Spiel das Memo von Lisa ab' → app_befehl).",
+      description: "Zettel an die Pinnwand (Kühlschranktür für alle im Haushalt, bis 140 Zeichen, in der Farbe der Person; bleibt, bis jemand 'Erledigt' tippt, nach 7 Tagen leise ins Archiv): 'Schreib an die Pinnwand: Bin um 20 Uhr da' → text 'Bin um 20 Uhr da'. Was nur für mich ist (Passwort, WLAN, Liste zum Merken) gehört in die Notizen (notiz_anlegen). Erledigte Zettel stehen nicht im Kontext. Sprachnachrichten ([Sprachnachricht 0:12]) nimmt die Familie selbst auf; ihren Inhalt kennst du nicht und du schreibst nie welche ('Spiel das Memo von Lisa ab' → app_befehl).",
       input_schema: { type: "object", properties: { text: { type: "string", description: "Die Nachricht, kurz, ohne Anführungszeichen" } }, required: ["text"], additionalProperties: false },
     },
     run: (ctx, raw) => {

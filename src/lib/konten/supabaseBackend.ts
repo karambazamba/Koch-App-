@@ -182,15 +182,13 @@ export function supabaseBackend(url: string, key: string): CloudBackend {
       const { data, error } = await sb.storage.from("memos").download(path);
       return error ? null : data;
     },
-    listMemos: async (householdId) => {
-      const { data, error } = await sb.storage.from("memos").list(householdId, { limit: 1000 });
-      if (error) return fail(friendlyError(error.message));
-      return ok((data ?? []).filter((f) => f.id).map((f) => ({ name: `${householdId}/${f.name}`, createdAt: f.created_at ?? "" })));
+    uploadFoto: async (path, blob) => {
+      const { error } = await sb.storage.from("fotos").upload(path, blob, { contentType: "image/jpeg", upsert: false });
+      return !error || /exist|duplicate/i.test(error.message) ? ok(true) : fail(friendlyError(error.message));
     },
-    removeMemos: async (paths) => {
-      if (!paths.length) return ok(true);
-      const { error } = await sb.storage.from("memos").remove(paths);
-      return error ? fail(friendlyError(error.message)) : ok(true);
+    downloadFoto: async (path) => {
+      const { data, error } = await sb.storage.from("fotos").download(path);
+      return error ? null : data;
     },
     mailAddress: async (room, renew) => {
       const { data, error } = await sb.rpc("mail_address", { p_room: room, p_renew: renew });

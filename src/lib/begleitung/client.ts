@@ -8,7 +8,7 @@ import { resolveGiving } from "@/lib/kalender/abgeben/model";
 import { accountCache } from "@/lib/konten/cache";
 import { readRaw, writeRaw } from "@/lib/core/localStore";
 import { replaceNotes } from "@/lib/notizen/store";
-import { addPin, changePins, createPin, formatDauer, loadMemos, loadPins, removePin, visibleMemos, visiblePins } from "@/lib/pinnwand";
+import { addPin, changePins, createPin, formatDauer, loadMemos, loadPins, removePin, activeMemos, activePins } from "@/lib/pinnwand";
 import { loadPlace } from "@/lib/wetter/client";
 import { tipContext } from "@/lib/tipps/client";
 import { loadMailStyle } from "@/lib/begleitung/mailSettings";
@@ -179,8 +179,8 @@ function trimmed(data: AssistantData, currentWeekStart: string, pantry: Assistan
     mail: loadMailStyle(),
     // Sprachnachrichten nur als „[Sprachnachricht 0:12]“ – den Inhalt kennt Mia nicht
     pinnwand: [
-      ...visiblePins(loadPins(), now().getTime()).map((m) => ({ author: m.data.author, text: m.data.text, at: m.erstellt })),
-      ...visibleMemos(loadMemos(), now().getTime()).map((m) => ({ author: m.data.author, text: `[Sprachnachricht ${formatDauer(m.data.dauer)}]`, at: m.erstellt })),
+      ...activePins(loadPins(), now().getTime()).map((m) => ({ author: m.data.author, text: m.data.text || "[Foto]", at: m.erstellt })),
+      ...activeMemos(loadMemos(), now().getTime()).map((m) => ({ author: m.data.author, text: `[Sprachnachricht ${formatDauer(m.data.dauer)}]`, at: m.erstellt })),
     ]
       .sort((a, b) => b.at.localeCompare(a.at))
       .slice(0, 8),
@@ -503,6 +503,7 @@ export function commitOps(current: AssistantData, ops: ChangeOp[], selected: Set
     notes.push(bausteinOf("notizen")!.where);
   }
   if (chosen.some((op) => op.type === "add_pin")) {
+    unlockFeature("pinnwand");
     const tiles = data.home ?? loadHomeTiles();
     if (!tiles.find((t) => t.id === "pinnwand")?.visible) {
       data = { ...data, home: applyHomeChange(tiles, { tile: "pinnwand", action: "zeigen" }) };

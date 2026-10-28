@@ -21,8 +21,8 @@ export type HomeTile = { id: HomeTileId; visible: boolean; size: TileSize };
  * Standard; `feature`: gehört zu einem Baustein (wird beim Hinzufügen
  * eingeschaltet); `soon`: gibt es noch nicht ("bald"); `fresh`: "NEU".
  */
-export const HOME_TILES: { id: HomeTileId; label: string; hint: string; sizes: TileSize[]; size: TileSize; feature?: "vorrat" | "regiontipps" | "sport" | "notizen" | "spendentopf"; soon?: boolean; fresh?: boolean }[] = [
-  { id: "pinnwand", label: "Pinnwand", hint: "Kurze Nachrichten an die Familie", sizes: ["S", "M", "L"], size: "S", fresh: true },
+export const HOME_TILES: { id: HomeTileId; label: string; hint: string; sizes: TileSize[]; size: TileSize; feature?: "vorrat" | "regiontipps" | "sport" | "notizen" | "spendentopf" | "pinnwand"; soon?: boolean; fresh?: boolean }[] = [
+  { id: "pinnwand", label: "Pinnwand", hint: "Zettel für alle, wie am Kühlschrank", sizes: ["S", "M", "L"], size: "S", feature: "pinnwand", fresh: true },
   { id: "wetter", label: "Wetter", hint: "Heute und die nächsten Tage", sizes: ["S", "M", "L"], size: "S", fresh: true },
   { id: "termine", label: "Termine", hint: "Die nächsten von heute", sizes: ["S", "M", "L"], size: "M" },
   { id: "aufgaben", label: "Aufgaben", hint: "Was heute dran ist", sizes: ["S", "M", "L"], size: "M" },

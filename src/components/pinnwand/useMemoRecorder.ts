@@ -15,8 +15,8 @@
 // ein Zeitlimit (4 s), und „sehr kurz“ gibt es nur, wenn wirklich Ton kam.
 
 import { useCallback, useEffect, useReducer, useRef, useState, useSyncExternalStore } from "react";
-import { MEMO_MIN_MS, WAVE_BARS, addMemo, changeMemos, createMemo, pickMemoMime, resample, type MemoMessage } from "@/lib/pinnwand";
-import { MEMO_IDLE, discardNeedsUndo, memoReducer, timeAnnouncement, type MemoMode } from "@/lib/pinnwand/recorderState";
+import { MEMO_MIN_MS, WAVE_BARS, addMemo, changeMemos, createMemo, pickMemoMime, resample, type MemoMessage, type ZettelFarbe } from "@/lib/pinnwand";
+import { MEMO_IDLE, discardNeedsUndo, holdsMic, memoReducer, timeAnnouncement, type MemoMode } from "@/lib/pinnwand/recorderState";
 import { memoAudio } from "@/lib/pinnwand/memoAudio";
 import { showToast } from "@/lib/core/toast";
 import { useWakeLock } from "@/lib/core/wakeLock";
@@ -80,7 +80,7 @@ function holdPage(on: boolean) {
   }
 }
 
-export function useMemoRecorder({ me, onSent }: { me: string; onSent?: (memo: MemoMessage) => void }) {
+export function useMemoRecorder({ me, onSent, farbe = null }: { me: string; onSent?: (memo: MemoMessage) => void; farbe?: ZettelFarbe | null }) {
   const [state, dispatch] = useReducer(memoReducer, MEMO_IDLE);
   const [levels, setLevels] = useState<number[]>([]);
   const [note, setNote] = useState<string | null>(null);
@@ -96,9 +96,11 @@ export function useMemoRecorder({ me, onSent }: { me: string; onSent?: (memo: Me
   const waiting = useRef(false);
   const meRef = useRef(me);
   const sentRef = useRef(onSent);
+  const farbeRef = useRef(farbe);
   useEffect(() => {
     meRef.current = me;
     sentRef.current = onSent;
+    farbeRef.current = farbe;
   });
   const phase = PHASE[state.phase];
   const busy = phase !== "idle";
@@ -116,7 +118,7 @@ export function useMemoRecorder({ me, onSent }: { me: string; onSent?: (memo: Me
     // Kam gar kein Ton, lief die Aufnahme nie richtig – das ist nicht „zu kurz“
     if (!t.blob.size) return setNote(MIC_HANGS_TEXT);
     if (t.ms < MEMO_MIN_MS) return setNote("Das war sehr kurz – einfach nochmal antippen und sprechen.");
-    const memo = createMemo({ author: meRef.current, dauer: t.ms / 1000, mime: t.blob.type || t.mime, wave: resample(t.levels, WAVE_BARS * 2) });
+    const memo = createMemo({ author: meRef.current, dauer: t.ms / 1000, mime: t.blob.type || t.mime, wave: resample(t.levels, WAVE_BARS * 2), farbe: farbeRef.current });
     setUnsent(false);
     // Der Eintrag kommt erst nach dem Ablegen des Tons in die Pinnwand; klappt
     // das Ablegen nie, bleibt die Aufnahme – nichts geht verloren
@@ -434,6 +436,8 @@ export function useMemoRecorder({ me, onSent }: { me: string; onSent?: (memo: Me
   return {
     phase,
     mode: state.mode,
+    /** Finger liegt noch auf dem Mikro (Halten): Mikro stehen lassen, sonst kommt das Loslassen nicht an */
+    holding: holdsMic(state),
     elapsed: state.ms,
     levels,
     note,

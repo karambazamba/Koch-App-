@@ -2,7 +2,7 @@
 // senden, abwechselnd mit Mias Zuhören, hängendes Mikrofon nach 4 s, und in
 // den Kacheln überlappen sich Tippflächen nie.
 import { devices } from "playwright";
-import { hello, launch, seedFamily, swipe } from "../lib.mjs";
+import { hello, launch, pinnwandMikro, seedFamily, swipe } from "../lib.mjs";
 
 const memoCount = (page) => page.evaluate(() => JSON.parse(localStorage.getItem("wasgibts.pinnwand") ?? "null")?.memos?.length ?? 0);
 const tap = (page, x, y) => swipe(page, { x, y, dx: 0, dy: 0, ms: 60, steps: 1 });
@@ -42,11 +42,10 @@ async function micPage(device) {
   return { page, browser };
 }
 
-/** Auf der Startseite in der Pinnwand-Kachel aufnehmen und senden; liefert die gezeigte Zeit */
+/** Auf der Startseite aufnehmen (leere Kachel direkt, sonst „Neuer Zettel“ → „Sprachnachricht“) und senden; liefert die gezeigte Zeit */
 async function recordOnce(page) {
-  const tile = page.getByRole("region", { name: "Pinnwand" });
   const before = await memoCount(page);
-  const mic = tile.getByRole("button", { name: "Aufnahme starten" });
+  const { mic, scope } = await pinnwandMikro(page);
   await mic.waitFor({ timeout: 6000 }).catch(async (e) => {
     await page.screenshot({ path: `.bilder/abbruch/sprachnachricht-mikro-${Date.now()}.png` }).catch(() => {});
     throw e;
@@ -59,7 +58,7 @@ async function recordOnce(page) {
     throw e;
   });
   await page.waitForTimeout(1600);
-  const time = (await tile.innerText()).match(/\d+:\d\d/)?.[0] ?? "0:00";
+  const time = (await scope.innerText()).match(/\d+:\d\d/)?.[0] ?? "0:00";
   await send.click();
   // Speichern (IndexedDB) braucht einen Moment
   for (let i = 0; i < 30 && (await memoCount(page)) === before; i++) await page.waitForTimeout(100);
@@ -102,17 +101,23 @@ export const mikroHaengt = async (_page, check, device) => {
     await page.reload();
     await page.waitForTimeout(1000);
     await page.evaluate(() => (window.__micHang = true));
-    const tile = page.getByRole("region", { name: "Pinnwand" });
-    const box = await tile.getByRole("button", { name: "Aufnahme starten" }).boundingBox();
+    const { mic, scope } = await pinnwandMikro(page);
+    const box = await mic.boundingBox();
     await tap(page, box.x + box.width / 2, box.y + box.height / 2);
     // erst ein stiller zweiter Versuch (4 s), dann der Satz
     await page.waitForTimeout(4800);
     check(!(await page.getByText("Das Mikrofon hängt gerade – nochmal antippen?").count()), "nach 4 s: still ein zweiter Versuch");
     await page.waitForTimeout(4200);
     check(await page.getByText("Das Mikrofon hängt gerade – nochmal antippen?").isVisible(), "nach 8 s: „Das Mikrofon hängt gerade …“");
-    check(await tile.getByRole("button", { name: "Aufnahme starten" }).isVisible(), "danach wieder bereit");
-    // Mikro wieder da → klappt sofort
+    // dasselbe Mikro wie vorher (leere Kachel: „Sprachnachricht aufnehmen“, sonst im Fenster „Aufnahme starten“)
+    check(await mic.isVisible(), "danach wieder bereit");
+    // Mikro wieder da → klappt sofort (ein offenes „Neuer Zettel“-Fenster erst zu, dann wie immer)
     await page.evaluate(() => (window.__micHang = false));
+    if ((await scope.getAttribute("role")) === "dialog") {
+      await scope.getByRole("button", { name: "Schließen" }).last().click();
+      await scope.waitFor({ state: "detached", timeout: 4000 }).catch(() => {});
+    }
+    await page.waitForTimeout(500);
     const time = await recordOnce(page);
     check(time !== "0:00" && (await memoCount(page)) === 1, `danach aufnehmen: Zeit ${time}, gesendet`);
   } finally {
@@ -231,26 +236,24 @@ export const kachelKnoepfe = async (page, check) => {
 };
 
 /**
- * Aufnahme-Leiste in der Kachel (Tafel 80): EINE Pille unter dem Kopf, ➤
- * rechts ganz sichtbar (nicht abgeschnitten, nicht über dem Mikro), ＋ und
- * Mikro während der Aufnahme weg, unten „Sprachnachricht“ statt des alten
- * Hinweises; ➤ → Nachricht oben in der Kachel, kurz „✓ Gesendet“. Auf dem
- * jeweiligen Gerät und zusätzlich auf dem iPhone SE (kleinste Kachel).
+ * Aufnahme-Leiste in der leeren Pinnwand-Kachel (Tafel 80, 107/4): „Oder 🎙
+ * Sprachnachricht“ nimmt gleich auf – EINE Pille, ➤ rechts ganz sichtbar, ＋
+ * während der Aufnahme weg; ➤ → die Sprachnachricht liegt vorn im Fächer
+ * („▶ 0:0x“). Auf dem jeweiligen Gerät und zusätzlich auf dem iPhone SE.
  */
 export const aufnahmeLeiste = async (_page, check, device) => {
   for (const d of [device, "iPhone SE"]) {
     const { page, browser } = await micPage(d);
     try {
       await hello(page);
-      await seedFamily(page);
+      await seedFamily(page, { "wasgibts.pinnwand": { version: 4, messages: [], memos: [] } });
       await page.reload();
       await page.waitForTimeout(1000);
       const tile = page.getByRole("region", { name: "Pinnwand" });
       await tile.evaluate((el) => el.scrollIntoView({ block: "center" }));
-      check(await tile.getByText(/^Sprach\u00ad?nachricht$/).isVisible(), `${d}: unten „Sprachnachricht“`);
-      check(!(await tile.getByText(/＋ = schreiben/).count()), `${d}: alter Hinweis weg`);
+      check(await tile.getByText("Erster Zettel?").isVisible(), `${d}: leer „Erster Zettel?“`);
       const before = await memoCount(page);
-      const mic = await tile.getByRole("button", { name: "Aufnahme starten" }).boundingBox();
+      const mic = await tile.getByRole("button", { name: "Sprachnachricht aufnehmen" }).boundingBox();
       await tap(page, mic.x + mic.width / 2, mic.y + mic.height / 2);
       const send = tile.getByRole("button", { name: "Senden" });
       await send.waitFor({ timeout: 6000 });
@@ -260,14 +263,14 @@ export const aufnahmeLeiste = async (_page, check, device) => {
       const trash = await tile.getByRole("button", { name: "Verwerfen" }).boundingBox();
       check(s.x + s.width <= t.x + t.width - 4 && s.y + s.height <= t.y + t.height - 4 && s.width >= 36, `${d}: ➤ rechts ganz sichtbar (${Math.round(s.width)} px)`);
       check(Math.abs(s.y - trash.y) < 8 && trash.x < s.x, `${d}: eine Leiste – 🗑 links, ➤ rechts`);
-      check(!(await tile.getByRole("button", { name: /^Nachricht an die Pinnwand/ }).count()) && !(await tile.getByRole("button", { name: "Aufnahme starten" }).count()), `${d}: ＋ und Mikro während der Aufnahme weg`);
+      check(!(await tile.getByRole("button", { name: "Neuer Zettel" }).count()), `${d}: ＋ während der Aufnahme weg`);
       check(await tile.getByText("Aufnahme läuft – sprich einfach").isVisible(), `${d}: „Aufnahme läuft – sprich einfach“`);
       await send.click();
       for (let i = 0; i < 30 && (await memoCount(page)) === before; i++) await page.waitForTimeout(100);
       check((await memoCount(page)) === before + 1, `${d}: ➤ → gesendet`);
-      check(await tile.getByText("Gesendet").isVisible(), `${d}: „✓ Gesendet“`);
-      const first = tile.locator("[data-zeile]").first();
-      check(/Sprachnachricht von/.test((await first.getAttribute("aria-label")) ?? ""), `${d}: neue Sprachnachricht oben`);
+      const first = tile.getByRole("link", { name: /^Sprachnachricht von/ }).first();
+      check(await first.isVisible(), `${d}: Sprachnachricht vorn im Fächer`);
+      check(/▶ \d+:\d\d/.test(await first.innerText()), `${d}: „▶ 0:0x“`);
     } finally {
       await browser.close();
     }

@@ -7,7 +7,7 @@
 import { APP_NAME } from "@/lib/core/app";
 
 /** Stand der Texte – bei wesentlicher Änderung erhöhen (dann wird einmal neu gefragt, 23b) */
-export const RECHTSTEXTE_STAND = { version: 1, datum: "24. Oktober 2026" };
+export const RECHTSTEXTE_STAND = { version: 1, datum: "28. Oktober 2026" };
 
 export const BETREIBER = {
   name: "[Verantwortlicher]",
@@ -43,7 +43,7 @@ export const KURZ_GESAGT: { titel: string; text: string }[] = [
   { titel: "Wo eure Daten liegen", text: "Ohne Konto nur auf diesem Gerät. Mit Konto zusätzlich in unserer Datenbank, damit die Familie sie teilen kann. Unsere Server-Funktionen laufen in Frankfurt." },
   { titel: "Was ich sehe", text: "Nur, was ihr mir sagt oder weiterleitet. Für eine Antwort geht der Satz mit dem nötigen Ausschnitt an unseren KI-Anbieter. Sprachnachrichten nie." },
   { titel: "Wer sie sonst sieht", text: "Eure Familie, was ihr teilt. „Arbeit“ nur du. Niemand sonst." },
-  { titel: "Wie lange", text: "Bis ihr es löscht. Pinnwand und Sprachnachrichten 24 Stunden, Vorschläge aus Mails 7 Tage. Den Chat speichere ich gar nicht." },
+  { titel: "Wie lange", text: "Bis ihr es löscht. Pinnwand-Zettel gehen nach 7 Tagen ins Archiv und bleiben dort, bis ihr sie löscht. Vorschläge aus Mails 7 Tage. Den Chat speichere ich gar nicht." },
   { titel: "Nie verkauft", text: "Keine Tracker, keine Werbe-Profile. Eure Daten werden nie verkauft." },
   { titel: "Eure Rechte", text: "Ansehen, mitnehmen, löschen: alles in den Einstellungen unter „Daten & App“. Fragen gern an " + BETREIBER.mail + "." },
 ];
@@ -54,7 +54,7 @@ export const DATENSCHUTZ: Abschnitt[] = [
     titel: "Was wir verarbeiten und warum",
     absaetze: [
       `Ohne Konto speichert ${APP_NAME} alles nur im Speicher deines Browsers auf diesem Gerät. Wir sehen davon nichts.`,
-      "Mit Konto: deine E-Mail-Adresse (zum Anmelden per Code), dein Anzeigename und deine Rolle in der Familie sowie die Einträge, die ihr teilt (Termine, Aufgaben, Einkauf, Pinnwand, Sprachnachrichten). Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO (Nutzung der App).",
+      "Mit Konto: deine E-Mail-Adresse (zum Anmelden per Code), dein Anzeigename und deine Rolle in der Familie sowie die Einträge, die ihr teilt (Termine, Aufgaben, Einkauf, Pinnwand mit Fotos und Sprachnachrichten). Fotos für die Pinnwand verkleinern wir vorher auf dem Gerät (höchstens 1600 Pixel); ohne Konto bleiben sie nur auf dem Gerät, mit Konto sieht sie nur eure Familie. Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO (Nutzung der App).",
       "Allergien und Unverträglichkeiten im Profil bleiben auf dem Gerät. Für Vorschläge können sie an die KI gehen; das sind Gesundheitsdaten, wir verarbeiten sie nur mit deiner Einwilligung (Art. 9 Abs. 2 lit. a DSGVO).",
       "Technisch nötig: IP-Adresse und Zeitpunkt beim Aufruf (Betrieb, Missbrauch verhindern, Art. 6 Abs. 1 lit. f DSGVO). Unsere Protokolle enthalten keine Inhalte, nur Technik-Zahlen.",
     ],
@@ -69,7 +69,7 @@ export const DATENSCHUTZ: Abschnitt[] = [
   {
     titel: "Anbieter, die für uns arbeiten",
     absaetze: [
-      "Vercel Inc. (Hosting, Server-Funktionen in Frankfurt), Supabase Inc. (Konten, Datenbank, Sprachnachrichten; Region " + BETREIBER.supabaseRegion + "), Anthropic PBC (KI), ElevenLabs (Sprachausgabe und Spracherkennung), Resend (Empfang von „Mails an " + APP_NAME + "“). Mit allen besteht ein Vertrag zur Auftragsverarbeitung [bitte bestätigen]. Übermittlung in die USA auf Grundlage des EU-US Data Privacy Framework bzw. von Standardvertragsklauseln [je Anbieter bitte prüfen].",
+      "Vercel Inc. (Hosting, Server-Funktionen in Frankfurt), Supabase Inc. (Konten, Datenbank, Sprachnachrichten und Pinnwand-Fotos; Region " + BETREIBER.supabaseRegion + "), Anthropic PBC (KI), ElevenLabs (Sprachausgabe und Spracherkennung), Resend (Empfang von „Mails an " + APP_NAME + "“). Mit allen besteht ein Vertrag zur Auftragsverarbeitung [bitte bestätigen]. Übermittlung in die USA auf Grundlage des EU-US Data Privacy Framework bzw. von Standardvertragsklauseln [je Anbieter bitte prüfen].",
       "Wetter: Bright Sky (Daten des Deutschen Wetterdienstes) und Open-Meteo bekommen nur den Ortsnamen. Bei „Meinen Standort verwenden“ gehen auf etwa einen Kilometer gerundete Koordinaten an OpenStreetMap Nominatim; gespeichert wird nur der Ortsname.",
       "Kalender-Links: Der Link bleibt auf deinem Gerät. Zum Abrufen geht er über unseren Server zum Kalender-Anbieter, wird dabei aber weder gespeichert noch protokolliert.",
       "Ohne Sprach-Anbieter nutzen Spracheingabe und Vorlesen die Funktionen deines Browsers. Bei Chrome und Android kann der Ton an Google gehen, bei Safari und iOS an Apple. Erinnerungen (Push) laufen über die Push-Dienste von Apple, Google oder Mozilla.",
@@ -78,7 +78,7 @@ export const DATENSCHUTZ: Abschnitt[] = [
   {
     titel: "Wie lange",
     absaetze: [
-      "Einträge bleiben, bis ihr sie löscht. Pinnwand und Sprachnachrichten verschwinden nach 24 Stunden, Vorschläge aus Mails nach 7 Tagen, die Mail selbst speichern wir nie. Der Chat wird nicht gespeichert. Einladungs-Links gelten 14 Tage.",
+      "Einträge bleiben, bis ihr sie löscht. Pinnwand-Zettel, Fotos und Sprachnachrichten gehen nach 7 Tagen (oder 24 Stunden nach „Erledigt“) ins Archiv und bleiben dort, bis ihr sie löscht; Ton und Bilder gelöschter Zettel räumt der Server täglich weg. Vorschläge aus Mails nach 7 Tagen, die Mail selbst speichern wir nie. Der Chat wird nicht gespeichert. Einladungs-Links gelten 14 Tage.",
       "„Konto löschen“ entfernt deine Daten auf dem Server sofort; verlässt die letzte Person die Familie, wird auch die Familie gelöscht. Sicherungskopien unserer Anbieter laufen nach spätestens 30 Tagen aus [bitte bestätigen].",
     ],
   },

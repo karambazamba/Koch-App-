@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { MEMO_IDLE, discardNeedsUndo, memoReducer, timeAnnouncement, timeWarns, type MemoEvent, type MemoState } from "@/lib/pinnwand/recorderState";
+import { MEMO_IDLE, discardNeedsUndo, holdsMic, memoReducer, timeAnnouncement, timeWarns, type MemoEvent, type MemoState } from "@/lib/pinnwand/recorderState";
 
 const run = (...events: MemoEvent[]): MemoState => events.reduce(memoReducer, MEMO_IDLE);
 
@@ -21,6 +21,18 @@ describe("Sprachnachricht: antippen statt halten", () => {
     expect(memoReducer(holding, { type: "release", pressMs: 2000, slideUp: true })).toMatchObject({ phase: "nimmt_auf", mode: "tippen" });
     // Freigabe dauert noch: kurz antippen bleibt trotzdem eine Aufnahme
     expect(memoReducer(run({ type: "start", mode: "halten" }), { type: "release", pressMs: 100, slideUp: false })).toMatchObject({ phase: "fragt", mode: "tippen" });
+  });
+
+  it("Halten: das Mikro bleibt unter dem Finger, bis losgelassen wird (Neuer Zettel, v0.138.0)", () => {
+    const fragt = run({ type: "start", mode: "halten" });
+    const nimmt = run({ type: "start", mode: "halten" }, { type: "ready" });
+    expect(holdsMic(fragt)).toBe(true);
+    expect(holdsMic(nimmt)).toBe(true);
+    // losgelassen (frei weiter) oder angetippt: die Aufnahme-Leiste übernimmt
+    expect(holdsMic(memoReducer(nimmt, { type: "release", pressMs: 2000, slideUp: true }))).toBe(false);
+    expect(holdsMic(run({ type: "start", mode: "tippen" }, { type: "ready" }))).toBe(false);
+    expect(holdsMic(MEMO_IDLE)).toBe(false);
+    expect(holdsMic(memoReducer(nimmt, { type: "hidden" }))).toBe(false);
   });
 
   it("60-s-Grenze: hält an und wartet (nie automatisch senden)", () => {

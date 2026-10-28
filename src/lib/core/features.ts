@@ -28,6 +28,7 @@ const FEATURES = {
   mails: "Mails weiterleiten: aus weitergeleiteten Mails werden Vorschläge (nur mit Konto)",
   sport: "Sport (/sport, Kachel, Wochenziel)",
   notizen: "Notizen (/notizen, Kachel, Schnellnotiz)",
+  pinnwand: "Pinnwand (/pinnwand, Kachel): Zettel und Sprachnachrichten für alle im Haushalt",
   spendentopf: "Spendentopf (/spendentopf, Kachel, Beitrags-Frage)",
 } as const;
 
@@ -49,6 +50,7 @@ export const BAUSTEINE: Baustein[] = [
   { feature: "kochstil", name: "Kochstil & Vorlieben", text: "Plan oder spontan, Das mögt ihr, Nie wieder, Lieblingsgerichte.", where: "Kochstil & Vorlieben stehen jetzt in den Einstellungen.", icon: "chef" },
   { feature: "sport", name: "Sport", text: "Trainings und ein Wochenziel – gezählt werden nur Wochen.", where: "Die Sport-Kachel steht jetzt auf der Startseite.", icon: "dumbbell" },
   { feature: "notizen", name: "Notizen", text: "Notizen und Listen festhalten.", where: "Notizen stehen jetzt als Kachel auf der Startseite.", icon: "note" },
+  { feature: "pinnwand", name: "Pinnwand", text: "Zettel und Sprachnachrichten für alle, wie am Kühlschrank.", where: "Die Pinnwand steht jetzt als Kachel auf der Startseite.", icon: "pin" },
   { feature: "spendentopf", name: "Spendentopf", text: "Jeder Euro geht in eure Region.", where: "Der Spendentopf steht jetzt auf der Startseite.", icon: "coins" },
 ];
 
@@ -81,16 +83,20 @@ export const bausteinOf = (feature: Feature) => BAUSTEINE.find((b) => b.feature 
 const ENABLED: Partial<Record<Feature, true>> = {};
 
 /**
+ * v6: Pinnwand ist ein Baustein (Kühlschranktür) – wer sie hatte, behält sie
+ * (beim Update einmal an); neue Nutzer allein starten ohne (`startFresh`).
  * v5: „Im Haus“ gehört zu 1.0 – `imHaus` = beim Update einmal eingeschaltet
  * (die Kachel bleibt dabei aus, `launchUebernahme`). v4: Notizen gehören zu
  * 1.0 – beim Update einmal eingeschaltet (danach selbst abschaltbar). v3:
  * eingeschaltete Bausteine + `launch` (Übernahme für 1.0 erledigt). v2 ohne
  * `launch`, v1 hatte `legacy` und `unlocked`.
  */
-type FeatureStore = { version: 5; on: Feature[]; launch: boolean; imHaus: boolean };
+type FeatureStore = { version: 6; on: Feature[]; launch: boolean; imHaus: boolean };
 
-/** Standard für neue Nutzer: Notizen und Im Haus (Bereich unter Essen; die Kachel nur über die Auswahl) */
-const DEFAULT_ON: Feature[] = ["notizen", "vorrat"];
+/** Standard für neue Nutzer: Notizen, Pinnwand und Im Haus (Bereich unter Essen; die Kachel nur über die Auswahl). Allein: Pinnwand aus (`startFresh`) */
+const DEFAULT_ON: Feature[] = ["notizen", "vorrat", "pinnwand"];
+/** Beim Update auf v6 einmal dazu: wer die Pinnwand hatte, behält sie */
+const PINNWAND_ON: Feature[] = ["pinnwand"];
 /** Beim Update auf v4 einmal dazu (Im Haus kommt über `launchUebernahme`, damit die Kachel aus bleibt) */
 const NOTIZEN_ON: Feature[] = ["notizen"];
 
@@ -127,14 +133,16 @@ function migrate(raw: unknown): FeatureStore | null {
   const d = raw as { version?: number; legacy?: unknown; unlocked?: unknown; on?: unknown };
   const list = (Array.isArray(d.on) ? d.on : []).filter(isFeature);
   const launch = (d as { launch?: unknown }).launch === true;
-  if (d.version === 5) return { version: 5, on: list, launch, imHaus: (d as { imHaus?: unknown }).imHaus === true };
-  if (d.version === 4) return { version: 5, on: list, launch, imHaus: false };
-  if (d.version === 3 || d.version === 2) return { version: 5, on: [...new Set([...list, ...NOTIZEN_ON])], launch: d.version === 3 && launch, imHaus: false };
+  const keep = (on: Feature[]) => [...new Set([...on, ...PINNWAND_ON])];
+  if (d.version === 6) return { version: 6, on: list, launch, imHaus: (d as { imHaus?: unknown }).imHaus === true };
+  if (d.version === 5) return { version: 6, on: keep(list), launch, imHaus: (d as { imHaus?: unknown }).imHaus === true };
+  if (d.version === 4) return { version: 6, on: keep(list), launch, imHaus: false };
+  if (d.version === 3 || d.version === 2) return { version: 6, on: keep([...list, ...NOTIZEN_ON]), launch: d.version === 3 && launch, imHaus: false };
   if (d.version !== 1) return null;
   // Alter Test-Schalter: wird zurückgesetzt; was genutzt wurde, wird als Baustein übernommen
   const unlocked = (Array.isArray(d.unlocked) ? d.unlocked : []).filter(isFeature);
   const used = d.legacy === true && typeof localStorage !== "undefined" ? usedFeatures() : [];
-  return { version: 5, on: [...new Set([...unlocked, ...used, ...NOTIZEN_ON])], launch: false, imHaus: false };
+  return { version: 6, on: [...new Set([...unlocked, ...used, ...NOTIZEN_ON, ...PINNWAND_ON])], launch: false, imHaus: false };
 }
 
 const store = createLocalStore("wasgibts.funktionen", migrate);
@@ -156,7 +164,7 @@ export function setFeature(feature: Feature, on: boolean): boolean {
   const list = onList();
   if (list.includes(feature) === on) return false;
   const s = store.load();
-  store.save({ version: 5, on: on ? [...list, feature] : list.filter((f) => f !== feature), launch: s?.launch ?? false, imHaus: s?.imHaus ?? false });
+  store.save({ version: 6, on: on ? [...list, feature] : list.filter((f) => f !== feature), launch: s?.launch ?? false, imHaus: s?.imHaus ?? false });
   return true;
 }
 
@@ -206,7 +214,7 @@ function imHausUebernahme() {
     const tiles = loadHomeTiles();
     if (tiles.some((t) => t.id === "vorrat" && t.visible)) saveHomeTiles(tiles.map((t) => (t.id === "vorrat" ? { ...t, visible: false } : t)));
   }
-  store.save({ version: 5, on: [...new Set([...on, "vorrat" as Feature])], launch: s?.launch ?? false, imHaus: true });
+  store.save({ version: 6, on: [...new Set([...on, "vorrat" as Feature])], launch: s?.launch ?? false, imHaus: true });
 }
 
 function launchSchnitt(read: (key: StorageKey) => string | null) {
@@ -227,5 +235,5 @@ function launchSchnitt(read: (key: StorageKey) => string | null) {
   if (shown("sport") || (sport?.trainings?.length ?? 0) > 0) used.push("sport");
   if (shown("spendentopf")) used.push("spendentopf");
   const on = s?.on ?? DEFAULT_ON;
-  store.save({ version: 5, on: [...new Set([...on, ...used])], launch: true, imHaus: s?.imHaus ?? false });
+  store.save({ version: 6, on: [...new Set([...on, ...used])], launch: true, imHaus: s?.imHaus ?? false });
 }

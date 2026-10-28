@@ -1,8 +1,6 @@
-// Pinnwand-Kachel (Tafel 80): Aufnahme = EINE Leiste (Mülleimer, Punkt, Zeit,
-// Welle, rechts ➤), ＋ und Mikro während der Aufnahme weg, Senden nur über ➤;
-// in Ruhe unten nur „Sprachnachricht“, beim ersten Mal das Schild „schreiben“
-// unter dem ＋ (bis zum Tipp darauf oder nach 2 Besuchen); nach dem Senden
-// „✓ Gesendet“ und die neue Sprachnachricht zart hervorgehoben.
+// Pinnwand-Kachel (Tafel 80, 107): Aufnahme = EINE Leiste (Mülleimer, Punkt,
+// Zeit, Welle, rechts ➤), ＋ während der Aufnahme weg, Senden nur über ➤;
+// leer startet „Oder 🎙 Sprachnachricht“ die Aufnahme direkt.
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
@@ -21,28 +19,16 @@ describe("Aufnahme-Leiste in der Kachel", () => {
     expect(compact).toMatch(/senden ·[\s\S]*verwerfen/);
   });
 
-  it("während der Aufnahme: kein ＋, kein Mikro – Senden nur über ➤ (nur antippen, kein Halten)", () => {
-    expect(tile).toMatch(/\{recording \? \(\s*<span className="h-\[26px\] w-\[26px\] shrink-0" aria-hidden \/>/);
-    expect(tile).toMatch(/\{!recording && canRecord && \(/);
-    expect(tile).toMatch(/<MemoMic recorder=\{recorder\} size=\{34\} tapOnly \/>/);
+  it("während der Aufnahme: kein ＋ – die Leiste ersetzt die Zettel, Senden nur über ➤ (nur antippen, kein Halten)", () => {
+    expect(tile).toMatch(/\{recording \? <span className="h-\[26px\] w-\[26px\] shrink-0" aria-hidden \/> :/);
+    expect(tile).toMatch(/<RecordingRow recorder=\{recorder\} compact \/>/);
     expect(parts).toMatch(/if \(e\.button !== 0 \|\| freeMode \|\| tapOnly\) return;/);
   });
 
-  it("in Ruhe unten nur „Sprachnachricht“ – der alte Hinweis ist weg; Schild „schreiben“ beim ersten Mal", () => {
-    expect(tile).toMatch(/>Sprach&shy;nachricht<\/span>/);
-    expect(tile).not.toContain("＋ = schreiben");
-    // Schild links neben dem ＋ im Kopf (nie über dem Text, Launch 1.0)
-    expect(tile).toMatch(/hintSeen === false && size !== "S" && \(\s*<span className="pointer-events-none rounded-full/);
-    expect(tile).not.toMatch(/pointer-events-none absolute/);
-    expect(tile).toContain("schreiben\n");
-    expect(tile).toMatch(/markHintSeen\("pinnwand-kachel-1"\)/);
-    expect(tile).toMatch(/return \(\) => markHintSeen\("pinnwand-kachel"\)/);
-  });
-
-  it("nach dem Senden: „✓ Gesendet“ 1,5 s, neue Sprachnachricht hervorgehoben", () => {
-    expect(tile).toMatch(/setTimeout\(\(\) => setSent\(null\), 1500\)/);
-    expect(tile).toMatch(/useMemoRecorder\(\{ me, onSent: \(m\) => setSent\(m\.id\) \}\)/);
-    expect(tile).toMatch(/sent === item\.id \? "pin-hervor" : ""/);
-    expect(tile).toMatch(/Gesendet/);
+  it("leer: „Oder 🎙 Sprachnachricht“ nimmt gleich auf; im Fenster „Neuer Zettel“ Mikro antippen oder halten, nach dem Senden zu", () => {
+    expect(tile).toMatch(/onRecord=\{canRecord \? \(\) => void recorder\.start\("tippen"\) : null\}/);
+    const sheet = readFileSync("src/components/pinnwand/NeuerZettel.tsx", "utf8");
+    expect(sheet).toMatch(/<MemoMic recorder=\{recorder\} size=\{56\} \/>/);
+    expect(sheet).toMatch(/useMemoRecorder\(\{ me, farbe, onSent: \(\) => onClose\(\) \}\)/);
   });
 });

@@ -143,9 +143,16 @@ describe("Regel „＋ = schreiben, Mia = sprechen“", () => {
     "src/components/kalender/DayView.tsx",
     "src/components/kalender/TasksView.tsx",
     "src/components/einkauf/QuickAdd.tsx",
-    "src/components/pinnwand/PinboardTile.tsx",
-    "src/components/pinnwand/PinboardView.tsx",
   ];
+
+  it("Pinnwand: das ＋ öffnet „Neuer Zettel“ (Tafel 106) – ein Feld auf dem Zettel, Tastatur sofort, nie Mia", () => {
+    for (const f of ["src/components/pinnwand/PinboardTile.tsx", "src/components/pinnwand/PinboardView.tsx"]) {
+      const src = readFileSync(f, "utf8");
+      expect(src, f).toMatch(/<NeuerZettel /);
+      expect(src, f).not.toMatch(/openHelper|askMiaFirst/);
+    }
+    expect(readFileSync("src/components/pinnwand/NeuerZettel.tsx", "utf8")).toMatch(/autoFocus=\{art === "zettel"\}/);
+  });
 
   it("Notizen: das Seiten-Plus öffnet eine neue leere Notiz zum Bearbeiten (Tafel 93)", () => {
     expect(readFileSync("src/components/notizen/NotesView.tsx", "utf8")).toMatch(/PagePlus[^\n]*\/notizen\/bearbeiten\?neu=text/);

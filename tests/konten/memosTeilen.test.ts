@@ -1,8 +1,9 @@
 // Etappe 3c: Sprachnachrichten teilen – Pfad, Hochladen, Teilen erst mit Ton,
-// Holen auf dem anderen Gerät, Aufräumen nach 25 Std., Regeln des Test-Backends.
+// Holen auf dem anderen Gerät, Regeln des Test-Backends. Kühlschranktür: nie
+// nach Alter aufräumen – nur Dateien von Hand gelöschter Einträge (`orphanFiles`).
 import { readFileSync } from "node:fs";
 import { beforeEach, describe, expect, it } from "vitest";
-import { expiredMemoFiles, memoContentType, memoExt, memoPath, MEMO_FILE_MS, uploadPendingMemos } from "@/lib/konten/memoShare";
+import { memoContentType, memoExt, memoPath, orphanFiles, ORPHAN_GRACE_MS, uploadPendingMemos } from "@/lib/konten/memoShare";
 import { ADAPTERS } from "@/lib/konten/sync/docs";
 import { resetTestKonten, testKonten } from "@/lib/konten/testServer";
 import { createMemoAudio, type MemoTable } from "@/lib/pinnwand/memoAudio";
@@ -19,7 +20,7 @@ const memo = (id: string, storagePath: string | null = null, mime = "audio/mp4")
   besitzer: "lokal",
   erstellt: T0,
   geaendert: T0,
-  data: { author: "Felix", dauer: 3, mime, wave: [], gehoertVon: ["Felix"], alleGehoertAm: null, reactions: {}, storagePath },
+  data: { author: "Felix", dauer: 3, mime, wave: [], gehoertVon: ["Felix"], alleGehoertAm: null, reactions: {}, storagePath, farbe: null, erledigt: null, archiv: null },
 });
 
 describe("Pfad und Format", () => {
@@ -39,14 +40,20 @@ describe("Pfad und Format", () => {
     expect(rule.test(`${HH}/../x.m4a`)).toBe(false);
   });
 
-  it("Aufräumen: erst nach 25 Std.", () => {
+  it("Aufräumen: nie nach Alter – nur Dateien ohne Eintrag (von Hand gelöscht), mit einem Tag Luft", () => {
     const now = Date.parse(T0);
+    const old = new Date(now - ORPHAN_GRACE_MS - 1000).toISOString();
     const files = [
-      { name: `${HH}/alt.m4a`, createdAt: new Date(now - MEMO_FILE_MS - 1000).toISOString() },
-      { name: `${HH}/neu.m4a`, createdAt: new Date(now - 3_600_000).toISOString() },
+      { name: `${HH}/archiviert.m4a`, createdAt: new Date(now - 30 * 86_400_000).toISOString() },
+      { name: `${HH}/geloescht.m4a`, createdAt: old },
+      { name: `${HH}/foto-weg.jpg`, createdAt: old },
+      { name: `${HH}/frisch.m4a`, createdAt: new Date(now - 3_600_000).toISOString() },
       { name: `${HH}/ohne.m4a`, createdAt: "" },
     ];
-    expect(expiredMemoFiles(files, now)).toEqual([`${HH}/alt.m4a`]);
+    expect(orphanFiles(files, ["archiviert", "a/b"], now)).toEqual([`${HH}/geloescht.m4a`, `${HH}/foto-weg.jpg`]);
+    const route = readFileSync("src/app/api/memos/aufraeumen/route.ts", "utf8");
+    expect(route).toMatch(/BUCKETS = \["memos", "fotos"\]/);
+    expect(route).not.toMatch(/expired|MEMO_FILE_MS/);
   });
 });
 
@@ -150,12 +157,14 @@ describe("Test-Backend: Bucket „memos“", () => {
     expect(testKonten({ action: "upload_memo", token: felix, path: `${hh}/../x.m4a`, data: "dG9u" }).error).toBe("nicht_erlaubt");
     expect(testKonten({ action: "download_memo", token: lisa, path })).toEqual({ data: "dG9u", mime: "audio/mp4" });
     expect(testKonten({ action: "download_memo", token: fremd, path }).error).toBe("nicht_gefunden");
-    expect(testKonten({ action: "list_memos", token: fremd, householdId: hh }).files).toEqual([]);
-    expect(testKonten({ action: "list_memos", token: lisa, householdId: hh }).files).toEqual([{ name: path, createdAt: new Date(1000).toISOString() }]);
-    testKonten({ action: "remove_memos", token: fremd, paths: [path] });
-    expect(testKonten({ action: "download_memo", token: lisa, path }).data).toBe("dG9u");
-    testKonten({ action: "remove_memos", token: lisa, paths: [path] });
-    expect(testKonten({ action: "download_memo", token: felix, path }).error).toBe("nicht_gefunden");
+    // Fotos (Bucket „fotos“): nur <haushalt>/<id>.jpg, nur der eigene Haushalt
+    const foto = `${hh}/z1.jpg`;
+    expect(testKonten({ action: "upload_foto", token: felix, path: foto, data: "YmlsZA==" }).ok).toBe(true);
+    expect(testKonten({ action: "upload_foto", token: felix, path: `${hh}/z1.png`, data: "YmlsZA==" }).error).toBe("nicht_erlaubt");
+    expect(testKonten({ action: "upload_foto", token: felix, path: `${hh2}/z1.jpg`, data: "YmlsZA==" }).error).toBe("nicht_erlaubt");
+    expect(testKonten({ action: "upload_memo", token: felix, path: foto, data: "YmlsZA==" }).error).toBe("nicht_erlaubt");
+    expect(testKonten({ action: "download_foto", token: lisa, path: foto })).toEqual({ data: "YmlsZA==", mime: "image/jpeg" });
+    expect(testKonten({ action: "download_foto", token: fremd, path: foto }).error).toBe("nicht_gefunden");
   });
 
   it("leerer Haushalt nimmt seine Töne mit", () => {
