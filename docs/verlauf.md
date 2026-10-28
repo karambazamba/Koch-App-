@@ -3414,3 +3414,29 @@ Fehler in `docs/aufraeumen-nachher.md`.
   Termine bleiben; Abgleich hebt v2–v4 auf v5.
 - Prüfstand: 35 Raum-Sätze (Termin und Aufgabe, alle drei Räume) im großen
   Prüfstand; ohne KI 35/35.
+
+## Ergebnis-Karten wie im Clip + Aufleuchten (A-037, Tafel 126)
+- Vorlage: Clip-Bild „Einfach erzählen. Mia sortiert.“ (`docs/tafeln/tafel-126.png`).
+- Die Text-Übersicht `MiaDoneCard` (Gruppen mit „·“) ist weg. Nach jedem
+  Satz, mit dem Mia etwas anlegt, steht pro Eintrag eine weiße Karte unter
+  ihrem kurzen Satz: Symbol in der Kachelfarbe, fett der Inhalt, klein
+  „Termin · Familie ⌄“ bzw. „Einkauf · für alle“, rechts die grüne Pille
+  („Eingetragen“, „Steht drauf“, „Hängt dran“, „Notiert“). Nacheinander weich
+  eingeblendet (0,15 s versetzt). Nie abgeschnitten, die Pille schrumpft
+  notfalls aufs Häkchen; mehr als 4 → „und N weitere ⌄“.
+- Der Raum-Chip „Familie ⌄“ unter Mias Bestätigung (A-034) wohnt jetzt in der
+  Karte (`RaumZeile`, dieselben `ui/RaumChips`); auch die Regeln ohne KI
+  zeigen die Karte.
+- EIN „Rückgängig“ (10 s) für alle Karten einer Antwort, danach „Mia hat
+  schon …“. Karte antippen = Eintrag öffnen.
+- Große Dinge aus einfachen neuen Sachen: dieselbe Karte mit orangem
+  „Übernehmen“ → grün; Wochenplan, Rezept, Ändern, Löschen bleiben Vorschau.
+- Aufleuchten: nach dem Schließen der Bühne bzw. bei der Rückkehr zur
+  Startseite leuchtet der neue Eintrag einmal 1,5 s weich orange in seiner
+  Kachel (Zeile oder Kachel als Ganzes), Merker nur im Arbeitsspeicher.
+- Neue Tokens `--app-good-pill`/`--app-on-good-pill`, `--app-leuchten`,
+  `--app-leuchten-flaeche` (hell und dunkel).
+- Testmodus: mehrere Sätze werden einzeln gelesen, wenn das Ganze nicht
+  verstanden wird und jeder Satz etwas einträgt; Termin mit Kind aus dem
+  Haushalt = Familie. Prüfstand im Testmodus unverändert (Raum- und
+  Sofort-Prüfstand weiter ≥ 95 %).

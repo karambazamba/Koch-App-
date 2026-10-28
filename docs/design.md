@@ -47,3 +47,8 @@ Grundregeln stehen in CLAUDE.md, Abschnitt 7.
   in `docs/brand.md`. Startseiten-Kopf: links BrandMark (30 px), rechts das
   Datum („Fr, 23. Okt“) und „···“ (Einstellungen, Startseite bearbeiten), kein
   Zahnrad; die Begrüßung steht nur noch für VoiceOver da.
+- Mias Ergebnis-Karten (A-037, Tafel 126): weiße Karte `CARD` (`rounded-card`),
+  Symbol in der Kachelfarbe (`--app-tile-<id>`/`-ac`), grüne Pille nur über
+  `bg-good-pill`/`text-on-good-pill` (≥ 4,5:1), „Übernehmen“ = Akzent (Orange).
+  Aufleuchten in der Kachel nur über `data-leuchtet` (Ring `--app-leuchten`,
+  Fläche `--app-leuchten-flaeche`, nur opacity). Details `docs/bereiche/begleitung.md`.

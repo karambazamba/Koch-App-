@@ -473,6 +473,20 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
   `dayChat.ts` („Blende die Jetzt-Karte aus“, auch „Lass die Startseite immer
   gleich“).
 - Nutzt die Begleitung eine Kachel, die fehlt, kommt sie dazu (`unlockHomeTile`).
+- Aufleuchten in der Kachel (A-037, Tafel 126): Was Mia eingetragen hat
+  (sofort oder per „Übernehmen“), leuchtet nach dem Schließen der Bühne bzw.
+  bei der Rückkehr zur Startseite EINMAL 1,5 s weich orange – die Zeile, wenn
+  sie in der Kachel steht (`data-leuchte`: Termine/Aufgaben `eintrag:<id>`,
+  Einkauf `einkauf:<name>` an der Laden- bzw. „ohne Laden“-Zeile, Notizen
+  `notiz:<id>`), sonst die Kachel als Ganzes (z. B. Termin nächste Woche,
+  Pinnwand, Im Haus). Merker nur im Arbeitsspeicher (`lib/heute/aufleuchten.ts`:
+  `leuchtenMerken` in `noteMiaDone`/Übernehmen, `buehneGeoeffnet` aus
+  KitchenHelper, `geleuchtet` = nie wieder; Rückgängig vergisst es), nichts
+  gespeichert. Auslösen in `components/heute/useAufleuchten.ts` (HomeBoard,
+  nie im Bearbeiten): setzt nur `data-leuchtet`, das Leuchten ist CSS
+  (`::after` mit Ring `--app-leuchten` und Fläche `--app-leuchten-flaeche`,
+  nur opacity, `cubic-bezier(.16,1,.3,1)`); reduzierte Bewegung = nur kurz
+  hervorgehoben (`leuchten-still`). Durchklick `ergebniskarten.mjs` (`miaAufleuchten`).
 
 ## Tests
 

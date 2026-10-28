@@ -9,7 +9,7 @@ Jede Vorlage aus einem Auftrag liegt hier als `tafel-<nr>.png`; der Auftrag in
 | 107 | `tafel-107.png` | A-016 Pinnwand-Kachel S: vier Ideen (Variante 1 „Fächer“, leer = 4) |
 | 108 | `tafel-108.png` | A-017 Kachel-Farben neu + einfach wählbar |
 | 111 | `tafel-111.png` | A-018 Einkauf neu: Aussuchen – erst Laden, dann Sachen |
-| 114 | `tafel-114.png` | A-020 Neue Aufgabe & Termin (Räume später durch A-021 ersetzt) |
+| 114 | `tafel-114.png` | A-020 Neue Aufgabe & Termin (Räume später durch A-034 ersetzt) |
 | 116 | `tafel-116.png` | A-022 Mias Wundertüte |
 | 118 | `tafel-118.png` | A-023 Startseite: XS · S · M |
 | 119 | `tafel-119.png` | A-023 Beispiel-Startseite je Haushalt |

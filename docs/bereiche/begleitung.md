@@ -128,18 +128,46 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
   Vorschlag dagegen verstoßen würde, keine Oberflächen-Erklärungen, ehrlich KI
   (keine menschlichen Erlebnisse; „Ich bin müde“ → „Dann mach heute langsam.
   Soll ich das Abendessen übernehmen?“).
-- Mehreres auf einmal = kurze Übersicht (seit v0.108): Erledigt Mia mit
-  einer Antwort 2+ Dinge sofort, steht nur „Erledigt.“ da (Vorlesen auch;
-  eigene Fassung bis 2 Wörter wie „Steht alles.“ bleibt), plus höchstens EIN
-  Satz, wenn etwas unklar war oder nicht ging (`shortDoneReply`, ohne
-  Anschluss-Angebote). Darunter `MiaDoneCard`: Gruppen in fester Reihenfolge
-  Termine · Aufgaben · Einkaufsliste · Pinnwand · Notizen · Essen · Im Haus ·
-  Familie (`doneGroups` in `lib/begleitung/uebersicht.ts`), je Gruppe Symbol,
-  Überschrift und Einträge mit „·“ („Mo 10:00 Zahnarzt“), Zeile antippen =
-  Seite; „Alles rückgängig“ 10 s (eine Rücknahme für alles), danach bleibt
-  es in „Mia hat schon …“. Keine Zahlen. Die KI bekommt die Liste im Verlauf
-  (`send`). Prüfstand: 3 Mehrfach-Sätze (`alle`, `woerter: 2`). Durchklick
-  `uebersicht.mjs`.
+- Mehreres auf einmal = kurzer Satz (seit v0.108): Erledigt Mia mit einer
+  Antwort 2+ Dinge sofort, steht nur „Erledigt.“ da (Vorlesen auch; eigene
+  Fassung bis 2 Wörter wie „Steht alles.“ bleibt), plus höchstens EIN Satz,
+  wenn etwas unklar war oder nicht ging (`shortDoneReply`, ohne
+  Anschluss-Angebote). Prüfstand: 3 Mehrfach-Sätze (`alle`, `woerter: 2`).
+- Ergebnis-Karten wie im Clip (A-037, Tafel 126, ersetzt die Text-Übersicht
+  `MiaDoneCard`): nach JEDEM Satz, mit dem Mia etwas anlegt (1 bis viele),
+  steht unter ihrem kurzen Satz pro Eintrag eine weiße Karte
+  (`components/begleitung/ErgebnisKarten.tsx`, rein `lib/begleitung/ergebnis.ts`),
+  nacheinander weich eingeblendet (0,8 s `cubic-bezier(.16,1,.3,1)`, 0,15 s
+  versetzt; reduzierte Bewegung nur Überblenden). Links das Symbol (lucide) in
+  der Kachelfarbe (`--app-tile-<id>`/`-ac`: Termin Kalender, Einkauf Wagen,
+  Aufgabe Häkchen, Pinnwand Pin, Notiz Zettel, Im Haus Kühlschrank), Mitte fett
+  der Inhalt („Fr 16:00 Zahnarzt“, „Milch“), darunter klein Art · Raum
+  („Termin · Familie ⌄“, „Aufgabe · Ich ⌄“, „Einkauf · für alle“ ohne
+  Raum-Wahl), rechts die grüne Pille (`--app-good-pill`, Schrift ≥ 4,5:1) mit
+  Häkchen: „Eingetragen“ / „Steht drauf“ / „Hängt dran“ / „Notiert“
+  (abgehakt „Abgehakt“, Regeln „Gemerkt“). Text nie abgeschnitten: wird der
+  Inhalt länger als 2 Zeilen, schrumpft die Pille aufs Häkchen. Mehr als 4:
+  4 Karten + „und N weitere ⌄“. Karte antippen = Eintrag öffnen (Termin/
+  Aufgabe im EINEN Fenster, sonst die Seite; die Bühne schließt). Raum ändern
+  direkt in der Zeile „Termin · Familie ⌄“ → dieselben `ui/RaumChips`
+  (`RaumZeile` in `kalender/raum/RaumBestaetigung.tsx`, mit Rückgängig, Mia
+  lernt; einmal „Hab Familie gewählt. Tippen zum Ändern.“). Darunter EINMAL
+  „Rückgängig“ (10 s, nimmt alles dieser Antwort zurück), danach steht alles
+  in „Mia hat schon …“. Auch ohne KI (Regeln, `turn.raum`) dieselbe Karte.
+  Große Dinge (Vorschau) aus einfachen neuen Sachen (Einkauf-Vorschlag,
+  neuer Termin/Aufgabe/Notiz, Pinnwand, Im Haus): dieselbe Karte, rechts
+  oranger Knopf „Übernehmen“ → grün (`nachUebernehmen`, Bühne bleibt offen;
+  alles übernommen → „Steht drin.“ mit den fertigen Karten); Wochenplan,
+  Rezept, Ändern und Löschen behalten die Vorschau „Das würde ich machen:“.
+  Die Karten werden nicht vorgelesen, Mias Satz weiter über `tidyMiaText`.
+  Die KI bekommt die Liste im Verlauf (`send`, `ergebnisSummary`). Testmodus:
+  versteht er die ganze Nachricht nicht, liest er jeden Satz einzeln und
+  schickt alle Werkzeuge zusammen, wenn JEDER Satz etwas einträgt („Freitag
+  16 Uhr Zahnarzt mit Jonne. Und wir brauchen Milch.“); ein Termin MIT einem
+  Kind aus dem Haushalt ist dort Familie (wie die echte KI). Tests
+  `tests/begleitung/ergebnisKarten.test.ts`, Durchklick `ergebniskarten.mjs`
+  (+ `uebersicht.mjs`), Bild `mia-ergebnis`. Danach leuchtet der Eintrag
+  einmal in seiner Kachel (`docs/bereiche/heute.md`, „Aufleuchten“).
 - Seit v0.108 (Launch 1.0): Bausteine mit Kennzeichen „später“
   (`LAUNCH_AUS`: Im Haus, Wochenplan, Notizen, Sport, Mails an Mia, Tipps aus
   der Region, Spendentopf) schaltet Mia nie ein und schreibt nicht hinein
