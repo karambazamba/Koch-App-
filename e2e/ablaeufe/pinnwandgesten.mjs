@@ -65,12 +65,22 @@ export const pinnwandGesten = async (page, check) => {
   await page.goto(BASE + "/");
   await page.waitForTimeout(900);
   await tile.evaluate((el) => el.scrollIntoView({ block: "center" }));
-  const fan = tile.getByRole("link", { name: /^Ich bin um 6/ });
+  const fan = tile.getByRole("link", { name: /^[^;]*Ich bin um 6/ });
   const ids = await fan.locator("[data-zettel]").evaluateAll((els) => els.map((el) => el.dataset.zettel));
-  const fb = await fan.boundingBox();
-  const backBox = await fan.locator("[data-zettel]").first().boundingBox();
   check(ids.length >= 2 && (await fan.locator("a, button").count()) === 0, `Fächer: EIN Link, Zettel ohne eigene Knöpfe (${ids.length})`);
-  await swipe(page, { x: fb.x + fb.width * 0.07, y: backBox.y + backBox.height / 2, dx: 0, dy: 0, ms: 60, steps: 1 });
+  // eine Stelle, an der nur der hinterste Zettel zu sehen ist (der vordere verdeckt den Rest)
+  const spot = await fan.locator("[data-zettel]").first().evaluate((el) => {
+    const r = el.getBoundingClientRect();
+    for (let fy = 0.5; fy < 0.95; fy += 0.1)
+      for (let fx = 0.05; fx < 0.95; fx += 0.05) {
+        const x = r.left + r.width * fx;
+        const y = r.top + r.height * fy;
+        if (document.elementFromPoint(x, y)?.closest("[data-zettel]") === el) return { x, y };
+      }
+    return null;
+  });
+  check(Boolean(spot), "hinterer Zettel schaut sichtbar hervor");
+  if (spot) await swipe(page, { x: spot.x, y: spot.y, dx: 0, dy: 0, ms: 60, steps: 1 });
   await page.waitForURL(/\/pinnwand/, { timeout: 5000 }).catch(() => {});
   check(page.url().includes(`n=${ids[0]}`), "Tipp auf den hinteren Zettel → Pinnwand an diesem Zettel");
 
