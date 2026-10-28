@@ -1,11 +1,11 @@
 "use client";
 
-// Startseite, unter der Jetzt-Karte (höchstens ein Hinweis, ohne Mia-Gesicht): „Soll Lisa auch
-// sehen, was du einträgst?“ → „Familie einladen“ (ohne Konto erst anmelden,
-// danach gleich weiter zum Einladen) / „Später“.
+// Startseite, unter der Jetzt-Karte (höchstens ein Hinweis, im Stil der
+// Seiten-Tipps): „Soll Lisa auch sehen, was du einträgst?“ → „Familie
+// einladen“ (ohne Konto erst anmelden, danach gleich weiter zum Einladen) /
+// „Alles klar“ (wie früher „Später“).
 
-import Link from "next/link";
-import { CARD, buttonClass } from "@/components/ui/styles";
+import { SeitenTipp } from "@/components/begleitung/denktmit/SeitenTipp";
 import { appSince } from "@/lib/core/activity";
 import { useCloudMode } from "@/lib/konten/backend";
 import { useCachedAccount } from "@/lib/konten/cache";
@@ -24,19 +24,5 @@ export function useInviteHint(profile: HouseholdProfile, today: string, quiet: b
 
 export function InviteHintCard({ text, today }: { text: string; today: string }) {
   const einladen = useEinladenKnopf();
-  return (
-    <div className={`${CARD} flex items-center gap-3 px-4 py-3`} role="note" aria-label={einladen}>
-      <div className="flex min-w-0 flex-1 flex-col gap-2">
-        <p className="text-[15px] font-bold leading-snug">{text}</p>
-        <div className="flex flex-wrap gap-2">
-          <Link href="/konto?einladen=1" className={buttonClass("primary", "sm")}>
-            {einladen}
-          </Link>
-          <button type="button" onClick={() => laterEinladen(today)} className={`${buttonClass("ghost", "sm")} text-muted`}>
-            Später
-          </button>
-        </div>
-      </div>
-    </div>
-  );
+  return <SeitenTipp text={text} label={einladen} id="einladen" onOk={() => laterEinladen(today)} aktion={{ label: einladen, href: "/konto?einladen=1" }} />;
 }

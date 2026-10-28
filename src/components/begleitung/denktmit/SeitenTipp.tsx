@@ -6,8 +6,12 @@
 // Mia-Gesicht (nicht antippbar, ohne Ring), darüber „MIA“, dann 1–2 Sätze.
 // „Alles klar“ schließt weich nach oben; „Zeig mal“ nur, wenn es etwas zu
 // zeigen gibt. Schiebt den Inhalt nach unten, schwebt nie über der Liste.
+// Derselbe Stil für ALLE einmaligen Hinweise der Startseite (unter der
+// Jetzt-Karte, `core/hinweise.ts`): dann mit eigenem zweiten Knopf (`aktion`,
+// z. B. „Schlicht ansehen“) statt „Zeig mal“.
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import Link from "next/link";
 import { BegleitungAvatar } from "@/components/begleitung/BegleitungAvatar";
 import { buttonClass } from "@/components/ui/styles";
 import { tidyMiaText } from "@/lib/begleitung/tidy";
@@ -20,12 +24,19 @@ const TIPP_ZU_MS = 800;
 type TippPfeil = "links" | "mitte" | "rechts";
 const PFEIL_X: Record<TippPfeil, string> = { links: "left-[22%]", mitte: "left-1/2", rechts: "left-[78%]" };
 
+/** Zweiter Knopf (weiß): tut etwas bzw. führt hin; `bleibt` = der Tipp schließt danach nicht von selbst */
+export type TippAktion = { label: string; onClick?: () => void; href?: string; bleibt?: boolean };
+
 type Props = {
   text: string;
   /** „Alles klar“: erst weich weg, dann gemerkt */
   onOk: () => void;
   /** „Zeig mal“ (weiß) – nur, wenn es auf der Seite etwas zu zeigen gibt */
   zeigMal?: () => void;
+  /** Eigener zweiter Knopf statt „Zeig mal“ */
+  aktion?: TippAktion;
+  /** Weiteres unter dem Text (z. B. eine Auswahl) */
+  children?: ReactNode;
   pfeil?: TippPfeil;
   label?: string;
   className?: string;
@@ -33,10 +44,11 @@ type Props = {
   id?: string;
 };
 
-export function SeitenTipp({ text, onOk, zeigMal, pfeil, label = "Kurz erklärt", className = "", id }: Props) {
+export function SeitenTipp({ text, onOk, zeigMal, aktion, children, pfeil, label = "Kurz erklärt", className = "", id }: Props) {
   const [zu, setZu] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => () => clearTimeout(timer.current ?? undefined), []);
+  const knopf: TippAktion | null = aktion ?? (zeigMal ? { label: "Zeig mal", onClick: zeigMal } : null);
   const schliessen = (dann: () => void) => {
     if (zu) return;
     setZu(true);
@@ -58,22 +70,28 @@ export function SeitenTipp({ text, onOk, zeigMal, pfeil, label = "Kurz erklärt"
           <p className="text-[12px] font-extrabold tracking-wider text-accent-strong uppercase">{helperName()}</p>
           <p className="text-[15px] font-semibold leading-snug">{tidyMiaText(text)}</p>
         </div>
+        {children}
         <div className="flex flex-wrap gap-2">
           <button type="button" onClick={() => schliessen(onOk)} className={`${buttonClass("primary", "sm")} min-h-11`}>
             Alles klar
           </button>
-          {zeigMal && (
-            <button
-              type="button"
-              onClick={() => {
-                zeigMal();
-                schliessen(onOk);
-              }}
-              className={`${buttonClass("secondary", "sm")} min-h-11`}
-            >
-              Zeig mal
-            </button>
-          )}
+          {knopf &&
+            (knopf.href ? (
+              <Link href={knopf.href} onClick={knopf.onClick} className={`${buttonClass("secondary", "sm")} min-h-11`}>
+                {knopf.label}
+              </Link>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  knopf.onClick?.();
+                  if (!knopf.bleibt) schliessen(onOk);
+                }}
+                className={`${buttonClass("secondary", "sm")} min-h-11`}
+              >
+                {knopf.label}
+              </button>
+            ))}
         </div>
       </div>
     </div>

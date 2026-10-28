@@ -55,8 +55,9 @@ export const miaNeuHinzufuegen = async (page, check, device) => {
   check(await guide.getByText("Schritt 1 von 5").isVisible(), "Zeig mir wie: 5 Schritte, zuerst sichern");
   await page.keyboard.press("Escape");
   await page.waitForTimeout(500);
-  await page.getByRole("button", { name: "Hinweis schließen" }).click();
+  await page.getByRole("button", { name: "Alles klar" }).click();
+  await page.waitForTimeout(1000);
   await page.reload();
   await page.waitForTimeout(1200);
-  check(!(await hint.isVisible()), "nach ✕ nie wieder");
+  check(!(await hint.isVisible()), "nach „Alles klar“ nie wieder");
 };

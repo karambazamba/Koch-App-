@@ -93,7 +93,8 @@ import { weekendKey } from "@/lib/tipps/model";
 import { BrandMark } from "@/components/ui/BrandMark";
 import { headerDate } from "@/lib/heute/kopfDatum";
 import { MiaNameHint, useMiaHomeHint } from "@/components/heute/MiaNameHint";
-import { LEISTE_NEU } from "@/lib/heute/miaName";
+import { HALTEN_TIPP, LEISTE_NEU } from "@/lib/heute/miaName";
+import { SeitenTipp } from "@/components/begleitung/denktmit/SeitenTipp";
 import { markHintSeen, useHintSeen } from "@/lib/core/hints";
 import { InviteHintCard, useInviteHint } from "@/components/konten/InviteHintCard";
 import { termineTile } from "@/lib/heute/termineKachel";
@@ -491,21 +492,14 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
 
           {!editing.on && (
             <>
-              {/* Höchstens ein Hinweis, Reihenfolge und „nur einmal“ in core/hinweise.ts */}
+              {/* Höchstens ein Hinweis, Reihenfolge und „nur einmal“ in core/hinweise.ts; alle im Stil der Seiten-Tipps (SeitenTipp) */}
               {hinweis === "mia-name-neu" && <MiaNameHint />}
-              {hinweis === "leiste-neu" && <MiaKarte satz={LEISTE_NEU} label="Neu" knoepfe={[{ label: "Alles klar", onClick: () => markHintSeen("leiste-neu") }]} />}
+              {hinweis === "leiste-neu" && <SeitenTipp text={LEISTE_NEU} label="Neu" id="leiste-neu" onOk={() => markHintSeen("leiste-neu")} />}
               {hinweis === "einladen" && inviteHint && <InviteHintCard text={inviteHint} today={data.todayIso} />}
               {hinweis === "spendentopf" && potHint && <PotHintCard hint={potHint} />}
               {denkt.karte && <MiaKarte {...denkt.karte} />}
               <DarkTip profile={data.profile} today={data.todayIso} quiet={hinweis !== "lieber-schlicht" && hinweis !== "abends-dunkel"} />
-              {hinweis === "startseite-halten" && (
-                <div className="flex items-start gap-3 rounded-card bg-accent-soft px-4 py-3" role="status">
-                  <p className="flex-1 text-[15px] leading-snug text-accent-strong">Tipp: Halte die Startseite gedrückt, um Kacheln hinzuzufügen oder zu entfernen.</p>
-                  <button type="button" onClick={markHomeTipSeen} className="hit shrink-0 text-sm font-bold text-accent-strong underline">
-                    Verstanden
-                  </button>
-                </div>
-              )}
+              {hinweis === "startseite-halten" && <SeitenTipp text={HALTEN_TIPP} label="Tipp" id="startseite-halten" onOk={markHomeTipSeen} />}
             </>
           )}
 
