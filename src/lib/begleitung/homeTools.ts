@@ -14,6 +14,7 @@ import { dateForDay, nextId, propose, type ToolContext, type ToolResult } from "
 import { PLAN_TOOLS } from "@/lib/begleitung/planTools";
 import { findDate } from "@/lib/kalender/parse";
 import { BAUSTEINE } from "@/lib/core/features";
+import { KACHEL_FARBEN, farbWaehlbar, farbeAusWort } from "@/lib/heute/kachelFarben";
 
 type Input = Record<string, unknown>;
 const str = (v: unknown) => (typeof v === "string" ? v.trim() : "");
@@ -165,12 +166,13 @@ export const HOME_TOOLS: BegleitungTool[] = [
     definition: {
       name: "startseite_anpassen",
       description:
-        "Passt die Startseite an: Kachel zeigen (landet an ihrem Standard-Platz), ausblenden, Größe klein/mittel/gross (S/M/L) oder verschieben (hoch, runter, nach_oben, nach_unten); 'standard' = Reihenfolge und Größen wie am Anfang (kachel egal). Z. B. 'Pinnwand ganz nach oben' → pinnwand, nach_oben; 'Wetter klein machen' → wetter, klein; 'Nimm das Wetter weg' → wetter, ausblenden; 'Startseite wie am Anfang' → standard. Zum Bearbeiten-Modus selbst: app_befehl 'Startseite bearbeiten'. Ausblenden löscht nichts. 'Mach die Einkaufsliste wieder klein' → einkauf, klein (Standard ist kompakt); 'Nimm die Einkaufsliste von der Startseite' → einkauf, ausblenden.",
+        "Passt die Startseite an: Kachel zeigen (landet an ihrem Standard-Platz), ausblenden, Größe klein/mittel/gross (S/M/L) oder verschieben (hoch, runter, nach_oben, nach_unten); 'standard' = Reihenfolge und Größen wie am Anfang (kachel egal). Z. B. 'Pinnwand ganz nach oben' → pinnwand, nach_oben; 'Wetter klein machen' → wetter, klein; 'Nimm das Wetter weg' → wetter, ausblenden; 'Startseite wie am Anfang' → standard. Farbe: aktion farbe + farbe (nur die Palette; andere Farbwörter nimmt die App als nächsten Ton, z. B. 'Mach die Notizen blau' → notizen, farbe, blau; 'Notizen wieder automatisch' → farbe automatisch). Wetter und Essen haben keine Farbwahl. Zum Bearbeiten-Modus selbst: app_befehl 'Startseite bearbeiten'. Ausblenden löscht nichts. 'Mach die Einkaufsliste wieder klein' → einkauf, klein (Standard ist kompakt); 'Nimm die Einkaufsliste von der Startseite' → einkauf, ausblenden.",
       input_schema: {
         type: "object",
         properties: {
           kachel: { type: "string", enum: HOME_TILES.map((t) => t.id), description: "pinnwand, termine, aufgaben, wetter, essen, einkauf, notizen (neueste und angeheftete Notizen), vorrat" },
           aktion: { type: "string", enum: ACTIONS },
+          farbe: { type: "string", description: `Nur bei aktion farbe: ${KACHEL_FARBEN.map((f) => f.id).join(", ")} oder automatisch` },
         },
         required: ["kachel", "aktion"],
         additionalProperties: false,
@@ -181,6 +183,13 @@ export const HOME_TOOLS: BegleitungTool[] = [
       const tile = str(input.kachel) as HomeTileId;
       const action = str(input.aktion) as HomeAction;
       if (!HOME_TILES.some((t) => t.id === tile) || !ACTIONS.includes(action)) return fail("kachel und aktion angeben.");
+      if (action === "farbe") {
+        if (!farbWaehlbar(tile)) return fail(`${tile} behält seine Farbe (Wetter = Himmel, Essen = Bild). Sag das kurz.`);
+        const farbe = farbeAusWort(str(input.farbe));
+        if (!farbe) return fail(`farbe: ${KACHEL_FARBEN.map((f) => f.id).join(", ")} oder automatisch.`);
+        propose(ctx, { id: nextId(ctx), type: "home", change: { tile, action, farbe } });
+        return { content: `Vorgemerkt: Startseite – ${tile} ${farbe}.` };
+      }
       propose(ctx, { id: nextId(ctx), type: "home", change: { tile, action } });
       return { content: `Vorgemerkt: Startseite – ${tile} ${action}.` };
     },

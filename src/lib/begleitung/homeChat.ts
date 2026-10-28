@@ -4,6 +4,7 @@
 // den Wochenplan wieder", "Mach das rückgängig". Rein (nur Erkennung).
 
 import type { HomeAction, HomeChange, HomeTileId } from "@/lib/core/homeLayout";
+import { farbWaehlbar, farbeAusWort, type KachelFarbe } from "@/lib/heute/kachelFarben";
 
 type HomeCommand =
   | { kind: "home"; change: HomeChange }
@@ -23,6 +24,19 @@ function tileIn(t: string): HomeTileId | null {
   if (/\b(termine?|kalender)\b/.test(t)) return "termine";
   if (/\b(essen|gericht|essens-?kachel)\b/.test(t)) return "essen";
   return null;
+}
+
+/**
+ * Kachel-Farbe im Satz („Mach die Notizen blau“, „Pinnwand wieder in
+ * Standardfarbe“) – nie „Meine Farbe im Kalender“ (Einstellungen).
+ */
+function farbeIn(t: string): KachelFarbe | "auto" | null {
+  const words = t.split(/[\s,]+/).filter((w) => w !== "bitte");
+  if (words.length > 7 || /\d|farbe im kalender|kalenderfarbe/.test(t)) return null;
+  if (/(standard|automatisch\w*|eigene\w*|normale\w*|alte\w*) ?farbe|farbe\w* (wieder )?(automatisch|zurück)|wieder automatisch$/.test(t)) return "auto";
+  // Die Farbe steht am Ende: „Mach die Notizen blau“, „Notizen in Grün“
+  const f = farbeAusWort(words[words.length - 1] ?? "");
+  return f && f !== "auto" ? f : null;
 }
 
 function actionIn(t: string): HomeAction | null {
@@ -50,6 +64,10 @@ export function parseHomeCommand(text: string): HomeCommand | null {
     const action = actionIn(t);
     if (tile && action && (action !== "zeigen" || /\bstartseite\b|einblenden/.test(t))) return { kind: "home", change: { tile, action } };
   }
+  // Farbe: „Mach die Notizen blau“ (nächster Ton der Palette)
+  const farbTile = tileIn(t);
+  const farbe = farbTile && farbWaehlbar(farbTile) && !actionIn(t) ? farbeIn(t) : null;
+  if (farbTile && farbe) return { kind: "home", change: { tile: farbTile, action: "farbe", farbe } };
   // Kurz: "Aufgaben ganz nach oben", "Aufgaben groß", "Wetter klein"
   const tile = tileIn(t);
   const action = actionIn(t);

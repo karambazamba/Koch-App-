@@ -178,7 +178,7 @@ describe("Startseite: Texte", () => {
 
 describe("Startseite: Migration", () => {
   it("v5 bleibt, v4 bekommt einmal Notizen ans Ende der sichtbaren, v3 zusätzlich den Spendentopf", () => {
-    expect(migrateHome({ version: 5, tiles: DEFAULT_HOME, tipSeen: true })).toEqual({ version: 7, tiles: lonelySToM(DEFAULT_HOME), tipSeen: true });
+    expect(migrateHome({ version: 5, tiles: DEFAULT_HOME, tipSeen: true })).toEqual({ version: 8, tiles: lonelySToM(DEFAULT_HOME), tipSeen: true });
     const v4 = migrateHome({ version: 4, tiles: [{ id: "termine", visible: true, size: "M" }, { id: "notizen", visible: false, size: "M" }, { id: "wetter", visible: true, size: "S" }], tipSeen: true })!;
     expect(visible(v4.tiles)).toEqual(["termine", "wetter", "notizen"]);
     const v3 = migrateHome({ version: 3, tiles: [{ id: "termine", visible: true, size: "M" }, { id: "wetter", visible: true, size: "S" }, { id: "notizen", visible: false, size: "M" }] })!;
@@ -224,7 +224,7 @@ describe("Startseite: Migration", () => {
       { id: "einkauf", visible: true, size: "S" },
     ];
     const m = migrateHome({ version: 6, tiles: v6, tipSeen: true })!;
-    expect(m.version).toBe(7);
+    expect(m.version).toBe(8);
     expect(m.tipSeen).toBe(true);
     expect(m.tiles.some((t) => (t.id as string) === "morgen")).toBe(false);
     expect(m.tiles.filter((t) => t.visible).map((t) => [t.id, t.size])).toEqual([
@@ -242,7 +242,7 @@ describe("Startseite: Migration", () => {
 
   it("Unbekanntes → null", () => {
     expect(migrateHome(null)).toBeNull();
-    expect(migrateHome({ version: 8 })).toBeNull();
+    expect(migrateHome({ version: 9 })).toBeNull();
     expect(migrateHome({ version: 2, tiles: "x" })!.tiles).toHaveLength(HOME_TILES.length);
   });
 });
@@ -255,7 +255,7 @@ describe("Startseite: Speicher", () => {
     expect(home.loadHomeTiles()).toEqual(home.DEFAULT_HOME);
     const undo = home.changeHome({ tile: "wetter", action: "gross" });
     expect(sizeOf(home.loadHomeTiles(), "wetter")).toBe("L");
-    expect(JSON.parse(win.localStorage.getItem("wasgibts.startseite")!).version).toBe(7);
+    expect(JSON.parse(win.localStorage.getItem("wasgibts.startseite")!).version).toBe(8);
     undo();
     expect(sizeOf(home.loadHomeTiles(), "wetter")).toBe("S");
   });

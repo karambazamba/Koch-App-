@@ -4,7 +4,7 @@
 
 - Startseite = Kacheln in EINER gespeicherten Anordnung, die sich nie von
   selbst ändert. Bearbeiten direkt auf der Startseite (lange drücken: wackeln,
-  ziehen, „–“, S/M/L); jede S ist halb breit, zwei S nebeneinander, jede
+  ziehen, „–“, S/M/L, darunter die Farbe); jede S ist halb breit, zwei S nebeneinander, jede
   S-fähige Kachel mit jeder anderen (eine einzelne S bleibt halb, im Bearbeiten
   zeigt die freie Hälfte „＋ Kachel“); Essen + Einkauf sind ein festes Paar. Größe ändert nur die Menge (S ≤ M ≤ L). Standard für
   neue Nutzer: Pinnwand + Wetter (S; allein ohne Pinnwand), Termine, Aufgaben, Essen + Einkauf,
@@ -66,10 +66,13 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
 
 ## Daten und Speicher
 
-- `wasgibts.startseite` v4 `{version, tiles: {id, visible, size}[], tipSeen}`
+- `wasgibts.startseite` v8 `{version, tiles: {id, visible, size, farbe?}[], tipSeen}`
   (`migrateHome`). v1 → Aufgaben hinter Termine; v1/v2 → Größen S/M/L,
   Kachel „kladde“ wird „notizen“ an derselben Stelle; v3 → v4 hängt die
-  Spendentopf-Kachel einmal hinter die letzte sichtbare (`withPotTile`).
+  Spendentopf-Kachel einmal hinter die letzte sichtbare (`withPotTile`);
+  v7 → v8 (Tafel 108): `farbe` je Kachel, fehlt = automatisch (alle alten
+  Anordnungen bleiben automatisch). `sanitizeHome` lässt nur Töne der Palette
+  zu und nie bei Wetter/Essen.
   `sanitizeHome` wirft Unbekanntes raus, ergänzt fehlende Kacheln unsichtbar
   und hält Essen + Einkauf zusammen. In der Sicherung.
 - `wasgibts.jetzt` v1 `{on, day, hidden, weights}` – an/aus, heute
@@ -114,6 +117,17 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
   Kacheln mit feinem Rand, Innen-Kärtchen sehr hell, Farbe nur in Überschrift,
   Symbol, Uhrzeit und Termin-Strich. Termine: Uhrzeit fett in der Tonfarbe,
   Strich links in Raumfarbe. Hell/Dunkel gilt für beide.
+- Kachel-Farben (Tafel 108, `src/lib/heute/kachelFarben.ts`): Termine
+  Lavendel, Aufgaben Mint, Einkauf Salbei, Pinnwand Rosé, Notizen Vanille,
+  Im Haus Aqua, Sport Flieder, Timer Sand (alle gleich hell, Schrift ≥ 4,5:1,
+  dunkle Töne für Dunkel); Wetter = Himmel, Essen = Bild. Im Bearbeiten-Modus
+  unter S · M · L die Reihe `FarbWahl` („A“ gestrichelt + 8 Punkte, Ring in
+  der Tonfarbe, ein Tipp = gespeichert); Wetter und Essen ohne Reihe. Die
+  Wahl steht als `farbe` in der Startseiten-Anordnung (pro Person/Gerät, in
+  der Sicherung), die Kachel trägt `data-farbe="<ton>"` – CSS nimmt Fläche und
+  Schrift der Kachel, deren Standard der Ton ist. „Schlicht“: weiß, der Ton
+  nur in Überschrift/Symbol. „Wie am Anfang“ setzt auch die Farben zurück.
+  Beispiel-Tag nutzt dieselbe Anordnung, also dieselben Farben.
 - `HOME_TILES` in Standard-Reihenfolge: Pinnwand (S), Wetter (S), Termine (M),
   Aufgaben (M), Essen (S), Einkauf (S), Spendentopf (nur M), Tipps (M/L,
   Baustein), Timer (S/M), Sport, Notizen, Vorrat (S/M, Baustein),
@@ -392,18 +406,24 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
 ## Begleitung (Mia)
 
 - `startseite_anpassen` (Op `home`, Vorschau + Übernehmen): zeigen,
-  ausblenden, klein/mittel/gross, hoch/runter/nach_oben/nach_unten, standard.
+  ausblenden, klein/mittel/gross, hoch/runter/nach_oben/nach_unten, standard,
+  farbe + `farbe` („Mach die Notizen blau“ → nächster Ton: blau → Lavendel,
+  hellblau/türkis → Aqua, grün → Mint, oliv/hellgrün → Salbei, gelb → Vanille,
+  rosa/pink/rot → Rosé, lila/violett → Flieder, beige/braun/grau → Sand,
+  automatisch/Standard → A; `farbeAusWort`). Wetter/Essen: ehrlich ablehnen.
 - `jetzt_karte` (Op `set_jetzt`): Jetzt-Karte an/aus.
 - „Startseite bearbeiten“ → `app_befehl` mit diesem Satz → `requestHomeEdit`.
 - Ohne KI: `parseHomeCommand` in `src/lib/begleitung/homeChat.ts` („Mach die
-  Einkaufsliste wieder klein“, „Nimm das Wetter weg“) und `jetztCommand` in
+  Einkaufsliste wieder klein“, „Nimm das Wetter weg“, „Mach die Notizen blau“ –
+  Farbe nur als letztes Wort, höchstens 7 Wörter) und `jetztCommand` in
   `dayChat.ts` („Blende die Jetzt-Karte aus“, auch „Lass die Startseite immer
   gleich“).
 - Nutzt die Begleitung eine Kachel, die fehlt, kommt sie dazu (`unlockHomeTile`).
 
 ## Tests
 
-- `tests/heute/`: `jetztKarte.test.ts`, `jetztThemen.test.ts`, `deinTag.test.ts`,
+- `tests/heute/`: `kachelFarben.test.ts` (Palette, Kontrast hell/dunkel/Schlicht,
+  Wahl/„A“, Migration v8, Sicherung, Mia), `jetztKarte.test.ts`, `jetztThemen.test.ts`, `deinTag.test.ts`,
   `phasen.test.ts`, `tagesphasen.test.ts`, `tagesablaufSpeicher.test.ts`.
 - `tests/core/`: `kachelAnordnung.test.ts`, `startseite.test.ts`,
   `beispielTag.test.ts`, `beispielTagSpeicher.test.ts`, `wischen.test.ts`.

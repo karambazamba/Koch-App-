@@ -56,7 +56,7 @@ export function everydayUses(latest: string, system: string): Anthropic.Beta.Bet
   const home = parseHomeCommand(latest);
   if (home) {
     if (home.kind === "undo") return tools([{ name: "rueckgaengig", input: {} }]);
-    if (home.kind === "home") return tools([{ name: "startseite_anpassen", input: { kachel: home.change.tile, aktion: home.change.action } }]);
+    if (home.kind === "home") return tools([{ name: "startseite_anpassen", input: { kachel: home.change.tile, aktion: home.change.action, ...(home.change.farbe ? { farbe: home.change.farbe } : {}) } }]);
     if (home.kind === "clear_week") return tools([{ name: "wochenplan_loeschen", input: {} }]);
     if (home.kind === "clear_shopping") return tools([{ name: "einkaufsliste_leeren", input: {} }]);
     if (home.kind === "remove_shopping") return tools([{ name: "einkaufsliste_entfernen", input: { artikel: home.names } }]);

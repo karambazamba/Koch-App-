@@ -41,7 +41,7 @@ describe("Kachel-Größen", () => {
 describe("Migration der Startseite", () => {
   it("v2 → v3: Kladde wird zur Notizen-Kachel an derselben Stelle, Größen gesetzt", () => {
     const v3 = migrateHome({ version: 2, tiles: [{ id: "termine", visible: true }, { id: "kladde", visible: true }, { id: "essen", visible: true }], tipSeen: true });
-    expect(v3?.version).toBe(7);
+    expect(v3?.version).toBe(8);
     const ids = v3!.tiles.filter((t) => t.visible).map((t) => t.id);
     expect(ids.indexOf("notizen")).toBe(ids.indexOf("termine") + 1);
     // Essen ohne Einkauf stand allein – war breit, wird beim Update M (v6: jede S halb)

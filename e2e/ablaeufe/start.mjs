@@ -169,6 +169,21 @@ export const bearbeiten = async (page, check) => {
   check(await page.getByRole("button", { name: /Kachel/ }).first().isVisible(), "„+ Kachel“ im Kopf");
   await page.getByRole("button", { name: "Verstanden" }).click();
   await page.waitForTimeout(400);
+  // Farbe wählen (Tafel 108): ein Tipp = sofort übernommen, „A“ = zurück auf automatisch; Wetter ohne Auswahl
+  const farbe = () => page.evaluate(() => JSON.parse(localStorage.getItem("wasgibts.startseite") ?? "{}").tiles?.find((t) => t.id === "pinnwand")?.farbe ?? null);
+  check(!(await page.getByRole("radiogroup", { name: "Farbe Wetter" }).count()), "Wetter ohne Farbwahl");
+  // Im Bearbeiten wackeln die Kacheln samt Farbreihe – tippen wie ein Finger auf die Mitte
+  const tippe = async (name) => {
+    const b = await page.getByRole("radio", { name }).boundingBox();
+    await page.mouse.click(b.x + b.width / 2, b.y + b.height / 2);
+  };
+  await tippe("Pinnwand Farbe Aqua");
+  await page.waitForTimeout(300);
+  check((await farbe()) === "aqua" && (await page.locator('[data-tone="pinnwand"][data-farbe="aqua"]').count()) > 0, "Pinnwand → Aqua, sofort übernommen");
+  check((await page.getByRole("radio", { name: "Pinnwand Farbe Aqua" }).getAttribute("aria-checked")) === "true", "aktuelle Farbe ausgewählt");
+  await tippe("Pinnwand Farbe automatisch");
+  await page.waitForTimeout(300);
+  check((await farbe()) === null && !(await page.locator('[data-tone="pinnwand"][data-farbe]').count()), "„A“ → wieder automatisch");
   await page.getByRole("button", { name: "Fertig" }).first().click();
   await page.waitForTimeout(400);
   check(!(await page.getByRole("button", { name: "Fertig" }).first().isVisible()), "„Fertig“ beendet");

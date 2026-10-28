@@ -2,6 +2,14 @@
 
 Grundregeln stehen in CLAUDE.md, Abschnitt 7.
 
+- Kachel-Farben (Tafel 108, `heute/kachelFarben.ts`): Termine Lavendel,
+  Aufgaben Mint, Einkauf Salbei, Pinnwand Rosé, Notizen Vanille, Im Haus Aqua,
+  Sport Flieder, Timer Sand; im Bearbeiten unter S · M · L „A“ (automatisch) +
+  diese 8 Töne, ein Tipp = übernommen, keine freie Farbwahl, Schrift kommt mit
+  dem Ton; Wetter und Essen ohne Auswahl; gespeichert pro Person in der
+  Startseiten-Anordnung (`farbe`, `data-farbe`), bei „Schlicht“ nur für
+  Überschrift/Symbol.
+
 - Leiste unten (Stil B1): schwebend, weiß (dunkel: Kartenfarbe), 12 px Rand,
   rounded-card, ca. 66 px, Reiter mit Linien-Icon + 12 px Text (aktiv Orange),
   Mia rechts IN der Leiste (60 px, ragt 30 px heraus, atmet leicht), auf allen

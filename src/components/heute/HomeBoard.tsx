@@ -25,6 +25,7 @@ import { glowTile, pfeilZu, rowsOf, unitsOf, type Unit } from "@/lib/core/homeUn
 import { SeitenTipp } from "@/components/begleitung/denktmit/SeitenTipp";
 import type { VorstellAnzeige } from "@/components/begleitung/denktmit/useMiaDenkt";
 import { EditFrame } from "@/components/heute/EditFrame";
+import type { KachelFarbe } from "@/lib/heute/kachelFarben";
 import { buzz } from "@/components/heute/actions";
 import type { TilePicker } from "@/components/heute/TilePicker";
 
@@ -308,6 +309,10 @@ export function HomeBoard({
     buzz();
     saveHomeTiles(applyHomeChange(all, { tile: id, action: size === "S" ? "klein" : size === "M" ? "mittel" : "gross" }));
   };
+  const recolor = (id: HomeTileId, farbe: KachelFarbe | undefined) => {
+    buzz();
+    saveHomeTiles(applyHomeChange(all, { tile: id, action: "farbe", farbe: farbe ?? "auto" }));
+  };
 
   const renderUnit = (unit: Unit, index: number, half: boolean, floating = false, wide = true) => {
     const pair = unit.tiles.length === 2;
@@ -356,7 +361,7 @@ export function HomeBoard({
           style={editing && !floating && !drag && !holding ? { animation: `${index % 2 ? "wiggle-b" : "wiggle"} 1.6s ease-in-out infinite` } : undefined}
         >
           {unit.tiles.map((tile) => (
-            <EditFrame key={tile.id} tile={tile} editing={editing} href={hrefFor?.(tile.id)} onRemove={() => remove(tile.id)} onResize={(s) => resize(tile.id, s)}>
+            <EditFrame key={tile.id} tile={tile} editing={editing} href={hrefFor?.(tile.id)} onRemove={() => remove(tile.id)} onResize={(s) => resize(tile.id, s)} onFarbe={(f) => recolor(tile.id, f)}>
               {render(tile, half || pair, editing)}
             </EditFrame>
           ))}
