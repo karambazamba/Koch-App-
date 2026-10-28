@@ -3445,7 +3445,7 @@ Fehler in `docs/aufraeumen-nachher.md`.
   Haushalt = Familie. Prüfstand im Testmodus unverändert (Raum- und
   Sofort-Prüfstand weiter ≥ 95 %).
 
-## Pinnwand aufgeräumt (A-028 Teil 1, Tafel 123, Version folgt beim Mergen)
+## Pinnwand aufgeräumt (v0.152.0, A-028 Teil 1, Tafel 123)
 
 - Fotos als Polaroid in Zettelgröße (halbe Breite, quadratisch,
   `object-fit: cover`), antippen = groß im Fenster (`FotoFenster`, Text,
@@ -3458,7 +3458,7 @@ Fehler in `docs/aufraeumen-nachher.md`.
 - Entschieden: „OBEN“ nur an „Bleibt hängen“-Zettel (die stehen vorn);
   eigene Zettel heißen weiter „Du“ (Tafel: „Ich“).
 
-## Pinnwand: Größe, Ordnen, „Nur für mich“ (A-028 Teil 2, Tafel 123, Version folgt beim Mergen)
+## Pinnwand: Größe, Ordnen, „Nur für mich“ (v0.152.0, A-028 Teil 2, Tafel 123)
 
 - Lange drücken hebt den Zettel an (Schatten, 1,06); loslassen = Fenster wie
   Tafel 123 C (Titel = Zettel in „…“, Klein | Groß, Nach oben, Nur für mich
@@ -3486,3 +3486,12 @@ Fehler in `docs/aufraeumen-nachher.md`.
   Sprachnachrichten haben Größe und Platz, aber kein „Nur für mich“ (sie
   sind für die anderen). Kein „Nur für mich“-Schalter beim Schreiben (nur
   im Fenster und per Mia).
+- Auf v0.151 (A-034) aufgesetzt: Die Pinnwand-Migration `20261101130000`
+  baut jetzt auf `20261101120000_raeume_ich.sql` auf – „Nur für mich“ kommt
+  als erste Regel vor die drei Räume, „ich“ und „arbeit“ bleiben nur für den
+  Besitzer (vorher hätte die Pinnwand-Migration `entry_visible` auf den
+  Stand vor A-034 zurückgesetzt). Test-Backend (`visible`, `fremdPrivat`)
+  genauso; RLS-Test Abschnitt 7 und `nurFuerMichTeilen.test.ts` prüfen auch
+  Pinnwand-Einträge in „ich“/„arbeit“. Abhaken bleibt wie seit v0.145 (1 s
+  stehen, Kachel zeigt das Häkchen kurz mit). Prüfstand 226 Sätze.
+  Tafel 123 in neuer, schärferer Fassung (gleicher Inhalt).

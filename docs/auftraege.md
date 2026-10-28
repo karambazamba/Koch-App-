@@ -18,7 +18,10 @@ Status: offen · in Arbeit · fertig vX.Y · zurückgestellt (Grund)
   12 Stunden (v0.147), Familie verbinden + Namen statt Mail (v0.148), Einladungsseite ohne Leiste (v0.149,
   Ursache des roten Konto-Durchklicks), Essen-Kachel final + nichts
   abgeschnitten (A-045/A-046, v0.150), Neue Aufgabe & Termin mit Räumen
-  Familie · Ich · Arbeit und Ergebnis-Karten (A-020, A-021, A-034, A-037, v0.151).
+  Familie · Ich · Arbeit und Ergebnis-Karten (A-020, A-021, A-034, A-037, v0.151),
+  Pinnwand aufgeräumt, Größe, Ordnen, Ecke „Nur für mich“ (A-028 Teil 1 und 2,
+  Tafel 123, v0.152; ausprobieren: Zettel lange drücken → Groß / Nach oben /
+  Nur für mich, halten und ziehen).
 - **Merge-Reihenfolge (Sortier-Auftrag 28.10., je bauen → testen → PR → mergen,
   dann der nächste auf dem neuesten `main`):**
   1. A-027 Erster Start rund (mit A-031 Zugangscode nachsichtig, 10 Versuche)
@@ -83,7 +86,7 @@ Status: offen · in Arbeit · fertig vX.Y · zurückgestellt (Grund)
 | A-025 | Essen-Kachel „Rezept“ / „Wochenplan“, Rezeptseite, Kochmodus + Nachtrag Schnellanleitung „Kurz \| Ausführlich“ (ersetzt Tafel-121-Nachtrag „Ich koche jetzt“) | `tafel-122-essen-rezept.png` | fertig v0.146 |
 | A-026 | Nachtrag zu A-019 (VORRANG): Mia hört live über ElevenLabs (Scribe Realtime) – Text beim Sprechen, Ende von selbst | – | fertig v0.143 |
 | A-027 | Erster Start rund für Testfreunde (höchstens 3 Bildschirme, „Zugangscode“, Karte „Auf den Home-Bildschirm“, KI-OK aufräumen) | – | fertig v0.141 |
-| A-028 | Pinnwand: aufgeräumt, Größe, Ordnen, Ecke „Nur für mich“ (+ 7a einklappbar) – Teil 1 und Teil 2 | `tafel-123.png` | gebaut, wartet (Teil 1 und Teil 2) |
+| A-028 | Pinnwand: aufgeräumt, Größe, Ordnen, Ecke „Nur für mich“ (+ 7a einklappbar) – Teil 1 und Teil 2 | `tafel-123.png` | fertig v0.152 |
 | A-029 | Sport-Kachel mit Wasserzeichen + kleine Reparaturen (Im-Haus-Namen, Sport leer, Gedankenstriche) | Tafel 124 A (kein Bild) | gebaut, wartet |
 | A-030 | Neue Adresse mia.karamba-eis.de (keine Weiterleitung, feste Adressen ersetzen; Supabase-Redirects von Hand) | – | fertig v0.140 |
 | A-031 | SOFORT: Zugangscode nachsichtig prüfen (Groß/klein, Leerzeichen egal; 10 Versuche je Adresse) | – | fertig v0.141 (mit A-027) |

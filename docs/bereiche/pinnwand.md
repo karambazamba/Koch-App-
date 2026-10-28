@@ -50,7 +50,7 @@ ziehen) und unten die Ecke „Nur für mich“.
   Anheben. Reihenfolge = „Bleibt hängen“ („OBEN“) vorn, dann `sort`, ohne
   `sort` die Zeit; geteilt mit der Familie. „Nur für mich“ (`privat`) unter
   einer gestrichelten Linie ganz unten, grau-weiß mit grauem Pin und
-  Schloss, nur der Besitzer sieht sie (RLS wie „Arbeit“, Bilder bleiben auf
+  Schloss, nur der Besitzer sieht sie (RLS wie „Ich“ und „Arbeit“, Bilder bleiben auf
   dem Gerät), nie auf der Kachel, im Push oder als ungelesen; ohne private
   Zettel und im Haushalt „allein“ keine Linie; einklappbar, pro Gerät
   gemerkt (Standard auf, zu ohne Anzahl). Wörter in `woerter.ts`.
@@ -292,7 +292,7 @@ ziehen) und unten die Ecke „Nur für mich“.
   privater Zettel nie hochgeladen, Mia-Sätze), `nurFuerMichTeilen.test.ts`
   (zwei Konten: Platz/Größe kommen an, private nie, auch nicht nachträglich
   privat gemachte; Partner kann nichts privat machen),
-  `tests/datenbank/sicherheit.test.sql` Abschnitt 5 (RLS).
+  `tests/datenbank/sicherheit.test.sql` Abschnitt 7 (RLS, auch „ich“/„arbeit“).
 
 - `tests/pinnwand/aufgeraeumt.test.ts` (A-028 Teil 1: Polaroid quadratisch,
   Foto groß im Fenster, Wand ohne Mindesthöhe, OBEN, Meta-Zeile kurz).
