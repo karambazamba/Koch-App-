@@ -2996,3 +2996,67 @@ Fehler in `docs/aufraeumen-nachher.md`.
   die Hinweis-Warteschlange bei jedem Start, „jeder Hinweis nur einmal“ galt
   so nicht. Jetzt nur noch lebender Schlüssel; Test: kein Schlüssel aus dem
   Verzeichnis wird beim Start gelöscht.
+
+
+## Neue Adresse mia.karamba-eis.de (v0.141.0, A-030)
+- Feste Adresse `APP_URL` (keine Weiterleitung); Einladungslinks zeigen immer dorthin, Mail-Vorlage lädt das Logo von dort. Supabase-Redirects werden von Hand angepasst (siehe `docs/bereiche/konten.md`).
+
+## Mia-Zubehör: Sonne das ganze Jahr (v0.142.0, A-033)
+- `wetter()` in `src/lib/mia/zubehoer.ts`: Regen bald → Schirm (Vorrang);
+  jetzt sonnig ab 18 °C → Sonnenbrille, ganzjährig (vorher nur > 22 °C im
+  Sommer); sonnig unter 18 °C → neues Zubehör „sonne“. Sonne und Sonnenbrille
+  nur tagsüber (Sonnenauf- bis -untergang über `isNight` aus
+  `wetter/view.ts`), nachts nie. Rangfolge Geburtstag > Anlass > Kochen >
+  Wetter > Jahreszeit unverändert, immer genau EIN Zubehör.
+- Sonne: Kreis mit acht kurzen Strahlen in `--app-sonne` (#F5B82E), halb
+  hinter Mia oben rechts; am Mia-Knopf und auf der Bühne (dort als einziges
+  Zubehör). Neuer Moment `sonne` in `miaMoment`: Strahlen drehen sich einmal
+  in 8 s, höchstens 1×/h, nur transform; reduzierte Bewegung = still.
+- Das eckige Logo (`BrandMark`) bleibt ohne Zubehör (Test).
+- Tests: `tests/mia/familienmanagerin.test.ts` (Oktober 13 °C mittags Sonne,
+  April 19 °C Sonnenbrille, nachts nichts, Regen schlägt Sonne, Moment,
+  Logo, Token und reduzierte Bewegung).
+
+## Einkauf neu – einsprechen oder aussuchen (vX, Tafel 110/111)
+- Problem (Screenshots 28.10. 08:24): die Einkaufsliste war zu voll (Woche,
+  Reiter, Einkaufsmodus-Knopf, Abteilungen, Zuletzt gekauft, Gerichte ohne
+  Zutaten, Hinweistexte). Die Kachel war klar – so ist jetzt die Seite.
+  Ersetzt „Einkauf so einfach wie die Kachel“, „Einkaufs-Diktat“ und die
+  Oberfläche aus Tafel 89/99; Datenmodell, „Meine Läden“, Regeln, Lernen und
+  Mia bleiben.
+- Seite „Einkauf“: zwei große Knöpfe „Einsprechen · Einfach aufzählen“
+  (Orange) und „Aussuchen · Suchen & antippen“ (weiß), „Meine Läden“ als große
+  farbige Karten (auch mit 0, Tipp = Laden-Seite), „Noch ohne Laden“
+  gestrichelt: antippen = „Wo kaufst du das?“, halten (250 ms) und auf eine
+  Karte ziehen = sofort gemerkt („Käse → Edeka. Merk ich mir. · Rückgängig“),
+  „Mia sortiert“. Alles Seltene im „···“ (Woche, Zuletzt gekauft, Gerichte
+  ohne Zutaten, Stammliste, Teilen, Meine Läden).
+- Einsprechen: Mia im Modus „Einkauf“ (zuhörend, „Zähl einfach auf.“), KI
+  zuerst mit „[Einkauf] …“, ohne KI eigener Versteher (nur Lebensmittel und
+  Verbrauchsartikel, Füllwörter/Abbrüche/Smalltalk/Namen raus, Korrekturen,
+  Mengen, Doppeltes, „bei Rewe“). Live-Blase streicht Ignoriertes durch,
+  „Hab ich: 9 Sachen“ als Chips (×, Farbpunkt), „Passt“ → „9 drauf · 3 ohne
+  Laden · Rückgängig“. Prüfstand +12 Sätze (neu geprüft: Anzahl, Menge).
+- Aussuchen: erst Laden (große Knöpfe, aktiv voll in Ladenfarbe mit Zahl),
+  dann Sachen; feste Abschnitte (Für eure Woche → Oft bei/Beliebt → Obst …
+  Süßes & Snacks → Drogerie & Haushalt zuletzt, im Drogerie-Laden zuerst und
+  Lebensmittel eingeklappt), klebende Überschriften, Suche und Chip-Reihe
+  bleiben oben, Haken „steht drauf“ in Ladenfarbe, Punkt „noch da“, halten =
+  Menge („×2“), dunkle Leiste „● Rewe 3 · ● Rossmann 2“ + „Fertig“. Jede Wahl
+  wird als feste Regel gemerkt.
+- Laden-Seite statt Einkaufsmodus: große Karte „Rewe · 3 Sachen“, großer
+  Kreis = gekauft (nach 2 s „Im Korb“), lange drücken = anderer Laden/ändern/
+  löschen, Feld „Was noch bei Rewe?“. „Familie Bescheid sagen“ beim ersten
+  Abhaken bzw. unterwegs geöffnet („Ich bin bei REWE“, Jetzt-Karte).
+- Kachel C2 bleibt: Laden-Zeile = Laden-Seite, „n ohne Laden“ = Einkauf am
+  Bereich. Beispiel-Tag mit Edeka/Rewe/Lidl/Rossmann und zwei Chips.
+- Entschieden ohne Rückfrage: Leiste unten über das neue Token
+  `--app-leiste-dunkel` (warmes Fast-Schwarz, nie reines Schwarz), „Fertig“
+  orange; „Süßes & Snacks“/„Drogerie & Haushalt“ nur als Anzeige-Abschnitte
+  (gespeichert bleibt die Abteilung, kein Formatwechsel); der gemerkte Chip
+  (`wasgibts.einkaufsansicht`) ist jetzt der aktive Laden in „Aussuchen“
+  (gleiches Format); Rückgängig nach dem Ziehen nimmt den Schritt samt Regel
+  zurück; Grundsachen aus Rezepten und fällige Stammartikel stehen nicht
+  mehr als Extra-Zeilen auf der Seite (Grundsachen unter „Aussuchen · Für
+  eure Woche“, Stammliste im „···“); „Tomaten und Gurke bei Rewe“ gilt auch
+  ohne KI für beide (nur ohne Komma).

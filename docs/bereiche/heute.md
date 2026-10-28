@@ -508,6 +508,12 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
   nie einen Buchstaben. Gibt es nur „Egal wo“, zeigt die Kachel bis zu 6
   runde Symbole der ersten Sachen, „+N“ und die Zahl (Variante A,
   `tileArt`/`symbolReihe`); sobald Läden da sind, die Zeilen je Laden (C2).
+  Seit „Einkauf neu“ (vX, Tafel 110): Laden-Zeile = Laden-Seite
+  (`/einkaufsliste/laden?name=…`, `ladenHref`), „n noch ohne Laden ·
+  Sortieren ›“ = Seite „Einkauf“ am Bereich „Noch ohne Laden“
+  (`/einkaufsliste#ohne-laden`), Kopf und Rest = Seite „Einkauf“; die
+  Jetzt-Karte „Auf dem Heimweg bei REWE?“ öffnet die Laden-Seite unterwegs
+  (`&unterwegs=1`).
 - Tests: `tests/heute/essenKachel.test.ts` (sieben Zustände mit Bild,
   Kopfzeile, Schritt-Zeile), `tests/einkauf/kachelSymbole.test.ts` (nie ein
   Buchstabe, Variante A/C2, Kochmodus-Schritt).
