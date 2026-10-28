@@ -99,6 +99,16 @@ const cookTip = async (page, step) => {
   await page.waitForTimeout(1200);
   await settle(page);
 };
+/** Mias Ergebnis-Karten auf der Bühne (A-037, Tafel 126): zwei Karten, grüne Pillen, EIN „Rückgängig“ */
+const ergebnisKarten = async (page) => {
+  const box = await miaTippen(page);
+  await box.fill("Freitag 16 Uhr Zahnarzt mit Mathis. Und wir brauchen Milch.");
+  await box.press("Enter");
+  await page.locator("[data-ergebnis-karten] [data-ergebnis]").nth(1).waitFor({ timeout: 10000 });
+  // Einblenden (0,15 s versetzt) abwarten
+  await page.waitForTimeout(1200);
+  await settle(page);
+};
 /** Zugangscode-Bildschirm („Fast geschafft.“, „Fertig“): Server nur nachgestellt („braucht Code“), kein echter Code */
 const codeScreen = async (page) => {
   await page.route("**/api/lotte**", (route) => route.fulfill({ json: { configured: true, mock: false, needsCode: true } }));
@@ -118,6 +128,7 @@ const SCENES = [
   ["zugangscode", codeScreen],
   ["home-karte", homeKarte],
   ["home-anleitung", async (page) => (await homeKarte(page), await page.getByRole("button", { name: "Zeig’s mir" }).click(), await page.waitForTimeout(900))],
+  ["mia-ergebnis", ergebnisKarten],
   ["stimme-angebot", voiceOffer],
   ["stimme-anleitung", async (page) => (await voiceOffer(page), await page.getByRole("button", { name: "Schönere Stimme holen" }).click())],
   ["kochidee-knopf", (page) => cookTip(page, "knopf")],
