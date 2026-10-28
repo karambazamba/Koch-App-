@@ -6,7 +6,7 @@
 import { loadSport, saveSport } from "@/lib/sport/store";
 import { createLocalStore } from "@/lib/core/localStore";
 import { useExternalStore } from "@/lib/core/useExternalStore";
-import { defaultHome, saveHomeTiles } from "@/lib/core/homeLayout";
+import { ersteStartseite, saveHomeTiles } from "@/lib/core/homeLayout";
 import { setFeature } from "@/lib/core/features";
 import { clearDemoStore, startDemo } from "@/lib/core/demo";
 import { loadProfile, saveProfile } from "@/lib/einstellungen/profileStore";
@@ -38,7 +38,7 @@ function finishWelcome(state: WelcomeState, look: AppLook = "farbig") {
  * sortieren?“): sonst Standardwerte, die Standard-Startseite des Haushalts
  * (Tafel 119: Familie / zu zweit Pinnwand S | Wetter XS über Notizen XS,
  * allein Wetter, Sport, Notizen, Im Haus als XS; dann Termine, Aufgaben,
- * Essen + Einkauf) und die Beispiele darin.
+ * Essen + Einkauf; dazu Mias Wundertüte als S, A-022) und die Beispiele darin.
  */
 export function startFresh(look: AppLook = "farbig", haushalt: Haushalt = "familie", name = "") {
   finishWelcome(startState(), look);
@@ -47,9 +47,11 @@ export function startFresh(look: AppLook = "farbig", haushalt: Haushalt = "famil
   const eigener = name.trim().slice(0, 40);
   if (profile) saveProfile({ ...profile, householdType: HOUSEHOLD_FOR[haushalt], persons: eigener ? profile.persons.map((p, i) => (i === 0 ? { ...p, name: eigener } : p)) : profile.persons });
   // Allein: Pinnwand aus (Baustein und Kachel, zuschaltbar), dafür Sport; zu zweit und Familie mit Pinnwand
-  saveHomeTiles(defaultHome(haushalt));
+  saveHomeTiles(ersteStartseite(haushalt));
   setFeature("pinnwand", haushalt !== "allein");
   if (haushalt === "allein") setFeature("sport", true);
+  // Mias Wundertüte: für neue Nutzer an (auch nach „Neu anfangen“), als S-Kachel im Standard
+  setFeature("wundertuete", true);
   startDemo();
 }
 

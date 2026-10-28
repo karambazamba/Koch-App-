@@ -16,6 +16,7 @@ type HomeCommand =
 
 function tileIn(t: string): HomeTileId | null {
   if (/\bpinnwand\b/.test(t)) return "pinnwand";
+  if (/wundert(ü|ue)te(?![a-zäöüß])/.test(t)) return "wundertuete";
   if (/\bwetter\b/.test(t)) return "wetter";
   if (/\b(kladde|schnellnotiz|notizen?)\b/.test(t)) return "notizen";
   if (/\bvorrat\b/.test(t)) return "vorrat";

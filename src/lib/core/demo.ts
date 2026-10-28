@@ -1,6 +1,6 @@
 // Beispiel-Tag beim ersten Start: Beispiele je Haushalt auf der Startseite
 // (Tafel 119: Termine, Aufgaben, Pinnwand, Einkauf, Essen mit Beispielgericht,
-// Notizen, Sport, Im Haus), damit nichts leer aussieht. Die
+// Notizen, Sport, Im Haus; Wundertüte mit fester Karte), damit nichts leer aussieht. Die
 // Beispiele liegen NICHT in den echten Speichern – nur die Startseite zeigt
 // sie, nie Sicherung, Kalender, Push oder KI. Uhrzeiten werden beim Öffnen
 // aus einem festen Tagesplan passend zum Wochentag (`demoDay`: Werktag,
@@ -17,8 +17,8 @@ import { istFeiertag } from "@/lib/core/feiertage";
 import type { Haushalt } from "@/lib/core/haushalt";
 import type { Room } from "@/lib/core/entries";
 
-export type DemoTile = "termine" | "aufgaben" | "pinnwand" | "einkauf" | "essen" | "notizen" | "sport" | "vorrat";
-const TILES: DemoTile[] = ["termine", "aufgaben", "pinnwand", "einkauf", "essen", "notizen", "sport", "vorrat"];
+export type DemoTile = "termine" | "aufgaben" | "pinnwand" | "einkauf" | "essen" | "notizen" | "sport" | "vorrat" | "wundertuete";
+const TILES: DemoTile[] = ["termine", "aufgaben", "pinnwand", "einkauf", "essen", "notizen", "sport", "vorrat", "wundertuete"];
 const DAYS = 3;
 
 export type DemoState = {

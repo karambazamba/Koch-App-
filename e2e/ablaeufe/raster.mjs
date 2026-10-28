@@ -9,8 +9,8 @@ import { BASE, hello, newPage, seedFamily } from "../lib.mjs";
 
 const KEY = "wasgibts.startseite";
 /** Erlaubte Größen je Kachel (wie `HOME_TILES`) */
-const SIZES = { wetter: ["XS", "S", "M"], timer: ["XS", "S"], notizen: ["XS", "S", "M"], vorrat: ["XS", "S"], sport: ["XS", "S"], pinnwand: ["S", "M"], essen: ["S", "M"], einkauf: ["S", "M"], termine: ["S", "M"], aufgaben: ["S", "M"] };
-const FEATURES = { version: 6, on: ["notizen", "vorrat", "pinnwand", "sport", "rezepte"], launch: true, imHaus: true };
+const SIZES = { wetter: ["XS", "S", "M"], timer: ["XS", "S"], notizen: ["XS", "S", "M"], vorrat: ["XS", "S"], sport: ["XS", "S"], pinnwand: ["S", "M"], essen: ["S", "M"], einkauf: ["S", "M"], termine: ["S", "M"], aufgaben: ["S", "M"], wundertuete: ["S", "M"] };
+const FEATURES = { version: 6, on: ["notizen", "vorrat", "pinnwand", "sport", "rezepte", "wundertuete"], launch: true, imHaus: true };
 
 /** Anordnung speichern (nur diese Kacheln sichtbar, in dieser Reihenfolge) und neu laden */
 async function layout(page, tiles) {

@@ -15,7 +15,7 @@ import { useExternalStore } from "@/lib/core/useExternalStore";
 import { farbLabel, gueltigeFarbe, type KachelFarbe } from "@/lib/heute/kachelFarben";
 import type { Haushalt } from "@/lib/core/haushalt";
 
-export type HomeTileId = "pinnwand" | "termine" | "aufgaben" | "wetter" | "essen" | "einkauf" | "timer" | "sport" | "notizen" | "vorrat" | "post" | "spendentopf" | "tipps";
+export type HomeTileId = "pinnwand" | "termine" | "aufgaben" | "wetter" | "essen" | "einkauf" | "timer" | "sport" | "notizen" | "vorrat" | "post" | "spendentopf" | "tipps" | "wundertuete";
 export type TileSize = "XS" | "S" | "M";
 export type HomeTile = { id: HomeTileId; visible: boolean; size: TileSize; farbe?: KachelFarbe };
 
@@ -28,7 +28,7 @@ export const TILE_SIZES: TileSize[] = ["XS", "S", "M"];
  * zu einem Baustein (wird beim Hinzufügen eingeschaltet); `soon`: gibt es
  * noch nicht ("bald"); `fresh`: "NEU".
  */
-export const HOME_TILES: { id: HomeTileId; label: string; hint: string; sizes: TileSize[]; size: TileSize; feature?: "vorrat" | "regiontipps" | "sport" | "notizen" | "spendentopf" | "pinnwand"; soon?: boolean; fresh?: boolean }[] = [
+export const HOME_TILES: { id: HomeTileId; label: string; hint: string; sizes: TileSize[]; size: TileSize; feature?: "vorrat" | "regiontipps" | "sport" | "notizen" | "spendentopf" | "pinnwand" | "wundertuete"; soon?: boolean; fresh?: boolean }[] = [
   { id: "pinnwand", label: "Pinnwand", hint: "Zettel für alle, wie am Kühlschrank", sizes: ["S", "M"], size: "S", feature: "pinnwand", fresh: true },
   { id: "wetter", label: "Wetter", hint: "Heute und die nächsten Stunden", sizes: ["XS", "S", "M"], size: "XS", fresh: true },
   { id: "notizen", label: "Notizen", hint: "Schnellnotiz + Angeheftetes", sizes: ["XS", "S", "M"], size: "XS", feature: "notizen" },
@@ -36,6 +36,7 @@ export const HOME_TILES: { id: HomeTileId; label: string; hint: string; sizes: T
   { id: "aufgaben", label: "Aufgaben", hint: "Was heute dran ist", sizes: ["S", "M"], size: "M" },
   { id: "essen", label: "Essen", hint: "Gericht von heute", sizes: ["S", "M"], size: "S" },
   { id: "einkauf", label: "Einkaufsliste", hint: "Was ihr braucht, nach Laden", sizes: ["S", "M"], size: "S" },
+  { id: "wundertuete", label: "Wundertüte", hint: "Jeden Tag was Neues: Angeberwissen, Platt, Rätsel und Spiele für den Tisch", sizes: ["S", "M"], size: "S", feature: "wundertuete", fresh: true },
   { id: "spendentopf", label: "Spendentopf", hint: "Jeder Euro geht in eure Region", sizes: ["M"], size: "M", feature: "spendentopf", fresh: true },
   { id: "tipps", label: "Tipps fürs Wochenende", hint: "Was in eurer Nähe los ist", sizes: ["M"], size: "M", feature: "regiontipps", fresh: true },
   { id: "timer", label: "Timer", hint: "Bis zu 5 Timer und eine Stoppuhr", sizes: ["XS", "S"], size: "XS", fresh: true },
@@ -63,6 +64,14 @@ const STANDARD: Record<"gemeinsam" | "allein", HomeTileId[]> = {
   allein: ["wetter", "sport", "notizen", "vorrat", "termine", "aufgaben", "essen", "einkauf"],
 };
 
+/**
+ * Kacheln, die nur ganz neue Nutzer beim ersten Start dazubekommen (A-022:
+ * Mias Wundertüte als S direkt hinter Essen + Einkauf, `ersteStartseite`).
+ * Bestehenden schieben sie sich nie in die Anordnung, auch nicht beim
+ * Haushaltswechsel; der Tafel-119-Standard bleibt, wie er ist.
+ */
+const NUR_NEU: HomeTileId[] = ["wundertuete"];
+
 const standardOf = (h: Haushalt) => STANDARD[h === "allein" ? "allein" : "gemeinsam"];
 
 /** Standard-Anordnung eines Haushalts: sichtbare in ihrer Reihenfolge, dahinter alle übrigen (unsichtbar) */
@@ -70,6 +79,11 @@ export function defaultHome(haushalt: Haushalt = "familie"): HomeTile[] {
   const on = standardOf(haushalt);
   const order = [...on, ...IDS.filter((id) => !on.includes(id))];
   return order.map((id) => ({ id, visible: on.includes(id), size: tileMeta(id).size }));
+}
+
+/** Startseite beim allerersten Start: Standard des Haushalts + die Wundertüte (S) hinter Essen + Einkauf */
+export function ersteStartseite(haushalt: Haushalt = "familie"): HomeTile[] {
+  return NUR_NEU.reduce((tiles, id) => applyHomeChange(tiles, { tile: id, action: "zeigen" }), defaultHome(haushalt));
 }
 
 /** Standard für Familie / zu zweit (Launch 1.0: mit Notizen; Im Haus nur über die Auswahl) */
@@ -378,13 +392,14 @@ function showOnce(tiles: HomeTile[], id: HomeTileId): HomeTile[] {
  */
 export function homeForHaushalt(tiles: HomeTile[], from: Haushalt, to: Haushalt): HomeTile[] {
   const list = sanitizeHome(tiles);
-  const shape = (l: HomeTile[]) => l.filter((t) => t.visible).map((t) => `${t.id}:${t.size}`).join();
+  // Nur-für-Neue-Kacheln (Wundertüte) zählen beim Vergleich nicht mit und behalten ihre Sichtbarkeit
+  const shape = (l: HomeTile[]) => l.filter((t) => t.visible && !NUR_NEU.includes(t.id)).map((t) => `${t.id}:${t.size}`).join();
   if (shape(list) === shape(defaultHome(from))) {
-    const farben = new Map(list.map((t) => [t.id, t.farbe]));
-    return sanitizeHome(defaultHome(to).map((t) => ({ ...t, farbe: farben.get(t.id) })));
+    const before = new Map(list.map((t) => [t.id, t]));
+    return sanitizeHome(defaultHome(to).map((t) => (NUR_NEU.includes(t.id) ? { ...t, ...before.get(t.id) } : { ...t, farbe: before.get(t.id)?.farbe })));
   }
   let next = list;
-  for (const id of standardOf(to)) if (!next.find((t) => t.id === id)?.visible) next = applyHomeChange(next, { tile: id, action: "zeigen" });
+  for (const id of standardOf(to)) if (!NUR_NEU.includes(id) && !next.find((t) => t.id === id)?.visible) next = applyHomeChange(next, { tile: id, action: "zeigen" });
   return to === "allein" ? applyHomeChange(next, { tile: "pinnwand", action: "ausblenden" }) : next;
 }
 

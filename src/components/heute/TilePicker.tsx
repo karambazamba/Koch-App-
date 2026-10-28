@@ -7,7 +7,7 @@
 // Seite zur zuletzt hinzugefügten Kachel, sie leuchtet kurz auf. Neue Kacheln
 // mit "NEU" stehen oben; Post („bald“) erscheint noch nicht.
 
-import { Box, HandCoins, MapPin, CalendarClock, CheckCircle2, CloudSun, Dumbbell, ListChecks, Timer, Mail, NotebookPen, Pin, Plus, Refrigerator, ShoppingCart, UtensilsCrossed, type LucideIcon } from "lucide-react";
+import { Box, Gift, HandCoins, MapPin, CalendarClock, CheckCircle2, CloudSun, Dumbbell, ListChecks, Timer, Mail, NotebookPen, Pin, Plus, Refrigerator, ShoppingCart, UtensilsCrossed, type LucideIcon } from "lucide-react";
 import { useRef } from "react";
 import { Sheet } from "@/components/ui/Sheet";
 import { TILE_PLUS_DOT } from "@/components/ui/styles";
@@ -19,6 +19,9 @@ import { pushUndo } from "@/lib/core/undo";
 import { buzz } from "@/components/heute/actions";
 import { sortBy, TILE_PICKER } from "@/lib/core/sort";
 import { useTipsMode } from "@/lib/tipps/client";
+import { helperName } from "@/lib/einstellungen/profile";
+import { useProfile } from "@/lib/einstellungen/useProfile";
+import { wundertueteName } from "@/lib/wundertuete/sorten";
 
 const TILE_ICONS: Record<HomeTileId, LucideIcon> = {
   pinnwand: Pin,
@@ -34,6 +37,7 @@ const TILE_ICONS: Record<HomeTileId, LucideIcon> = {
   post: Mail,
   spendentopf: HandCoins,
   tipps: MapPin,
+  wundertuete: Gift,
 };
 
 /** Kachel hinzufügen (still) bzw. entfernen (mit Rückgängig) */
@@ -62,7 +66,10 @@ export function TilePicker({ onClose, onClosed, luecke }: { onClose: () => void;
   const added = useRef<HomeTileId | null>(null);
   const tipsMode = useTipsMode();
   const on = useBausteine();
+  const profile = useProfile();
   if (!all) return null;
+  /** Name in der Auswahl (Tafel 116: „Mias Wundertüte“) */
+  const nameOf = (id: HomeTileId, label: string) => (id === "wundertuete" ? wundertueteName(helperName(profile)) : label);
   const close = () => {
     onClose();
     if (added.current) onClosed?.(added.current);
@@ -79,7 +86,7 @@ export function TilePicker({ onClose, onClosed, luecke }: { onClose: () => void;
               <button
                 type="button"
                 aria-pressed={active}
-                aria-label={luecke ? `${meta.label} – hierhin stellen` : `${meta.label}${active ? " – entfernen" : " – hinzufügen"}`}
+                aria-label={luecke ? `${nameOf(meta.id, meta.label)} – hierhin stellen` : `${nameOf(meta.id, meta.label)}${active ? " – entfernen" : " – hinzufügen"}`}
                 onClick={() => {
                   if (luecke) {
                     // In die Lücke stellen (auch eine schon sichtbare Kachel wandert hierher)
@@ -97,7 +104,7 @@ export function TilePicker({ onClose, onClosed, luecke }: { onClose: () => void;
               >
                 <Icon className="h-5 w-5 text-accent" strokeWidth={2} aria-hidden />
                 <span className="flex items-center gap-1.5 text-[15px] font-bold">
-                  {meta.label}
+                  {nameOf(meta.id, meta.label)}
                   {meta.fresh && !active && <span className="rounded-full bg-accent px-1.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-on-accent">Neu</span>}
                 </span>
                 <span className="text-xs leading-snug text-muted">{meta.hint}</span>
