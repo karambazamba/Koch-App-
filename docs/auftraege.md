@@ -14,7 +14,7 @@ Status: offen · in Arbeit · fertig vX.Y · zurückgestellt (Grund)
   mia.karamba-eis.de (v0.140), Mia-Zubehör Sonne (v0.140), Erster Start rund +
   Zugangscode nachsichtig (v0.141), Einkauf neu mit Nachtrag (v0.142), Mia schneller + Live-Zuhören + Stimme bleibt
   (v0.143), Fenster-Zurück ohne Wettlauf (v0.144, Fehler hinter dem
-  schwankenden Ablauf `erinnerungFrage`), Pinnwand-Nachtrag (v0.145).
+  schwankenden Ablauf `erinnerungFrage`), Pinnwand-Nachtrag (v0.145), Essen-Kachel „Rezept“ + Vorschau vor „Nehmen“ (v0.146).
 - **Merge-Reihenfolge (Sortier-Auftrag 28.10., je bauen → testen → PR → mergen,
   dann der nächste auf dem neuesten `main`):**
   1. A-027 Erster Start rund (mit A-031 Zugangscode nachsichtig, 10 Versuche)
@@ -73,7 +73,7 @@ Status: offen · in Arbeit · fertig vX.Y · zurückgestellt (Grund)
 | A-022 | Mias Wundertüte – eine Kachel, die jeden Tag anders heißt (ersetzt „Kachel Angeberwissen“; Wortlaut in `docs/auftraege/A-022-wundertuete.md`) | `tafel-116.png` | gebaut, wartet (Punkt 9a; Pool 459 Einträge) |
 | A-023 | Startseite im festen Raster XS · S · M + Standard-Anordnung je Haushalt + Wetter mit Himmel (ersetzt „Raster S/M/L“, „… XS · S · M“ und Nachträge) | `tafel-118.png`, `tafel-119.png`, `tafel-120.png` | gebaut, wartet |
 | A-024 | Pinnwand-Nachtrag: Wörter klarer („Aufhängen“, „Bleibt hängen“), abhaken wie Aufgaben/Einkauf (Häkchen, 1 s stehen, dann weich ins Archiv), Archiv 30 Tage | – | fertig v0.145 |
-| A-025 | Essen-Kachel „Rezept“ / „Wochenplan“, Rezeptseite, Kochmodus + Nachtrag Schnellanleitung „Kurz \| Ausführlich“ (ersetzt Tafel-121-Nachtrag „Ich koche jetzt“) | `tafel-122-essen-rezept.png` | gebaut, wartet |
+| A-025 | Essen-Kachel „Rezept“ / „Wochenplan“, Rezeptseite, Kochmodus + Nachtrag Schnellanleitung „Kurz \| Ausführlich“ (ersetzt Tafel-121-Nachtrag „Ich koche jetzt“) | `tafel-122-essen-rezept.png` | fertig v0.146 |
 | A-026 | Nachtrag zu A-019 (VORRANG): Mia hört live über ElevenLabs (Scribe Realtime) – Text beim Sprechen, Ende von selbst | – | fertig v0.143 |
 | A-027 | Erster Start rund für Testfreunde (höchstens 3 Bildschirme, „Zugangscode“, Karte „Auf den Home-Bildschirm“, KI-OK aufräumen) | – | fertig v0.141 |
 | A-028 | Pinnwand: aufgeräumt, Größe, Ordnen, Ecke „Nur für mich“ (+ 7a einklappbar) – Teil 1 und Teil 2 | `tafel-123.png` | gebaut, wartet (Teil 1 und Teil 2) |
@@ -86,7 +86,7 @@ Status: offen · in Arbeit · fertig vX.Y · zurückgestellt (Grund)
 | A-035 | Nachtrag A-019: Mias Stimme bleibt Mias Stimme (Status einmal holen und merken, erste Silbe 2,5 s mit „Mhm“, nie im Gespräch springen, erst nach 2 Fehlern Handy-Stimme mit Hinweis, Vorwärmen, Ersatz mit Grund im Mikro-Protokoll) | – | fertig v0.143 |
 | A-036 | Wasserzeichen für alle Kacheln ohne eigenes Bild (eine Komponente, Zuordnung je Kachel, nicht bei Wetter/Essen/Pinnwand/Jetzt-Karte, nicht im Look „Schlicht“) | Tafel 124 A (kein Bild), Tafel 125 (kein Bild) | gebaut, wartet (mit A-029) |
 | A-037 | Mias Ergebnis-Karten wie im Clip + Aufleuchten in der Kachel (Wortlaut `docs/auftraege/A-037-ergebniskarten.md`) | `tafel-126.png` | in Arbeit (nach A-034) |
-| A-038 | SOFORT: Vorschläge erst anschauen, dann nehmen (Rezept-Vorschau als Fenster, überall wo Gerichte zur Auswahl stehen; Wortlaut `docs/auftraege/A-038-vorschau.md`) | `tafel-122-essen-rezept.png` | in Arbeit (mit A-025) |
+| A-038 | SOFORT: Vorschläge erst anschauen, dann nehmen (Rezept-Vorschau als Fenster, überall wo Gerichte zur Auswahl stehen; Wortlaut `docs/auftraege/A-038-vorschau.md`) | `tafel-122-essen-rezept.png` | fertig v0.146 |
 | A-039 | Monatlich: Mias Wundertüte nachfüllen (Pool von 459 Richtung ~845, nur geprüfte Fakten, Quellen gegenprüfen) | – | offen (nach A-022) |
 
 ## Offene Punkte (ohne eigenen Auftrag)

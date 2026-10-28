@@ -3238,7 +3238,7 @@ Fehler in `docs/aufraeumen-nachher.md`.
   weder im Abgleich noch in Push, Neuigkeiten/Pinnwand, Heute, Kalender oder
   Mias Kontext.
 
-## Essen-Kachel „Rezept“ und Kochmodus (vX, Tafel 122, A-025)
+## Essen-Kachel „Rezept“ und Kochmodus (v0.146.0, Tafel 122, A-025)
 - Problem: Die Essen-Kachel hatte zu viele Wege („Ich koche jetzt ›“, „Woche
   ›“, Antippen = Rezept, eigene Koch-Kachel mit „Gegessen“). Ersetzt den
   Nachtrag aus Tafel 121.
@@ -3263,7 +3263,7 @@ Fehler in `docs/aufraeumen-nachher.md`.
   v2 ergänzt leer), neu `wasgibts.rezeptansicht` v1 (Gerät, nicht in der
   Sicherung), Rezept `shortSteps` optional (Kochbuch v3, additiv).
 
-## Vorschläge erst anschauen, dann nehmen (A-038, Tafel 122)
+## Vorschläge erst anschauen, dann nehmen (v0.146.0, A-038, Tafel 122)
 - Problem: Bei „Was anderes?“ und der Kochidee (drei Vorschläge mit „Nehmen“)
   konnte man das Rezept nicht ansehen, nur nehmen.
 - Karte antippen öffnet überall die Rezept-Vorschau (ein Fenster über Bühne
