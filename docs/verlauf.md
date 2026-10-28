@@ -3165,3 +3165,14 @@ Fehler in `docs/aufraeumen-nachher.md`.
   HEAD zu ElevenLabs ohne Schlüssel, kein Sprechen, kein Kontingent.
 - Mikro-Protokoll: jeder Ersatz mit Grund (Status zu spät, erste Silbe zu
   spät, Fehler-Code). Tests `tests/begleitung/stimmeGespraech.test.ts`.
+
+## Fenster-Zurück ohne Wettlauf (v0.144.0)
+- Fehler: Schloss man die Schnelleingabe per ✕ und erschien gleich danach ein
+  neues Fenster (z. B. „Soll ich dich erinnern?“), konnte das verspätete
+  `popstate` des eigenen Zurück das neue Fenster sofort wieder schließen –
+  die Frage blinkte kurz auf und „Lieber nicht“ wurde still gemerkt.
+- Jetzt wartet ein neues Fenster mit seinem Verlaufseintrag, bis das eigene
+  Zurück angekommen ist (höchstens 1 s); wird es vorher geschlossen, legt es
+  gar keinen an (`src/lib/core/fensterVerlauf.ts`, `useBackCloses.ts` nur
+  noch Hülle). Test `tests/core/fensterVerlauf.test.ts` mit asynchronem
+  Verlauf; Durchklick `erinnerungFrage` war vorher schwankend.
