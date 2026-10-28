@@ -3319,3 +3319,6 @@ Fehler in `docs/aufraeumen-nachher.md`.
   einmalige Korrektur beim nächsten Anmelden. Details: `docs/bereiche/konten.md`.
 - Bild 1/2 des Auftrags kamen nicht an, gebaut nach Text
   (`docs/auftraege/A-042-familie-namen.md`).
+
+## Einladungsseite ohne Leiste (v0.149.0)
+- Fehler: Auf der Einladungsseite (`/e/…`, `/einladung`) lag die Leiste unten unsichtbar unter dem Anmelde-Fenster, das Wischen vom Rand war aktiv. Wer zu schnell weitertippte, brach das Beitreten ab und landete ohne Familie – die App legte dann still eine eigene an. Jetzt ohne Leiste und Mia-Knopf (`core/leiste.ts`, Test). Ursache des Konto-Durchklicks, der auf main meist rot war.
