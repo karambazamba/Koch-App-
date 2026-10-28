@@ -12,16 +12,21 @@ const KEY = "wasgibts.einkaufsliste";
 export const einsortieren = async (page, check) => {
   await hello(page);
   await seedFamily(page);
-  // Meine Läden Edeka + Rewe; Milch wurde einmal bei Edeka abgehakt (Gelerntes)
+  // Meine Läden Edeka + Rewe
   await page.evaluate((key) => {
     const s = JSON.parse(localStorage.getItem(key) ?? "null") ?? { version: 6, weeks: {}, products: {}, shops: [], itemShops: {}, staples: [], shopRules: {}, learnAsked: [], alwaysList: [] };
-    localStorage.setItem(key, JSON.stringify({ ...s, version: 6, myShops: ["Edeka", "Rewe"], shopsAsked: true, learned: { milch: { shop: "Edeka", n: 1 } } }));
+    localStorage.setItem(key, JSON.stringify({ ...s, version: 6, myShops: ["Edeka", "Rewe"], shopsAsked: true }));
   }, KEY);
   await page.goto(BASE + "/");
   await page.waitForTimeout(1100);
   // ＋ in der Einkauf-Kachel: nichts vorgewählt = noch ohne Laden
   await page.getByRole("button", { name: "Etwas auf die Einkaufsliste setzen" }).first().tap();
   await schnell(page, "Spinat, Milch, Kürbiskerne");
+  // Erst danach einmal Milch bei Edeka abgehakt (Gelerntes) – sonst landet sie seit A-041 gleich dort
+  await page.evaluate((key) => {
+    const s = JSON.parse(localStorage.getItem(key));
+    localStorage.setItem(key, JSON.stringify({ ...s, learned: { ...s.learned, milch: { shop: "Edeka", n: 1, am: new Date().toISOString().slice(0, 10) } } }));
+  }, KEY);
   await page.goto(BASE + "/einkaufsliste");
   await page.waitForTimeout(900);
 
