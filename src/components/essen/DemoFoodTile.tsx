@@ -38,11 +38,14 @@ export function DemoFoodTile({
   minutes,
   hat,
   onTake,
+  persons,
 }: {
   half: boolean;
   today: string;
   minutes: number;
   hat?: string;
+  /** Personen im (Beispiel-)Haushalt – das Rezept rechnet dafür um */
+  persons: number;
   /** „Nehmen“: das Beispielgericht in den echten Plan (heute bzw. morgen) */
   onTake?: (dish: { title: string; category: RecipeCategory | null }, tomorrow: boolean) => void;
 }) {
@@ -61,7 +64,7 @@ export function DemoFoodTile({
       half={half}
       label={`${d.when} · ${r.title} · Beispiel`}
       corner={hat && <KochideeKnopf name={hat} planned={r.title} demo />}
-      links={{ label: "Rezept", icon: BookOpen, open: `/kochbuch/rezept?id=${id}`, data: "rezept" }}
+      links={{ label: "Rezept", icon: BookOpen, open: `/kochbuch/rezept?id=${id}&personen=${persons}`, data: "rezept" }}
       rechts={half ? "Woche" : "Wochenplan"}
     />
     {open && onTake && (

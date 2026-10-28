@@ -484,7 +484,9 @@ Koch-Kachel (`CookingTile` ist weg).
   Eintrag ohne Rezept: `OhneRezeptSheet` mit Name, „Mia schreibt dir ein
   Rezept dazu.“ und „Ja, gern“ (Bitte „Schreib mir ein Rezept für …“ an Mia).
 - Rest der Kachel: geplant → Tagesansicht (`TagFenster`), Vorschlag →
-  `GerichtSheet`, frei → Essen-Seite. Beispiel-Tag gleich (Rezept = Beispiel-Rezept).
+  `GerichtSheet`, frei → Essen-Seite. Beispiel-Tag gleich (Rezept = Beispiel-Rezept
+  für die Personen des Haushalts, `beispielPersonen`: eingetragene, sonst
+  allein 1, zu zweit 2, Familie 4).
 - Kocht gerade = Kochmodus heute geöffnet (`at`) oder „Ich koche jetzt“ (Mia).
   Nach „Gegessen“ zeigt die Kachel wie bisher das Gericht bzw. den Vorschlag für morgen.
 

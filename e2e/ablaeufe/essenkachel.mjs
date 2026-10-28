@@ -36,6 +36,7 @@ export const essenKachelBeispiel = async (page, check) => {
   check(!(await planTitles(page)).includes(title), "noch nicht im echten Plan");
   // Tafel 122: auch das Beispiel hat „Rezept“ und „Wochenplan“/„Woche“
   check((await page.locator("[data-essen-kachel] [data-rezept]").count()) > 0 && (await page.locator("[data-essen-kachel] [data-woche]").count()) > 0, "Beispiel: „Rezept“ und „Wochenplan“");
+  check(/personen=\d/.test((await page.locator("[data-essen-kachel] [data-rezept]").first().getAttribute("href")) ?? ""), "Beispiel-Rezept für die Personen des Haushalts");
   await sheet.getByRole("button", { name: /^Für (heute|morgen) nehmen$/ }).click();
   await page.waitForTimeout(600);
   check((await planTitles(page)).includes(title), `„${title}“ jetzt im echten Plan`);

@@ -79,7 +79,7 @@ import { pushUndo } from "@/lib/core/undo";
 import { mealIsOver, useCookedDays } from "@/lib/essen/mealDone";
 import { matchStock } from "@/lib/essen/dishIdeas";
 import { useStock } from "@/lib/essen/useStock";
-import { demoDishAt } from "@/lib/essen/demoDish";
+import { beispielPersonen, demoDishAt } from "@/lib/essen/demoDish";
 import { openHelper } from "@/lib/begleitung/open";
 import { doneJetztTopic, noteJetztSkip, noteJetztTap, weekCheckDone } from "@/lib/heute/jetztStore";
 import { weekCheckKey } from "@/lib/kalender/wochencheck";
@@ -423,6 +423,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
               today={data.todayIso}
               minutes={minutes}
               hat={hat && !edit ? helperName(data.profile) : undefined}
+              persons={beispielPersonen(haushaltOf(data.profile.householdType), data.profile.persons.length)}
               onTake={edit ? undefined : (d, tomorrow) => takeDish(data, d, tomorrow ? addDays(data.todayIso, 1) : data.todayIso) && clearDemoTile("essen")}
             />
           );

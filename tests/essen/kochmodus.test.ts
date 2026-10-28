@@ -187,3 +187,14 @@ describe("Oberfläche (Quelltext-Regeln)", () => {
     expect(schritte).not.toMatch(/weitere/);
   });
 });
+
+describe("Demo-Haushalte: passende Personenzahl im Beispiel-Rezept", () => {
+  it("allein 1, zu zweit 2, Familie 4 – eingetragene Personen gehen vor", async () => {
+    const { beispielPersonen } = await import("@/lib/essen/demoDish");
+    expect(beispielPersonen("allein", 0)).toBe(1);
+    expect(beispielPersonen("paar", 0)).toBe(2);
+    expect(beispielPersonen("familie", 0)).toBe(4);
+    expect(beispielPersonen("familie", 3)).toBe(3);
+    expect(readFileSync("src/components/essen/DemoFoodTile.tsx", "utf8")).toMatch(/rezept\?id=\$\{id\}&personen=\$\{persons\}/);
+  });
+});
