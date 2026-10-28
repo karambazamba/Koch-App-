@@ -8,7 +8,7 @@
 
 import { Brain, Hand, KeyRound, Mic, Palmtree, Sun } from "lucide-react";
 import { useEffect, useState } from "react";
-import { requestCodeScreen } from "@/lib/begleitung/codeAbfrage";
+import { CODE_TEXTE, requestCodeScreen } from "@/lib/begleitung/codeAbfrage";
 import { fetchStatus } from "@/lib/begleitung/zugang";
 import { openMicHelp } from "@/lib/core/mic";
 import { setKnopfLinks, useKnopfLinks } from "@/lib/mia/knopf";
@@ -54,7 +54,7 @@ export function MiaView() {
                 Ich sag dir, woran’s liegt
               </Row>
               {needsCode && (
-                <Row onClick={() => requestCodeScreen(true)} icon={KeyRound} title="Testcode ändern">
+                <Row onClick={() => requestCodeScreen(true)} icon={KeyRound} title={CODE_TEXTE.aendern}>
                   Für Zuhören und Mitdenken
                 </Row>
               )}
@@ -91,7 +91,7 @@ export function MiaView() {
   );
 }
 
-/** Braucht die KI einen Testcode? Nur dann steht „Testcode ändern“ da */
+/** Braucht die KI einen Zugangscode? Nur dann steht „Zugangscode ändern“ da */
 function useNeedsCode(): boolean {
   const [needs, setNeeds] = useState(false);
   useEffect(() => {

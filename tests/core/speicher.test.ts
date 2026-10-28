@@ -1,9 +1,9 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { backupSummary, createBackup, parseBackup, restoreBackup } from "@/lib/core/backup";
 import { STORAGE, removeRetiredKeys } from "@/lib/core/storage";
 import { migrateHelper, migrateProfile } from "@/lib/einstellungen/profileStore";
 import { createEmptyProfile } from "@/lib/einstellungen/profile";
-import { memoryStorage } from "../helpers";
+import { fakeWindow, memoryStorage, noBrowser } from "../helpers";
 
 describe("Verzeichnis der gespeicherten Daten", () => {
   it("jeder Schlüssel steht genau einmal drin", () => {
@@ -16,9 +16,32 @@ describe("Verzeichnis der gespeicherten Daten", () => {
     const session = memoryStorage({ "wasgibts.entwicklung": "1" });
     removeRetiredKeys(local, session);
     expect(local.getItem("wasgibts.bewertungen")).toBeNull();
-    expect(local.getItem("wasgibts.hinweise")).toBeNull();
+    // Die Hinweis-Warteschlange ist ein lebender Schlüssel (A-027)
+    expect(local.getItem("wasgibts.hinweise")).toBe("{}");
     expect(local.getItem("wasgibts.eintraege")).toBe("{}");
     expect(session.getItem("wasgibts.entwicklung")).toBeNull();
+  });
+});
+
+describe("Ausmustern löscht nie einen lebenden Schlüssel (A-027)", () => {
+  it("kein Schlüssel aus dem Verzeichnis wird beim Start gelöscht", () => {
+    const alle = Object.fromEntries(STORAGE.filter((s) => s.area !== "indexeddb").map((s) => [s.key, "{}"]));
+    const local = memoryStorage(alle);
+    const session = memoryStorage(alle);
+    removeRetiredKeys(local, session);
+    const weg = Object.keys(alle).filter((k) => local.getItem(k) === null || session.getItem(k) === null);
+    expect(weg).toEqual([]);
+  });
+
+  it("Hinweis-Warteschlange übersteht den Start: jeder Hinweis nur einmal", async () => {
+    const win = fakeWindow({ "wasgibts.hinweise": JSON.stringify({ version: 1, gezeigt: { einladen: "2026-10-04" } }) });
+    removeRetiredKeys(win.localStorage, win.sessionStorage);
+    vi.resetModules();
+    const h = await import("@/lib/core/hinweise");
+    const gezeigt = JSON.parse(win.localStorage.getItem("wasgibts.hinweise")!).gezeigt;
+    expect(gezeigt).toEqual({ einladen: "2026-10-04" });
+    expect(h.abgelaufen(gezeigt, "einladen", "2026-10-05")).toBe(true);
+    noBrowser();
   });
 });
 

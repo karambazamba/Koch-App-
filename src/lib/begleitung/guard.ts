@@ -3,7 +3,7 @@
 // gemeinsames Tageslimit pro Gerät. Nur auf dem Server verwenden.
 
 import { createHash, timingSafeEqual } from "node:crypto";
-import { ACCESS_HEADER, type AssistantErrorCode } from "@/lib/begleitung/protocol";
+import { ACCESS_HEADER, normalisiereZugangscode, type AssistantErrorCode } from "@/lib/begleitung/protocol";
 import { allowDaily, codeAttemptsLeft, noteWrongCode } from "@/lib/begleitung/rateLimit";
 
 export function aiSetup() {
@@ -18,10 +18,11 @@ export const clientIp = (request: Request) => request.headers.get("x-forwarded-f
 
 const digest = (s: string) => createHash("sha256").update(s).digest();
 
+/** Nachsichtig: Groß/klein und Leerzeichen sind egal (`normalisiereZugangscode`) */
 function codeMatches(given: string | null): boolean {
-  const expected = process.env.APP_ACCESS_CODE?.trim();
+  const expected = normalisiereZugangscode(process.env.APP_ACCESS_CODE ?? "");
   if (!expected || !given) return false;
-  return timingSafeEqual(digest(given.trim()), digest(expected));
+  return timingSafeEqual(digest(normalisiereZugangscode(given)), digest(expected));
 }
 
 /** Prüft den mitgeschickten Zugangscode; null = in Ordnung */

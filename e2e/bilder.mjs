@@ -98,7 +98,7 @@ const cookTip = async (page, step) => {
   await page.waitForTimeout(1200);
   await settle(page);
 };
-/** Testcode-Bildschirm: Server nur nachgestellt („braucht Code“), kein echter Code */
+/** Zugangscode-Bildschirm („Fast geschafft.“, „Fertig“): Server nur nachgestellt („braucht Code“), kein echter Code */
 const codeScreen = async (page) => {
   await page.route("**/api/lotte**", (route) => route.fulfill({ json: { configured: true, mock: false, needsCode: true } }));
   await page.reload();
@@ -106,8 +106,17 @@ const codeScreen = async (page) => {
   await page.locator("[data-code-screen] input").blur();
   await settle(page);
 };
+/** Karte „Mia auf den Home-Bildschirm“ (A-027): im Browser einmal oben auf der Startseite (iPhone: Teilen, Pixel: Menü) */
+const homeKarte = async (page) => {
+  await page.evaluate(() => localStorage.setItem("wasgibts.homebildschirm", JSON.stringify({ version: 1, spaeter: 0, am: null, fertig: false })));
+  await page.reload();
+  await page.locator("[data-home-karte]").waitFor({ timeout: 8000 });
+  await settle(page);
+};
 const SCENES = [
-  ["testcode", codeScreen],
+  ["zugangscode", codeScreen],
+  ["home-karte", homeKarte],
+  ["home-anleitung", async (page) => (await homeKarte(page), await page.getByRole("button", { name: "Zeig’s mir" }).click(), await page.waitForTimeout(900))],
   ["stimme-angebot", voiceOffer],
   ["stimme-anleitung", async (page) => (await voiceOffer(page), await page.getByRole("button", { name: "Schönere Stimme holen" }).click())],
   ["kochidee-knopf", (page) => cookTip(page, "knopf")],
@@ -146,7 +155,7 @@ for (const device of DEVICES) {
     await first.goto(BASE);
     await first.waitForTimeout(1200);
     await first.screenshot({ path: `${dir}/hallo-${tag}.png` });
-    // Bildschirm 3 nach „Los geht’s“: Mia sagt, wie’s losgeht
+    // Bildschirm 2 nach „Los geht’s“ (A-027: Zustimmung als Häkchen im Hallo): „Für wen soll ich sortieren?“
     await first.getByRole("button", { name: "Los geht’s" }).click();
     await first.getByRole("button", { name: "Für die Familie" }).waitFor();
     await first.waitForTimeout(1500);

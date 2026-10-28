@@ -3,7 +3,7 @@
 // Bestehende Nutzer (mit Profil) ohne gültige Zustimmung sehen „Bevor’s
 // losgeht“ einmal beim nächsten Öffnen, auf jeder Seite außer den Rechtstexten
 // (die bleiben lesbar) und Anmelden/Beitreten (dort gibt es das Häkchen schon).
-// Neue Nutzer bekommen den Schritt im Hallo-Ablauf.
+// Neue Nutzer haken die Zustimmung direkt im Hallo-Bildschirm an (A-027).
 
 import { usePathname } from "next/navigation";
 import { ZustimmungStep } from "@/components/datenschutz/ZustimmungStep";

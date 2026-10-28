@@ -1,8 +1,8 @@
 "use client";
 
-// Im Layout (klein): steht der Testcode-Bildschirm? Nach Hallo und Zustimmung,
+// Im Layout (klein): steht der Zugangscode-Bildschirm? Nach Hallo (mit Zustimmung) und „Für wen“,
 // wenn die KI einen Code braucht, er fehlt und nicht „Später“ gewählt ist –
-// oder wenn jemand ihn anfordert (KI-Versuch nach „Später“, „Testcode
+// oder wenn jemand ihn anfordert (KI-Versuch nach „Später“, „Zugangscode
 // ändern“). Der Bildschirm selbst wird erst dann geladen.
 
 import dynamic from "next/dynamic";

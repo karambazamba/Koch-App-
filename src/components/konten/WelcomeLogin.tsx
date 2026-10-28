@@ -6,12 +6,16 @@
 //   - „Schon ein Konto? Anmelden“: „Willkommen zurück“
 //   - Einladungs-Link (/e/…): „<Name> lädt dich ein.“
 //   - alter Code-Link (/beitreten?code=…): Code ist schon eingetragen
-// Knöpfe: „Mit Apple/Google fortfahren“ (nur wenn eingerichtet,
-// NEXT_PUBLIC_AUTH_APPLE/…_GOOGLE) und „Mit E-Mail fortfahren“ → E-Mail →
-// 6-stelliger Code (prüft selbst, „Neuen Code senden in 0:60“). Danach keine
-// Frage: per Einladung beitreten (schon in einer anderen Familie: „Wechseln?“),
-// sonst still „Familie <Name>“ anlegen. Was schon auf dem Handy ist, kommt
-// mit. Startseite; die Begleitung fliegt in die Jetzt-Karte.
+// Launch „Mia 1.0“: nur E-Mail-Code (`LAUNCH_NUR_EMAIL` in `konten/oauth.ts`)
+// – es geht gleich mit der E-Mail los. Die Knöpfe „Mit Apple/Google
+// fortfahren“ bleiben im Code für später (nur wenn eingerichtet,
+// NEXT_PUBLIC_AUTH_APPLE/…_GOOGLE, und erst ohne Launch-Sperre).
+// E-Mail → 6-stelliger Code (prüft selbst, „Neuen Code senden in 0:60“).
+// Danach keine Frage: per Einladung beitreten (schon in einer anderen
+// Familie: „Wechseln?“), sonst still „Familie <Name>“ anlegen. Was schon auf
+// dem Handy ist, kommt mit. Startseite; die Begleitung fliegt in die
+// Jetzt-Karte. Per Einladung fragt der Zugangscode erst beim ersten
+// KI-Versuch (A-027, `codeErstBeimKiVersuch`), nicht gleich danach.
 
 import { BedingungenHaken, useBedingungenOk } from "@/components/datenschutz/BedingungenHaken";
 import { RechtLinks } from "@/components/datenschutz/RechtstextView";
@@ -25,6 +29,7 @@ import { useProfile } from "@/lib/einstellungen/useProfile";
 import { startFresh } from "@/lib/einstellungen/welcomeStore";
 import { expectReplace } from "@/lib/core/navigation";
 import { setHelloFlight } from "@/lib/core/hello";
+import { codeErstBeimKiVersuch } from "@/lib/begleitung/codeAbfrage";
 import { ensureFamily, joinByLink, joinHousehold, sendLoginCode, startOAuth, useAccount, verifyLoginCode } from "@/lib/konten/account";
 import { familyNameFor, isEmail, otpDigits } from "@/lib/konten/model";
 import { oauthProviders } from "@/lib/konten/oauth";
@@ -152,6 +157,8 @@ export function WelcomeLogin({ code: linkCode = "", einladung = "", inviter = ""
       setHelloFlight(r ? { x: r.left, y: r.top, size: r.width } : null);
       startFresh();
     }
+    // Einladungs-Weg: Mail-Code → Startseite; der Zugangscode erst beim ersten KI-Versuch
+    if (einladung) codeErstBeimKiVersuch();
     expectReplace();
     router.replace("/");
   }

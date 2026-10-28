@@ -65,8 +65,8 @@ Die frühere Lieblingsfarbe ist „Meine Farbe im Kalender“ (Profil
 - Gesten: Tippen = Eintrag öffnen, lange Drücken = Startseite bearbeiten,
   Wischen = Seite wechseln (Kalender · Heute · Essen), Wischen vom linken Rand
   auf Unterseiten = eine Ebene zurück.
-- Erster Start: höchstens 3 Bildschirme vor der App (Hallo, Zustimmung, „Für
-  wen soll ich sortieren?“), Details in `docs/bereiche/heute.md`.
+- Erster Start: höchstens 3 Bildschirme (Hallo mit Zustimmungs-Häkchen → „Für
+  wen?“ → Zugangscode nur wenn nötig), Details in `docs/bereiche/heute.md`.
 - Rückgängig nur bei echtem Löschen („Gelöscht · Rückgängig“, 3 s) und in der
   Schnelleingabe („Eingetragen: … · Rückgängig“); sonst meldet sich
   Hinzufügen still. Typografischer Apostroph überall („Was gibt’s?“).

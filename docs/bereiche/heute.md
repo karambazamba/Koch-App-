@@ -20,14 +20,51 @@
 
 ## Erster Start (aus CLAUDE.md umgezogen)
 
-- Erster Start = höchstens 3 Bildschirme vor der App: Hallo („Moin, ich bin
-  Mia.“ → „Los geht’s“), „Bevor’s losgeht“ (Zustimmung, Pflicht für alle,
-  `ZustimmungGate`) und „Für wen soll ich sortieren?“ (`ZeigMalStep`, nur
-  beim allerersten Start: drei gleichwertige Knöpfe „Nur für mich“ / „Für uns
-  zwei“ / „Für die Familie“, nichts vorausgewählt), dann die Startseite mit
-  Beispiel-Tag passend zur Antwort. Zurück-Geste = ein Schritt zurück. Keine
-  Look-Frage: Standard „Farbig“, nach 3 Tagen einmal „Lieber schlicht?“ als
-  Hinweis, sonst Einstellungen → Aussehen.
+- Erster Start = höchstens 3 Bildschirme vor der App (A-027, „Erster Start
+  rund für Testfreunde“):
+  1. Hallo („Moin, ich bin Mia.“, „Erzähl einfach, was ansteht. Ich sortier
+     das.“). Darunter klein die drei Sätze der Zustimmung („Deine Sachen
+     bleiben auf diesem Handy. Mit Konto teilst du sie mit deinen Leuten.“ ·
+     „Ich bin eine KI und kann mich auch mal irren.“ · „Deine Daten werden
+     nie verkauft.“, `VOR_DEM_START` in `datenschutz/rechtstexte.ts`) und das
+     Häkchen „Ich akzeptiere die Nutzungsbedingungen und hab die
+     Datenschutzerklärung gelesen.“ (`BedingungenHaken`, speichert sofort
+     Fassung und Zeit). „Los geht’s“ erst mit Häkchen. Unten „Gemacht in Eutin
+     von KARAMBA Eis“, „Nutzungsbedingungen · Datenschutz · Impressum“.
+  2. „Für wen soll ich sortieren?“ (`ZeigMalStep`, nur beim allerersten
+     Start: drei gleichwertige Knöpfe „Nur für mich“ / „Für uns zwei“ / „Für
+     die Familie“, nichts vorausgewählt).
+  3. Nur wenn die KI einen Zugangscode braucht und keiner gemerkt ist:
+     „Fast geschafft.“ (`CodeScreen`, `CodeGate`): „Gib deinen Zugangscode
+     ein, dann kann ich zuhören und mitdenken.“, darunter „Groß/klein und
+     Leerzeichen sind egal.“ (Prüfung nachsichtig,
+     `normalisiereZugangscode`), Knopf „Fertig“, leise „Später“.
+
+  Dann die Startseite mit Beispiel-Tag passend zur Antwort. Zurück-Geste =
+  ein Schritt zurück. Ein eigener Schritt „Bevor’s losgeht“ steht nur noch
+  für bestehende Nutzer ohne gültige Zustimmung (`ZustimmungGate`, Pflicht
+  für alle). Keine Look-Frage: Standard „Farbig“, nach 3 Tagen einmal
+  „Lieber schlicht?“ als Hinweis, sonst Einstellungen → Aussehen.
+- Einladung (/e/…): E-Mail-Code (Häkchen dort) → Startseite; der
+  Zugangscode kommt erst beim ersten KI-Versuch (`codeErstBeimKiVersuch`).
+- Karte „Mia auf den Home-Bildschirm“ (`core/homeBildschirm.ts`,
+  `heute/HomeBildschirmKarte.tsx`): nur im Browser (nie als
+  Home-Bildschirm-App, nicht in der Zeit-Vorschau, nicht am Computer, nicht
+  solange der Beispiel-Tag läuft), einmal oben auf der Startseite beim
+  ersten Öffnen der echten (eigenen) Startseite, im Stil der Seiten-Tipps,
+  belegt den einen Hinweis-Platz unter der Jetzt-Karte (nur „Ich heiße jetzt
+  Mia“ geht vor; „Mia denkt mit“ wartet). iPhone/Safari: „Mia als App: unten
+  auf Teilen [Teilen-Symbol] tippen, dann ‚Zum Home-Bildschirm‘.“ mit kleiner
+  Skizze, „Zeig’s mir“ (Fenster mit 3 Schritten und eigenen Skizzen) und
+  „Später“. iPhone in anderem Browser oder App-Vorschau (Chrome, Instagram,
+  WhatsApp …): „Öffne mich in Safari, dann kann ich auf deinen
+  Home-Bildschirm.“ + „Link kopieren“. Android: `beforeinstallprompt` wird
+  einmal abgefangen und aufgehoben → „Mia installieren“; ohne Angebot „Mia
+  als App: Menü [⋮] → ‚App installieren‘.“; Android-App-Vorschau: „Öffne
+  mich in Chrome …“. „Später“ = nach 2 Tagen einmal wieder, danach nie
+  mehr; installiert = nie mehr. Dauerhaft: Einstellungen → Daten & App „Mia
+  auf den Home-Bildschirm“ (rechts „Ist drauf“ als App). Kein Badge, kein
+  Druck.
 
 
 ## Feste Regeln (aus CLAUDE.md umgezogen)
@@ -62,7 +99,10 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
   Sofort-Wechsel `nudge.ts`, Push-Regeln (vorbereitet) `push.ts`;
   Hook `src/components/heute/useHomePhase.ts`.
 - Beispiel-Tag: `src/lib/core/demo.ts`, `useDemoDay.ts`, `DemoBits.tsx`.
-- Erster Start: `begleitung/HelloScreen.tsx`, `core/hello.ts`, `einstellungen/welcomeStore.ts`.
+- Erster Start: `begleitung/HelloScreen.tsx`, `core/hello.ts`, `einstellungen/welcomeStore.ts`;
+  Zugangscode `begleitung/CodeScreen.tsx`, `CodeGate.tsx`, `lib/begleitung/codeAbfrage.ts`;
+  Home-Bildschirm-Karte `heute/HomeBildschirmKarte.tsx`, `HomeBildschirmAnleitung.tsx`,
+  `lib/core/homeBildschirm.ts`, Einstellungen `einstellungen/settings/HomeBildschirmRow.tsx`.
 
 ## Daten und Speicher
 
@@ -85,7 +125,9 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
   die Startseite (`setPreview`, `PreviewBanner`).
 - Nur auf dem Gerät: `wasgibts.beispiel` v1 `{since, cleared, done, gone, asked}`,
   `wasgibts.einmalhinweise` („+ Kachel“), `wasgibts.dunkeltipp`, `wasgibts.willkommen`,
-  `wasgibts.hinweise` v1 `{gezeigt: {id: Tag}}` (Hinweis-Warteschlange).
+  `wasgibts.hinweise` v1 `{gezeigt: {id: Tag}}` (Hinweis-Warteschlange),
+  `wasgibts.homebildschirm` v1 `{spaeter, am, fertig}` (Karte „Mia auf den
+  Home-Bildschirm“; gehört zu diesem Browser, daher nicht in der Sicherung).
 
 ## So verhält es sich
 
@@ -358,7 +400,7 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
 - Erster Start ohne Profil: Hallo-Bildschirm („Moin!“, früher „Hallo, ich bin Mia.“ aus
   `DEFAULT_HELPER`, „Ich behalte euren Alltag im Blick.“, Mikrofon-Hinweis,
   „Los geht’s“, „Ich habe eine Sicherung“). Seit v0.94: „Los geht’s“ →
-  („Bevor’s losgeht“) → „Für wen soll ich sortieren?“ (Mia 110 px zwinkert
+  („Bevor’s losgeht“, seit A-027 als Häkchen im Hallo) → „Für wen soll ich sortieren?“ (Mia 110 px zwinkert
   einmal, Sprechblase „Kein Stress. Ich sortier deinen Alltag, Stück für
   Stück.“, drei Knöpfe, Texte `ERSTER_START` in `mia/persona.ts`, seit
   v0.120) → `startFresh("farbig", haushalt)`: Standardwerte,
@@ -428,7 +470,8 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
 - `tests/core/`: `kachelAnordnung.test.ts`, `startseite.test.ts`,
   `beispielTag.test.ts`, `beispielTagSpeicher.test.ts`, `wischen.test.ts`.
 - `tests/einstellungen/ersterStart.test.ts`, `tests/begleitung/werkzeugeStartseite.test.ts`.
-- Durchklick `e2e/ablaeufe/start.mjs`: `hallo`, `bearbeiten`, `wischen`.
+- Durchklick `e2e/ablaeufe/start.mjs`: `hallo`, `ersterStart`, `dreiBildschirme` (höchstens 3 Bildschirme, allein/zu zweit/Familie, mit und ohne Zugangscode), `homeKarte` (nur im Browser, nicht als App, nicht im Beispiel-Tag, „Später“-Regel, Android-Angebot), `bearbeiten`, `wischen`; `testcode.mjs` (Zugangscode falsch/richtig/nachsichtig/später), `datenschutz.mjs` `vorDemStart` (Häkchen im Hallo), `konten.mjs` (Einladung: Zugangscode erst beim KI-Versuch).
+- Unit: `tests/heute/homeBildschirm.test.ts`, `tests/begleitung/ersterStart.test.ts`, `tests/begleitung/codeAbfrage.test.ts`, `tests/begleitung/kiOk.test.ts`.
 
 ## Kopf und „neu hinzufügen“ (v0.67)
 

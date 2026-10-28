@@ -24,11 +24,11 @@ export const BETREIBER = {
 export const VOR_DEM_START = {
   titel: "Bevor’s losgeht",
   saetze: [
-    "Eure Sachen bleiben auf diesem Handy. Mit Konto teilt ihr sie in der Familie.",
+    "Deine Sachen bleiben auf diesem Handy. Mit Konto teilst du sie mit deinen Leuten.",
     "Ich bin eine KI und kann mich auch mal irren.",
-    "Eure Daten werden nie verkauft.",
+    "Deine Daten werden nie verkauft.",
   ],
-  haken: "Ich akzeptiere die Nutzungsbedingungen und habe die Datenschutzerklärung gelesen.",
+  haken: "Ich akzeptiere die Nutzungsbedingungen und hab die Datenschutzerklärung gelesen.",
 };
 
 export const ENTWURF = "Entwurf – vor Veröffentlichung juristisch prüfen lassen.";

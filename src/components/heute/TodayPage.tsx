@@ -104,6 +104,7 @@ import { kidsWay, vorlaufVon } from "@/lib/heute/abendDaten";
 import { abendLage } from "@/lib/heute/abendThema";
 import { useMiaDenkt } from "@/components/begleitung/denktmit/useMiaDenkt";
 import { MiaKarte } from "@/components/begleitung/denktmit/MiaKarte";
+import { HomeBildschirmKarte, useHomeBildschirmKarte } from "@/components/heute/HomeBildschirmKarte";
 
 
 /** Name für die Begrüßung: die erste Person im Haushalt (meist man selbst) */
@@ -283,7 +284,9 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
   const lookOn = showLookTip(darkState, data.todayIso, data.profile.look);
   const gezeigt = useHinweiseGezeigt();
   const leisteNeu = useHintSeen("leiste-neu");
-  const hinweis = gezeigt
+  // A-027: „Mia auf den Home-Bildschirm“ (nur im Browser, nicht im Beispiel-Tag) belegt den einen Hinweis-Platz – nur „Ich heiße jetzt Mia“ (schützt Daten) geht vor
+  const homeKarte = useHomeBildschirmKarte({ today: data.todayIso, vorschau: Boolean(preview), beispiel: demoOn });
+  const hinweisRoh = gezeigt
     ? naechsterHinweis(
         {
           "mia-name-neu": miaHint,
@@ -297,6 +300,8 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
         { today: data.todayIso, since: appSince(), demo: demoOn, gezeigt },
       )
     : null;
+  const hinweis = homeKarte && hinweisRoh !== "mia-name-neu" ? null : hinweisRoh;
+  const homeKarteSteht = Boolean(homeKarte) && !hinweis;
   useEffect(() => {
     if (hinweis) hinweisGezeigt(hinweis, data.todayIso);
   }, [hinweis, data.todayIso]);
@@ -330,7 +335,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
   const tasks = tasksAll;
   const arbeitMorgen = view.hideWork ? tasksJetzt.length - tasksAll.length : 0;
   const tasksTomorrow = workless(aufgabenFuerTag(entries, tomorrowIso, mitwandern));
-  const denkt = useMiaDenkt({ data, entries, items: allItems, minutes, visible: visible.map((t) => t.id), demo: demoOn, pause: Boolean(paused), ruhe: evening && routine.ruhe, besetzt: Boolean(hinweis), me: name || "Ich", onOpenFood });
+  const denkt = useMiaDenkt({ data, entries, items: allItems, minutes, visible: visible.map((t) => t.id), demo: demoOn, pause: Boolean(paused), ruhe: evening && routine.ruhe, besetzt: Boolean(hinweis) || homeKarteSteht, me: name || "Ich", onOpenFood });
   const mia = useMiaRoutinen({ today: data.todayIso, minutes, entries, termine: allItems, tomorrow: tomorrowAll, profile: data.profile, me: name || "Ich", regen: null, demo: Boolean(demoDay.termine) || demoDay.tiles.length > 0 });
   const jetzt = useJetztTopics({
     routinen: mia.routinen,
@@ -497,6 +502,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
           {!editing.on && (
             <>
               {/* Höchstens ein Hinweis, Reihenfolge und „nur einmal“ in core/hinweise.ts; alle im Stil der Seiten-Tipps (SeitenTipp) */}
+              {homeKarteSteht && homeKarte && <HomeBildschirmKarte art={homeKarte} today={data.todayIso} />}
               {hinweis === "mia-name-neu" && <MiaNameHint />}
               {hinweis === "leiste-neu" && <SeitenTipp text={LEISTE_NEU} label="Neu" id="leiste-neu" onOk={() => markHintSeen("leiste-neu")} />}
               {hinweis === "einladen" && inviteHint && <InviteHintCard text={inviteHint} today={data.todayIso} />}

@@ -251,6 +251,11 @@ describe("Rate-Limit pro Gerät", () => {
     for (let i = 0; i < 10; i++) noteWrongCode("ip-c", t + i);
     expect(codeAttemptsLeft("ip-c", t + 100)).toBe(false);
     expect(codeAttemptsLeft("ip-c", t + 60 * 60_000 + 100)).toBe(true);
+    // 10 Versuche je Adresse: nach 9 falschen noch erlaubt, nach 10 Pause
+    for (let i = 0; i < 9; i++) noteWrongCode("ip-d", t + i);
+    expect(codeAttemptsLeft("ip-d", t + 50)).toBe(true);
+    noteWrongCode("ip-d", t + 60);
+    expect(codeAttemptsLeft("ip-d", t + 70)).toBe(false);
   });
 
   it("räumt alte Einträge auf, wenn es zu viele werden", () => {

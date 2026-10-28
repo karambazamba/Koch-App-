@@ -1,8 +1,9 @@
 "use client";
 
-// Pflicht-Häkchen vor dem ersten Speichern auf dem Server (Anmelden, Beitreten):
-// „Ich akzeptiere die Nutzungsbedingungen und habe die Datenschutzerklärung
-// gelesen.“ Gilt je Person und Gerät; Konto-Knöpfe sind bis dahin aus.
+// Pflicht-Häkchen (Hallo-Bildschirm, Anmelden, Beitreten): „Ich akzeptiere
+// die Nutzungsbedingungen und hab die Datenschutzerklärung gelesen.“
+// (`VOR_DEM_START.haken`). Wird sofort gespeichert, gilt je Person und Gerät;
+// „Los geht’s“ bzw. die Konto-Knöpfe sind bis dahin aus.
 
 import { Check } from "lucide-react";
 import {
@@ -10,6 +11,7 @@ import {
   useEinwilligungen,
 } from "@/lib/datenschutz/einwilligung";
 import { RechtLinks } from "@/components/datenschutz/RechtstextView";
+import { VOR_DEM_START } from "@/lib/datenschutz/rechtstexte";
 
 export function useBedingungenOk(): boolean {
   return useEinwilligungen().erteilt("bedingungen");
@@ -33,10 +35,7 @@ export function BedingungenHaken({ links = true }: { links?: boolean }) {
         >
           {ok && <Check className="h-4 w-4" strokeWidth={3} />}
         </span>
-        <span>
-          Ich akzeptiere die Nutzungsbedingungen und habe die
-          Datenschutzerklärung gelesen.
-        </span>
+        <span>{VOR_DEM_START.haken}</span>
       </label>
       {links && (
         <RechtLinks

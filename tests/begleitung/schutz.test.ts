@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { memoryStorage } from "../helpers";
 import { aiSetup, checkAccess, clientIp, takeDailySlot } from "@/lib/begleitung/guard";
 import { allowDaily, allowRequest, codeAttemptsLeft, noteWrongCode } from "@/lib/begleitung/rateLimit";
-import { ACCESS_HEADER, LIMITS } from "@/lib/begleitung/protocol";
+import { ACCESS_HEADER, LIMITS, normalisiereZugangscode } from "@/lib/begleitung/protocol";
 
 afterEach(() => {
   vi.unstubAllEnvs();
@@ -25,17 +25,27 @@ describe("KI nur mit Schlüssel UND Zugangscode", () => {
     expect(aiSetup()).toMatchObject({ mock: true, configured: true });
   });
 
-  it("checkAccess: ohne Code ok, falscher Code zählt, nach 5 Fehlversuchen kurze Pause", () => {
+  it("checkAccess: ohne Code ok, falscher Code zählt, nach 10 Fehlversuchen kurze Pause", () => {
     vi.stubEnv("APP_ACCESS_CODE", "");
     expect(checkAccess(anfrage())).toBeNull();
     vi.stubEnv("APP_ACCESS_CODE", " sonne ");
     expect(checkAccess(anfrage())).toBe("zugangscode");
     expect(checkAccess(anfrage({ [ACCESS_HEADER]: "sonne", "x-forwarded-for": "10.0.0.1" }))).toBeNull();
     const ip = { "x-forwarded-for": "10.0.0.2, 1.1.1.1" };
-    for (let i = 0; i < 5; i++) expect(checkAccess(anfrage({ ...ip, [ACCESS_HEADER]: "mond" }))).toBe("zugangscode");
+    for (let i = 0; i < 10; i++) expect(checkAccess(anfrage({ ...ip, [ACCESS_HEADER]: "mond" }))).toBe("zugangscode");
     expect(checkAccess(anfrage({ ...ip, [ACCESS_HEADER]: "sonne" }))).toBe("limit");
     expect(clientIp(anfrage(ip))).toBe("10.0.0.2");
     expect(clientIp(anfrage())).toBe("unbekannt");
+  });
+
+  it("Zugangscode nachsichtig: Groß/klein und Leerzeichen sind egal, Falsches bleibt falsch", () => {
+    vi.stubEnv("APP_ACCESS_CODE", "Sonne 42");
+    const ip = { "x-forwarded-for": "10.0.0.9" };
+    expect(checkAccess(anfrage({ ...ip, [ACCESS_HEADER]: "sonne42" }))).toBeNull();
+    expect(checkAccess(anfrage({ ...ip, [ACCESS_HEADER]: "  SONNE  42 " }))).toBeNull();
+    expect(checkAccess(anfrage({ ...ip, [ACCESS_HEADER]: "sonne4" }))).toBe("zugangscode");
+    expect(normalisiereZugangscode(" Mia\tSonne ")).toBe("miasonne");
+    expect(normalisiereZugangscode("   ")).toBe("");
   });
 
   it("takeDailySlot: Testmodus frei, sonst Tageslimit pro Gerät", () => {
@@ -73,7 +83,7 @@ describe("Rate-Limit", () => {
     for (let i = 0; i < LIMITS.dailyPerDevice; i++) allowDaily("d1", 1, t0);
     expect(allowDaily("d1", 1, t0)).toBe(false);
     expect(allowDaily("d1", 1, t0 + 25 * 60 * 60_000)).toBe(true);
-    for (let i = 0; i < 4; i++) noteWrongCode("ip-x", t0);
+    for (let i = 0; i < 9; i++) noteWrongCode("ip-x", t0);
     expect(codeAttemptsLeft("ip-x", t0)).toBe(true);
     noteWrongCode("ip-x", t0);
     expect(codeAttemptsLeft("ip-x", t0)).toBe(false);

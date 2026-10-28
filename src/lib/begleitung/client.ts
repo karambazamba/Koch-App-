@@ -74,7 +74,7 @@ export const UNAVAILABLE_TEXT: Record<AssistantErrorCode | "offline" | "einwilli
   einwilligung: "Dafür brauch ich kurz dein OK.",
   offline: "Bin grad offline. Ich mach’s, sobald wieder Netz da ist.",
   limit: "Für heute hab ich genug geredet. Listen und Termine gehen natürlich weiter.",
-  zugangscode: "Dafür brauch ich einmal deinen Testcode.",
+  zugangscode: "Dafür brauch ich einmal deinen Zugangscode.",
   aus: "Hat grad nicht geklappt. Nochmal?",
   fehler: "Hat grad nicht geklappt. Nochmal?",
 };
