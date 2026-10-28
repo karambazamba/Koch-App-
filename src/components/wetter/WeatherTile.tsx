@@ -5,8 +5,9 @@
 // Animation), Look „Schlicht“ weiß mit farbigem Symbol.
 // S = Temperatur + Windsack + EINE Zeile („Regen · ab 10 trocken“);
 // M = dazu ↑ max / ↓ min, Wind in Worten („Frischer Wind · 32 km/h aus West“,
-// ab 60 „· Böen 85“ in Orange) und unten die nächsten Stunden im
-// 2-Stunden-Abstand; L = dazu die nächsten Tage in Worten. Offline: letzte
+// ab 60 „· Böen 85“ in Orange). Windsack und Wind-Zeile nur, wenn der Wind
+// auffällt (`windZeigen`: ab „Frischer Wind“ oder Böen ≥ 60). Unten die
+// nächsten Stunden im 2-Stunden-Abstand; L = dazu die nächsten Tage in Worten. Offline: letzte
 // Werte mit „Stand 8:10“. Antippen → Wetter-Seite.
 
 import Link from "next/link";
@@ -16,7 +17,7 @@ import type { AppLook } from "@/lib/einstellungen/profileModel";
 import { round, todayRange } from "@/lib/wetter/forecast";
 import { dayWords, isNight, weatherGroup } from "@/lib/wetter/view";
 import { kachelHimmel, kachelLage, kachelWind, kachelZeile, zweiStunden } from "@/lib/wetter/kachel";
-import { windLevel, windLine, windSpoken } from "@/lib/wetter/wind";
+import { windLevel, windLine, windSpoken, windZeigen } from "@/lib/wetter/wind";
 import { useForecast } from "@/lib/wetter/client";
 import { tomorrowLabel, weekdayShort } from "@/lib/kalender/model";
 import { shortClock } from "@/components/notizen/Schnellnotiz";
@@ -80,11 +81,12 @@ export function WeatherTile({
   const wind = kachelWind(forecast, today, nowHour);
   const sky = kachelHimmel(kachelLage(forecast, today, nowHour), night, look, wind);
   const line = kachelZeile(forecast, today, nowHour, small);
-  const words = wind ? windLine(wind) : null;
+  const shown = windZeigen(wind) ? wind : null;
+  const words = shown ? windLine(shown) : null;
   const range = todayRange(forecast, today);
   const hours = small ? [] : zweiStunden(forecast, today, nowHour);
   const temp = round(forecast.current.temp);
-  const spoken = [`${temp}°`, `${line.wort}${line.rest ? `, ${line.rest}` : ""}`, wind ? windSpoken(wind) : null].filter(Boolean).join(", ");
+  const spoken = [`${temp}°`, `${line.wort}${line.rest ? `, ${line.rest}` : ""}`, shown ? windSpoken(shown) : null].filter(Boolean).join(", ");
   return (
     <Link href="/wetter" className={BOX} data-himmel={sky.key} data-ton={sky.ton ?? undefined} data-groesse={size} aria-label={`${label}: ${spoken} – öffnen`}>
       {sky.muster && <HimmelMuster muster={sky.muster} />}
@@ -95,7 +97,7 @@ export function WeatherTile({
       <span className={`relative flex items-center ${small ? "mt-1 gap-1.5" : "mt-2 gap-2.5"}`}>
         {sky.symbol && <WeatherSymbol code={forecast.current.code} night={night} className={small ? "h-8 w-8" : "h-11 w-11"} />}
         <span className={`${small ? "text-[30px]" : "text-[46px]"} font-extrabold tabular-nums leading-none`}>{temp}°</span>
-        {wind && <Windsock level={windLevel(wind.speed)} className={small ? "h-8 w-8" : "h-12 w-12"} />}
+        {shown && <Windsock level={windLevel(shown.speed)} className={small ? "h-8 w-8" : "h-12 w-12"} />}
         {!small && range && (
           <span className="wx-soft ml-auto flex flex-col items-end text-[15px] font-semibold leading-tight tabular-nums" aria-label={`Höchstens ${range.max}°, mindestens ${range.min}°`}>
             <span>↑ {range.max}°</span>

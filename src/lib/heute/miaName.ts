@@ -30,3 +30,6 @@ export function miaHomeSteps(host: string, name: string): MicStep[] {
 
 /** Leiste unten neu (Tafel 96): einmal kurz Mia */
 export const LEISTE_NEU = "Unten findest du jetzt Kalender, Heute und Essen. Ein Tipp, und du bist da.";
+
+/** Startseite halten (einmal, ab dem 4. Tag) */
+export const HALTEN_TIPP = "Halte die Startseite gedrückt, dann kannst du Kacheln dazuholen oder wegnehmen.";

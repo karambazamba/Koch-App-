@@ -200,17 +200,42 @@ describe("Kachel S/M/L", () => {
     expect(html).toContain("Nächste Tage");
   });
 
-  it("Böen unter 60: kein Zusatz; nachts dunkler; Schlicht ohne Muster mit Symbol", async () => {
+  it("Böen unter 60, Mittelwind unter 29: kein Windsack, keine Wind-Zeile; nachts dunkler; Schlicht ohne Muster mit Symbol", async () => {
     const calm = fcOf(day24((h) => ({ wind: 22, gust: 40, code: h > 20 ? 0 : 3 })), { code: 0 });
     const night = await tile("M", calm, 22 * 60);
     expect(night).toContain('data-himmel="sonnig-nacht"');
     expect(night).toContain('data-muster="mond"');
     expect(night).not.toContain("Böen");
-    expect(night).toContain("Mäßiger Wind");
+    expect(night).not.toContain("Mäßiger Wind");
+    expect(night).not.toContain("data-windsack");
+    expect(night).not.toContain("data-wind-zeile");
+    expect(night).not.toContain("Kilometer pro Stunde");
     const plain = await tile("M", calm, 12 * 60, "schlicht");
     expect(plain).toContain('data-himmel="schlicht"');
     expect(plain).not.toContain("data-muster");
     expect(plain).toMatch(/<svg viewBox="0 0 48 48" class="shrink-0 h-11 w-11"/);
+  });
+
+  it.each(["S", "M", "L"] as const)("%s: 10 km/h → kein Windsack, kein Wind-Text", async (size) => {
+    const html = await tile(size, fcOf(day24(() => ({ wind: 10, gust: 18 }))));
+    expect(html).not.toContain("data-windsack");
+    expect(html).not.toContain("data-wind-zeile");
+    expect(html).not.toContain("Wind");
+  });
+
+  it("30 km/h → Windsack und „Frischer Wind“ (M)", async () => {
+    const html = await tile("M", fcOf(day24(() => ({ wind: 30, gust: 45 }))));
+    expect(html).toContain('data-windsack="frisch"');
+    expect(html).toContain("Frischer Wind");
+    expect(html).not.toContain("Böen");
+  });
+
+  it("Böen 65 bei 20 km/h Mittelwind → Windsack und „Böen 65“", async () => {
+    const fc = fcOf(day24(() => ({ wind: 20, gust: 65 })));
+    const m = await tile("M", fc);
+    expect(m).toContain('data-windsack="maessig"');
+    expect(m).toContain("Böen 65");
+    expect(await tile("S", fc)).toContain('data-windsack="maessig"');
   });
 
   it("Sturm: Karte getönt, Windsack rot, Windstriche", async () => {

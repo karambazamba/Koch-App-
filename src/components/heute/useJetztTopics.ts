@@ -103,6 +103,7 @@ export function useJetztTopics(src: JetztSource) {
     ...(src.memos ? visibleMemos(src.memos, src.nowMs).filter((m) => memoUnheard(m, src.me)) : []).map((m) => ({ id: m.id, erstellt: m.erstellt, data: { author: m.data.author, text: `Sprachnachricht · ${formatDauer(m.data.dauer)}` } })),
   ].sort((a, b) => b.erstellt.localeCompare(a.erstellt))[0];
   const birthday = (list: DayItem[], when: "heute" | "morgen") => list.filter((i) => /geburtstag/i.test(i.title) || /geburtstag/i.test(i.label ?? "")).map((i) => ({ title: i.title, date: i.date, when }));
+  const jahrestag = src.todayAll.find((i) => i.date === src.today && anlassOf(i.title, i.label) === "jahrestag");
   const sportKind = src.training ? sportById(guessSport(src.training.title) ?? "") : null;
   // Wetter nur mit Planbezug: Regen zur Stunde eines Draußen-Termins bzw. -Trainings
   const outside = [...timed.filter((t) => t.outdoor), ...(src.training && sportKind?.outdoor ? [{ key: src.training.key, title: src.training.title, time: src.training.time }] : [])];
@@ -134,6 +135,7 @@ export function useJetztTopics(src: JetztSource) {
     planWeather: wet ? { key: wet.key, title: wet.title, time: wet.time, word: "Regen" } : storm ? { ...storm, word: "Wind" } : null,
     dish: src.dish,
     birthdays: [...birthday(src.todayAll.filter((i) => i.date === src.today), "heute"), ...birthday(src.tomorrow, "morgen")],
+    jahrestagHeute: jahrestag ? { key: jahrestag.key, title: jahrestag.title } : null,
     sport: src.training && sportKind ? { ...src.training, pack: sportKind.pack } : null,
     shop: topShop?.shop ? { shop: topShop.shop, names: topShop.names } : null,
     timer: src.timer,

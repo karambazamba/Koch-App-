@@ -1,14 +1,13 @@
 "use client";
 
 // Startseite, unter der Jetzt-Karte (höchstens ein Hinweis): zu Beginn der
-// Abstimmung „2.344 € im Topf – stimmt jetzt ab!“ (bis abgestimmt oder ✕,
+// Abstimmung „2.344 € im Topf – stimmt jetzt ab!“ (bis abgestimmt oder „Alles klar“,
 // einmal im Jahr) – später als Web-Push. Sonst nach ca. 4 Wochen einmal
-// „Gemeinsam für <Region>“ mit Beitrag vormerken (Vorschau) bzw. zusagen · Später (höchstens 3×).
+// „Gemeinsam für <Region>“ mit Beitrag vormerken (Vorschau) bzw. zusagen ·
+// „Alles klar“ = später (höchstens 3×). Im Stil der Seiten-Tipps (`SeitenTipp`).
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
-import { X } from "lucide-react";
-import { CARD, buttonClass } from "@/components/ui/styles";
+import { SeitenTipp } from "@/components/begleitung/denktmit/SeitenTipp";
 import { todayIso } from "@/lib/core/now";
 import { POT_TEXTS, activePot, askDue, askLater, euro, potPhase, potTotal } from "@/lib/spendentopf/model";
 import { changePot, notePotStart, useFamilyRegion, usePotState } from "@/lib/spendentopf/store";
@@ -36,26 +35,18 @@ export function PotHintCard({ hint }: { hint: Exclude<PotHint, null> }) {
   if (gone) return null;
   if (hint.kind === "vote")
     return (
-      <div className={`${CARD} flex items-center gap-3 px-4 py-3`} role="note" aria-label="Spendentopf: Abstimmung">
-        <p className="flex-1 text-[15px] font-bold leading-snug">{hint.text}</p>
-        <Link href="/spendentopf" className={buttonClass("primary", "sm")}>
-          Abstimmen
-        </Link>
-        <button type="button" onClick={() => changePot((s) => ({ ...s, voteCardHidden: [...s.voteCardHidden, year] }))} aria-label="Ausblenden" className="hit flex h-6 w-6 items-center justify-center text-muted">
-          <X className="h-4 w-4" strokeWidth={2.5} aria-hidden />
-        </button>
-      </div>
+      <SeitenTipp
+        text={hint.text}
+        label="Spendentopf: Abstimmung"
+        id="spendentopf"
+        onOk={() => changePot((s) => ({ ...s, voteCardHidden: [...s.voteCardHidden, year] }))}
+        aktion={{ label: "Abstimmen", href: "/spendentopf" }}
+      />
     );
   return (
-    <div className={`${CARD} flex flex-col gap-2 px-4 py-3.5`} role="note" aria-label={POT_TEXTS.together(region?.name)}>
-      <div className="flex items-start gap-2">
-        <p className="flex-1 text-[16px] font-extrabold leading-snug">{POT_TEXTS.together(region?.name)}</p>
-        <button type="button" onClick={() => changePot((s) => ({ ...s, ask: askLater(s.ask, todayIso()) }))} className="hit shrink-0 text-sm font-bold text-muted">
-          Später
-        </button>
-      </div>
+    <SeitenTipp text={POT_TEXTS.together(region?.name)} label={POT_TEXTS.together(region?.name)} id="spendentopf" onOk={() => changePot((s) => ({ ...s, ask: askLater(s.ask, todayIso()) }))}>
       {/* Nach dem Danke blendet sich die Karte selbst aus */}
       <PledgeChoice onDone={() => setGone(true)} />
-    </div>
+    </SeitenTipp>
   );
 }

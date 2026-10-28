@@ -3,7 +3,7 @@
 // Uhr, ältere Daten ohne Wind, gleiche Wörter für Seite und Mia.
 import { describe, expect, it } from "vitest";
 import { buildDays, sanitizeForecast, weatherQuestion, type ForecastHour } from "@/lib/wetter/forecast";
-import { dirFrom, dirLong, dirShort, gustText, stormForPlan, meanDirection, WIND_STUFEN, windAnswer, windLevel, windLine, windLong, windLook, windOf, windShort, windSpoken, windWord, windWords } from "@/lib/wetter/wind";
+import { dirFrom, dirLong, dirShort, gustText, stormForPlan, meanDirection, WIND_STUFEN, windAnswer, windLevel, windLine, windLong, windLook, windOf, windShort, windSpoken, windWord, windWords, windZeigen } from "@/lib/wetter/wind";
 
 const hour = (h: number, wind?: number, dir?: number, gust = 0): ForecastHour => ({ date: "2026-10-23", hour: h, temp: 10, code: 3, rain: 0, gust, mm: 0, sun: 0, cloud: 80, ...(wind === undefined ? {} : { wind }), ...(dir === undefined ? {} : { dir }) });
 
@@ -145,5 +145,39 @@ describe("Jetzt-Karte: Wind nur ab „Stürmisch“ und nur mit Planbezug", () =
     expect(stormForPlan(day(() => 70), D, 10, [])).toBeNull();
     const old = day(() => 70).map((h) => ({ ...h, wind: undefined }));
     expect(stormForPlan(old, D, 10, plan("Trampolin"))).toBeNull();
+  });
+});
+
+describe("Windsack und Wind-Zeile erst, wenn der Wind auffällt", () => {
+  const w = (speed: number, gust = 0) => ({ speed, gust, dir: 270 });
+  it("10 km/h → nichts", () => expect(windZeigen(w(10, 16))).toBe(false));
+  it("30 km/h → „Frischer Wind“", () => {
+    expect(windZeigen(w(30, 40))).toBe(true);
+    expect(windLine(w(30, 40)).wort).toBe("Frischer Wind");
+  });
+  it("Böen 65 bei 20 km/h → zeigen mit „Böen 65“", () => {
+    expect(windZeigen(w(20, 65))).toBe(true);
+    expect(windLine(w(20, 65)).boeen).toBe("Böen 65");
+  });
+  it.each([
+    [28, 0, false],
+    [29, 0, true],
+    [20, 59, false],
+    [20, 60, true],
+  ])("Grenze: %i km/h, Böen %i → %s", (speed, gust, show) => expect(windZeigen(w(speed, gust))).toBe(show));
+  it("ohne Winddaten nichts", () => {
+    expect(windZeigen(null)).toBe(false);
+    expect(windZeigen(undefined)).toBe(false);
+  });
+});
+
+describe("Wetter-Seite: unter der Schwelle nur klein die Zahl", () => {
+  it("Himmel-Karte, Tagesabschnitte und Wochen-Band fragen windZeigen", async () => {
+    const { readFileSync } = await import("node:fs");
+    const parts = readFileSync("src/components/wetter/WeatherParts.tsx", "utf8");
+    const view = readFileSync("src/components/wetter/WeatherView.tsx", "utf8");
+    expect(parts).toMatch(/windZeigen\(wind\) && <WindChip/);
+    expect(parts).toMatch(/windZeigen\(d\.wind\) && <Windsock/);
+    expect(view).toMatch(/windZeigen\(part\.wind\) \? <WindChip[^:]+: <WindZahl/);
   });
 });

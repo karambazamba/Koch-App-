@@ -4,12 +4,14 @@
 // (Verlauf je Lage, nachts Nachtblau, weißer Text, großes Symbol oben rechts,
 // unten Morgens/Mittags/Abends), „Bester Tag für draußen“, das Wochen-Band
 // (7 Säulen mit Regenbalken, Sonnenstunden und Wind) und der eine Satz zur
-// Woche. Wind (Tafel 87): Wort + Windsack = Stärke, Buchstaben = Richtung.
+// Woche. Wind (Tafel 87): Wort + Windsack = Stärke, Buchstaben = Richtung –
+// Windsack und Wort nur, wenn der Wind auffällt (`windZeigen`), sonst nur
+// klein die Zahl (`WindZahl`).
 
 import { round, type ForecastDay } from "@/lib/wetter/forecast";
 import { dayExtras, dayWords, columnTone, type DayPart, type Sky } from "@/lib/wetter/view";
 import { WeatherSymbol, Windsock } from "@/components/wetter/WeatherSymbol";
-import { dirShort, gustText, windLevel, windLong, windShort, windSpoken, windWord, type Wind } from "@/lib/wetter/wind";
+import { dirShort, gustText, windLevel, windLong, windShort, windSpoken, windWord, windZeigen, type Wind } from "@/lib/wetter/wind";
 
 /** Wind als Chip: „[Windsack] Mäßiger Wind · 22 km/h aus West“ (lang, ab 60 mit „· Böen 85“) bzw. „22 km/h · W“ (kurz) */
 export function WindChip({ wind, long = false, className = "" }: { wind: Wind; long?: boolean; className?: string }) {
@@ -17,6 +19,15 @@ export function WindChip({ wind, long = false, className = "" }: { wind: Wind; l
     <span className={`inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2.5 py-1 text-[13px] font-bold tabular-nums ${className}`} role="img" aria-label={windSpoken(wind)}>
       <Windsock level={windLevel(wind.speed)} className="h-5 w-5" />
       {long ? [windWord(windLevel(wind.speed)), windLong(wind), gustText(wind)].filter(Boolean).join(" · ") : windShort(wind)}
+    </span>
+  );
+}
+
+/** Wind unter „Frischer Wind“: nur klein die Zahl („12 km/h · W“), kein Windsack */
+export function WindZahl({ wind, className = "" }: { wind: Wind; className?: string }) {
+  return (
+    <span className={`whitespace-nowrap text-[12px] font-semibold tabular-nums text-muted ${className}`} aria-label={windSpoken(wind)} data-wind-zahl>
+      {windShort(wind)}
     </span>
   );
 }
@@ -30,7 +41,7 @@ export function SkyCard({ sky, label, temp, state, line, sub, code, night, parts
         <span className="text-[12px] font-extrabold uppercase tracking-wide opacity-90">{label}</span>
         <span className="mt-1 text-[54px] font-extrabold leading-none tabular-nums">{temp}°</span>
         {sub && <span className="mt-1 text-[15px] font-semibold opacity-90">{sub}</span>}
-        {wind && <WindChip wind={wind} long className="wx-glass mt-2 self-start" />}
+        {windZeigen(wind) && <WindChip wind={wind} long className="wx-glass mt-2 self-start" />}
         <span className="mt-2 text-[19px] font-bold">{state}</span>
         <span className="text-[14px] font-semibold opacity-90">{line}</span>
       </div>
@@ -95,7 +106,7 @@ export function WeekBand({ days, today, best, label, short, onOpen }: { days: Fo
               <span className="h-3 text-[11px] font-semibold leading-none text-muted">{sun ? `☀ ${sun}` : ""}</span>
               {d.wind && (
                 <span className="mt-1 flex w-full flex-col items-center gap-0.5 border-t border-line pt-1.5" data-wind>
-                  <Windsock level={windLevel(d.wind.speed)} className="h-5 w-5" />
+                  {windZeigen(d.wind) && <Windsock level={windLevel(d.wind.speed)} className="h-5 w-5" />}
                   <span className="text-[12px] font-extrabold leading-none tabular-nums">{d.wind.speed}</span>
                   <span className="h-3 text-[10px] font-bold leading-none text-weather-ink">{d.wind.dir === null ? "" : dirShort(d.wind.dir)}</span>
                 </span>
@@ -108,7 +119,7 @@ export function WeekBand({ days, today, best, label, short, onOpen }: { days: Fo
         Balken = Regenrisiko · ☀ = Sonnenstunden
         {days.some((d) => d.wind) && (
           <span className="flex items-center justify-center gap-1">
-            <Windsock level="maessig" className="h-4 w-4" /> = Wind km/h · W = Wind aus Westen
+            {days.some((d) => windZeigen(d.wind)) ? <Windsock level="frisch" className="h-4 w-4" /> : "Zahl"} = Wind km/h · W = Wind aus Westen
           </span>
         )}
       </p>

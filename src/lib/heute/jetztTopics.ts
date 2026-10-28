@@ -6,10 +6,13 @@
 // langsam gelernt. Höchstens drei Themen zum Wischen; nichts Passendes =
 // „Alles ruhig. Ich sag Bescheid.“ Die Kachel-Anordnung bleibt unberührt.
 // Abends (Tafel 98, `abendThema.ts`) höchstens EIN Thema in fester Reihenfolge.
+// Morgens (6–10 Uhr): ein besonderer Tag (Geburtstag, Jahrestag) kommt zuerst
+// („Moin! Heute hat Lisa Geburtstag.“); die Morgen-Info mit den Terminen nur,
+// wenn die Termine-Kachel fehlt – sonst ein Thema, das keine Kachel zeigt.
 
 import type { HomeTileId } from "@/lib/core/homeLayout";
 import type { Anlass } from "@/lib/kalender/anlass";
-import { birthdayName } from "@/lib/kalender/anlass";
+import { birthdayName, eigenerJahrestag } from "@/lib/kalender/anlass";
 import { abendThemen, isAbend } from "@/lib/heute/abendThema";
 import { kuehlThema } from "@/lib/vorrat/kuehlcheck";
 
@@ -109,6 +112,8 @@ export type JetztInput = {
   /** Gericht von heute (solange nicht gegessen) */
   dish: { name: string; clock: string | null; minutes: number | null; ready: boolean; missing: string[]; unsure?: string[]; demo?: boolean } | null;
   birthdays: { title: string; date: string; when: "heute" | "morgen" }[];
+  /** Jahrestag bzw. Hochzeitstag heute (ganztägiger Termin mit Stichwort oder Etikett) */
+  jahrestagHeute?: { key: string; title: string } | null;
   /** Heute geplantes Training mit Packliste */
   sport: { key: string; title: string; time: string; pack: string[] } | null;
   /** Laden mit den meisten Sachen auf der Liste (mindestens 2) */
@@ -148,7 +153,7 @@ export type JetztInput = {
   hidden: string[];
 };
 
-type Candidate = JetztTopic & { gentle?: boolean; night?: boolean };
+type Candidate = JetztTopic & { gentle?: boolean; night?: boolean; /** steht vor allem anderen (Morgen am besonderen Tag) */ first?: boolean };
 
 /** Zeile 1 höchstens so lang */
 export const TITLE_MAX = 32;
@@ -168,6 +173,20 @@ const short = (s: string, max = TITLE_MAX) => {
 const ask = (note: string) => (/[?!.]$/.test(note.trim()) ? note.trim() : `${note.trim()}?`);
 /** Steht jemand für die Kinder in der Notiz? („Oma bleibt bei den Kindern“) */
 const careNoted = (note?: string) => Boolean(note && /bleibt|babysitter|betreu|passt auf/i.test(note));
+
+/** Morgens (wie die Morgen-Info der Routinen): 6–10 Uhr */
+const isMorgen = (minutes: number) => minutes >= 6 * 60 && minutes < 10 * 60;
+
+/**
+ * Morgengruß am besonderen Tag, Zeile 1 höchstens 32 Zeichen: „Moin! Heute
+ * ist euer Jahrestag.“; passt das nicht, gesprochen kürzer („Moin! Heut is
+ * euer Hochzeitstag.“), sonst ohne „Moin!“.
+ */
+export function moinZeile(kern: { verb: "ist" | "hat"; rest: string }): string {
+  const kurz = kern.verb === "ist" ? "is" : "hat";
+  const formen = [`Moin! Heute ${kern.verb} ${kern.rest}.`, `Moin! Heut ${kurz} ${kern.rest}.`, `Heute ${kern.verb} ${kern.rest}.`];
+  return formen.find((f) => f.length <= TITLE_MAX) ?? formen[2];
+}
 
 /** Draußen? (Sportart draußen oder typische Draußen-Wörter) – nur dann zählt Regen */
 export function isOutdoor(title: string, place = "", sportOutdoor = false): boolean {
@@ -269,11 +288,22 @@ export function jetztTopics(x: JetztInput): JetztTopic[] {
       add({ id: `absprache:${t.key}`, kind: "absprache", title: `${clock(t.time)} ${t.title}`, detail: done ? `${t.note!.trim()} ✓` : "Wer bleibt bei den Kindern?", score: done ? 45 : 64, target: { href: dayHref }, button: "Öffnen", gentle: true });
     }
 
+  // Besondere Tage: morgens als Erstes mit „Moin!“, sonst wie gehabt
+  const morgen = isMorgen(x.minutes);
   for (const b of x.birthdays.slice(0, 1)) {
     const name = birthdayName(b.title);
     const when = b.when === "heute" ? "Heute" : "Morgen";
-    add({ id: `geburtstag:${b.date}:${b.title}`, kind: "geburtstag", title: name ? `${when} hat ${name} Geburtstag` : `${when}: ${b.title}`, detail: b.when === "heute" ? "Vielleicht kurz anrufen?" : "Noch Zeit für eine Kleinigkeit", score: b.when === "heute" ? 82 : 58, target: { href: `/tag?datum=${b.date}` }, button: "Erledigt", gentle: true, night: true });
+    const moin = morgen && b.when === "heute";
+    const title = moin ? moinZeile(name ? { verb: "hat", rest: `${name} Geburtstag` } : { verb: "ist", rest: b.title }) : name ? `${when} hat ${name} Geburtstag` : `${when}: ${b.title}`;
+    add({ id: `geburtstag:${b.date}:${b.title}`, kind: "geburtstag", title, detail: b.when === "heute" ? "Vielleicht kurz anrufen?" : "Noch Zeit für eine Kleinigkeit", score: b.when === "heute" ? 82 : 58, target: { href: `/tag?datum=${b.date}` }, button: "Erledigt", gentle: true, night: true, first: moin });
   }
+  if (x.jahrestagHeute) {
+    const eigen = eigenerJahrestag(x.jahrestagHeute.title);
+    const kern = eigen ? { verb: "ist" as const, rest: `${x.solo ? "dein" : "euer"} ${eigen}` } : null;
+    const title = morgen ? moinZeile(kern ?? { verb: "ist", rest: x.jahrestagHeute.title }) : kern ? `Heute ist ${kern.rest}.` : `Heute: ${x.jahrestagHeute.title}`;
+    add({ id: `jahrestag:${x.jahrestagHeute.key}`, kind: "jahrestag", title, detail: "Was Schönes geplant?", score: 82, target: { href: dayHref }, button: "Erledigt", gentle: true, night: true, first: morgen });
+  }
+  const festMorgens = c.some((t) => t.first);
 
   // Aufgaben nur, wenn die Aufgaben-Kachel fehlt
   if (!shows("aufgaben"))
@@ -286,7 +316,8 @@ export function jetztTopics(x: JetztInput): JetztTopic[] {
   if (x.region && !shows("tipps") && !night) add({ id: `region:${x.region.id}`, kind: "region", title: x.region.title, detail: x.region.detail, score: 38, target: { href: `/tipps?tipp=${encodeURIComponent(x.region.id)}` }, button: "Öffnen", gentle: true });
   if (x.routinen?.ueber && !night) add({ id: x.routinen.ueber.key, kind: "ueberschneidung", title: short(x.routinen.ueber.title), detail: x.routinen.ueber.detail, score: 84, target: null, button: null, gentle: true });
   if (x.routinen?.pack && !night) add({ id: x.routinen.pack.key, kind: "packen", title: short(x.routinen.pack.title), detail: x.routinen.pack.detail, score: 70, target: null, button: null, gentle: true });
-  if (x.routinen?.morgen && !night) add({ id: `morgen:${x.today}`, kind: "morgen", title: short(x.routinen.morgen.title), detail: x.routinen.morgen.detail, score: 62, target: null, button: null, gentle: true });
+  // Morgen-Info („Moin! Zahnarzt 9:15“) wiederholt die Termine-Kachel – nur ohne sie und ohne besonderen Tag
+  if (x.routinen?.morgen && !night && !shows("termine") && !festMorgens) add({ id: `morgen:${x.today}`, kind: "morgen", title: short(x.routinen.morgen.title), detail: x.routinen.morgen.detail, score: 62, target: null, button: null, gentle: true });
   if (x.family && !night) add({ id: `familie:${x.family.id}`, kind: "familie", title: short(x.family.title), detail: x.family.detail, score: 45, target: { href: x.family.href }, button: "Öffnen", gentle: true });
   if (x.mail && !night) add({ id: `mail:${x.mail.id}`, kind: "mail", title: short(x.mail.title), detail: x.mail.detail, score: 68, target: { href: "/mails" }, button: "Öffnen", gentle: true });
   if (x.potInvite && !night) add({ id: `spendentopf:live`, kind: "spendentopf", title: x.potInvite.title, detail: x.potInvite.detail, score: 40, target: { href: "/spendentopf" }, button: "Öffnen", gentle: true });
@@ -312,7 +343,7 @@ export function jetztTopics(x: JetztInput): JetztTopic[] {
       const w = Math.max(-6, Math.min(6, x.weights[t.kind] ?? 0));
       return { ...t, title: short(t.title), score: Math.round(t.score * (1 + w * 0.05) * 10) / 10 };
     })
-    .sort((a, b) => b.score - a.score)
+    .sort((a, b) => Number(Boolean(b.first)) - Number(Boolean(a.first)) || b.score - a.score)
     .slice(0, MAX)
     .map(({ id, kind, title, detail, score, target, button }) => ({ id, kind, title, detail, score, target, button }));
   if (ranked.length) return ranked;

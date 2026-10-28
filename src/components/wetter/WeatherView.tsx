@@ -24,7 +24,8 @@ import { HourStrip } from "@/components/wetter/HourStrip";
 import { Shirt, Snowflake, Sun, Umbrella, Zap, type LucideIcon } from "lucide-react";
 import { useForecast } from "@/lib/wetter/client";
 import { WeatherSymbol } from "@/components/wetter/WeatherSymbol";
-import { BestDayCard, SkyCard, WeekBand, WeekNote, WindChip } from "@/components/wetter/WeatherParts";
+import { BestDayCard, SkyCard, WeekBand, WeekNote, WindChip, WindZahl } from "@/components/wetter/WeatherParts";
+import { windZeigen } from "@/lib/wetter/wind";
 
 type Tab = "heute" | "morgen" | "woche";
 const TABS: { id: Tab; label: string }[] = [
@@ -143,7 +144,7 @@ function PartCard({ part }: { part: DayPart }) {
       </span>
       {(part.tips.length > 0 || part.wind) && (
         <span className="flex flex-col items-end gap-1">
-          {part.wind && <WindChip wind={part.wind} className="bg-fill" />}
+          {part.wind && (windZeigen(part.wind) ? <WindChip wind={part.wind} className="bg-fill" /> : <WindZahl wind={part.wind} />)}
           {part.tips.map((t) => {
             const Icon = TIPP_ICON[t.icon];
             return (
