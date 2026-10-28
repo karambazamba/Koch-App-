@@ -244,9 +244,12 @@ describe("Satzende am Pegel (eigene Aufnahme)", () => {
     expect(o.at(-1)).toEqual({ t: 8000, a: "nichts" });
   });
 
-  it("Grundrauschen zählt nicht als Sprechen; höchstens 60 s am Stück", () => {
+  it("Grundrauschen zählt nicht als Sprechen; Dauer-Laut hält nie offen (höchstens 20 s, A-026)", () => {
     expect(lauf(() => 0.015, 20_000).at(-1)?.a).toBe("nichts");
-    expect(lauf(() => 0.2, 70_000).at(-1)).toEqual({ t: STIMME_GRENZEN.aufnahmeMs, a: "fertig" });
+    const dauer = lauf(() => 0.2, 70_000).at(-1)!;
+    expect(dauer.a).toBe("fertig");
+    expect(dauer.t).toBeLessThanOrEqual(20_000);
+    expect(STIMME_GRENZEN.aufnahmeMs).toBe(60_000);
   });
 
   it("Pegel = Effektivwert", () => {

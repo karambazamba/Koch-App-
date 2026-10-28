@@ -4,9 +4,10 @@
 // Stücken holen und nacheinander abspielen; feste Sätze kommen aus dem
 // Zwischenspeicher. Kommt die erste Silbe nicht in ~1 s (oder ist nichts
 // eingerichtet), liest still die Stimme des Handys weiter (`ersatz`).
-// Zuhören: die eigene Aufnahme (`aufnahme.ts`) geht an `/api/hoeren`, Text kommt
-// zurück. Klappt es nicht, einmal still nochmal, dann null. Pinnwand-
-// Sprachnachrichten laufen nie hierüber.
+// Zuhören live (`ohrLive.ts`): hier nur der Einmal-Schlüssel vom eigenen Server
+// und ob es geht. Ersatz ganz hinten: die eigene Aufnahme (`aufnahme.ts`) geht
+// an `/api/hoeren`, Text kommt zurück. Klappt es nicht, einmal still nochmal,
+// dann null. Pinnwand-Sprachnachrichten laufen nie hierüber.
 
 import { useEffect, useState } from "react";
 import { now, toIsoDate } from "@/lib/core/now";
@@ -14,7 +15,7 @@ import { useEinwilligungen } from "@/lib/datenschutz/einwilligung";
 import { recordStimme } from "@/lib/begleitung/usage";
 import { stueckeFuerStimme } from "@/lib/begleitung/vorlesText";
 import { accessHeaders, deviceId, serverStimme } from "@/lib/begleitung/zugang";
-import { GERAET_HEADER, HOEREN_ENDPOINT, STIMME_ENDPOINT, STIMME_GRENZEN, ZEICHEN_HEADER, festerSatz } from "@/lib/begleitung/stimmeProtokoll";
+import { GERAET_HEADER, HOEREN_ENDPOINT, OHR_TOKEN_ENDPOINT, STIMME_ENDPOINT, STIMME_GRENZEN, ZEICHEN_HEADER, festerSatz } from "@/lib/begleitung/stimmeProtokoll";
 
 /** Kleinste stille WAV-Datei – zum Freischalten der Wiedergabe beim ersten Tippen */
 const STILL = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=";
@@ -153,6 +154,53 @@ export function serverOhr(stand: { hoeren: boolean } | null): boolean {
   return !ohrAus && Boolean(stand?.hoeren) && typeof MediaRecorder !== "undefined" && Boolean(navigator.mediaDevices?.getUserMedia);
 }
 
+/** Live-Zuhören hat „aus“ gemeldet bzw. ist zweimal hintereinander gescheitert – bis zum Neuladen nicht mehr */
+let liveAus = false;
+let liveFehler = 0;
+
+/** Kann dieser Browser live zuhören? (Mikrofon, Ton-Verarbeitung, Websocket) */
+function liveTechnik(): boolean {
+  if (typeof window === "undefined") return false;
+  const AC = window.AudioContext ?? (window as unknown as { webkitAudioContext?: unknown }).webkitAudioContext;
+  return Boolean(AC) && typeof WebSocket !== "undefined" && Boolean(navigator.mediaDevices?.getUserMedia);
+}
+
+/** Hört Mia live über den Server zu? (sofort, ohne Warten) */
+export function liveOhr(stand: { live?: boolean } | null): boolean {
+  return !liveAus && stand?.live === true && liveTechnik();
+}
+
+/** Eine Live-Runde ist gescheitert (Schlüssel/Verbindung); zweimal hintereinander = bis zum Neuladen Browser */
+export function liveGescheitert() {
+  if (++liveFehler >= 2) liveAus = true;
+}
+
+/** Eine Live-Runde hat geklappt: gestreamte Sekunden für die Kosten-Übersicht */
+export function liveGeklappt(sekunden: number) {
+  liveFehler = 0;
+  if (sekunden > 0) recordStimme(heute(), { sekunden: Math.max(1, Math.round(sekunden)) });
+}
+
+/** Einmal-Schlüssel fürs Live-Zuhören (gilt kurz und nur für eine Verbindung); null = geht nicht */
+export async function ohrToken(): Promise<{ token: string; modell: string } | null> {
+  try {
+    const r = await fetch(OHR_TOKEN_ENDPOINT, {
+      method: "POST",
+      cache: "no-store",
+      headers: { "content-type": "application/json", ...accessHeaders() },
+      body: JSON.stringify({ geraet: deviceId() }),
+      signal: typeof AbortSignal.timeout === "function" ? AbortSignal.timeout(2500) : undefined,
+    });
+    if (r.status === 503) liveAus = true;
+    if (!r.ok) return null;
+    const b = (await r.json()) as { token?: unknown; modell?: unknown };
+    if (typeof b.token !== "string" || !b.token) return null;
+    return { token: b.token, modell: typeof b.modell === "string" && b.modell ? b.modell : "scribe_v2_realtime" };
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Aufnahme in Text verwandeln. Fehler: einmal still nochmal, dann null.
  * Die Aufnahme geht nur an `/api/hoeren` und wird nirgends aufgehoben.
@@ -208,7 +256,7 @@ export function useServerOhr(): boolean {
   const [ok, setOk] = useState(false);
   useEffect(() => {
     let aktiv = true;
-    void serverStimme().then((s) => aktiv && setOk(serverOhr(s)));
+    void serverStimme().then((s) => aktiv && setOk(serverOhr(s) || liveOhr(s)));
     return () => {
       aktiv = false;
     };

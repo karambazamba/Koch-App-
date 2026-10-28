@@ -7,14 +7,21 @@
 // App → Für Entwickler („Tempo: Median der letzten 20“).
 
 import { createLocalStore } from "@/lib/core/localStore";
+import { micLog } from "@/lib/core/micLog";
 import { useExternalStore } from "@/lib/core/useExternalStore";
 
 const MAX = 20;
+
+/** Wie Mia zugehört hat (Auftrag A-026): live über ElevenLabs, Browser oder eigene Aufnahme */
+export type TempoOhr = "live" | "browser" | "aufnahme";
+const OHREN: TempoOhr[] = ["live", "browser", "aufnahme"];
 
 /** Felder in ms; `weg`: Sofort-Weg (ohne KI) oder KI */
 export type TempoMessung = {
   weg: "sofort" | "ki";
   sprache: boolean;
+  /** Gesprochen: über welchen Weg */
+  ohr?: TempoOhr;
   /** Letztes Wort → abgeschickt */
   stille?: number;
   /** Abgeschickt → Server hat geantwortet (Kopf da) */
@@ -44,6 +51,7 @@ export function migrateTempo(raw: unknown): TempoState | null {
     .filter((m): m is TempoMessung => Boolean(m) && typeof m === "object")
     .map((m) => {
       const clean: TempoMessung = { weg: m.weg === "sofort" ? "sofort" : "ki", sprache: m.sprache === true };
+      if (OHREN.includes(m.ohr as TempoOhr)) clean.ohr = m.ohr;
       for (const f of TEMPO_FELDER) {
         const v = zahl(m[f]);
         if (v !== undefined) clean[f] = v;
@@ -68,7 +76,14 @@ export type TempoUebersicht = Record<Feld, number | null> & {
   sofort: number;
   /** Letztes Wort → erste Reaktion (Stille + erstes Wort bzw. erster Satz), nur gesprochene */
   reaktion: number | null;
+  /** Erstes Wort der Antwort → Ton (erster Satz vorgelesen) */
+  ton: number | null;
+  /** Ende Sprechen → Mia spricht (Stille + erster Satz vorgelesen; Ziel unter 2 s) */
+  bisTon: number | null;
 };
+
+/** Erstes Wort → Ton einer Messung */
+const tonVon = (m: TempoMessung) => (m.satz !== undefined && m.token !== undefined ? Math.max(0, m.satz - m.token) : undefined);
 
 /** Median je Schritt über die letzten 20 */
 export function tempoUebersicht(messungen: TempoMessung[]): TempoUebersicht {
@@ -83,10 +98,22 @@ export function tempoUebersicht(messungen: TempoMessung[]): TempoUebersicht {
     anzahl: list.length,
     sofort: list.filter((m) => m.weg === "sofort").length,
     reaktion: median(reaktion),
+    ton: median(list.flatMap((m) => (tonVon(m) === undefined ? [] : [tonVon(m)!]))),
+    bisTon: median(list.flatMap((m) => (m.sprache && m.stille !== undefined && m.satz !== undefined ? [m.stille + m.satz] : []))),
   };
 }
 
+const sek = (ms: number | undefined) => (ms === undefined ? "–" : `${(ms / 1000).toFixed(1).replace(".", ",")} s`);
+
+/** Eine Zeile fürs Mikro-Protokoll (nur Zahlen): Sprechende → abgeschickt, → erstes Wort, erstes Wort → Ton */
+export function tempoZeile(m: TempoMessung): string {
+  const teile = [`Ende→Commit ${sek(m.stille)}`, `Commit→Wort ${sek(m.token)}`, `Wort→Ton ${sek(tonVon(m))}`];
+  if (m.stille !== undefined && m.satz !== undefined) teile.push(`gesamt ${sek(m.stille + m.satz)}`);
+  return `Tempo (${m.ohr ?? "?"}${m.weg === "sofort" ? ", sofort" : ""}): ${teile.join(" · ")}`;
+}
+
 function speichern(m: TempoMessung) {
+  if (m.sprache) micLog(tempoZeile(m));
   try {
     store.save({ version: 1, messungen: [...(store.load()?.messungen ?? []), m].slice(-MAX) });
   } catch {
@@ -107,6 +134,12 @@ function vielleichtSpeichern(l: Lauf) {
   speichern(l.m);
 }
 
+/** Über welchen Weg zuletzt gehört wurde (setzt `useSpeechInput` beim Ende einer Runde) */
+let letztesOhr: TempoOhr | null = null;
+export function tempoOhr(ohr: TempoOhr) {
+  letztesOhr = ohr;
+}
+
 /** Abgeschickt: neue Messung (die vorige wird gespeichert, wenn sie fertig war) */
 export function tempoBeginn(opts: { sprache: boolean; letztesWortAm?: number | null; liest?: boolean }, jetzt = uhr()) {
   if (lauf && lauf.fertig && !lauf.gespeichert) {
@@ -114,6 +147,7 @@ export function tempoBeginn(opts: { sprache: boolean; letztesWortAm?: number | n
     speichern(lauf.m);
   }
   const m: TempoMessung = { weg: "ki", sprache: opts.sprache };
+  if (opts.sprache && letztesOhr) m.ohr = letztesOhr;
   if (opts.sprache && typeof opts.letztesWortAm === "number") m.stille = Math.max(0, Math.round(jetzt - opts.letztesWortAm));
   lauf = { start: jetzt, m, liest: Boolean(opts.liest), fertig: false, gespeichert: false };
 }

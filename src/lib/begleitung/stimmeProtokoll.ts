@@ -7,6 +7,8 @@ import { vorlesText } from "@/lib/begleitung/vorlesText";
 
 export const STIMME_ENDPOINT = "/api/stimme";
 export const HOEREN_ENDPOINT = "/api/hoeren";
+/** Kurzlebiger Einmal-Schlüssel fürs Live-Zuhören (der echte Schlüssel bleibt auf dem Server) */
+export const OHR_TOKEN_ENDPOINT = "/api/stimme/ohr-token";
 /** Gerätekennung bei Aufnahmen (der Körper ist der Ton selbst) */
 export const GERAET_HEADER = "x-mia-geraet";
 /** Vorgelesene Zeichen (Antwort-Header, für die Kosten-Übersicht) */
@@ -31,6 +33,8 @@ export type StimmeStatus = {
   hoeren: boolean;
   /** Kennung von Stimme und Modell – ändert sich die Stimme, laden feste Sätze neu */
   v: string;
+  /** Live-Zuhören (Text beim Sprechen, Ende von selbst) ist eingerichtet – fehlt bei älteren Servern */
+  live?: boolean;
 };
 
 /**

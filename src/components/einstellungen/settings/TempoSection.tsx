@@ -6,7 +6,7 @@
 import { CARD, SECTION_TITLE } from "@/components/ui/styles";
 import { clearTempo, tempoUebersicht, useTempo } from "@/lib/begleitung/tempo";
 
-const ZEILEN: { feld: "reaktion" | "stille" | "server" | "modell" | "token" | "satz" | "fertig"; label: string }[] = [
+const ZEILEN: { feld: "reaktion" | "stille" | "server" | "modell" | "token" | "satz" | "fertig" | "ton" | "bisTon"; label: string }[] = [
   { feld: "reaktion", label: "Letztes Wort → erste Reaktion" },
   { feld: "stille", label: "Letztes Wort → abgeschickt" },
   { feld: "server", label: "Abgeschickt → Server erhalten" },
@@ -14,6 +14,8 @@ const ZEILEN: { feld: "reaktion" | "stille" | "server" | "modell" | "token" | "s
   { feld: "token", label: "Abgeschickt → erstes Wort" },
   { feld: "satz", label: "Abgeschickt → erster Satz vorgelesen" },
   { feld: "fertig", label: "Abgeschickt → fertig" },
+  { feld: "ton", label: "Erstes Wort → Ton" },
+  { feld: "bisTon", label: "Ende Sprechen → Antwort zu hören" },
 ];
 
 /** „1,2 s“ bzw. „–“ */

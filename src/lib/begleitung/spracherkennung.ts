@@ -52,7 +52,7 @@ export const NOCHMAL = "Hat grad nicht geklappt. Nochmal?";
 export const BELEGT = "Mikro ist gerade belegt. Lieber schreiben?";
 /** Endet eine Sitzung schneller als das ohne Ton, war das Mikro nicht wirklich da */
 export const LEER_MS = 1500;
-const NICHT_GEKLAPPT = "Spracheingabe hat nicht geklappt. Schreib’s einfach.";
+export const NICHT_GEKLAPPT = "Spracheingabe hat nicht geklappt. Schreib’s einfach.";
 
 const STOP_WORDS = /[\s,.]*(?:fertig|das\s+war[’']?s)[\s.!]*$/i;
 /** Langes Zuhören: „… fertig“ am Ende = Schluss (das Wort selbst gehört nicht zum Text) */
@@ -99,7 +99,15 @@ export class Spracherkennung {
   private frist: ReturnType<typeof setTimeout> | null = null;
 
   constructor(
-    private readonly o: { micId: string; long?: boolean; buehne?: boolean; klasse: () => RecognitionClass | null; anzeige: () => Anzeige },
+    private readonly o: {
+      micId: string;
+      long?: boolean;
+      buehne?: boolean;
+      klasse: () => RecognitionClass | null;
+      anzeige: () => Anzeige;
+      /** iPhone ohne Diktieren/Spracherkennung: true = jemand anderes hört zu (Mias eigene Aufnahme), keine Hilfe zeigen */
+      beiErkennungAus?: () => boolean;
+    },
   ) {}
 
   /** Läuft gerade eine Erkennung? */
@@ -304,6 +312,7 @@ export class Spracherkennung {
         this.detach();
         ui.interim("");
         ui.wartet(false);
+        if (block === "erkennung_aus" && this.o.beiErkennungAus?.()) return micLog("Zuhören: Spracherkennung aus, eigene Aufnahme");
         reportMicBlocked(block);
         return;
       }

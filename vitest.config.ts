@@ -13,7 +13,7 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       include: ["src/lib/**/*.ts"],
-      exclude: ["src/lib/**/use[A-Z]*.ts", "src/lib/begleitung/speech.ts", "src/lib/pinnwand/memoAudio.ts", "src/lib/pinnwand/memoPlayer.ts", "src/lib/pinnwand/fotoStore.ts", "src/lib/core/wakeLock.ts", "src/lib/begleitung/aufnahme.ts"],
+      exclude: ["src/lib/**/use[A-Z]*.ts", "src/lib/begleitung/speech.ts", "src/lib/pinnwand/memoAudio.ts", "src/lib/pinnwand/memoPlayer.ts", "src/lib/pinnwand/fotoStore.ts", "src/lib/core/wakeLock.ts", "src/lib/begleitung/aufnahme.ts", "src/lib/begleitung/ohrLiveBrowser.ts"],
       reporter: ["text-summary", "json-summary"],
       // Untergrenze (Aufräumen, Etappe 6): darunter schlägt test:abdeckung fehl
       thresholds: { lines: 80, statements: 80, functions: 80, branches: 75 },
