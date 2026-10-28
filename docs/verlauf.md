@@ -3102,7 +3102,7 @@ Fehler in `docs/aufraeumen-nachher.md`.
     bei Mia-Vorschlägen hängt der Laden ohnehin am Namen. Eier als 6er/10er.
 
 
-## Mia schneller und flüssiger (vX)
+## Mia schneller und flüssiger (v0.143.0, A-019)
 - Auftrag A-019: einfache Sachen in unter 1,5 s nach dem letzten Wort, bei
   großen sofort eine Reaktion. Messen zuerst: `begleitung/tempo.ts`
   (`wasgibts.tempo`, nur Zahlen, nur Gerät), Server schickt seine Zeiten mit,
@@ -3124,7 +3124,7 @@ Fehler in `docs/aufraeumen-nachher.md`.
   höchstens ein stiller Neustart ohne Ton, dann „Mikro ist gerade belegt.
   Lieber schreiben?“.
 
-## Mia hört live über ElevenLabs (vX)
+## Mia hört live über ElevenLabs (v0.143.0, A-026)
 - Auftrag A-026 (Nachtrag zu A-019, Video 28.10. im Café): Seit ElevenLabs
   aktiv war, nahm Mia per MediaRecorder auf und schickte die Datei am Ende an
   scribe_v1 – kein Live-Text mehr, Satzende nur über den Pegel (im Café nie
@@ -3150,7 +3150,7 @@ Fehler in `docs/aufraeumen-nachher.md`.
 - Datenschutz: Datenkarte, Anbieter und Datenschutzerklärung um das
   Streaming ergänzt (gestreamt, nicht gespeichert, nur mit KI-Einwilligung).
 
-## Mias Stimme bleibt Mias Stimme (A-035)
+## Mias Stimme bleibt Mias Stimme (v0.143.0, A-035)
 - Nachtrag zu A-019: Mia sprang mitten im Gespräch still auf die Stimme des
   Handys, weil der Server-Status bei jeder Antwort neu abgewartet wurde
   (Grenze 400 ms) und die erste Silbe nach 1 s als zu spät galt.
