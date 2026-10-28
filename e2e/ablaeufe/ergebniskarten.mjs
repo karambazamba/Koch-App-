@@ -5,7 +5,7 @@
 // Sachen → 4 Karten + „und 2 weitere ⌄“; lange Titel nie abgeschnitten
 // (iPhone SE, iPhone 15 Pro, Pixel 7); nach dem Schließen der Bühne leuchtet
 // der neue Eintrag einmal in der Termine- und der Einkauf-Kachel.
-import { BASE, hello, miaTippen, newPage, seedFamily, store } from "../lib.mjs";
+import { BASE, hello, miaTippen, newPage, seedFamily, store, tippenFeld } from "../lib.mjs";
 
 const SATZ = "Freitag 16 Uhr Zahnarzt mit Jonne. Und wir brauchen Milch.";
 
@@ -24,11 +24,15 @@ async function mitJonne(page) {
 }
 
 async function sagen(page, text) {
-  const box = await miaTippen(page);
+  // Bühne schon offen (auf der Bühne ist der Mia-Knopf der Leiste verdeckt): gleich ins Feld tippen
+  const offen = await page.getByRole("textbox", { name: "Nachricht schreiben" }).isVisible();
+  const box = offen ? await tippenFeld(page) : await miaTippen(page);
+  const vorher = await page.locator("[data-ergebnis-karten]").count();
   await box.fill(text);
   await box.press("Enter");
+  // Auf die NEUEN Karten warten (ältere Antworten stehen noch im Verlauf)
+  await page.waitForFunction((n) => document.querySelectorAll("[data-ergebnis-karten]").length > n, vorher, { timeout: 10000 });
   const karten = page.locator("[data-ergebnis-karten]").last();
-  await karten.waitFor({ timeout: 10000 });
   await page.waitForTimeout(900);
   return karten;
 }
@@ -133,12 +137,16 @@ export const miaAufleuchten = async (page, check) => {
   await page.waitForTimeout(1200);
   check(!(await page.locator("[data-leuchtet]").count()), "leuchtet nur einmal");
   // Zurück zur Startseite von einer anderen Seite: was Mia dort eingetragen hat, leuchtet beim Zurückkommen
-  await page.goto(BASE + "/einkaufsliste");
+  // in der App hin (Kachel antippen) – mit page.goto wäre „Zurück“ ein Neuladen und der Merker weg
+  await page.locator('[data-tone="einkauf"] a[href^="/einkaufsliste"]').first().click();
+  await page.waitForURL(/\/einkaufsliste/);
   await page.waitForTimeout(900);
+  const ohneNeuladen = await page.evaluate(() => (window.__ohneNeuladen = true));
   await sagen(page, "Wir brauchen Butter");
   await page.keyboard.press("Escape");
   await page.waitForTimeout(400);
   // über die Leiste (ohne Neuladen – der Merker lebt nur im Arbeitsspeicher)
   await page.locator("[data-leiste-flaeche]").getByRole("tab", { name: "Heute" }).click();
   check(await page.locator('[data-tone="einkauf"] [data-leuchtet]').first().waitFor({ timeout: 4000 }).then(() => true, () => false), "bei der Rückkehr zur Startseite leuchtet die Einkauf-Kachel");
+  check(ohneNeuladen && (await page.evaluate(() => window.__ohneNeuladen === true)), "Rückkehr ohne Neuladen");
 };

@@ -181,7 +181,8 @@ export const raumSprache = async (page, check) => {
     check(ok, `„${satz}“ eingetragen`);
     return finde(page, title);
   };
-  const lieferant = await sprich("Morgen um 9 Lieferant im Tohuus", "Lieferant");
+  // Mia macht daraus „Lieferant Tohuus“ (ohne „im“)
+  const lieferant = await sprich("Morgen um 9 Lieferant im Tohuus", "Lieferant Tohuus");
   check(lieferant?.raum === "arbeit", `Tohuus → Arbeit (${lieferant?.raum})`);
   await page.keyboard.press("Escape");
   await page.waitForTimeout(800);
@@ -248,10 +249,18 @@ export const raeumeZweiKonten = async (page, check, device) => {
       ],
     },
   });
+  // Jedes Gerät nimmt die erste Person im Profil als „mich“ (Anzeigename im Haushalt):
+  // Lisas Handy hat Lisa vorn, Felix’ Handy Felix – sonst hießen beide „Lisa“
+  const profile = await page.evaluate(() => localStorage.getItem("familienkueche.haushaltsprofil"));
+  await page.evaluate(() => {
+    const p = JSON.parse(localStorage.getItem("familienkueche.haushaltsprofil"));
+    const felix = p.persons.findIndex((x) => x.name === "Felix");
+    p.persons.unshift(...p.persons.splice(felix, 1));
+    localStorage.setItem("familienkueche.haushaltsprofil", JSON.stringify(p));
+  });
   await kontoAnmelden(page, `felix-raeume-${tag}@example.com`);
   await page.getByRole("button", { name: "Mitnehmen" }).click();
   const link = await familieEinladen(page);
-  const profile = await page.evaluate(() => localStorage.getItem("familienkueche.haushaltsprofil"));
   const besucht = await page.evaluate(() => localStorage.getItem("wasgibts.miadenkt"));
   const hat = (p, text) => p.evaluate((t) => (localStorage.getItem("wasgibts.eintraege") ?? "").includes(t), text);
   const warte = (p, text) => p.waitForFunction((t) => (localStorage.getItem("wasgibts.eintraege") ?? "").includes(t), text, { timeout: 20000, polling: 250 }).then(() => true, () => false);

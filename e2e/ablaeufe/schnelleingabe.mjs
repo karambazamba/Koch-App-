@@ -42,7 +42,8 @@ export const schnelleingabe = async (page, check) => {
   const schalter = sheet.getByRole("radiogroup", { name: "Wer sieht es?" });
   check((await schalter.getByRole("radio").allInnerTexts()).map((t) => t.trim()).join("|") === "Familie|Ich|Arbeit", "Chips „Familie · Ich · Arbeit“");
   check((await schalter.getByRole("radio", { checked: true }).count()) === 1, "genau einer an");
-  const glocke = sheet.getByRole("button", { name: "Erinnern" });
+  // exact: „Nicht erinnern“ (✕ an der Zeile „Erinnern heute 16:00“) ist ein eigener Knopf
+  const glocke = sheet.getByRole("button", { name: "Erinnern", exact: true });
   const g = await glocke.boundingBox();
   check(Math.round(g.width) === 42 && Math.round(g.height) === 42, `Glocke 42 px (${Math.round(g.width)})`);
 
@@ -104,7 +105,9 @@ export const schnelleingabe = async (page, check) => {
   await page.evaluate(() => localStorage.setItem("wasgibts.tagesablauf", JSON.stringify({ version: 1, routine: { ruhe: false } })));
   await page.reload();
   await page.waitForTimeout(900);
-  check((await page.getByRole("radiogroup", { name: "Filter" }).getByRole("radio").allInnerTexts()).join("|") === "Alle|Familie|Arbeit", "Filter „Alle · Familie · Arbeit“");
+  // Die Beispiel-Familie hat schon „Ich“-Aufgaben (A-034: Aufgaben gehören standardmäßig mir) → alle drei Räume
+  const filterText = (await page.getByRole("radiogroup", { name: "Filter" }).getByRole("radio").allInnerTexts()).join("|");
+  check(filterText === "Alle|Familie|Ich|Arbeit", `Filter „Alle · Familie · Ich · Arbeit“ (${filterText})`);
   check(await page.locator('[data-item]:has-text("Tim antworten") [data-schild="arbeit"]').getByText("Arbeit").isVisible(), "„Arbeit“-Schild an „Tim antworten“");
   check(!(await page.locator('[data-item]:has-text("Rechnung Steuerberater") [data-schild]').count()), "Familie ohne Schild");
 
