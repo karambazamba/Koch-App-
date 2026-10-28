@@ -22,10 +22,10 @@ describe("Hinweis „neu hinzufügen“", () => {
   });
 
   it("erst sichern, dann entfernen, in Safari neu hinzufügen, wiederherstellen", () => {
-    const steps = miaHomeSteps("koch-app-two.vercel.app", "Mia");
+    const steps = miaHomeSteps("mia.karamba-eis.de", "Mia");
     expect(steps.map((s) => s.icon)).toEqual(["sichern", "entfernen", "safari", "teilen", "erlauben"]);
     expect(steps[1].text).toContain("„App entfernen“");
-    expect(steps[2].text).toContain("koch-app-two.vercel.app");
+    expect(steps[2].text).toContain("mia.karamba-eis.de");
     expect(steps[3].text).toContain("„Zum Home-Bildschirm“");
     expect(steps[4].text).toContain("Daten wiederherstellen");
     expect(MIA_HOME_HINT("Mia")).toMatch(/^Ich heiße jetzt Mia\. .*Vorher kurz sichern/);

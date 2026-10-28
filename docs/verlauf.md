@@ -2937,3 +2937,7 @@ Fehler in `docs/aufraeumen-nachher.md`.
 - Mia: `startseite_anpassen` mit aktion `farbe` („Mach die Notizen blau“ →
   Lavendel, „Pinnwand wieder in Standardfarbe“ → A), auch ohne KI.
   Prüfstand +2 Sätze.
+
+
+## Neue Adresse mia.karamba-eis.de (v0.140.0, A-030)
+- Feste Adresse `APP_URL` (keine Weiterleitung); Einladungslinks zeigen immer dorthin, Mail-Vorlage lädt das Logo von dort. Supabase-Redirects werden von Hand angepasst (siehe `docs/bereiche/konten.md`).

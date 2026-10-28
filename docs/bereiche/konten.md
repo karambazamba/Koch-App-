@@ -329,3 +329,8 @@ E-Mail bleibt immer der sichere Weg. Bitte am echten iPhone prüfen.
   aller Haushalte kommen erst, wenn der Topf live geht (jetzt Vorschau –
   „vorgemerkt“ zählt noch nicht).
 - Tests: `tests/konten/sichtbar.test.ts`.
+
+## Adresse (A-030)
+- Feste Adresse der App: `https://mia.karamba-eis.de` (`APP_URL` in `src/lib/core/app.ts`), keine Weiterleitung von der alten Vercel-Adresse.
+- Einladungslinks (`/e/…`) nutzen immer die feste Adresse (`appOrigin`), nur auf dem eigenen Rechner bzw. im Testserver die Herkunft.
+- Supabase (von Hand im Dashboard, nicht im Code): Authentication → URL Configuration → Site URL `https://mia.karamba-eis.de`; Redirect URLs: `https://mia.karamba-eis.de/**` und statt `https://*.vercel.app/**` nur die eigenen Vorschau-Adressen `https://koch-app-*-karamba1.vercel.app/**`.

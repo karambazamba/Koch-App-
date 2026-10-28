@@ -15,7 +15,7 @@ im Repo liegt nur diese Vorlage. Keine Schlüssel hier eintragen.
 ```html
 <div style="font-family:-apple-system,'Segoe UI',Roboto,sans-serif;background:#faf7f2;padding:32px 16px;color:#1f1b16">
   <div style="max-width:420px;margin:0 auto;background:#ffffff;border-radius:20px;padding:32px 24px;text-align:center">
-    <img src="https://koch-app-two.vercel.app/brand/mia-icon@2x.png" width="72" height="72" alt="Mia" style="display:block;margin:0 auto 16px;border-radius:18px">
+    <img src="https://mia.karamba-eis.de/brand/mia-icon@2x.png" width="72" height="72" alt="Mia" style="display:block;margin:0 auto 16px;border-radius:18px">
     <p style="margin:0 0 8px;font-size:17px;font-weight:700">Hallo! Hier ist dein Code:</p>
     <p style="margin:0 0 12px;font-size:40px;font-weight:800;letter-spacing:8px;color:#EE5F14">{{ .Token }}</p>
     <p style="margin:0;font-size:15px;color:#6b625a">Gilt 15 Minuten. Einfach in der App eintippen.</p>
