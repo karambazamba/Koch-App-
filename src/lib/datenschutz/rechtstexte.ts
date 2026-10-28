@@ -55,6 +55,7 @@ export const DATENSCHUTZ: Abschnitt[] = [
     absaetze: [
       `Ohne Konto speichert ${APP_NAME} alles nur im Speicher deines Browsers auf diesem Gerät. Wir sehen davon nichts.`,
       "Mit Konto: deine E-Mail-Adresse (zum Anmelden per Code), dein Anzeigename und deine Rolle in der Familie sowie die Einträge, die ihr teilt (Termine, Aufgaben, Einkauf, Pinnwand mit Fotos und Sprachnachrichten). Fotos für die Pinnwand verkleinern wir vorher auf dem Gerät (höchstens 1600 Pixel); ohne Konto bleiben sie nur auf dem Gerät, mit Konto sieht sie nur eure Familie. Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO (Nutzung der App).",
+      `Wer was sieht: Was ihr unter „Familie“ eintragt, sehen alle in der Familie; „Ich“ und „Arbeit“ siehst nur du. Korrigierst du, für wen etwas ist, merkt sich ${APP_NAME} ein Stichwort dazu (zum Beispiel „Zahnarzt“ → nur ich), damit sie es beim nächsten Mal richtig vorwählt. Die Stichworte bleiben auf deinem Gerät, gehen nur als Teil des nötigen Ausschnitts an die KI und lassen sich unter Einstellungen → ${APP_NAME} → „Was ich mir gemerkt hab“ einzeln löschen.`,
       "Allergien und Unverträglichkeiten im Profil bleiben auf dem Gerät. Für Vorschläge können sie an die KI gehen; das sind Gesundheitsdaten, wir verarbeiten sie nur mit deiner Einwilligung (Art. 9 Abs. 2 lit. a DSGVO).",
       "Technisch nötig: IP-Adresse und Zeitpunkt beim Aufruf (Betrieb, Missbrauch verhindern, Art. 6 Abs. 1 lit. f DSGVO). Unsere Protokolle enthalten keine Inhalte, nur Technik-Zahlen.",
     ],
