@@ -1,6 +1,6 @@
 # Kalender
 
-Kurz: Termine (feste Uhrzeit) und Aufgaben (zu erledigen) im einheitlichen
+Kurz: Termine (feste Uhrzeit) und Aufgaben (stehen jetzt an – alles ist heute) im einheitlichen
 Eintrags-Modell. Dazu der Reiter Kalender (Monat/Woche/Liste), die Tag-Seite
 und die Aufgaben-Seite. **Kalender = nur Termine** (Tafel 74, seit v0.73.0):
 Aufgaben und Essen stehen nie im Kalender – alles zusammen zeigt „Dein Tag“.
@@ -8,7 +8,7 @@ Aufgaben und Essen stehen nie im Kalender – alles zusammen zeigt „Dein Tag�
 ## Wo im Code
 
 - Reine Logik: `src/lib/kalender/model.ts` (`itemsForDay`, `taskOverview`,
-  `orderedTasks`, `sortItems`, `setDone`, `moveItem`, `removeItem`,
+  `taskFrom`, `isNeu`, `ohneZeitraum`, `sortItems`, `setDone`, `moveItem`, `removeItem`,
   `setReminder`, `setUrgent`, `upcomingTermine`, `terminToAufgabe`,
   `aufgabeToTermin`, `sanitizeEntry`).
 - Speicher: `src/lib/kalender/store.ts` (`loadEntries`, `changeEntries`,
@@ -26,23 +26,35 @@ Aufgaben und Essen stehen nie im Kalender – alles zusammen zeigt „Dein Tag�
   gewählte Tag), `DayView.tsx` (/tag), `TasksView.tsx` (/aufgaben),
   `EntryForm.tsx` (das EINE Formular, auch „Mehr Details“ der
   Schnelleingabe), `Items.tsx` (Strich-Farbe, Menü), `UrgentMark.tsx`.
+- Aufgaben-Liste (rein): `aufgaben.ts` (`aufgabenKopf`, `aufgabenAnsicht`,
+  leise Zeilen, `aufgabenSatz` für Mia, `feierabendNachUhr`), gemerkter Filter
+  `aufgabenFilter.ts`, Schilder `components/kalender/AufgabeSchild.tsx`,
+  Feierabend der Seite `components/kalender/useArbeitRuht.ts` (Regel
+  `arbeitRuht`/`istFeierabend` in `heute/phases.ts`).
 - Kleine Änderungen aus der Oberfläche: `act()` in
   `src/components/heute/actions.ts`.
 
 ## Daten und Speicher
 
-- `wasgibts.eintraege` v2 `{entries, migratedTermine, seenReminders}`
+- `wasgibts.eintraege` v3 `{entries, migratedTermine, seenReminders}`
   (`migrate` in `store.ts`). Jeder Eintrag hat `id`, `typ` (termin/aufgabe),
   `raum` (familie/arbeit), `besitzer`, `erstellt`, `geaendert`, `data`.
   In der Sicherung.
 - v1 → v2: einmalige, offene „Aufgaben“ mit Tag und Uhrzeit (ohne Frist)
   werden zu Terminen (`asTermin`).
+- v2 → v3 (v0.137, Tafel 103): `week` („Diese Woche“) fällt still weg – die
+  Aufgabe steht heute; ein Zeitraum in der Zukunft („nächste Woche“) wird
+  zum Tag, ab dem sie erscheint (`ohneZeitraum`, auch im Abgleich
+  `konten/sync/docs.ts` und für alte Sicherungen). Nichts geht verloren.
+- `wasgibts.aufgabenfilter` v1 `{filter: alle|familie|arbeit}` – pro Gerät,
+  nicht in der Sicherung.
 - Alte Termine aus `wasgibts.termine` übernimmt `migrateOldTermine` einmal,
   danach wird der alte Schlüssel gelöscht. `seenReminders` hält höchstens 200.
 - `TerminData`: `title`, `date`, `start`, `end?`, `place?`, `label?`,
   `repeat`, `reminder`, `who?`, `note?`, `link?`, `doneDates?`, `skipDates?`.
-- `AufgabeData`: `title`, `date?` (Wunschtag), `due?` (Frist), `week?`
-  (Montag, „diese Woche“), `time?`, `label?`, `repeat`, `reminder`,
+- `AufgabeData`: `title`, `date?` (ab diesem Tag; neue Aufgaben immer mit
+  Tag, ohne genannten = heute), `due?` (Frist), `week?` (nur noch alt, wird
+  migriert), `time?`, `label?`, `repeat`, `reminder`,
   `doneOn?`, `doneDates?`, `skipDates?`, `dringend?`, `seit?`.
 - `Repeat`: taeglich · woechentlich · monatlich · wochentage (0 = Mo … 6 = So).
   `Reminder`: aus · 15 · 30 · 60 · vorabend.
@@ -50,13 +62,17 @@ Aufgaben und Essen stehen nie im Kalender – alles zusammen zeigt „Dein Tag�
 ## So verhält es sich
 
 ### Termine und Aufgaben an einem Tag
-- Termin = feste Uhrzeit. Aufgabe = an einem Wunschtag, bis zu einer Frist,
-  „diese Woche“ oder ohne alles („Irgendwann“, steht an keinem Tag).
-- Unerledigte einmalige Aufgaben von früher erscheinen still heute mit „von
-  gestern“, „von Montag“, „von letzter Woche“ oder „von früher“
-  (`carriedLabel`). Nie „überfällig“. „Diese Woche“ von letzter Woche rutscht
-  ebenso auf heute.
-- Fristen zeigen „bis heute“, „bis morgen“, „bis Mi“ oder „bis 24.10.“.
+- Termin = feste Uhrzeit. Aufgabe = steht jetzt an (Tafel 103/104, v0.137):
+  jede neue Aufgabe gehört zu HEUTE (Hand, ＋, Mia, Mail-Vorschlag). Nur bei
+  ausdrücklich genanntem Tag („Freitag KFZ-Steuer“) erscheint sie ab diesem
+  Tag (`taskFrom`), bis dahin unter „Geplant“. Eine Frist („bis Mittwoch“)
+  ändert daran nichts. Kein „Irgendwann“, kein „Diese Woche“.
+- Erkannt wird ein Tag nur, wenn er genannt ist (`genannterTag` in
+  `parse.ts`: die Erkennung setzt sonst „heute“ ein).
+- Unerledigte einmalige Aufgaben rutschen still auf heute – ohne Etikett
+  (kein „von gestern“, kein `carried` mehr). Nie „überfällig“.
+- Fristen zeigen „bis heute“, „bis morgen“, „bis Mi“ oder „bis 24.10.“ (nur
+  noch für Mia, nicht in der Zeile).
 - Ein Tag sortiert: Erledigtes ans Ende, dringende Aufgaben vorn, ganztägige
   Termine, dann Uhrzeit bzw. Erstellungszeit (`sortItems`).
 - Ganztägige Termine (vX, Tafel 98) zeigen in der Uhrzeit-Spalte „Ganztägig“
@@ -71,35 +87,41 @@ Aufgaben und Essen stehen nie im Kalender – alles zusammen zeigt „Dein Tag�
   1 Stunde (`upcomingTermine`).
 - Der nächste Tag heißt immer mit Wochentag: „Morgen · Mi“ (`tomorrowLabel`).
 
-### Reihenfolge der Aufgaben
-- EINE Reihenfolge (`orderedTasks`): dringend → heute dran (auch „von
-  gestern“) → nächste Frist (früheste zuerst) → diese Woche → später →
-  irgendwann. Innerhalb nach Uhrzeit, sonst Erstellungszeit; „Auf morgen“
-  setzt `seit` neu (dann hinten). Nie alphabetisch.
-- `taskOverview` gruppiert für die Aufgaben-Seite: Heute dran · Diese Woche ·
-  Später · Irgendwann · Erledigt (letzte 14 Tage); Dringendes je Gruppe zuerst.
+### Die eine Liste (Tafel 103/104, v0.137)
+- `taskOverview` liefert `{heute, geplant, erledigt}`: Heute = EINE Liste
+  (ohne Tag, von früher, mit Frist), Geplant = ab einem genannten Tag (mit
+  `when` „Fr 30.10.“), Erledigt = letzte 14 Tage.
+- Reihenfolge (Regel `TASKS` in `core/sort.ts`): dringend → heute angelegt
+  (`isNeu`, Schild „neu“, am nächsten Tag weg) → Rest nach Erstellungszeit;
+  „Auf morgen“ setzt `seit` neu (dann hinten). Nie alphabetisch.
 - Dringend: kleines rotes „!“ (`UrgentMark`), im Menü „Als dringend
   markieren“/„Nicht mehr dringend“.
+- Schilder nur „neu“ (Seite) und „Arbeit“ (klein, `bg-work`); Familie ohne
+  Kennzeichen, kein Punkt pro Zeile; Abgegebene „von Lisa“.
+- Filter „Alle · Familie · Arbeit“ (`aufgabenAnsicht`) nur, wenn es
+  Arbeitsaufgaben gibt; die Wahl merkt sich das Gerät. Gefiltert unten leise
+  „Familie · 5 ausgeblendet“ bzw. „Arbeit · 5 ausgeblendet“.
+- Nach Feierabend (Tagesablauf: „Feierabend ab“, frühestens nach dem letzten
+  Arbeit-Termin, mit „Ruhe nach Feierabend“; freie Tage laut Arbeitstagen)
+  ruht die Arbeit (`arbeitRuht`): keine Chips, unten leise „Arbeit · 5 für
+  morgen ›“ – antippen blendet sie kurz ein. Ab 5 Uhr (Morgens) wieder
+  normal; ein Arbeitsbeginn ist im Tagesablauf nicht eingestellt.
 
-### Abends wandert Offenes mit auf morgen (vX)
+### Abends wandert Offenes mit auf morgen
 - EINE Stelle: `lib/kalender/mitwandern.ts`. `aufMorgen` sagt, ob die
   Startseite abends schon auf morgen steht (ab Feierabend bzw. 19 Uhr bis
   Mitternacht, solange heute kein Termin und kein Essen mehr kommt und nicht
-  gekocht wird). `abendsNachUhr` rechnet dasselbe für Aufgaben-Seite
-  (`components/kalender/useAbendsMorgen.ts`) und Mia (mit und ohne KI) aus
-  „Feierabend ab“, Terminen und der Essenszeit.
-- `aufgabenUebersicht(entries, { heute, abends })` gruppiert wie
-  `taskOverview`, abends für morgen: „Morgen dran“ mit zuerst dem
-  Mitgewanderten („von heute“, Älteres „von gestern“/„von Montag“, Sonntag
-  „diese Woche“ → „von dieser Woche“), dringend ganz vorn. Fristen zählen
-  vom echten Heute („bis morgen“), Erledigtes bleibt das von heute,
-  Abhaken trägt das echte Heute ein. `aufgabenFuerTag` liefert die Aufgaben
-  eines angezeigten Tages, `aufgabenReihe` die Reihenfolge der Kachel,
-  `offeneAufgaben` die Zahl für „+N weitere“.
+  gekocht wird). `abendsNachUhr` rechnet dasselbe für Mia (mit und ohne KI).
+- `aufgabenUebersicht(entries, { heute, abends })` wie `taskOverview`, abends
+  für morgen: das Offene von heute steht still in derselben Liste
+  (`wandertMit`, ohne „von heute“), dazu, was für morgen geplant ist;
+  Erledigtes und „neu“ bleiben die von heute, Abhaken trägt das echte Heute
+  ein. `aufgabenFuerTag` liefert die Aufgaben eines angezeigten Tages.
+- Die Aufgaben-Seite zeigt immer das echte Heute (abends Kopf „Heute Abend ·
+  Feierabend“), nur die Startseite steht abends auf morgen.
 - Wiederkehrende Aufgaben wandern nicht mit (wie um Mitternacht kommt das
   nächste Vorkommen, sonst stünde „täglich“ doppelt da).
-- Nur Anzeige: In den Daten wird nichts verschoben. Um Mitternacht rutscht
-  alles wie bisher still auf den neuen Tag („von gestern“).
+- Nur Anzeige: In den Daten wird nichts verschoben.
 
 ### Wiederholungen
 - `repeatsOn`: täglich; wöchentlich im 7-Tage-Abstand zum ersten Tag;
@@ -167,17 +189,21 @@ Aufgaben und Essen stehen nie im Kalender – alles zusammen zeigt „Dein Tag�
   `commitOps`), unbekannte Namen bleiben bei mir („Oma ist noch nicht im
   Haushalt – ich hab’s erstmal bei dir notiert.“). „Gib das an Lisa“ geht
   über `aufgabe_aendern` mit `an`.
-- Kachel „Aufgaben“ als Checkliste in EINEM hellen Feld: Kreis, voller Titel,
-  rechts „heute“/„bis Fr“, „!“ bei dringend, „von Lisa“ klein darunter;
-  S 2, M 4, L 6 Zeilen, „+ N weitere“ unten.
+- Kachel „Aufgaben“ als Checkliste in EINEM hellen Feld: Kreis, Titel, „!“
+  bei dringend, „von Lisa“ klein, rechts nur das Schild „Arbeit“ (keine
+  Etiketten „heute“/„bis Fr“/„von gestern“); S 2, M 4, L 6 Zeilen, „+ N
+  weitere“. Nach Feierabend ohne Arbeit, unten leise „Arbeit · 5 für morgen“.
 
 ### Tag-Seite und Aufgaben-Seite
 - `/tag?datum=…`: Titel = Wochentag, darunter „22. Oktober · morgen“
   (`dayHeading`), dann der Tag (`DayPanel`, ohne eigenen Kopf). Plus =
   Schnelleingabe „NEUER TERMIN“ für diesen Tag.
-- `/aufgaben`: Filter, Gruppen (abends „Morgen dran“ statt „Heute dran“,
-  Sonntagabend „Nächste Woche“), „Erledigte anzeigen“ eingeklappt; leer
-  „Gerade nichts.“ mit großer Begleitung („Fällt dir was ein? Mit ＋ eintragen oder mir einfach sagen.“).
+- `/aufgaben` (Tafel 103/104): Kopf „Aufgaben“, darunter leise „Heute · Mi
+  28. Okt“ (nach Feierabend „Heute Abend · Feierabend“); Chips nur mit
+  Arbeitsaufgaben; EINE weiße Liste (Titel bis 2 Zeilen, dann „…“); darunter
+  leise „Familie · 5 ausgeblendet“ bzw. „Arbeit · 5 für morgen ›“, „Geplant ·
+  1 ›“ (nur wenn vorhanden), eingeklappte Listen, „Abgegeben“ und „Erledigte
+  anzeigen ›“; leer „Gerade nichts.“ mit großer Begleitung („Fällt dir was ein? Mit ＋ eintragen oder mir einfach sagen.“).
 - Antippen eines Eintrags = Menü: Erledigt · Auf morgen · Erinnerung ändern ·
   Bearbeiten · Löschen; bei Serien „Nur diesen Tag“ / „Alle – die ganze Reihe“.
   Abhaken überall gleich (Kachel, Aufgaben-Seite, Dein Tag): 1,5 s durchgestrichen (`LEAVE_MS`), dann „Erledigt · Rückgängig“;
@@ -203,15 +229,15 @@ Aufgaben und Essen stehen nie im Kalender – alles zusammen zeigt „Dein Tag�
   Liste, offen) wird nicht doppelt angelegt. Kleine Anleitung je Gerät
   (Apple Erinnerungen bzw. Android). Danach „Eingetragen: 29 Aufgaben ·
   Rückgängig“.
-- Ordnung (`lib/kalender/liste/ordnung.ts`): Die Startseiten-Kachel zeigt wie
-  bisher nur dringend, heute und diese Woche. Gibt es Listen, zeigt die
-  Aufgaben-Seite oben „Jetzt dran“ (heute, von gestern, diese Woche), dann
-  Später/Irgendwann ohne Liste und jede Liste eingeklappt mit Anzahl („Haus ·
-  14“, nach Name, `TASK_LISTS`). Ohne Listen bleibt die Seite wie gehabt.
-- Vorschlag (`lib/kalender/liste/vorschlag.ts`): ab 8 Aufgaben ohne Datum, die
-  schon 3 Tage liegen, oben auf der Aufgaben-Seite „Drei für diese Woche?“
-  (dringende, dann die ältesten) mit „Übernehmen“ (→ diese Woche, Rückgängig)
-  und „Nicht jetzt“; höchstens einmal pro Woche (`wasgibts.aufgabenvorschlag`).
+- Ordnung (`lib/kalender/liste/ordnung.ts`, `listenAnsicht`): Zeilen einer
+  eingefügten Liste ohne genannten Tag und ohne Frist (und nicht dringend)
+  bleiben in ihrer Liste geparkt (`inListe`) – eingeklappt mit Anzahl („Haus ·
+  14“, nach Name, `TASK_LISTS`) unter der einen Liste. Alles andere steht in
+  der einen Liste; Startseiten-Kachel und Mia zählen genauso.
+- Vorschlag (`lib/kalender/liste/vorschlag.ts`): ab 8 geparkten Aufgaben, die
+  schon 3 Tage liegen, oben auf der Aufgaben-Seite „Drei für heute?“ (die
+  ältesten) mit „Übernehmen“ (→ Tag heute, Rückgängig) und „Nicht jetzt“;
+  höchstens einmal pro Woche (`wasgibts.aufgabenvorschlag`).
 - Todoist verbinden (Teil 3) folgt mit den Verbindungen (🔑).
 
 ### Eintragen
@@ -351,13 +377,24 @@ Aufgaben und Essen stehen nie im Kalender – alles zusammen zeigt „Dein Tag�
 - In `noteTools.ts`: `termin_in_aufgabe_umwandeln`,
   `aufgabe_in_termin_umwandeln`, `aufgaben_anzeigen`.
 - Kontext je Anfrage: Datumsliste und Einträge der nächsten Tage mit ids
-  (`contextLines`); abends (`abendsNachUhr` in `engine.ts`) eine Zeile „Mit
+  (`contextLines`, Aufgaben ohne Tag stehen heute, Geplantes jenseits der 7
+  Tage extra); abends (`abendsNachUhr` in `engine.ts`) eine Zeile „Still mit
   auf morgen gewandert“, `tag_anzeigen` für morgen nennt sie kurz mit
   (`showAnswer` mit `abends`, ohne KI ebenso über `calendarChat`).
+- Alles ist heute: `aufgabe_anlegen` legt ohne genannten Tag für heute an
+  (`tag` nur bei ausdrücklichem Tag, sonst `ctx.today`); `woche_eintragen`
+  ebenso. „Was steht heute an?“ nennt die Termine und kurz Zahl und die ersten
+  drei Aufgaben (`aufgabenSatz`/`aufgabenKurz`); nach Feierabend
+  (`feierabendNachUhr`, `ctx.feierabend`; ohne KI `arbeitRuht`) ohne Arbeit.
+  „Was ist noch bei der Arbeit?“ → `aufgaben_anzeigen` mit `raum: "arbeit"`
+  (ohne KI `parseNoteCommand` → `tasks` mit `raum`). Prüfstand: „Irgendwann
+  mal den Keller aufräumen“/„Diese Woche noch Reifen wechseln“/„Aufgabe:
+  Fahrrad zur Werkstatt bringen“ = heute, „Freitag KFZ-Steuer überweisen“ =
+  ab Freitag, „Was ist noch bei der Arbeit?“ = Antwort.
 - Ohne KI: `calendarChat` (aufgerufen in
   `src/components/begleitung/useChatRules.ts`) trägt sofort ein und meldet
   „Eingetragen ✓ …“ mit Rückgängig. `parseCalendar` erkennt Tag, Uhrzeit,
-  Frist, „diese Woche“, Wiederholung, Erinnerung, Raum, Etikett und
+  Frist, „nächste Woche“ (ab Montag), Wiederholung, Erinnerung, Raum, Etikett und
   „Dringend: …“. Termin nur mit fester Uhrzeit und ohne Frist, sonst Aufgabe.
 - Befehle: „Verschieb … auf Donnerstag“, „Lösch …“ / „… fällt aus“, „… ist
   erledigt“, „Was steht diese Woche an?“, „Hab ich morgen Nachmittag Zeit?“.
@@ -384,7 +421,7 @@ Aufgaben und Essen stehen nie im Kalender – alles zusammen zeigt „Dein Tag�
   (`src/lib/kalender/wochencheck.ts`: Füllwörter, Korrekturen „nee,
   Mittwoch“, Nachträge, Wochentage ab heute, „nächste Woche Dienstag“,
   „halb acht“ abends, Raum Familie/Arbeit/Privat, Personen „Mathis: Spiel“,
-  Dauer Termin 60 / Elternabend 120 Minuten, Aufgaben ohne Tag = diese Woche,
+  Dauer Termin 60 / Elternabend 120 Minuten, Aufgaben ohne Tag = heute,
   „bis Freitag“ = Frist, ohne Uhrzeit Frage mit Knöpfen, schon Eingetragenes
   grau „schon drin“). Ohne KI keine Sport-Vorschläge.
 - „Deine Woche“ (`WeekPreview.tsx`): Legende, eine Zeile je Punkt, Fragen als
@@ -397,13 +434,19 @@ Aufgaben und Essen stehen nie im Kalender – alles zusammen zeigt „Dein Tag�
 ## Tests
 
 - `tests/kalender/kalenderAbo.test.ts`: Server-Schutz (private IPs, DNS, Weiterleitungen, zu groß, Zeitüberschreitung, kein Kalender), Abo-Termine, Kopie, Fälligkeit, Schreibschutz, Sicherung nur auf Wunsch; Durchklick `kalenderAbo` (verbinden, im Kalender, kopieren, Änderung kommt an).
-- `tests/kalender/listeEinfuegen.test.ts`: Zeilen bereinigen (alle Kästchen-/Aufzählungsformen), Abgehaktes, Fristen, Überschriften → Listen, Doppelte, Gespräch, Ordnung (Kachel nur jetzt dran, Listen eingeklappt), Vorschlag; Durchklick `listeEinfuegen` (30 Zeilen).
+- `tests/kalender/listeEinfuegen.test.ts`: Zeilen bereinigen (alle Kästchen-/Aufzählungsformen), Abgehaktes, Fristen, Überschriften → Listen, Doppelte, Gespräch, Ordnung (geparkt in Listen, sonst die eine Liste), Vorschlag „Drei für heute?“; Durchklick `listeEinfuegen` (30 Zeilen).
 - `tests/kalender/mitbringen.test.ts`: Angebot einmal/nach 14 Tagen/nie wieder, Link aus der Zwischenablage, Anbieter aus dem Satz, Erfolgs-Satz, „zuletzt aktualisiert“, Schritte je Dienst und Gerät, falsche Links; Durchklick `kalenderMitbringen`, `todoistAufgaben`.
 - `tests/kalender/kalenderAbo.test.ts` zusätzlich: Todoist-Feed → Aufgaben, VTODO, RDATE, doppelte UID.
 - `tests/kalender/kalenderImport.test.ts`: Dateien im Google- und Apple-Stil (Serie mit Ausnahme, verschobener Einzeltermin, ganztägig, mehrtägig, Sommerzeit, andere Zeitzone, Erinnerungen, Umlaute/Emojis, doppelt einlesen); Durchklick `kalenderImport`.
 
 - `tests/kalender/`: `termineAufgaben.test.ts`, `wiederholungen.test.ts`,
-  `spracheKalender.test.ts`, `kalenderChat.test.ts`.
+  `spracheKalender.test.ts`, `kalenderChat.test.ts`, `mitwandern.test.ts`.
+- `tests/kalender/allesHeute.test.ts` (Tafel 103/104): ohne Tag = heute, mit
+  Tag = ab dem Tag + „Geplant“, Migration v2 → v3 (Speicher, Abgleich, alte
+  Sicherung), keine Etiketten pro Zeile, Reihenfolge dringend → neu →
+  Erstellungszeit, Filter nur mit Arbeitsaufgaben und gemerkt, Feierabend
+  („Arbeit · n für morgen“), Startseiten-Kachel, 2-zeilige Namen. Durchklick
+  `listeEinfuegen` (eine Liste, „Geplant · 2“, Filter gemerkt, Arbeit-Schild).
 - `tests/core/sortierung.test.ts` („Termine und Aufgaben“),
   `tests/begleitung/werkzeugeKalender.test.ts`.
 - Durchklick `e2e/ablaeufe/alltag.mjs`: `eintragen`, `kalender`.

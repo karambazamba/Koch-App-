@@ -2853,3 +2853,20 @@ Fehler in `docs/aufraeumen-nachher.md`.
   Seiten-Tipps (`SeitenTipp`, Tafel 101) mit „Alles klar“.
 - Jetzt-Karte morgens: besonderer Tag zuerst („Moin! Heute hat Lisa
   Geburtstag.“), Morgen-Info mit Terminen nur ohne Termine-Kachel.
+
+## Aufgaben: alles ist heute, eine Liste, Arbeit als Schild (v0.137.0, Tafel 103/104)
+- Fehler (Screenshot 28.10. 07:28): Abschnitt „Irgendwann“ (darin „heute“),
+  in jeder Zeile „von gestern“ + oranger Punkt, lange Namen abgeschnitten.
+- Regel „alles ist heute“: jede neue Aufgabe gehört zu heute (Hand, ＋, Mia,
+  Mail-Vorschlag); nur mit genanntem Tag („Freitag KFZ-Steuer“) ab diesem Tag,
+  bis dahin leise „Geplant · 1 ›“. Speicher `wasgibts.eintraege` v3 setzt
+  „Diese Woche“ still auf heute (nächste Woche → ab Montag), auch im Abgleich
+  und aus alten Sicherungen.
+- Aufgaben-Seite: Kopf „Heute · Mi 28. Okt“ (abends „Heute Abend ·
+  Feierabend“), EINE weiße Liste (dringend → neu → Erstellungszeit), Schilder
+  nur „neu“ und „Arbeit“, Namen bis 2 Zeilen. Chips „Alle · Familie · Arbeit“
+  nur mit Arbeitsaufgaben, gemerkt (`wasgibts.aufgabenfilter`).
+- Nach Feierabend ruht die Arbeit (`arbeitRuht`) auf Seite und Kachel: leise
+  „Arbeit · 5 für morgen“, antippen blendet sie kurz ein.
+- Mia: „Was steht heute an?“ nennt Zahl und die ersten drei, abends ohne
+  Arbeit; „Was ist noch bei der Arbeit?“ fragt eigens. Prüfstand +3 Sätze.
