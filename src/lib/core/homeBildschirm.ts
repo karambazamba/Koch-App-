@@ -108,10 +108,24 @@ let abgefangen = false;
 const listeners = new Set<() => void>();
 const emit = () => listeners.forEach((l) => l());
 
-/** `beforeinstallprompt` genau einmal abfangen und für „Mia installieren“ aufheben */
+/**
+ * Das Angebot kommt oft, bevor das Seiten-JavaScript geladen ist (die Seite
+ * steht als Server-HTML schon da) – dann ginge es verloren. Darum fängt ein
+ * winziges Skript im `<head>` (Layout) es sofort ab und legt es hier ab; das
+ * Modul übernimmt es beim Laden.
+ */
+const FRUEH = "__miaInstallAngebot";
+export const INSTALL_BOOT_SCRIPT = `addEventListener("beforeinstallprompt",function(e){e.preventDefault();window.${FRUEH}=e;});`;
+
+/** `beforeinstallprompt` genau einmal abfangen und für „Mia installieren“ aufheben (auch ein schon früh abgefangenes) */
 export function fangeInstallAngebotAb(win: Pick<Window, "addEventListener"> | undefined = typeof window === "undefined" ? undefined : window) {
   if (abgefangen || !win) return;
   abgefangen = true;
+  const frueh = (win as unknown as Record<string, unknown>)[FRUEH];
+  if (frueh) {
+    angebot = frueh as InstallEvent;
+    emit();
+  }
   win.addEventListener("beforeinstallprompt", (e) => {
     e.preventDefault();
     angebot = e as InstallEvent;

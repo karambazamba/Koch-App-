@@ -144,6 +144,22 @@ describe("Android: beforeinstallprompt", () => {
     expect(state()).toMatchObject({ fertig: true });
   });
 
+  it("Angebot kam vor dem Seiten-JavaScript: das Skript im <head> fängt es ab, das Modul übernimmt es (Durchklick homeKarte, Pixel 7)", async () => {
+    const frueh = angebot("accepted");
+    // wie das Inline-Skript im Layout: sofort abfangen und am Fenster ablegen
+    const boot = new Function("addEventListener", "window", m.INSTALL_BOOT_SCRIPT);
+    const neu = fakeWindow();
+    boot(neu.addEventListener.bind(neu), neu);
+    neu.dispatchEvent(frueh);
+    expect(frueh.preventDefault).toHaveBeenCalledOnce();
+    vi.resetModules();
+    const spaet = await import("@/lib/core/homeBildschirm");
+    expect(spaet.installAngebotDa()).toBe(true);
+    expect(await spaet.installieren()).toBe("ok");
+    expect(frueh.prompt).toHaveBeenCalledOnce();
+    expect(readFileSync("src/app/layout.tsx", "utf8")).toContain("__html: INSTALL_BOOT_SCRIPT");
+  });
+
   it("abgelehnt: Karte bleibt (Weg übers Menü), installiert-Ereignis = fertig", async () => {
     win.dispatchEvent(angebot("dismissed"));
     expect(await m.installieren()).toBe("abgelehnt");

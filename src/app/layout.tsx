@@ -15,6 +15,7 @@ import { MicSheetHost } from "@/components/ui/MicPermission";
 import { ZustimmungGate } from "@/components/datenschutz/ZustimmungGate";
 import { CodeGate } from "@/components/begleitung/CodeGate";
 import { THEME_BOOT_SCRIPT, THEME_COLORS } from "@/lib/core/theme";
+import { INSTALL_BOOT_SCRIPT } from "@/lib/core/homeBildschirm";
 import { APP_DESCRIPTION, APP_NAME, APP_SHORT_NAME, icon } from "@/lib/core/app";
 import "@/app/globals.css";
 
@@ -64,6 +65,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <head>
         {/* Ansicht vor dem ersten Zeichnen setzen (kein Aufblitzen) */}
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
+        {/* Android: Installier-Angebot sofort abfangen, bevor die Seite geladen ist (`core/homeBildschirm.ts`) */}
+        <script dangerouslySetInnerHTML={{ __html: INSTALL_BOOT_SCRIPT }} />
       </head>
       <body className="min-h-full flex flex-col">
         {/* Hinter der Statusleiste: ruhiger, leicht durchscheinender Hintergrund statt durchlaufender Inhalte */}

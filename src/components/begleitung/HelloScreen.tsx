@@ -218,10 +218,11 @@ export function HelloScreen() {
   const shown = title.slice(0, typed);
   return (
     <main className="fixed inset-0 z-40 overflow-y-auto bg-background" aria-label="Willkommen">
-      <div className="mx-auto flex min-h-full w-full max-w-lg flex-col items-center px-6 pb-[calc(env(safe-area-inset-bottom)+2.25rem)] [@media(max-height:620px)]:pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-[calc(env(safe-area-inset-top)+2.5rem)] text-center [@media(max-height:620px)]:pt-[calc(env(safe-area-inset-top)+0.75rem)]">
-        <div className="flex w-full flex-1 flex-col items-center justify-center pb-4">
-          {/* Kleine Bildschirme (SE): Mia etwas kleiner, damit Zustimmung und „Los geht’s“ ohne Scrollen passen */}
-          <div className="relative [@media(max-height:700px)]:-my-3 [@media(max-height:700px)]:scale-[0.82]">
+      <div className="mx-auto flex min-h-full w-full max-w-lg flex-col items-center px-6 pb-[calc(env(safe-area-inset-bottom)+2.25rem)] [@media(max-height:620px)]:pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-[calc(env(safe-area-inset-top)+2.5rem)] text-center">
+        <div className="flex w-full flex-1 flex-col items-center justify-center pb-4 [@media(max-height:620px)]:pb-2">
+          {/* Kleine Bildschirme: Mia etwas kleiner, damit Zustimmung und „Los geht’s“ ohne Scrollen passen;
+              auf dem SE (≤ 620 px hoch) noch kleiner, oben bleibt Platz für „Ich bin bereit!“ */}
+          <div className="relative [@media(max-height:700px)]:-my-3 [@media(max-height:700px)]:scale-[0.82] [@media(max-height:620px)]:-my-5 [@media(max-height:620px)]:scale-[0.7]">
             <span className="hello-shadow" data-sprung={jump.on ? "an" : undefined} aria-hidden />
             <div className="hello-jump" data-sprung={jump.on ? "an" : undefined} data-kitzel={tap ? "an" : undefined} style={{ "--jump": `${jumpHeight}px` } as CSSProperties}>
               <div className="hello-spin">
@@ -259,7 +260,7 @@ export function HelloScreen() {
                 </span>
               ))}
           </div>
-          <h1 tabIndex={-1} className="mt-8 [@media(max-height:700px)]:mt-5 min-h-[38px] whitespace-nowrap text-[clamp(26px,9vw,38px)] font-extrabold leading-tight tracking-tight outline-none" aria-label={title}>
+          <h1 tabIndex={-1} className="mt-8 [@media(max-height:700px)]:mt-5 [@media(max-height:620px)]:mt-4 min-h-[38px] whitespace-nowrap text-[clamp(26px,9vw,38px)] font-extrabold leading-tight tracking-tight outline-none" aria-label={title}>
             <span aria-hidden>
               {shown.slice(0, lead.length)}
               <span className="text-accent">{shown.slice(lead.length, lead.length + name.length)}</span>
@@ -275,8 +276,8 @@ export function HelloScreen() {
         </div>
         <div className={`flex w-full flex-col items-center gap-1 ${show(T.buttons)}`}>
           {/* Zustimmung (früher eigener Schritt „Bevor’s losgeht“): drei kurze Sätze klein, darunter das Häkchen */}
-          <div className="mb-2 flex w-full flex-col gap-1 text-left" data-hallo-zustimmung>
-            <p className="text-[13px] leading-snug text-muted">
+          <div className="mb-2 flex w-full flex-col gap-1 text-left [@media(max-height:620px)]:mb-1 [@media(max-height:620px)]:gap-0.5" data-hallo-zustimmung>
+            <p className="text-[13px] leading-snug text-muted [@media(max-height:620px)]:text-[12px]">
               {VOR_DEM_START.saetze.map((satz) => (
                 <span key={satz} className="block">
                   {satz}
@@ -290,23 +291,23 @@ export function HelloScreen() {
             type="button"
             onClick={losGehts}
             disabled={!zugestimmt}
-            className={`h-14 w-full rounded-field text-[17px] font-bold text-on-color active:scale-[0.98] disabled:opacity-40 ${jump.nudge && zugestimmt ? "hello-nudge" : ""}`}
+            className={`h-14 w-full [@media(max-height:620px)]:h-12 rounded-field text-[17px] font-bold text-on-color active:scale-[0.98] disabled:opacity-40 ${jump.nudge && zugestimmt ? "hello-nudge" : ""}`}
             style={{ backgroundColor: color }}
           >
             Los geht’s
           </button>
           {/* Tafel 22: nur mit Konten „Schon ein Konto? Anmelden“ – „Daten wiederherstellen“ steht in Einstellungen → Daten & App */}
           {cloud === "supabase" || cloud === "test" ? (
-            <Link href="/anmelden" className="hit inline-flex h-11 items-center gap-1 whitespace-nowrap text-[clamp(12px,3.6vw,14px)] font-semibold text-muted">
+            <Link href="/anmelden" className="hit inline-flex h-11 [@media(max-height:620px)]:h-8 items-center gap-1 whitespace-nowrap text-[clamp(12px,3.6vw,14px)] font-semibold text-muted">
               Schon ein Konto? <span className="text-accent-strong">Anmelden</span>
             </Link>
           ) : (
-            <span className="h-11" aria-hidden />
+            <span className="h-11 [@media(max-height:620px)]:h-8" aria-hidden />
           )}
           {/* Tafel 84 (Variante A): unten nur ein ruhiger Abschluss – die große Mia oben reicht, kein kleines Logo */}
           <div className="mt-4 flex flex-col items-center [@media(max-height:620px)]:mt-1" data-hello-marke>
             <span className="whitespace-nowrap text-[clamp(11.5px,3.9vw,13px)] font-semibold text-muted">Gemacht in Eutin von KARAMBA Eis</span>
-            <nav aria-label="Rechtliches" className="mt-2 flex items-center gap-1.5 text-[12px] font-semibold text-faint">
+            <nav aria-label="Rechtliches" className="mt-2 [@media(max-height:620px)]:mt-1 flex items-center gap-1.5 text-[12px] font-semibold text-faint">
               <Link href="/nutzungsbedingungen" className="hit inline-flex h-4 items-center">
                 Nutzungsbedingungen
               </Link>
