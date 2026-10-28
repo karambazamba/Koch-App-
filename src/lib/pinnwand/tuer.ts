@@ -163,7 +163,7 @@ export function twoColumns<T>(items: T[], heightOf: (item: T) => number): [T[], 
 /** Geschätzte Höhe für die Spalten (Text-Länge und Zeilen; Foto und Kassenbon fest) */
 export function guessHeight(kind: "zettel" | "karo" | "foto" | "memo", text = ""): number {
   if (kind === "memo") return 120;
-  if (kind === "foto") return 190 + (text ? 24 : 0);
+  if (kind === "foto") return 200 + (text ? 24 : 0);
   const lines = text.split("\n").reduce((n, l) => n + Math.max(1, Math.ceil(l.length / 16)), 0);
   return 70 + lines * 22;
 }

@@ -9,7 +9,9 @@ Archiv „Ältere“, nie durchgestrichen; „Erledigt · Rückgängig“ holt i
 zurück), oder bis
 er 7 Tage alt ist – dann liegt er leise im Archiv. „Bleibt hängen“ geht nie
 von selbst. Im Archiv nach 30 Tagen still gelöscht, sonst nur von Hand
-(A-024; die 24-Stunden-Wartezeit für Erledigtes ist weg).
+(A-024; die 24-Stunden-Wartezeit für Erledigtes ist weg). Tafel 123
+(A-028 Teil 1): Fotos als kleines Polaroid (antippen = groß), die Wand so
+hoch wie ihr Inhalt, Meta-Zeile kurz, „OBEN“ an Zetteln, die hängen bleiben.
 
 ## Feste Regeln (aus CLAUDE.md)
 
@@ -119,8 +121,8 @@ von selbst. Im Archiv nach 30 Tagen still gelöscht, sonst nur von Hand
 - Zettel in zwei Spalten (`twoColumns`: das Erste oben links, dann in die
   kürzere Spalte), fest leicht schief, weicher Schatten, Ecke unten rechts
   gerundet. „Bleibt hängen“ steht oben links und hängt am roten Pin, Zeile
-  „Lisa · bleibt hängen“. Die Tür wächst mit dem Inhalt (Mindesthöhe
-  220 px, kein innerer Scrollbereich); der Griff ist ein kurzer, kräftiger
+  „Lisa · bleibt hängen“. Die Tür ist so hoch wie ihr Inhalt (Tafel 123: keine
+  Mindesthöhe, kein innerer Scrollbereich); der Griff ist ein kurzer, kräftiger
   Bügel (sah als schmale Leiste wie ein Scrollbalken aus).
 - Papiere: Haftnotiz in Personenfarbe (Magnet Punkt), Karoblatt für
   Kinder-Profile (Stern), Polaroid für Fotos (weißer Rahmen, Bild, Zeile
@@ -138,6 +140,16 @@ von selbst. Im Archiv nach 30 Tagen still gelöscht, sonst nur von Hand
   (5 s, nur wenn er noch so abgehakt ist); Rückgängig holt ihn zurück an
   die Tür. Erledigte zählen nie als ungelesen, Mia liest sie
   nicht vor.
+- Tafel 123 (A-028 Teil 1): Foto-Zettel als Polaroid in Zettelgröße (halbe
+  Breite, quadratischer Ausschnitt, `object-fit: cover`, Zeile darunter
+  freiwillig); antippen = Foto groß im Fenster (`FotoFenster`: ganzes Bild,
+  Text, wer/wann, „Erledigt“, „Mehr“ = Menü). „Bleibt hängen“ zeigt rechts
+  oben „OBEN“ (klein, Großbuchstaben, Zettelfarbe dunkel; `OBEN` in
+  `woerter.ts`), der Text hat rechts Platz – nicht mehr „· bleibt hängen“ in
+  der Meta-Zeile. Meta-Zeile EINE Zeile (`MetaZeile`): Zeit zuerst im DOM,
+  rückwärts umbrechend – passt der Name nicht, bleibt nur die Zeit; heute die
+  Uhrzeit, die letzten sechs Tage der Wochentag („Lisa · Mo“, `pinMetaParts`
+  mit `kurz`), sonst das Datum. Nie mitten im Wort mit „…“.
 - Antippen oder lange drücken (Android: „contextmenu“) = Menü: Reaktionen
   👍 ❤️ 😂 😮 🙏, „Erledigt“, „Antworten“ (neuer Zettel mit Bezug „↪ Lisa“),
   „In Notizen“ (Text wird eigene Notiz, Zettel ins Archiv, Rückgängig nimmt
@@ -236,6 +248,8 @@ von selbst. Im Archiv nach 30 Tagen still gelöscht, sonst nur von Hand
   zurück ohne Toast, nach 1,8 s im Archiv, dann „Erledigt · Rückgängig“,
   Archiv 30 Tage, Kachel gleich, Häkchen orange, nie durchgestrichen,
   gleiche Zeiten wie der Einkauf).
+- `tests/pinnwand/aufgeraeumt.test.ts` (A-028 Teil 1: Polaroid quadratisch,
+  Foto groß im Fenster, Wand ohne Mindesthöhe, OBEN, Meta-Zeile kurz).
 - `tests/pinnwand/nachtrag.test.ts` (A-024: Abhaken → nach 1,8 s im Archiv,
   Rückgängig holt zurück, Archiv nach 30 Tagen leer, „Bleibt hängen“ nie im
   Archiv, Fächer wie die Tür, Wörter überall gleich, Tür wächst mit,

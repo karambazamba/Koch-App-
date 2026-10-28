@@ -152,14 +152,29 @@ export const markPinsRead = (list: PinMessage[], me: string) => (list.some((m) =
 /** Ungelesen: an der Tür, nicht erledigt, von jemand anderem und noch nicht von mir gelesen */
 export const hasUnread = (list: PinMessage[], me: string, nowMs: number) => visiblePins(list, nowMs).some((m) => !m.data.erledigt && m.data.author !== me && !m.data.readBy.includes(me));
 
-/** "Du · 7:48" bzw. "Lisa · gestern" */
-export function pinMeta(m: { erstellt: string; data: { author: string } }, me: string, today: string, clock: (iso: string) => string, dayOf: (iso: string) => string): string {
-  const who = m.data.author === me ? "Du" : m.data.author;
+const TAGE = ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"] as const;
+
+/**
+ * Meta-Zeile in zwei Teilen: wer („Du“, „Lisa“) und wann („7:48“, „gestern“,
+ * „3.10.“) – bei Platzmangel bleibt nur „wann“. `kurz` (an der Tür, Tafel
+ * 123): die letzten sechs Tage als Wochentag („Lisa · Mo“).
+ */
+export function pinMetaParts(m: { erstellt: string; data: { author: string } }, me: string, today: string, clock: (iso: string) => string, dayOf: (iso: string) => string, kurz = false): { wer: string; wann: string } {
+  const wer = m.data.author === me ? "Du" : m.data.author;
   const day = dayOf(m.erstellt);
   const [y, mo, d] = today.split("-").map(Number);
-  const yesterday = new Date(Date.UTC(y, mo - 1, d - 1)).toISOString().slice(0, 10);
-  const when = day === today ? clock(m.erstellt) : day === yesterday ? "gestern" : `${Number(day.slice(8, 10))}.${Number(day.slice(5, 7))}.`;
-  return `${who} · ${when}`;
+  const back = (n: number) => new Date(Date.UTC(y, mo - 1, d - n)).toISOString().slice(0, 10);
+  const daysAgo = [1, 2, 3, 4, 5, 6].find((n) => back(n) === day);
+  const datum = `${Number(day.slice(8, 10))}.${Number(day.slice(5, 7))}.`;
+  if (day === today) return { wer, wann: clock(m.erstellt) };
+  if (kurz && daysAgo) return { wer, wann: TAGE[new Date(`${day}T12:00:00Z`).getUTCDay()] };
+  return { wer, wann: daysAgo === 1 ? "gestern" : datum };
+}
+
+/** "Du · 7:48" bzw. "Lisa · gestern" */
+export function pinMeta(m: { erstellt: string; data: { author: string } }, me: string, today: string, clock: (iso: string) => string, dayOf: (iso: string) => string): string {
+  const { wer, wann } = pinMetaParts(m, me, today, clock, dayOf);
+  return `${wer} · ${wann}`;
 }
 
 /** Feste Farbe je Person (eine von vier; Avatare in Sport und Kalender) */

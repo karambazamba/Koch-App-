@@ -7,13 +7,17 @@
 // roter Pin), unten Avatar-Kreis mit Initiale, Name und Zeit, rechts der
 // Haken-Kreis für „Erledigt“ – wie Aufgaben und Einkauf: Häkchen orange,
 // „erledigt von Lisa“, 1 s stehen (nochmal tippen = doch nicht), dann gleitet
-// er 0,8 s weich ins Archiv; nie durchgestrichen. Antippen oder lange drücken öffnet das Menü.
+// er 0,8 s weich ins Archiv; nie durchgestrichen. Antippen oder lange drücken öffnet das Menü
+// (Foto: Antippen = groß im Fenster). Tafel 123: Foto als Polaroid in
+// Zettelgröße (quadratisch, object-fit cover), „OBEN“ klein rechts oben an
+// Zetteln, die hängen bleiben (der Text bekommt rechts Platz). Die Meta-Zeile ist eine Zeile: Name und
+// Zeit, bei Platzmangel nur die Zeit – nie „Du · angeh…“.
 
 import { useEffect, useMemo, useState } from "react";
 import { Check, ImageIcon, Play } from "lucide-react";
-import { GLEIT_MS, formatDauer, doneLine, leavesIn, magnetOf, memoUnheard, reactionLine, tiltOf, zettelTon, type DoorEntry, type PinMessage, type ZettelFarbe } from "@/lib/pinnwand";
+import { GLEIT_MS, OBEN, formatDauer, doneLine, leavesIn, magnetOf, memoUnheard, reactionLine, tiltOf, zettelTon, type DoorEntry, type PinMessage, type ZettelFarbe } from "@/lib/pinnwand";
 import { fotoStore } from "@/lib/pinnwand/fotoStore";
-import { pinMetaLine } from "@/components/pinnwand/PinSheets";
+import { pinMetaPartsOf } from "@/components/pinnwand/PinSheets";
 import { MemoWave } from "@/components/pinnwand/MemoParts";
 import { PlayButton, useMemoPlayer } from "@/components/pinnwand/MemoRow";
 import { Magnet } from "@/components/pinnwand/Magnet";
@@ -29,8 +33,8 @@ function ZettelAvatar({ name, color, size = 20 }: { name: string; color: string;
   );
 }
 
-/** Bild eines Foto-Zettels (vom Gerät, sonst aus dem Haushalt) */
-export function FotoBild({ pin, className = "" }: { pin: Pick<PinMessage, "id" | "data">; className?: string }) {
+/** Bild eines Foto-Zettels (vom Gerät, sonst aus dem Haushalt); `square` = quadratischer Ausschnitt (Polaroid in Zettelgröße), `big` = ganz (Fenster) */
+export function FotoBild({ pin, className = "", square = false, big = false }: { pin: Pick<PinMessage, "id" | "data">; className?: string; square?: boolean; big?: boolean }) {
   const [url, setUrl] = useState<string | null>(null);
   const [missing, setMissing] = useState(false);
   useEffect(() => {
@@ -47,12 +51,13 @@ export function FotoBild({ pin, className = "" }: { pin: Pick<PinMessage, "id" |
       if (made) URL.revokeObjectURL(made);
     };
   }, [pin]);
-  const ratio = pin.data.foto ? `${pin.data.foto.w} / ${pin.data.foto.h}` : "4 / 3";
+  const ratio = square ? "1 / 1" : pin.data.foto ? `${pin.data.foto.w} / ${pin.data.foto.h}` : "4 / 3";
+  const box = { aspectRatio: ratio, ...(square ? {} : { maxHeight: big ? "62vh" : 220 }) };
   return url ? (
     // eslint-disable-next-line @next/next/no-img-element -- Bild vom Gerät (Blob-Adresse), nicht optimierbar
-    <img src={url} alt={pin.data.text ? `Foto: ${pin.data.text}` : "Foto"} className={`block w-full object-cover ${className}`} style={{ aspectRatio: ratio, maxHeight: 220 }} />
+    <img src={url} alt={pin.data.text ? `Foto: ${pin.data.text}` : "Foto"} className={`block w-full ${big ? "object-contain" : "object-cover"} ${className}`} style={box} />
   ) : (
-    <span className={`flex w-full items-center justify-center bg-fill text-faint ${className}`} style={{ aspectRatio: ratio, maxHeight: 220 }} aria-label={missing ? "Foto liegt auf einem anderen Handy" : "Foto lädt"}>
+    <span className={`flex w-full items-center justify-center bg-fill text-faint ${className}`} style={box} aria-label={missing ? "Foto liegt auf einem anderen Handy" : "Foto lädt"}>
       <ImageIcon className="h-6 w-6" strokeWidth={1.75} aria-hidden />
     </span>
   );
@@ -72,7 +77,26 @@ export function useGehtIn(entry: DoorEntry, aktiv = true): number | null {
   }, [doneAt]);
 }
 
-type Props = { item: BoardItem; me: string; household: string[]; highlight?: boolean; onOpen: () => void; onDone?: () => void; tone?: ZettelFarbe | "mia"; demo?: boolean };
+type Props = {
+  item: BoardItem;
+  me: string;
+  household: string[];
+  highlight?: boolean;
+  onOpen: () => void;
+  onDone?: () => void;
+  tone?: ZettelFarbe | "mia";
+  demo?: boolean;
+};
+
+/** Name · Zeit in EINER Zeile: passt der Name nicht mehr, rutscht er in die (unsichtbare) zweite Zeile – die Zeit bleibt */
+function MetaZeile({ wer, wann }: { wer: string; wann: string }) {
+  return (
+    <span className="flex h-[15px] min-w-0 flex-row-reverse flex-wrap justify-end gap-x-1 overflow-hidden" data-meta-zeile>
+      <span className="shrink-0 whitespace-nowrap tabular-nums">{wann}</span>
+      <span className="min-w-0 whitespace-nowrap">{wer} ·</span>
+    </span>
+  );
+}
 
 export function Zettel({ item, me, household, highlight = false, onOpen, onDone, tone: forced, demo = false }: Props) {
   const entry = entryOf(item);
@@ -80,7 +104,8 @@ export function Zettel({ item, me, household, highlight = false, onOpen, onDone,
   const done = entry.data.erledigt;
   const pinned = item.kind === "pin" && item.pin.data.pinned;
   const papier = item.kind === "memo" ? "memo" : item.pin.data.papier;
-  const meta = demo ? entry.data.author : done ? doneLine(done, me) : pinned ? `${entry.data.author === me ? "Du" : entry.data.author} · bleibt hängen` : pinMetaLine(entry, me);
+  const parts = pinMetaPartsOf(entry, me);
+  const meta = demo ? entry.data.author : done ? doneLine(done, me) : `${parts.wer} · ${parts.wann}`;
   // Abgehakt an der Tür: 1 s stehen, dann weich hinaus
   const gehtIn = useGehtIn(entry, Boolean(onDone));
   const reacted = reactionLine(entry.data.reactions);
@@ -100,7 +125,7 @@ export function Zettel({ item, me, household, highlight = false, onOpen, onDone,
         type="button"
         className="absolute inset-0 z-0"
         style={{ borderRadius: "inherit" }}
-        aria-label={`${label}. ${meta}. Antippen für mehr`}
+        aria-label={`${label}. ${meta}${pinned ? ", bleibt hängen" : ""}. Antippen für mehr`}
         onClick={onOpen}
         onContextMenu={(e) => {
           e.preventDefault();
@@ -110,13 +135,18 @@ export function Zettel({ item, me, household, highlight = false, onOpen, onDone,
       <span className="pointer-events-none absolute -top-2.5 left-1/2 z-10 -translate-x-1/2">
         <Magnet form={magnetOf(papier, pinned)} color={tone.mag} />
       </span>
-      <div className={`pointer-events-none relative flex flex-col gap-1.5 ${papier === "foto" ? "" : "px-3 pb-2.5 pt-4"}`}>
+      {pinned && !done && (
+        <span className="pointer-events-none absolute right-2 top-1.5 z-10 text-[10px] font-extrabold uppercase leading-none tracking-[0.14em]" style={{ color: `color-mix(in srgb, ${tone.mag} 62%, var(--app-fridge-ink))` }} data-oben>
+          {OBEN}
+        </span>
+      )}
+      <div className={`pointer-events-none relative flex flex-col gap-1.5 ${papier === "foto" ? "" : `px-3 pb-2.5 pt-4 ${pinned ? "pr-12" : ""}`}`}>
         {item.kind === "pin" && item.pin.data.replyTo && (
           <span className="text-[12px] font-bold text-fridge-soft">↪ {item.pin.data.replyTo.author}</span>
         )}
-        {item.kind === "pin" && item.pin.data.papier === "foto" && <FotoBild pin={item.pin} />}
+        {item.kind === "pin" && item.pin.data.papier === "foto" && <FotoBild pin={item.pin} square />}
         {item.kind === "pin" && item.pin.data.text && (
-          <p className={`zettel-text whitespace-pre-line break-words font-bold leading-snug ${papier === "foto" ? "px-1 pt-1 text-[15px]" : "text-[16px]"}`}>{item.pin.data.text}</p>
+          <p className={`zettel-text whitespace-pre-line break-words font-bold leading-snug ${papier === "foto" ? `px-1 pt-1 text-[15px] ${pinned ? "pr-10" : ""}` : "text-[16px]"}`}>{item.pin.data.text}</p>
         )}
         {item.kind === "memo" && (
           <>
@@ -135,10 +165,10 @@ export function Zettel({ item, me, household, highlight = false, onOpen, onDone,
           </>
         )}
         {reacted && <span className="text-[13px] text-fridge-soft">{reacted}</span>}
-        {/* Name · Zeit immer ganz lesbar: lieber zweizeilig als abgeschnitten; rechts bleibt Platz für den Haken-Kreis */}
+        {/* Name · Zeit in einer Zeile, nie abgeschnitten: bei Platzmangel nur die Zeit; rechts bleibt Platz für den Haken-Kreis */}
         <span className={`flex min-h-[30px] items-center gap-1.5 pr-8 text-[12px] font-semibold leading-tight text-fridge-soft ${papier === "foto" ? "px-1" : ""}`} data-meta>
           <ZettelAvatar name={entry.data.author} color={tone.mag} />
-          <span className="min-w-0 break-words">{meta}</span>
+          {demo || done ? <span className="min-w-0 break-words">{meta}</span> : <MetaZeile wer={parts.wer} wann={parts.wann} />}
           {item.kind === "memo" && memoUnheard(item.memo, me) && !done && <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: tone.mag }} aria-label="Noch nicht gehört" />}
         </span>
       </div>

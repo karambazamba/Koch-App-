@@ -181,7 +181,8 @@ describe("Wörter überall gleich", () => {
     expect(read("src/components/pinnwand/ReactionMenu.tsx")).toMatch(/label=\{item\.pin\.data\.pinned \? NICHT_MEHR_FESTHALTEN : BLEIBT_HAENGEN\}/);
     expect(read("src/components/pinnwand/PinboardView.tsx")).toContain("{PINNWAND_TIPP}");
     expect(PINNWAND.seite).toContain("‚Bleibt hängen‘");
-    expect(read("src/components/pinnwand/Zettel.tsx")).toContain("· bleibt hängen`");
+    // „Bleibt hängen“ zeigt der Zettel als kleine Markierung „OBEN“ (Tafel 123), nicht mehr in der Meta-Zeile
+    expect(read("src/components/pinnwand/Zettel.tsx")).toContain("{OBEN}");
     const tool = NOTE_TOOLS.find((t) => t.definition.name === "pinnwand_schreiben")!;
     expect(tool.definition.description).toContain("„Bleibt hängen“");
     expect(tool.definition.description).not.toMatch(ALT);
@@ -202,8 +203,8 @@ describe("Behoben (Bildschirmfoto v0.138, iPhone 15 Pro)", () => {
     const view = read("src/components/pinnwand/PinboardView.tsx");
     const door = view.match(/<section className="kuehlschrank ([^"]*)"/)![1];
     expect(door).not.toMatch(/overflow|max-h|h-screen|dvh/);
-    const minH = Number(door.match(/min-h-\[(\d+)px\]/)![1]);
-    expect(minH).toBeLessThanOrEqual(240);
+    // Tafel 123: so hoch wie der Inhalt – gar keine Mindesthöhe mehr
+    expect(door).not.toMatch(/min-h/);
     const css = read("src/app/globals.css");
     const griff = css.slice(css.indexOf(".kuehlschrank::after"), css.indexOf("}", css.indexOf(".kuehlschrank::after")));
     expect(Number(griff.match(/width: (\d+)px/)![1])).toBeGreaterThanOrEqual(8);
@@ -212,11 +213,14 @@ describe("Behoben (Bildschirmfoto v0.138, iPhone 15 Pro)", () => {
     expect(css.slice(css.indexOf(".kuehlschrank {"), css.indexOf("}", css.indexOf(".kuehlschrank {")))).not.toMatch(/overflow/);
   });
 
-  it("Name · Zeit unter dem Zettel nie abgeschnitten (lieber zweizeilig), rechts Platz für den Haken-Kreis", () => {
+  it("Name · Zeit unter dem Zettel nie abgeschnitten (Tafel 123: eine Zeile, bei Platzmangel nur die Zeit), rechts Platz für den Haken-Kreis", () => {
     const zettel = read("src/components/pinnwand/Zettel.tsx");
-    const meta = zettel.slice(zettel.indexOf("data-meta"), zettel.indexOf("{meta}</span>"));
-    expect(meta).not.toMatch(/truncate|text-ellipsis|whitespace-nowrap/);
-    expect(meta).toMatch(/break-words/);
+    const meta = zettel.slice(zettel.indexOf("function MetaZeile"), zettel.indexOf("export function Zettel"));
+    expect(meta).not.toMatch(/truncate|text-ellipsis/);
+    // Zeit zuerst im DOM, rückwärts umbrechend: passt der Name nicht, rutscht er in die unsichtbare zweite Zeile
+    expect(meta).toMatch(/flex-row-reverse flex-wrap/);
+    expect(meta).toMatch(/overflow-hidden/);
+    expect(meta.indexOf("{wann}")).toBeLessThan(meta.indexOf("{wer}"));
     expect(zettel).toMatch(/pr-8 text-\[12px\]/);
   });
 });

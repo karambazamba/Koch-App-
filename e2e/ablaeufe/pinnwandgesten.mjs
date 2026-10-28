@@ -94,6 +94,18 @@ export const pinnwandGesten = async (page, check) => {
   await page.goto(BASE + "/pinnwand");
   await page.waitForTimeout(900);
   check(await page.getByRole("region", { name: "Kühlschranktür" }).isVisible(), "Tür sichtbar");
+  // Tafel 123 A: Wand endet unter dem Inhalt, Meta-Zeilen nie abgeschnitten (Zeit immer ganz sichtbar, nie „…“)
+  const tuer = await page.getByRole("region", { name: "Kühlschranktür" }).boundingBox();
+  const unten = await page.locator(".kuehlschrank .zettel").evaluateAll((els) => Math.max(...els.map((el) => el.getBoundingClientRect().bottom)));
+  check(tuer.y + tuer.height - unten < 48, `Wand so hoch wie der Inhalt (${Math.round(tuer.y + tuer.height - unten)} px Luft)`);
+  const metas = await page.locator("[data-meta-zeile]").evaluateAll((els) =>
+    els.map((el) => {
+      const box = el.getBoundingClientRect();
+      const w = el.children[0].getBoundingClientRect();
+      return w.top >= box.top - 1 && w.bottom <= box.bottom + 1 && w.right <= box.right + 1 && !(el.textContent ?? "").includes("…");
+    }),
+  );
+  check(metas.length > 0 && metas.every(Boolean), `Meta-Zeilen: Zeit ganz sichtbar, nie „…“ (${metas.length})`);
   const own = zettel(page, "Ich bin um 6");
   const other = zettel(page, "Bin um 20 Uhr da");
   check((await own.isVisible()) && (await other.isVisible()), "eigener und fremder Zettel an der Tür");

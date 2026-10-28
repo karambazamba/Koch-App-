@@ -3444,3 +3444,16 @@ Fehler in `docs/aufraeumen-nachher.md`.
   verstanden wird und jeder Satz etwas einträgt; Termin mit Kind aus dem
   Haushalt = Familie. Prüfstand im Testmodus unverändert (Raum- und
   Sofort-Prüfstand weiter ≥ 95 %).
+
+## Pinnwand aufgeräumt (A-028 Teil 1, Tafel 123, Version folgt beim Mergen)
+
+- Fotos als Polaroid in Zettelgröße (halbe Breite, quadratisch,
+  `object-fit: cover`), antippen = groß im Fenster (`FotoFenster`, Text,
+  Erledigt, Mehr). Wand so hoch wie der Inhalt (keine Mindesthöhe, leer mit
+  ruhigem Innenabstand). Meta-Zeile EINE Zeile: Zeit zuerst im DOM,
+  rückwärts umbrechend – passt der Name nicht, bleibt nur die Zeit; die
+  letzten sechs Tage als Wochentag („Lisa · Mo“). „Bleibt hängen“ zeigt
+  statt „· bleibt hängen“ die kleine Markierung „OBEN“ (Großbuchstaben,
+  Zettelfarbe dunkel), der Text hat rechts Platz.
+- Entschieden: „OBEN“ nur an „Bleibt hängen“-Zettel (die stehen vorn);
+  eigene Zettel heißen weiter „Du“ (Tafel: „Ich“).

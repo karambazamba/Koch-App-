@@ -14,3 +14,8 @@ export const BLEIBT_HAENGEN_HINWEIS = "Verschwindet nicht von selbst, z. B. für
 export const NICHT_MEHR_FESTHALTEN = "Nicht mehr festhalten";
 /** Seiten-Tipp und leere Tür */
 export const PINNWAND_TIPP = "Kurze Zettel für alle. Abhaken räumt auf, ‚Bleibt hängen‘ bleibt.";
+
+// --- Aufgeräumt (Tafel 123) ----------------------------------------------------------
+
+/** Kleine Markierung (Großbuchstaben, Zettelfarbe dunkel) an Zetteln, die hängen bleiben – sie stehen vorn */
+export const OBEN = "Oben";

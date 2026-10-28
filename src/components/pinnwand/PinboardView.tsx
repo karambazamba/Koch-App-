@@ -2,7 +2,8 @@
 
 // Seite /pinnwand als Kühlschranktür (Tafel 106/1): Kopf „‹ Heute“, rechts
 // das orange ＋ (= „Neuer Zettel“), großer Titel. Darunter die Tür (heller
-// Verlauf, feiner Rand, Griff rechts) mit den Zetteln in zwei Spalten –
+// Verlauf, feiner Rand, Griff rechts, so hoch wie der Inhalt – Tafel 123)
+// mit den Zetteln in zwei Spalten; ein Foto antippen = groß im Fenster –
 // „Bleibt hängen“ oben links, sonst neueste zuerst. Antippen oder lange
 // drücken = Menü, Haken-Kreis = Erledigt (Häkchen orange, 1 s stehen, dann
 // weich ins Archiv). Unter der Tür „Ältere · n ›“ (Archiv, nach 30 Tagen still weg).
@@ -27,6 +28,7 @@ import { Zettel } from "@/components/pinnwand/Zettel";
 import { NeuerZettel, type ZettelArt } from "@/components/pinnwand/NeuerZettel";
 import { ReactionMenu } from "@/components/pinnwand/ReactionMenu";
 import { moveToNotes, toggleDone } from "@/components/pinnwand/boardActions";
+import { FotoFenster } from "@/components/pinnwand/FotoFenster";
 import { MicStrip } from "@/components/ui/MicPermission";
 import type { PinQuote } from "@/lib/pinnwand";
 
@@ -57,7 +59,9 @@ export function PinboardView() {
   const [held, setHeld] = useState<{ id: string; archived: boolean } | null>(null);
   const [focus, setFocus] = useState<string | null>(null);
   const [older, setOlder] = useState(false);
+  const [foto, setFoto] = useState<string | null>(null);
   const list = board.items;
+  const fotoItem = foto ? (list?.find((i) => i.id === foto) ?? null) : null;
   const heldItem = held ? ((held.archived ? board.archived : list)?.find((i) => i.id === held.id) ?? null) : null;
   const question = pins ? noteQuestionFor(pins, me, board.nowMs) : null;
   // Beispiel-Tag: die Beispiele hängen auch hier, bis der erste echte Zettel kommt
@@ -87,6 +91,8 @@ export function PinboardView() {
     return () => (clearTimeout(on), clearTimeout(off));
   }, [hasList]);
 
+  /** Antippen: Foto groß im Fenster (Tafel 123), sonst das Menü */
+  const open = (item: BoardItem) => (item.kind === "pin" && item.pin.data.papier === "foto" ? setFoto(item.id) : setHeld({ id: item.id, archived: false }));
   const reply = (item: BoardItem) => setWriting({ quote: quoteOf(item.kind === "pin" ? item.pin : { id: item.id, data: { author: item.memo.data.author } }), art: "zettel" });
   const answer = (yes: boolean) => {
     if (!question) return;
@@ -121,7 +127,7 @@ export function PinboardView() {
             </div>
           </section>
         )}
-        <section className="kuehlschrank min-h-[220px] py-3 pl-3 pr-5" aria-label="Kühlschranktür">
+        <section className="kuehlschrank py-3 pl-3 pr-5" aria-label="Kühlschranktür">
           {!list ? (
             <div className="h-40 animate-pulse" />
           ) : demo ? (
@@ -137,7 +143,7 @@ export function PinboardView() {
               />
             </>
           ) : list.length === 0 ? (
-            <div className="flex min-h-[300px] flex-col items-center justify-center gap-3 px-4 text-center">
+            <div className="flex flex-col items-center justify-center gap-3 px-4 py-10 text-center">
               <p className="text-[16px] font-semibold text-muted">{PINNWAND_TIPP}</p>
               <button type="button" onClick={() => setWriting({ quote: null, art: "zettel" })} className={buttonClass("soft", "sm")}>
                 Erster Zettel
@@ -146,7 +152,7 @@ export function PinboardView() {
           ) : (
             <Spalten
               items={list}
-              render={(item) => <Zettel item={item} me={me} household={board.household} highlight={focus === item.id} onOpen={() => setHeld({ id: item.id, archived: false })} onDone={() => toggleDone(item, me)} />}
+              render={(item) => <Zettel item={item} me={me} household={board.household} highlight={focus === item.id} onOpen={() => open(item)} onDone={() => toggleDone(item, me)} />}
             />
           )}
         </section>
@@ -169,6 +175,7 @@ export function PinboardView() {
           <Zettel item={heldItem} me={me} household={board.household} onOpen={() => setHeld(null)} />
         </ReactionMenu>
       )}
+      {fotoItem && fotoItem.kind === "pin" && <FotoFenster item={fotoItem} me={me} onMore={() => (setFoto(null), setHeld({ id: fotoItem.id, archived: false }))} onClose={() => setFoto(null)} />}
       {writing && <NeuerZettel me={me} household={board.household} karo={karo} quote={writing.quote} art={writing.art} onClose={() => setWriting(null)} />}
     </>
   );
