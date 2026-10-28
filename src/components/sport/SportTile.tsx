@@ -63,7 +63,7 @@ export function SportTile({ size = "M", entries, today, minutes, me }: { size?: 
               Als Nächstes
             </span>
             <span className="text-[14.5px] font-bold">{whenLabel(next, today)}</span>
-            <span className="w-full truncate text-[13px] text-muted">{next.title}</span>
+            <span className="w-full truncate text-[13px] text-muted" data-freitext>{next.title}</span>
           </button>
         ) : next ? (
           <button type="button" onClick={() => setDay(next.date)} className="flex min-h-11 items-center gap-3 rounded-field bg-tile-inner px-3 py-2 text-left" aria-label={`Als Nächstes: ${nextLine(next, today)} – öffnen`}>
@@ -72,7 +72,7 @@ export function SportTile({ size = "M", entries, today, minutes, me }: { size?: 
             </span>
             <span className="flex min-w-0 flex-1 flex-col">
               <span className="text-[11px] font-extrabold uppercase tracking-wide text-muted">Als Nächstes</span>
-              <span className="truncate text-[14.5px] font-bold">{nextLine(next, today)}</span>
+              <span className="break-words text-[14.5px] font-bold leading-snug">{nextLine(next, today)}</span>
             </span>
             {weatherAt && (
               <span className="flex shrink-0 items-center gap-1 text-[13px] font-semibold text-muted">
@@ -89,7 +89,7 @@ export function SportTile({ size = "M", entries, today, minutes, me }: { size?: 
             {done.slice(0, 3).map((t) => (
               <li key={t.id} className="flex items-center gap-2 text-[13.5px]">
                 <SportIcon sport={t.data.sport} className="h-4 w-4 shrink-0 text-good-ink" />
-                <span className="truncate">
+                <span className="min-w-0 break-words">
                   <span className="font-bold">{t.data.date === today ? "Heute" : t.data.date === addDays(today, -1) ? "Gestern" : weekdayShort(t.data.date)}</span> · {sportById(t.data.sport).label} · {t.data.minutes} Min
                 </span>
               </li>

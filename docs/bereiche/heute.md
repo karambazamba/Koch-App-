@@ -187,9 +187,19 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
   sonst bleibt sie leer. Ziehen tauscht die Partner. Startseite v6
   (`lonelySToM`): eine einzelne S, die bisher breit war, wird einmal M.
 - Notizen-Kachel (`heute/notizenKachel.ts`): S = neueste bzw. angeheftete
-  Notiz (Titel + 1 Zeile) oder „Schnell was aufschreiben …“, M = 3 Zeilen
+  Notiz (Titel + 1 Zeile) oder „Schnell was aufschreiben.“ (A-045: in
+  Kacheln kein „…“), M = 3 Zeilen
   „Titel · Anfang“, L = bis 5, Angeheftete zuerst; Listen als „x von y
   erledigt“. Zeile = diese Notiz, Stift = Schnelleingabe „Neue Notiz“.
+- Nichts abgeschnitten (A-045/A-046, Tafel 133/134): kein sichtbarer Text in
+  einer Kachel endet auf „…“ oder wird weggeschnitten – Texte brechen um,
+  die Kachel wächst mit. Ausnahme nur frei Eingegebenes (Notiz, Aufgabe,
+  Termin, Zettel, Timer- und Trainingsname), markiert mit `data-freitext`.
+  Im Haus: Name vor Schild, Schild 10,5 px, passt es nicht daneben, rutscht
+  es in die nächste Zeile. Essen-Kachel siehe `essen.md` („Essen-Kachel
+  final“). Prüfung: Durchklick `nichtsAbgeschnitten` (Beispiel-Tag und
+  Familie, iPhone SE/15 Pro/Pixel 7, jede Kachel in S/M/L,
+  `abgeschnitteneTexte` in `e2e/regeln.mjs`).
 - Essen + Einkauf sind ein Paar: immer direkt hintereinander, Essen zuerst
   (`keepPair`), und wandern zusammen. Als eine Einheit im Raster zählen sie
   nur, wenn beide S sind.

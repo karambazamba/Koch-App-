@@ -23,6 +23,8 @@ export type Vorschlag = {
   ingredients?: string[];
   /** Für so viele umrechnen (sonst der Haushalt) */
   persons?: number | null;
+  /** Kleine Statuszeile über dem Namen, wie auf der Essen-Kachel („Kochidee · Morgen Do“, Tafel 134) */
+  kopf?: string;
   /** Schon fertig mitgeliefert (z. B. neues KI-Rezept in Mias Vorschlag) */
   rezept?: Recipe;
 };

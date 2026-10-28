@@ -65,7 +65,7 @@ export function TimerTile({ size = "M" }: { size?: TileSize }) {
                 <span className="text-[22px] font-extrabold tabular-nums leading-none" role="timer" aria-label={`${main.name}: ${isExpired(main, nowMs) ? "fertig" : formatLeft(leftMs(main, nowMs))}`}>
                   {isExpired(main, nowMs) ? "fertig" : formatLeft(leftMs(main, nowMs))}
                 </span>
-                <span className="truncate text-[13px] text-muted">{main.name}</span>
+                <span className="truncate text-[13px] text-muted" data-freitext>{main.name}</span>
               </span>
             ) : sw ? (
               <span className="text-[20px] font-extrabold tabular-nums">{formatLeft(stopwatchMs(sw, nowMs))}</span>
@@ -151,7 +151,7 @@ function MainTimer({ timer, nowMs }: { timer: Timer; nowMs: number }) {
         <span className="text-[30px] font-extrabold tabular-nums leading-none" role="timer" aria-label={`${timer.name}: ${done ? "fertig" : formatLeft(left)}`}>
           {done ? "fertig ✓" : formatLeft(left)}
         </span>
-        <span className="truncate text-[13.5px] text-muted">
+        <span className="break-words text-[13.5px] leading-snug text-muted">
           {timer.name}
           {timer.name.startsWith("Timer ") ? "" : ` · ${durationLabel(timer.durationMs)}`}
           {isPaused(timer) ? " · pausiert" : ""}
@@ -183,7 +183,7 @@ function TimerRow({ timer, nowMs }: { timer: Timer; nowMs: number }) {
   const done = isExpired(timer, nowMs);
   return (
     <div className="flex min-h-11 items-center gap-2 border-t border-line pt-1.5">
-      <span className="min-w-0 flex-1 truncate text-[14px] font-semibold">{timer.name}</span>
+      <span className="min-w-0 flex-1 truncate text-[14px] font-semibold" data-freitext>{timer.name}</span>
       <span className="text-[15px] font-bold tabular-nums" role="timer" aria-label={`${timer.name}: ${done ? "fertig" : formatLeft(leftMs(timer, nowMs))}`}>
         {done ? "fertig ✓" : formatLeft(leftMs(timer, nowMs))}
       </span>

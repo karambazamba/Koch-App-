@@ -1,50 +1,27 @@
 "use client";
 
-// ESSEN-Kachel mit Bild (Tafel 122) – EINE Komponente für den Beispiel-Tag
-// und das echte Gericht: Bild füllt die Kachel, darüber ein Verlauf (oben
-// leicht, unten dunkel, Token `--app-dish-tile-shade`, weiße Schrift überall
-// ≥ 4,5:1). Oben links die Pille (Kochidee „Was anderes?“ bzw. „Andere Idee“), in der
-// Mitte linksbündig „ESSEN · 18:30“, der Name groß (S 20 px, M 24 px, höchstens
-// 2 Zeilen, nie mitten im Wort abgeschnitten – `titelPx`) und die Unterzeile.
-// Unten zwei gleich breite Knöpfe (je 44 px): links weiß mit oranger Schrift
-// („Rezept“, „Vorschlag“, „Weiter kochen“), rechts weiß 85 % („Wochenplan“
-// bzw. bei S „Woche“). Der Rest der Kachel öffnet `open`.
+// ESSEN-Kachel mit Bild (final: A-046, Tafel 134) – EINE Komponente für den
+// Beispiel-Tag und das echte Gericht: Bild füllt die Kachel, darüber ein
+// Verlauf (unten dunkel, Token `--app-dish-tile-shade`, weiße Schrift ≥ 4,5:1).
+// Oben links die Pille „Was anderes?“ mit Pfeil-Symbol (`corner`), unten links die kleine
+// Statuszeile (10,5 px, „Kochidee · Heute“, „Essen · 18:30“, „Essen · Jetzt“),
+// der Name (S 19 px, M 22 px, immer ganz, nie „…“ – `titelPx`) und die
+// Zeile(n) darunter; unten rechts die weiße Pille „Wochenplan ›“ bzw.
+// „Weiter kochen ›“ (`ui/KachelKnopf` als Pille, 32 px, Tippfläche 44 px,
+// Stufen statt „…“). Keine großen Knöpfe mehr. Die ganze übrige Kachel
+// öffnet `open` (Vorschau, Rezept, Kochmodus).
 
 import Link from "next/link";
 import type { ReactNode } from "react";
-import type { LucideIcon } from "lucide-react";
-import { CalendarDays } from "lucide-react";
 import { DishPicture } from "@/components/essen/DishPicture";
+import { KachelKnopf as Knopf } from "@/components/ui/KachelKnopf";
 import type { RecipeCategory } from "@/lib/essen/cookbook";
-import { titelAnzeige } from "@/lib/heute/essenKachel";
+import { titelPx } from "@/lib/heute/essenKachel";
 
 type Picture = { photo?: string; title: string; ingredients?: string[]; category?: RecipeCategory | null; leer?: boolean };
 
-/** Ein Knopf unten: Link oder Schritt */
-export type KachelKnopf = { label: string; icon: LucideIcon; open: string | (() => void); data?: string };
-
-const KNOPF = "flex h-11 min-w-0 items-center justify-center gap-1.5 rounded-field px-2 text-[14px] font-extrabold shadow-card active:scale-[0.97]";
-
-function Knopf({ k, tone }: { k: KachelKnopf; tone: "links" | "rechts" }) {
-  const Icon = k.icon;
-  const cls = `${KNOPF} ${tone === "links" ? "bg-on-color text-on-photo-ink" : "bg-on-color/85 text-on-photo-dark"}`;
-  const inner = (
-    <>
-      <Icon className="h-4 w-4 shrink-0" strokeWidth={2.25} aria-hidden />
-      <span className="truncate">{k.label}</span>
-    </>
-  );
-  const data = k.data ? { [`data-${k.data}`]: true } : {};
-  return typeof k.open === "string" ? (
-    <Link href={k.open} className={cls} {...data}>
-      {inner}
-    </Link>
-  ) : (
-    <button type="button" onClick={k.open} className={cls} {...data}>
-      {inner}
-    </button>
-  );
-}
+/** Pille unten rechts: Link oder Schritt */
+type Pille = { label: string; open: string | (() => void); data?: string };
 
 export function DishTile({
   kopf,
@@ -55,13 +32,13 @@ export function DishTile({
   half,
   label,
   corner,
-  links,
-  rechts,
+  pille,
 }: {
   /** „Essen · 18:30“, „Morgen · Do“ – angezeigt in Großbuchstaben */
   kopf: string;
   title: string;
-  sub?: string;
+  /** Zeilen unter dem Namen (`essenUnterzeilen`: S zwei, M eine) */
+  sub?: string[];
   picture: Picture;
   /** Rest der Kachel antippen: Seite (Link) oder eigener Schritt */
   open: string | (() => void);
@@ -69,49 +46,47 @@ export function DishTile({
   label: string;
   /** Pille oben links */
   corner?: ReactNode;
-  links?: KachelKnopf | null;
-  /** Rechter Knopf (Wochenplan); ohne = keiner */
-  rechts?: string;
+  /** Pille unten rechts („Wochenplan ›“, „Weiter kochen ›“) */
+  pille?: Pille;
 }) {
-  const name = titelAnzeige(title, half ? "S" : "M");
+  const px = titelPx(title, half ? "S" : "M");
+  // Bereich heißt für VoiceOver immer „Essen …“, auch bei „Kochidee · Heute“ und „Morgen · Do“
+  const bereich = /^Essen/i.test(kopf) ? kopf : `Essen · ${kopf}`;
   const body = (
     <>
       <DishPicture photo={picture.photo} title={picture.title} ingredients={picture.ingredients} category={picture.category} leer={picture.leer} alt="" className="absolute inset-0" />
       <span className="dish-tile-shade absolute inset-0" aria-hidden />
-      <span className="absolute inset-x-3 bottom-[54px] top-10 flex flex-col justify-center gap-0.5 text-on-color">
-        <span className="truncate whitespace-nowrap text-[11px] font-extrabold uppercase leading-[13px] tracking-wider opacity-95" data-kopf>
+      <span className="relative flex flex-1 flex-col justify-end gap-0.5 px-3 pb-[50px] pt-11 text-on-color">
+        <span className="text-[10.5px] font-extrabold uppercase leading-[13px] tracking-wider opacity-95" data-kopf>
           {kopf}
         </span>
-        <span className="line-clamp-2 font-extrabold leading-[1.06] tracking-tight [overflow-wrap:normal]" style={{ fontSize: name.px }} data-titel>
-          {name.text}
+        <span className="hyphens-auto font-extrabold leading-[1.06] tracking-tight [overflow-wrap:break-word]" style={{ fontSize: px }} data-titel>
+          {title}
         </span>
-        {sub && (
-          <span className="truncate text-[12px] font-semibold leading-[15px]" data-unterzeile>
-            {sub}
+        {sub?.map((zeile) => (
+          <span key={zeile} className="text-[12px] font-semibold leading-[15px]" data-unterzeile>
+            {zeile}
           </span>
-        )}
+        ))}
       </span>
     </>
   );
-  const frame = `relative block h-full w-full overflow-hidden rounded-card text-left shadow-card ${half ? "min-h-[168px]" : "min-h-[180px]"}`;
-  const knoepfe = [links, rechts ? { label: rechts, icon: CalendarDays, open: "/?seite=essen&zu=woche", data: "woche" } : null].filter((k): k is KachelKnopf => Boolean(k));
+  const frame = `relative flex h-full w-full flex-col overflow-hidden rounded-card text-left shadow-card ${half ? "min-h-[184px]" : "min-h-[180px]"}`;
   return (
-    <section className="relative h-full" aria-label={kopf} data-essen-kachel>
+    <section className="relative h-full" aria-label={bereich} data-essen-kachel>
       {typeof open === "string" ? (
-        <Link href={open} aria-label={label} className={frame}>
+        <Link href={open} aria-label={label} className={frame} data-essen-antippen>
           {body}
         </Link>
       ) : (
-        <button type="button" onClick={open} aria-label={label} className={frame}>
+        <button type="button" onClick={open} aria-label={label} className={frame} data-essen-antippen>
           {body}
         </button>
       )}
-      {knoepfe.length > 0 && (
-        <div className={`absolute inset-x-2 bottom-2 grid gap-2 ${knoepfe.length > 1 ? "grid-cols-2" : "grid-cols-1"}`} data-kachel-knoepfe>
-          {knoepfe.map((k, i) => (
-            <Knopf key={k.label} k={k} tone={i === 0 && links ? "links" : "rechts"} />
-          ))}
-        </div>
+      {pille && (
+        <span className="absolute bottom-1 right-1 flex max-w-[calc(100%-8px)] justify-end" data-essen-pille>
+          <Knopf label={pille.label} open={pille.open} data={pille.data} />
+        </span>
       )}
       {corner}
     </section>

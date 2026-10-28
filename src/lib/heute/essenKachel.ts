@@ -11,7 +11,7 @@ export type FoodView =
   | { kind: "geplant"; title: string; when: "heute" | "morgen" }
   /** Nur Vorschlag (⇄ bzw. Idee): leise „Vorschlag“ unter dem Namen */
   | { kind: "vorschlag"; title: string; takeFor: "heute" | "morgen" }
-  /** Kein Gericht: „Noch frei“ (bzw. „Kein Kochtag“), „Ideen ansehen“ nur mit Ideen */
+  /** Kein Gericht und kein Vorschlag: „Was gibt’s heute?“ (bzw. „Kein Kochtag“) – antippen = 3 Ideen */
   | { kind: "frei"; title: string; ideen: boolean };
 
 export function foodTileView(o: {
@@ -31,11 +31,8 @@ export function foodTileView(o: {
   if (o.idea) return { kind: "vorschlag", title: o.idea, takeFor: o.over ? "morgen" : "heute" };
   const planned = o.over ? o.tomorrow : o.today;
   if (planned) return { kind: "geplant", title: planned, when: o.over ? "morgen" : "heute" };
-  return { kind: "frei", title: o.away ?? "Noch frei", ideen: o.ideas > 0 };
+  return { kind: "frei", title: o.away ?? (o.over ? "Was gibt’s morgen?" : "Was gibt’s heute?"), ideen: o.ideas > 0 };
 }
-
-/** Knopf im Gericht-Fenster */
-export const takeLabel = (takeFor: "heute" | "morgen") => (takeFor === "morgen" ? "Für morgen nehmen" : "Für heute nehmen");
 
 /**
  * ⇄ „Andere Idee“: die nächste Idee, die nicht das gerade Gezeigte ist – nie
@@ -71,8 +68,17 @@ export function kochSchrittText(at: number, total: number): string | null {
   return `Schritt ${Math.min(total, Math.max(1, at))} von ${total}`;
 }
 
-/** Was auf die Liste müsste – höchstens zwei Namen, dann „…“ */
-const listenText = (needs: string[]) => `${needs.slice(0, 2).join(", ")}${needs.length > 2 ? " …" : ""}`;
+/**
+ * Was auf die Liste müsste (Tafel 133): höchstens `max` Namen, der Rest als
+ * „+N“ – nie mitten in der Liste mit „…“ abgebrochen. „Eier, Limette +2“.
+ */
+export function zutatenKurz(needs: string[], max = 2): string {
+  const n = Math.max(1, Math.floor(max));
+  const shown = needs.slice(0, n).join(", ");
+  return needs.length > n ? `${shown} +${needs.length - n}` : shown;
+}
+
+const vorratText = (needs: string[] | null, max: number) => (needs === null ? "" : needs.length ? `auf die Liste: ${zutatenKurz(needs, max)}` : "alles im Haus");
 
 /**
  * Unterzeile der Essen-Kachel (Tafel 122): „90 Min · auf die Liste: Karotte“,
@@ -81,32 +87,66 @@ const listenText = (needs: string[]) => `${needs.slice(0, 2).join(", ")}${needs.
  */
 export function essenUnterzeile(o: { minutes: number | null; needs: string[] | null; schritt?: string | null }): string {
   if (o.schritt) return o.schritt;
-  const vorrat = o.needs === null ? "" : o.needs.length ? `auf die Liste: ${listenText(o.needs)}` : "alles im Haus";
-  return [o.minutes ? `${o.minutes} Min` : "", vorrat].filter(Boolean).join(" · ");
+  return [o.minutes ? `${o.minutes} Min` : "", vorratText(o.needs, 2)].filter(Boolean).join(" · ");
+}
+
+/**
+ * Zeilen unter dem Namen je Größe (Tafel 133): M eine Zeile wie
+ * `essenUnterzeile` (2 Zutaten + „+N“), S zwei Zeilen „30 Min“ und
+ * „auf die Liste: Eier +3“ (eine Zutat + „+N“), damit nichts abgeschnitten wird.
+ */
+export function essenUnterzeilen(o: { minutes: number | null; needs: string[] | null; schritt?: string | null }, size: "S" | "M"): string[] {
+  if (o.schritt) return [o.schritt];
+  if (size === "M") return [essenUnterzeile(o)].filter(Boolean);
+  return [o.minutes ? `${o.minutes} Min` : "", vorratText(o.needs, 1)].filter(Boolean);
 }
 
 /** Rezeptseite im Bild (Tafel 122): „90 Min · alles im Haus bis auf Karotte“ */
 export function rezeptVorratZeile(minutes: number | null, needs: string[] | null): string {
-  const vorrat = needs === null ? "" : needs.length ? `alles im Haus bis auf ${listenText(needs)}` : "alles im Haus";
+  const vorrat = needs === null ? "" : needs.length ? `alles im Haus bis auf ${zutatenKurz(needs)}` : "alles im Haus";
   return [minutes ? `${minutes} Min` : "", vorrat].filter(Boolean).join(" · ");
 }
 
-/** Linker Knopf: Rezept · Vorschlag (nichts geplant) · Weiter kochen (Kochmodus läuft) · keiner (Kein Kochtag) */
-export type LinkerKnopf = "rezept" | "vorschlag" | "weiter" | null;
+// --- Essen-Kachel final (A-046, Tafel 134): Statuszeile, Pille, Antippen ---------------
 
-export function essenKnoepfe(view: FoodView, o: { kocht: boolean; half: boolean }): { links: LinkerKnopf; rechts: "Wochenplan" | "Woche" } {
-  const rechts = o.half ? "Woche" : "Wochenplan";
-  if (view.kind === "geplant") return { links: o.kocht && view.when === "heute" ? "weiter" : "rezept", rechts };
-  if (view.kind === "vorschlag") return { links: "vorschlag", rechts };
-  return { links: view.ideen ? "vorschlag" : null, rechts };
+/** Was die Kachel gerade ist: Vorschlag, fest geplant, beim Kochen oder frei */
+type KachelZustand = "vorschlag" | "geplant" | "kocht" | "frei";
+
+export function kachelZustand(view: FoodView, kocht: boolean): KachelZustand {
+  if (view.kind === "geplant") return kocht && view.when === "heute" ? "kocht" : "geplant";
+  return view.kind;
+}
+
+/**
+ * Kleine Statuszeile über dem Namen: Vorschlag „Kochidee · Heute“ bzw.
+ * „Kochidee · Morgen Do“, fest geplant „Essen · 18:30“ bzw. „Morgen · Do“,
+ * beim Kochen „Essen · Jetzt“. `morgen` = Wochentag von morgen („Do“).
+ */
+export function essenKopf(z: KachelZustand, o: { over: boolean; clock: string | null; morgen: string }): string {
+  if (z === "kocht") return "Essen · Jetzt";
+  if (z === "vorschlag") return `Kochidee · ${o.over ? `Morgen ${o.morgen}` : "Heute"}`;
+  if (o.over) return `Morgen · ${o.morgen}`;
+  return z === "geplant" && o.clock ? `Essen · ${o.clock}` : "Essen";
+}
+
+/** Pille unten rechts: beim Kochen „Weiter kochen ›“ (Kochmodus), sonst „Wochenplan ›“ (die nächsten 7 Tage) */
+export const essenPille = (z: KachelZustand): "Weiter kochen ›" | "Wochenplan ›" => (z === "kocht" ? "Weiter kochen ›" : "Wochenplan ›");
+
+/**
+ * Ganze Kachel antippen (außer den Pillen): Vorschlag → Rezept-Vorschau,
+ * fest geplant → Rezeptseite („Los, Schritt für Schritt“), beim Kochen →
+ * Kochmodus am aktuellen Schritt, frei → 3 Ideen.
+ */
+export function essenTippen(z: KachelZustand): "vorschau" | "rezept" | "kochmodus" | "ideen" {
+  return z === "vorschlag" ? "vorschau" : z === "geplant" ? "rezept" : z === "kocht" ? "kochmodus" : "ideen";
 }
 
 // --- Name groß, nie mitten im Wort abgeschnitten -----------------------------------------
 
-/** Schriftgrößen des Namens: S 20 px, M 24 px – nur wenn er sonst nicht in 2 Zeilen passt, etwas kleiner */
-const TITEL_PX = { S: [20, 18, 17, 16, 15], M: [24, 22, 20, 18] } as const;
-/** Textbreite der Kachel auf dem kleinsten Gerät (iPhone SE: 343 px Inhalt, Abstand 8, Rand 12) */
-export const TITEL_BREITE = { S: 143, M: 319 } as const;
+/** Schriftgrößen des Namens (Tafel 134): S 19 px, M 22 px – nur wenn er sonst nicht in 2 Zeilen passt, etwas kleiner */
+const TITEL_PX = { S: [19, 18, 17, 16, 15, 14], M: [22, 20, 18, 17] } as const;
+/** Textbreite der Kachel auf dem kleinsten Gerät (iPhone SE 1. Gen.: 320 px, Rand 16, Abstand 8, Innenrand 12) – A-045 */
+export const TITEL_BREITE = { S: 116, M: 264 } as const;
 
 /**
  * Breite der Zeichen in em (Plus Jakarta Sans 800, im Browser gemessen),
@@ -133,9 +173,12 @@ export function titelZeilen(title: string, px: number, width: number): number | 
 }
 
 /**
- * Schriftgröße des Namens: S = größte, bei der er in höchstens 2 Zeilen passt;
- * M (gleich hoch wie S, aber doppelt breit) = möglichst einzeilig groß, sonst
- * zweizeilig etwas kleiner. Nie ein Wort teilen; passt gar nichts, die kleinste.
+ * Schriftgröße des Namens: S = größte, bei der er in höchstens 2 Zeilen passt
+ * (sonst 3 Zeilen); M (gleich hoch wie S, aber doppelt breit) = möglichst
+ * einzeilig groß, sonst zweizeilig etwas kleiner. Nie ein Wort teilen; passt
+ * gar nichts, die kleinste. Der Name steht immer ganz da, nie mit „…“
+ * gekürzt (A-045) – die Kachel wächst mit, ein einzelnes zu langes Wort
+ * trennt der Browser (`hyphens-auto`).
  */
 export function titelPx(title: string, size: "S" | "M", width: number = TITEL_BREITE[size]): number {
   const list = TITEL_PX[size];
@@ -143,29 +186,8 @@ export function titelPx(title: string, size: "S" | "M", width: number = TITEL_BR
     const n = titelZeilen(title, px, width);
     return n !== null && n <= max;
   };
-  if (size === "M") return list.find((px) => passt(px, 1)) ?? list.slice(2).find((px) => passt(px, 2)) ?? list[list.length - 1];
-  return list.find((px) => passt(px, 2)) ?? list[list.length - 1];
-}
-
-/**
- * Name für die Kachel: Schriftgröße und Text. Passt ein sehr langer Name
- * selbst klein nicht in 2 Zeilen, wird er an einer Wortgrenze gekürzt
- * („Rahmspinat mit Spiegelei …“) – nie mitten im Wort. Der volle Name steht
- * im VoiceOver-Text und auf der Rezeptseite.
- */
-export function titelAnzeige(title: string, size: "S" | "M", width: number = TITEL_BREITE[size]): { px: number; text: string } {
-  const px = titelPx(title, size, width);
-  const passt = (t: string) => {
-    const n = titelZeilen(t, px, width);
-    return n !== null && n <= 2;
-  };
-  if (passt(title)) return { px, text: title };
-  const words = title.trim().split(/\s+/);
-  for (let n = words.length - 1; n >= 1; n--) {
-    const t = `${words.slice(0, n).join(" ").replace(/[,–-]$/, "")} …`;
-    if (passt(t)) return { px, text: t };
-  }
-  return { px, text: words[0] };
+  if (size === "M") return list.find((px) => passt(px, 1)) ?? list.slice(2).find((px) => passt(px, 2)) ?? list.find((px) => passt(px, 3)) ?? list[list.length - 1];
+  return list.find((px) => passt(px, 2)) ?? list.find((px) => passt(px, 3)) ?? list[list.length - 1];
 }
 
 // --- Verlauf über dem Bild (Kontrast weißer Schrift mind. 4,5:1) ---------------------------

@@ -67,7 +67,7 @@ export function PinboardTile({ size = "S", me, demo = false }: { size?: TileSize
         <div className="flex items-center gap-2">
           <Link href="/pinnwand" className={`hit flex min-w-0 flex-1 items-center gap-1.5 ${TILE_LABEL}`} aria-label="Pinnwand öffnen">
             <Pin className="h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden />
-            <span className="truncate">Pinnwand</span>
+            <span>Pinnwand</span>
           </Link>
           {recording ? <span className="h-[26px] w-[26px] shrink-0" aria-hidden /> : <QuickButton icon={Plus} label="Neuer Zettel" onClick={() => setWriting(true)} />}
         </div>

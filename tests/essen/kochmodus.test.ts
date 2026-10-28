@@ -195,6 +195,6 @@ describe("Demo-Haushalte: passende Personenzahl im Beispiel-Rezept", () => {
     expect(beispielPersonen("paar", 0)).toBe(2);
     expect(beispielPersonen("familie", 0)).toBe(4);
     expect(beispielPersonen("familie", 3)).toBe(3);
-    expect(readFileSync("src/components/essen/DemoFoodTile.tsx", "utf8")).toMatch(/rezept\?id=\$\{id\}&personen=\$\{persons\}/);
+    expect(readFileSync("src/components/essen/DemoFoodTile.tsx", "utf8")).toMatch(/rezept: r, needs: \[\], persons, kopf: d\.when/);
   });
 });

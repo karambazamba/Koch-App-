@@ -27,7 +27,9 @@ weiter Vorrat (`src/lib/vorrat/`, `/vorrat`, `wasgibts.vorrat`).
   `src/components/vorrat/PantryView.tsx`; eine Sache ändern (Ort, „Ist alle“,
   Entfernen): `src/components/vorrat/SacheSheet.tsx`.
 - Bereich unter Essen: `src/components/essen/ImHausBereich.tsx`.
-- Kachel auf Heute: `PantryTile` in `src/components/heute/HomeTiles.tsx`.
+- Kachel auf Heute: `PantryTile` in `src/components/heute/HomeTiles.tsx`
+  (A-045: Name immer ganz vor dem Schild, Schild 10,5 px, sonst Umbruch in
+  die nächste Zeile).
 - Gleiche Kachel wie im Einkauf: `ItemTile`
   (`src/components/einkauf/kacheln/ItemTile.tsx`, mit `badge` und `faded`).
 - Ehrliche Zutaten-Zeile: `matchStock(names, stock, today)` und `stockLine`

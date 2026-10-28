@@ -145,7 +145,7 @@ function TerminLine({ row, entering, onOpen, spalte, half }: { row: TerminRow; e
       <button type="button" onClick={onOpen} className="flex h-[30px] w-full items-center gap-2 pl-2.5 pr-3 text-left" aria-label={`${item.time ? clockLabel(item.time) : "ganztägig"} ${item.title}${state === "laeuft" ? " – läuft" : state === "gleich" ? " – gleich" : ""} – Möglichkeiten`}>
         <span className={`h-3.5 w-[3px] shrink-0 rounded-full ${roomBarProps(item).className}`} style={roomBarProps(item).style} aria-hidden />
         <span className={`${spalte} shrink-0 whitespace-nowrap text-[13.5px] font-extrabold tabular-nums text-tile-accent`}>{item.time ? clockLabel(item.time) : <GanztagMarke title={item.title} label={item.label} kurz={half} />}</span>
-        <span className={`min-w-0 flex-1 truncate text-[13.5px] leading-tight ${next ? "font-bold" : "font-semibold"}`}>{withoutEmoji(item.title)}</span>
+        <span className={`min-w-0 flex-1 truncate text-[13.5px] leading-tight ${next ? "font-bold" : "font-semibold"}`} data-freitext>{withoutEmoji(item.title)}</span>
         {reminderFor(item) && <Bell className="h-[13px] w-[13px] shrink-0 text-muted" strokeWidth={2.25} aria-label="mit Erinnerung" />}
         {(state === "laeuft" || state === "gleich") && <span className={`shrink-0 text-[11px] font-bold ${state === "gleich" ? "text-accent-strong" : "text-muted"}`}>{STATE_LABEL[state]}</span>}
       </button>
@@ -221,7 +221,7 @@ function TaskField({ item, leaving, entering, onOpen, onDone }: { item: DayItem;
       </button>
       <button type="button" onClick={onOpen} className="flex h-[30px] min-w-0 flex-1 items-center gap-1 pr-3 text-left" aria-label={`${item.title} – Möglichkeiten`}>
         {isUrgent(item) && !leaving && <UrgentMark />}
-        <span className={`min-w-0 flex-1 truncate text-[13.5px] font-semibold leading-tight ${leaving ? "text-muted line-through" : ""}`}>{withoutEmoji(item.title)}</span>
+        <span className={`min-w-0 flex-1 truncate text-[13.5px] font-semibold leading-tight ${leaving ? "text-muted line-through" : ""}`} data-freitext>{withoutEmoji(item.title)}</span>
         <TaskFrom item={item} className="shrink-0 text-[11px] text-muted" />
         {reminderFor(item) && !leaving && <Bell className="h-[13px] w-[13px] shrink-0 text-muted" strokeWidth={2.25} aria-label="mit Erinnerung" />}
         {item.room === "arbeit" && <ArbeitSchild klein />}

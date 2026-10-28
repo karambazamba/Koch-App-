@@ -30,7 +30,6 @@ const LABEL = `relative flex items-center gap-1.5 ${TILE_LABEL}`;
 
 export function WeatherTile({
   size = "S",
-  half = false,
   today,
   minutes,
   look = "farbig",
@@ -61,7 +60,7 @@ export function WeatherTile({
       <Link href="/wetter?tag=morgen" className={BOX} data-himmel={sky.key} data-ton={sky.ton ?? undefined} aria-label={`Wetter ${tomorrowLabel(next.date)} · ${place} – öffnen`}>
         {sky.muster && <HimmelMuster muster={sky.muster} />}
         <span className={LABEL}>
-          <span className="truncate">
+          <span className="min-w-0 break-words">
             {tomorrowLabel(next.date)} · {place}
           </span>
         </span>
@@ -71,7 +70,7 @@ export function WeatherTile({
             {round(next.max)}°<span className="wx-soft text-[15px] font-semibold"> / {round(next.min)}°</span>
           </span>
         </span>
-        <span className="relative mt-1 line-clamp-2 text-[13px] font-semibold leading-snug">{next.wet > 0 ? `${next.text}. Schirm einpacken` : next.text}</span>
+        <span className="relative mt-1 text-[13px] font-semibold leading-snug">{next.wet > 0 ? `${next.text}. Schirm einpacken` : next.text}</span>
       </Link>
     );
   }
@@ -91,7 +90,7 @@ export function WeatherTile({
     <Link href="/wetter" className={BOX} data-himmel={sky.key} data-ton={sky.ton ?? undefined} data-groesse={size} aria-label={`${label}: ${spoken} – öffnen`}>
       {sky.muster && <HimmelMuster muster={sky.muster} />}
       <span className={LABEL}>
-        <span className="truncate">{label}</span>
+        <span className="min-w-0 break-words">{label}</span>
         {stale && <span className="ml-auto shrink-0 font-semibold normal-case tracking-normal">Stand {shortClock(forecast.fetchedAt)}</span>}
       </span>
       <span className={`relative flex items-center ${small ? "mt-1 gap-1.5" : "mt-2 gap-2.5"}`}>
@@ -105,12 +104,12 @@ export function WeatherTile({
           </span>
         )}
       </span>
-      <span className={`relative ${small ? (half ? "mt-1 line-clamp-2 text-[13px]" : "mt-1 truncate text-[13px]") : "mt-2 truncate text-[17px]"} leading-snug`} data-wetter-zeile>
+      <span className={`relative ${small ? "mt-1 text-[13px]" : "mt-2 text-[17px]"} leading-snug`} data-wetter-zeile>
         <span className="font-semibold">{line.wort}</span>
         {line.rest && <span className="wx-soft"> · {line.rest}</span>}
       </span>
       {!small && words && (
-        <span className="relative mt-0.5 truncate text-[15px] leading-snug" data-wind-zeile>
+        <span className="relative mt-0.5 text-[15px] leading-snug" data-wind-zeile>
           <span className="font-extrabold">{words.wort}</span>
           <span className="wx-soft font-semibold"> · {words.zahl}</span>
           {words.boeen && (
@@ -142,7 +141,7 @@ export function WeatherTile({
             <span key={d.date} className="flex items-center gap-2 text-[13px]">
               <span className="w-7 font-bold">{weekdayShort(d.date)}</span>
               <WeatherSymbol code={d.code} className="h-5 w-5" />
-              <span className="min-w-0 flex-1 truncate">{dayWords(d)}</span>
+              <span className="min-w-0 flex-1 leading-snug">{dayWords(d)}</span>
             </span>
           ))}
         </span>

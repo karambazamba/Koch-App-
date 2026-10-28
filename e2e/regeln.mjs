@@ -35,3 +35,52 @@ export function miaKnopfUeberText() {
   }
   return out;
 }
+
+/**
+ * „Nichts abgeschnitten“ (A-045, Tafel 133): jeder sichtbare Text in einer
+ * Kachel der Startseite steht ganz da – er endet nicht auf „…“ und reicht
+ * nicht über einen Rahmen hinaus, der ihn wegschneidet (overflow hidden/clip,
+ * text-overflow: ellipsis, line-clamp). Ausnahme: frei eingegebener Text
+ * (Notiz, Aufgabe, Termin, Zettel, Timer-Name), markiert mit `data-freitext`.
+ * Liefert je Fund „Kachel: Text (Grund)“.
+ */
+export function abgeschnitteneTexte() {
+  const out = [];
+  const panel = document.querySelector("[role=tabpanel]:not([inert])") ?? document;
+  for (const tile of panel.querySelectorAll("[data-unit]")) {
+    const name = tile.getAttribute("data-tile") ?? "?";
+    const walker = document.createTreeWalker(tile, NodeFilter.SHOW_TEXT);
+    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+      const text = node.textContent.replace(/\s+/g, " ").trim();
+      const el = node.parentElement;
+      if (!text || !el || el.closest("[data-freitext], .sr-only, [aria-hidden=true], [data-platzhalter]")) continue;
+      const st = getComputedStyle(el);
+      if (st.visibility === "hidden" || st.display === "none") continue;
+      const range = document.createRange();
+      range.selectNodeContents(node);
+      const r = range.getBoundingClientRect();
+      if (!r.width || !r.height) continue;
+      if (/(…|\.\.\.)$/.test(text)) out.push(`${name}: „${text}“ (endet auf …)`);
+      for (let a = el; a && a !== tile.parentElement; a = a.parentElement) {
+        const s = getComputedStyle(a);
+        const clamp = s.webkitLineClamp && s.webkitLineClamp !== "none";
+        const ellipsis = s.textOverflow === "ellipsis";
+        const cutX = ellipsis || ["hidden", "clip"].includes(s.overflowX);
+        const cutY = clamp || ["hidden", "clip"].includes(s.overflowY);
+        if (!cutX && !cutY) continue;
+        const b = a.getBoundingClientRect();
+        const left = parseFloat(s.borderLeftWidth) || 0;
+        const right = parseFloat(s.borderRightWidth) || 0;
+        if (cutX && (r.right > b.right - right + 1 || r.left < b.left + left - 1)) {
+          out.push(`${name}: „${text}“ (seitlich abgeschnitten)`);
+          break;
+        }
+        if (cutY && (r.bottom > b.bottom + 1 || r.top < b.top - 1)) {
+          out.push(`${name}: „${text}“ (unten abgeschnitten)`);
+          break;
+        }
+      }
+    }
+  }
+  return out;
+}

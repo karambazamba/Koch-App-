@@ -46,9 +46,9 @@ export function TipsTile({ size, today }: { size: TileSize; today: string }) {
               <button type="button" onClick={() => setOpen(t)} className={`${TILE_INNER} flex h-full w-full flex-col items-start gap-1 p-2.5 text-left`} aria-label={`${t.titel} – ${tipWhen(t)}, ${t.ort_name}`}>
                 <TipIcon tip={t} size={30} />
                 {t.karamba && <KarambaLine />}
-                <span className="line-clamp-2 text-[14px] font-bold leading-snug">{t.titel}</span>
+                <span className="break-words text-[14px] font-bold leading-snug">{t.titel}</span>
                 <span className="text-[12px] font-semibold text-muted">{tipWhen(t)}</span>
-                <span className="truncate text-[12px] text-muted">{t.ort_name}</span>
+                <span className="break-words text-[12px] leading-snug text-muted">{t.ort_name}</span>
                 {tipTags(t, 1)[0] && <span className="mt-auto rounded-full bg-tipp-soft px-2 py-0.5 text-[11px] font-bold text-tipp">{tipTags(t, 1)[0]}</span>}
               </button>
             </li>

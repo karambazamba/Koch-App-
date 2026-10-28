@@ -2,6 +2,16 @@
 
 Grundregeln stehen in CLAUDE.md, Abschnitt 7.
 
+- Nichts abgeschnitten (A-045/A-046, Tafel 133/134): in Kacheln endet kein
+  sichtbarer Text auf „…“, kein `truncate`/`line-clamp`/`text-ellipsis` außer
+  bei frei eingegebenem Text (`data-freitext`). Knopf- und Pillentexte nie
+  gekürzt: passt es nicht, erst Symbol weg, dann 12–13 px, dann die kurze
+  Form aus `KURZ_LABEL`, zuletzt weniger Innenabstand (`lib/heute/kachelKnopf.ts`,
+  gemessen in `ui/KachelKnopf`). Pillen auf Bild-Kacheln: weiß, oben links
+  `ui/KachelPille` (12 px, 30 px hoch), unten rechts `ui/KachelKnopf`
+  (12,5 px, 32 px hoch), Tippfläche immer 44 px; nie ein oranger Kreis neben
+  dem Mia-Knopf. Zutatenlisten: höchstens 2 Namen + „+N“ (`zutatenKurz`).
+
 - Kachel-Farben (Tafel 108, `heute/kachelFarben.ts`): Termine Lavendel,
   Aufgaben Mint, Einkauf Salbei, Pinnwand Rosé, Notizen Vanille, Im Haus Aqua,
   Sport Flieder, Timer Sand; im Bearbeiten unter S · M · L „A“ (automatisch) +

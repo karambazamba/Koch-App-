@@ -69,6 +69,14 @@ export function RezeptVorschau({ vorschlag, onNehmen, onClose }: { vorschlag: Vo
       <div className="flex flex-col gap-3" data-vorschau={vorschlag.title}>
         <div className="relative -mx-4 h-44 shrink-0 overflow-hidden">
           <DishPicture title={vorschlag.title} ingredients={vorschlag.ingredients} category={vorschlag.category ?? rezept?.category ?? null} tone={dishTone(vorschlag.title, vorschlag.category ?? rezept?.category ?? null)} alt="" className="absolute inset-0 h-full w-full object-cover" />
+          {vorschlag.kopf && (
+            <>
+              <span className="dish-tile-shade absolute inset-0" aria-hidden />
+              <span className="absolute inset-x-4 bottom-3 text-[11px] font-extrabold uppercase tracking-wider text-on-color" data-vorschau-kopf>
+                {vorschlag.kopf}
+              </span>
+            </>
+          )}
         </div>
         <p className="text-[15px] text-muted">
           {[minutes ? `${minutes} Min` : null, persons ? `für ${persons}` : null].filter(Boolean).join(" · ")}
