@@ -139,26 +139,32 @@ describe("Ziehen + Rückgängig im Speicher", () => {
 });
 
 describe("Laden-Seite", () => {
-  it("große farbige Karte „Rewe · 3 Sachen“, Liste mit großem Kreis, Symbol, Name, Menge leise", () => {
-    expect(laden).toMatch(/\{name\} <span className="font-bold text-muted">· \{sachenText\(anzahl\)\}<\/span>/);
+  it("Titel mit Strich in Ladenfarbe (Tafel 127/128), Liste mit großem Kreis, Symbol, Name – Menge nur, wenn selbst gesagt, kein Rezept-Hinweis", () => {
+    expect(laden).toMatch(/style=\{\{ background: farbe\.voll \}\} role="img" aria-label=\{`\$\{name\} · \$\{sachenText\(anzahl\)\}`\} data-laden-kopf/);
     const zeile = read("src/components/einkauf/seite/LadenZeile.tsx");
     expect(zeile).toMatch(/h-9 w-9 shrink-0 items-center justify-center rounded-full border-2/);
     expect(zeile).toMatch(/<ItemSymbol/);
-    expect(zeile).toMatch(/item\.amount && <span className=\{`shrink-0 text-\[15px\] tabular-nums/);
+    expect(zeile).toMatch(/item\.amount && <span className="shrink-0 text-\[15px\] tabular-nums/);
+    expect(zeile).not.toMatch(/item\.hinweis/);
+    // Zeile antippen = Fenster (wofür, Menge, Laden, „Von der Liste nehmen“)
+    expect(zeile).toMatch(/onOpen\(\);/);
+    expect(laden).toMatch(/onOpen=\{\(\) => setFenster\(item\)\}/);
   });
 
-  it("Kreis = im Wagen: Häkchen orange, blasser, nie durchgestrichen; 1 s stehen, gleitet nach unten in „Schon im Wagen“ (zugeklappt); lange drücken = ändern", () => {
+  it("Kreis = im Wagen: Häkchen orange, blasser, nie durchgestrichen; 1 s stehen, gleitet weg in „Im Wagen“ (zugeklappt); lange drücken = ändern", () => {
     const zeile = read("src/components/einkauf/seite/LadenZeile.tsx");
     expect(zeile).not.toMatch(/line-through/);
     expect(zeile).toMatch(/border-accent bg-accent text-on-accent/);
     expect(zeile).toMatch(/item\.checked \? "opacity-50" : ""/);
     expect(laden).not.toContain("Im Korb");
-    expect(laden).toMatch(/window\.setTimeout\(\(\) => setGleitet\(\(l\) => \[\.\.\.l, item\.key\]\), STEHEN_MS\)/);
+    // Ein Ablauf fürs Abhaken (`useAbhaken`, A-041)
+    expect(laden).toMatch(/const \{ bleibt, gleitet, tick \} = useAbhaken\(/);
+    expect(read("src/lib/einkauf/wagen/useAbhaken.ts")).toMatch(/setTimeout\(\(\) => setzen\(\{ \.\.\.stand, gleitet: \[\.\.\.stand\.gleitet, item\.key\] \}\), STEHEN_MS\)/);
     // Gleiten nur mit transform/opacity, 0,8 s weich; reduzierte Bewegung = nur Überblenden
     expect(laden).toMatch(/translate-y-7 opacity-0 transition-\[transform,opacity\] duration-\[800ms\] ease-\[cubic-bezier\(\.16,1,\.3,1\)\] motion-reduce:translate-y-0/);
-    expect(laden).toMatch(/aria-label="Schon im Wagen"/);
+    expect(laden).toMatch(/aria-label="Im Wagen"/);
     expect(laden).toMatch(/aria-expanded=\{wagenOffen\}/);
-    expect(laden).toMatch(/useState\(false\);\n  const \[leerStand/);
+    expect(laden).toMatch(/const \[wagenOffen, setWagenOffen\] = useState\(false\);/);
     expect(laden).toMatch(/onLongPress=\{\(\) => setMenu\(item\)\}/);
     expect(laden).toMatch(/<WoKaufstDuSheet[\s\S]*onEdit=/);
   });
@@ -174,9 +180,9 @@ describe("Laden-Seite", () => {
     expect(laden).toMatch(/\{\(imWagen\.length > 0 \|\| active\?\.tripId\) && \(/);
     expect(laden).toMatch(/Einkauf fertig\n/);
     expect(laden).not.toMatch(/Fertig eingekauft/);
-    // einmal oben: „Abhaken, was im Wagen liegt.“ (bis zum ersten Abhaken)
-    expect(laden).toMatch(/hinweisGesehen === false && <p[^>]*>Abhaken, was im Wagen liegt\.<\/p>/);
-    expect(laden).toMatch(/markHintSeen\("einkauf-wagen"\)/);
+    // oben „Abhaken, was im Wagen liegt.“ (Tafel 127/128; nicht, solange Mias Tipp dasselbe sagt)
+    expect(laden).toMatch(/!tippOffen && <p[^>]*>Abhaken, was im Wagen liegt\.<\/p>/);
+    expect(laden).toMatch(/markHintSeen\("einkauf-merken"\)/);
     // Einkauf beginnt beim ersten Abhaken oder unterwegs geöffnet („Ich bin bei REWE“, Jetzt-Karte)
     expect(laden).toMatch(/if \(ready && unterwegs\) beginnen\(\)/);
     expect(laden).toMatch(/buzz\(\);\s*beginnen\(\);/);

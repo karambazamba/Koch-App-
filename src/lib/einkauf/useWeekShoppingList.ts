@@ -2,7 +2,7 @@
 
 import { useRecipes } from "@/lib/essen/cookbook";
 import { composeWeek, useMealPlans } from "@/lib/essen/mealPlan";
-import { buildShoppingList, useShoppingLists, useShoppingSettings, type ShoppingList, type ShoppingSettings, type WeekList } from "@/lib/einkauf/shoppingList";
+import { buildShoppingList, planAlsAngebot, useShoppingLists, useShoppingSettings, type ShoppingList, type ShoppingSettings, type WeekList } from "@/lib/einkauf/shoppingList";
 import { isSmallHousehold, planningVisible } from "@/lib/einstellungen/profile";
 import { useProfile } from "@/lib/einstellungen/useProfile";
 import {
@@ -49,7 +49,7 @@ export function useWeekShoppingList(
   return {
     weekStart,
     isNext: weekStart !== current,
-    list: buildShoppingList(week, recipes, lists[weekStart], settings, { small: profile ? isSmallHousehold(profile) : false, manualOnly: !planning }),
+    list: buildShoppingList(week, recipes, lists[weekStart], settings, { small: profile ? isSmallHousehold(profile) : false, manualOnly: !planning, angebot: planAlsAngebot(weekStart, settings.angebotAb) }),
     planning,
     weekList: lists[weekStart],
     settings,

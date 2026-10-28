@@ -4,7 +4,7 @@
 // Einkaufsmengen (Packung, Rezeptmenge nur als Hinweis, eigene Mengen bleiben).
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { aufnehmen, gleicheSache, mengenAddieren, normalform, zielFuer } from "@/lib/einkauf/zusammen/zusammen";
-import { alsEinkauf, einkaufsMenge, rezeptHinweis } from "@/lib/einkauf/zusammen/packung";
+import { alsEinkauf, einkaufsMenge, packungAus, packungFuer, rezeptHinweis } from "@/lib/einkauf/zusammen/packung";
 import { migrateStore } from "@/lib/einkauf/listMigration";
 import { buildShoppingList } from "@/lib/einkauf/buildList";
 import { applyOps, type AssistantData } from "@/lib/begleitung/ops";
@@ -106,10 +106,10 @@ describe("Rückwirkend: Migration v6 → v7", () => {
   it("doppelte offene Artikel werden eins, nichts geht verloren (Mengen, Erledigtes bleibt)", () => {
     const old = v6([m("b2", "Zucchini", "1"), m("a1", "Zucchini", "2"), m("c3", "zucchinis"), m("d4", "Zucchini", "", { done: true }), m("e5", "Milch", "1 l")]);
     const neu = migrateStore(old)!;
-    expect(neu.version).toBe(7);
+    expect(neu.version).toBe(8);
     // die kleinste Kennung bleibt (alle Geräte im Haushalt entscheiden gleich)
     expect(neu.weeks[W].manual).toEqual([m("a1", "Zucchini", "3"), m("d4", "Zucchini", "", { done: true }), m("e5", "Milch", "1 l")]);
-    // v7 bleibt beim Laden, wie es ist
+    // v8 bleibt beim Laden, wie es ist
     expect(migrateStore(neu)).toEqual(neu);
   });
 
@@ -122,14 +122,14 @@ describe("Rückwirkend: Migration v6 → v7", () => {
     w.localStorage.setItem(KEY, JSON.stringify(v6([m("a", "Zucchini", "1"), m("b", "Zucchini", "1")])));
     const { store } = await import("@/lib/einkauf/listStore");
     expect(store.load()!.weeks[W].manual).toHaveLength(1);
-    expect(saved().version).toBe(7);
+    expect(saved().version).toBe(8);
     // Abgleich: der zusammengeführte Eintrag bleibt, der andere fehlt (→ Lösch-Markierung), nichts doppelt
     const adapter = ADAPTERS.find((a) => a.name === "einkauf")!;
     const docs = adapter.toDocs(saved() as unknown as Record<string, unknown>);
     expect(docs.filter((d) => d.typ === "einkauf").map((d) => d.id)).toEqual([`ek:${W}:a`]);
     // ein älterer Stand vom Partner wird beim Abgleich genauso zusammengefasst
     const up = adapter.upgrade!(v6([m("a", "Zucchini", "1"), m("b", "Zucchini", "1")]) as unknown as Record<string, unknown>) as unknown as ShoppingListStore;
-    expect(up.version).toBe(7);
+    expect(up.version).toBe(8);
     expect(up.weeks[W].manual).toEqual([m("a", "Zucchini", "2")]);
     expect(adapter.upgrade!(saved() as unknown as Record<string, unknown>)).toBeNull();
   });
@@ -183,26 +183,28 @@ describe("Rezeptmengen als Einkaufsmengen", () => {
     expect(einkaufsMenge("gehackte Tomaten", 2, "Dosen")).toBe("2 Dosen");
   });
 
-  it("Liste aus dem Plan: ohne Krümel-Mengen, Rezeptmenge klein als Hinweis „für Lasagne“; gleiche Zutat eins", () => {
+  it("Liste aus dem Plan: nie eine Rezeptmenge als Menge (A-040), Packung nur als Vorschlag, Rezeptmenge als Hinweis im Fenster; gleiche Zutat eins", () => {
     const list = buildShoppingList(week([day("Montag", entry("Lasagne", "lasagne")), day("Dienstag", entry("Gemüsepfanne", "gemuese"))]), RECIPES);
     const find = (n: string) => list.items.find((i) => i.name === n);
     expect(find("Milch")).toMatchObject({ amount: "", hinweis: "250 ml für Lasagne" });
-    expect(find("Lasagneplatten")).toMatchObject({ amount: "1 Packung", hinweis: "2 Stück für Lasagne" });
+    expect(find("Milch")?.packung).toBeUndefined();
+    expect(find("Lasagneplatten")).toMatchObject({ amount: "", packung: "1 Packung", hinweis: "2 Stück für Lasagne" });
     expect(find("Parmesan")).toMatchObject({ amount: "", hinweis: "20 g für Lasagne" });
-    expect(find("Hackfleisch")).toMatchObject({ amount: "500 g", hinweis: "für Lasagne" });
+    expect(find("Hackfleisch")).toMatchObject({ amount: "", packung: "500 g", hinweis: "500 g für Lasagne" });
     expect(find("Salz")?.amount).toBe("");
-    // „Zucchini“ (Lasagne) und „Zucchinis“ (Pfanne) = eine Zeile, Mengen addiert
+    // „Zucchini“ (Lasagne) und „Zucchinis“ (Pfanne) = eine Zeile
     const zucchini = list.items.filter((i) => gleicheSache(i.name, "Zucchini"));
     expect(zucchini).toHaveLength(1);
-    expect(zucchini[0]).toMatchObject({ amount: "3", hinweis: "für Lasagne, Gemüsepfanne" });
-    expect(list.items.every((i) => !/\d+ (g|ml|EL|TL)$/.test(i.amount) || i.name === "Hackfleisch")).toBe(true);
+    expect(zucchini[0]).toMatchObject({ amount: "", packung: "3", hinweis: "3 Stück für Lasagne, Gemüsepfanne" });
+    expect(list.items.every((i) => i.amount === "")).toBe(true);
   });
 
   it("eigener Artikel kommt zur Rezept-Zutat dazu (eine Zeile, abhaken gilt für beide); eigene Mengen nie geändert", async () => {
     const list = buildShoppingList(week([day("Montag", entry("Lasagne", "lasagne"))]), RECIPES, { manual: [m("u", "Zucchini", "1"), m("v", "Milch", "250 ml", { section: "kuehlregal" })], checked: [], have: [] });
     const zucchini = list.items.filter((i) => gleicheSache(i.name, "Zucchini"));
     expect(zucchini).toHaveLength(1);
-    expect(zucchini[0]).toMatchObject({ amount: "3", teile: ["u"] });
+    // nur die selbst gesagte Menge zählt (A-040)
+    expect(zucchini[0]).toMatchObject({ amount: "1", teile: ["u"] });
     // die eigene Milch-Menge bleibt „250 ml“ (die Rezept-Milch hat keine Hauptmenge)
     expect(list.items.find((i) => i.name === "Milch")?.amount).toBe("250 ml");
     const { toggleChecked } = await import("@/lib/einkauf/listEdits");
@@ -216,11 +218,14 @@ describe("Rezeptmengen als Einkaufsmengen", () => {
     expect(own.hinweis).toBeUndefined();
   });
 
-  it("Rezept-Link und Kochidee: Packung als Menge, Rezeptmenge als Hinweis", async () => {
+  it("Rezept-Link und Kochidee: keine Menge (A-040), Rezeptmenge als Hinweis, Packung als Vorschlag", async () => {
     expect(alsEinkauf("Milch", 250, "ml")).toEqual({ amount: "", rezeptMenge: "250 ml" });
-    expect(alsEinkauf("Lasagneplatten", 2, "Stück")).toEqual({ amount: "1 Packung", rezeptMenge: "2 Stück" });
+    expect(alsEinkauf("Lasagneplatten", 2, "Stück")).toEqual({ amount: "", rezeptMenge: "2 Stück" });
     expect(alsEinkauf("Mehl", 0.5, "kg")).toEqual({ amount: "", rezeptMenge: "0,5 kg" });
-    expect(alsEinkauf("Hackfleisch", 500, "g")).toEqual({ amount: "500 g" });
+    expect(alsEinkauf("Hackfleisch", 500, "g")).toEqual({ amount: "", rezeptMenge: "500 g" });
+    expect(packungFuer("Lasagneplatten", 2, "Stück")).toBe("1 Packung");
+    expect(packungAus("Mehl", "0,5 kg")).toBe("");
+    expect(packungAus("Sahne", "400 ml")).toBe("2 Becher");
     expect(alsEinkauf("Salz", null, "")).toEqual({ amount: "" });
     expect(rezeptHinweis("250 ml", ["Lasagne (Mi) ×2"])).toBe("250 ml für Lasagne");
     const { linkAufDieListe } = await import("@/lib/essen/rezeptLink/uebernehmen");

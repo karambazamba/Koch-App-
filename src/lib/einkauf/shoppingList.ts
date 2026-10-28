@@ -39,4 +39,4 @@ export {
 export { SHOP_SUGGESTIONS, addShop, allShops, clearItemShop, removeShop, setItemShop } from "@/lib/einkauf/shops";
 export { noteShopCheck, removeShopRule, rulesByShop, setShopRule, shopForItem } from "@/lib/einkauf/shopRules";
 export { addStaple, dueStaples, isStaple, removeStaple, rhythmLabel, stapleInterval } from "@/lib/einkauf/staples";
-export { buildShoppingList, shoppingListText } from "@/lib/einkauf/buildList";
+export { buildShoppingList, planAlsAngebot, shoppingListText } from "@/lib/einkauf/buildList";

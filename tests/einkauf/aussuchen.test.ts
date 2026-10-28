@@ -162,7 +162,9 @@ describe("Antippen = sofort in den aktiven Laden, gemerkt; nochmal = raus; Laden
     expect(mitStand).toEqual(vorher);
     expect(mitStand.eintraege.map((e) => e.name)).toContain("Butter");
     expect(src).toMatch(/if \(s && !stand\) setStand\(/);
-    expect(src).toMatch(/aussuchenAbschnitte\(\{ shop: aktiv, items: visible, verlauf: stand \}\)/);
+    // „Für eure Woche“ = das Wochenplan-Angebot aus dem Stand beim Öffnen (A-040)
+    expect(src).toMatch(/aussuchenAbschnitte\(\{ shop: aktiv, items: \[\.\.\.visible, \.\.\.\(wocheStand \?\? \[\]\)\], verlauf: stand \}\)/);
+    expect(src).toMatch(/if \(data && !wocheStand\) setWocheStand\(data\.list\.angebot\)/);
   });
 
   it("Seite: aktiver Laden gemerkt, Wahl mit fester Regel, Zahl der heute gewählten Sachen am Knopf", () => {

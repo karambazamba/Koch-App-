@@ -18,7 +18,7 @@ import { istAbgelaufen } from "@/lib/kalender/erledigt";
 import { applyHomeChange, loadHomeTiles, saveHomeTiles } from "@/lib/core/homeLayout";
 import { BAUSTEINE, LAUNCH_AUS, bausteinOf, featureOn, setFeature, unlockFeature, type Feature } from "@/lib/core/features";
 import { pushUndo, undoLast } from "@/lib/core/undo";
-import { buildShoppingList } from "@/lib/einkauf/shoppingList";
+import { buildShoppingList, planAlsAngebot } from "@/lib/einkauf/shoppingList";
 import { replaceRecipes } from "@/lib/essen/cookbook";
 import { replaceMealPlans } from "@/lib/essen/mealPlan";
 import { effectivePlanStyle } from "@/lib/einstellungen/profile";
@@ -455,7 +455,8 @@ type CommitResult = {
 function shoppingNote(data: AssistantData, before: AssistantData): string | null {
   const today = now();
   const weekStart = weekStartFor(today, data.profile.shoppingDay || "Montag");
-  const count = (d: AssistantData) => buildShoppingList(weekOf(d, weekStart), d.recipes, d.shopping[weekStart]).items.filter((i) => !i.hidden && !i.checked);
+  const angebot = planAlsAngebot(weekStart, loadShoppingSettings().angebotAb);
+  const count = (d: AssistantData) => buildShoppingList(weekOf(d, weekStart), d.recipes, d.shopping[weekStart], undefined, { angebot }).items.filter((i) => !i.hidden && !i.checked);
   const after = count(data);
   if (after.length === count(before).length) return null;
   const todayName = new Intl.DateTimeFormat("de-DE", { weekday: "long" }).format(today);

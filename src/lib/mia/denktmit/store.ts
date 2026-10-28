@@ -88,6 +88,9 @@ export const vorstellungFertig = (tile: string) => change((s) => ({ ...s, vorges
 /** Erster Besuch einer Seite: Karte stand da (nie wieder) */
 export const seiteBesucht = (seite: string) => change((s) => (s.besucht.includes(seite) ? s : { ...s, besucht: [...s.besucht, seite] }));
 
+/** „Tipps nochmal zeigen“: alle Seiten-Tipps kommen beim nächsten Besuch wieder */
+export const besucheZuruecksetzen = () => change((s) => ({ ...s, besucht: [] }));
+
 /** Frage beantwortet (Ja/Nein, Später zählt bei Mitdenken als Nein) */
 export const antworten = (key: string, antwort: "ja" | "nein", satz: string, today: string) => change((s) => ({ ...s, antworten: { ...s.antworten, [key]: { antwort, satz, am: today } } }));
 

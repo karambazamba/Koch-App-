@@ -3,14 +3,17 @@
 // Wochenplan, Stammartikel und eigene Artikel bekommen den Laden von selbst
 // (`shopForItem` in buildList.ts). Ähnliche Namen („Cherrytomaten“) folgen
 // einer Regel nur, wenn genau ein Laden passt – nie raten.
-// Lernen: wird ein Artikel zweimal hintereinander im selben Laden abgehakt,
-// merkt sich die Liste den Laden still und fragt einmal, ob es eine feste
-// Regel werden soll.
+// Lernen (A-041, `einkauf/merken`): jedes Abhaken auf einer Laden-Seite wird
+// gemerkt (Sache → Laden, Zähler, Datum). Eine Sache ohne Regel und ohne
+// gewählten Laden landet im gelernten Laden („Rewe · wie immer“).
 
 import { lower } from "@/lib/einkauf/listModel";
 import { store, update } from "@/lib/einkauf/listStore";
 import { SHOP_SUGGESTIONS } from "@/lib/einkauf/shops";
 import { compareText } from "@/lib/core/sort";
+import { todayIso } from "@/lib/core/now";
+import type { Gelernt } from "@/lib/einkauf/listModel";
+import { abgehakt, gelernterLadenFuer, gelerntSchluessel, korrigiert } from "@/lib/einkauf/merken/gelernt";
 
 const cap = (s: string) => (s ? s[0].toLocaleUpperCase("de-DE") + s.slice(1) : s);
 const cleanShop = (shop: string) => shop.trim().slice(0, 30);
@@ -87,22 +90,36 @@ function similar(name: string, rule: string): boolean {
   return false;
 }
 
+type LadenWissen = { itemShops: Record<string, string>; shopRules?: Record<string, string>; products?: Record<string, string>; learned?: Record<string, Gelernt> };
+
+/** Woher der Laden einer Sache kommt: Regel, selbst gewählt, gelernt (Abhaken), ähnlicher Name */
+export type LadenHerkunft = { shop: string; von: "regel" | "gewaehlt" | "gelernt" | "aehnlich" };
+
 /**
- * Laden für einen Artikel: feste Regel → gemerkter Laden (leer = bewusst
- * „Egal wo“) → Regel für einen ähnlichen Namen (nur, wenn genau ein Laden
- * passt). `null` = noch ohne Laden.
+ * Laden für einen Artikel samt Herkunft: feste Regel → gewählter Laden (leer =
+ * bewusst „Egal wo“) → gelernt beim Abhaken (A-041, 90-Tage-Regel) → Regel für
+ * einen ähnlichen Namen (nur, wenn genau ein Laden passt). `null` = noch ohne Laden.
  */
-export function shopChoice(name: string, s: { itemShops: Record<string, string>; shopRules?: Record<string, string>; products?: Record<string, string> }): string | null {
+export function ladenHerkunft(name: string, s: LadenWissen, heute: string = todayIso()): LadenHerkunft | null {
   const key = lower(name);
   if (!key) return null;
   const rules = s.shopRules ?? {};
   const product = s.products?.[key] ? lower(s.products[key]) : "";
-  for (const k of product ? [key, product] : [key]) {
-    if (rules[k]) return rules[k];
-    if (typeof s.itemShops[k] === "string") return s.itemShops[k];
+  const keys = product ? [key, product] : [key];
+  for (const k of keys) {
+    if (rules[k]) return { shop: rules[k], von: "regel" };
+    if (typeof s.itemShops[k] === "string") return { shop: s.itemShops[k], von: "gewaehlt" };
   }
-  return similarShop(name, rules, product);
+  for (const k of keys) {
+    const g = gelernterLadenFuer(s.learned, k, heute);
+    if (g) return { shop: g, von: "gelernt" };
+  }
+  const aehnlich = similarShop(name, rules, product);
+  return aehnlich === null ? null : { shop: aehnlich, von: "aehnlich" };
 }
+
+/** Laden für einen Artikel (siehe `ladenHerkunft`); `null` = noch ohne Laden */
+export const shopChoice = (name: string, s: LadenWissen, heute?: string): string | null => ladenHerkunft(name, s, heute)?.shop ?? null;
 
 /** Genau ein Laden passt über ähnliche Namen (sonst `null` – nie raten) */
 function similarShop(name: string, map: Record<string, string>, product = ""): string | null {
@@ -119,12 +136,9 @@ export const shopForItem = (name: string, s: Parameters<typeof shopChoice>[1]): 
  * Gelernten (zuletzt dort abgehakt) oder einem gemerkten ähnlichen Namen
  * („Cherrytomaten“ ← „Tomaten“ bei Rewe), nur wenn genau ein Laden passt.
  */
-export function gelernterLaden(name: string, s: { itemShops: Record<string, string>; learned?: Record<string, { shop: string; n: number }> }): string | null {
-  const key = lower(name);
-  if (!key) return null;
-  const learned = s.learned?.[key]?.shop.trim();
-  if (learned) return learned;
-  return similarShop(name, s.itemShops);
+export function gelernterLaden(name: string, s: { itemShops: Record<string, string>; learned?: Record<string, Gelernt> }): string | null {
+  if (!lower(name)) return null;
+  return gelernterLadenFuer(s.learned, name, todayIso()) ?? similarShop(name, s.itemShops);
 }
 
 /** Regeln nach Laden: Laden → Artikel (deutsch sortiert) */
@@ -140,26 +154,59 @@ export function rulesByShop(rules: Record<string, string>): Record<string, strin
 }
 
 /**
- * Im Einkaufsmodus von `shop` abgehakt: ohne feste Regel zählt die Liste mit
- * (gleicher Laden +1, sonst neu). Ab zweimal hintereinander merkt sie sich
- * den Laden still; "frage" = einmal je Artikel fragen, ob es eine Regel wird.
+ * Auf der Laden-Seite von `shop` abgehakt (A-041): gemerkt mit Zähler und
+ * Datum – auch neben einer festen Regel (zählt für „Oft bei“). Still.
+ * Liefert Rücknahme (nochmal tippen in der Sekunde = doch nicht).
  */
-export function noteShopCheck(item: string, shop: string): "frage" | null {
+export function noteShopCheck(item: string, shop: string): () => void {
+  if (!lower(item) || !cleanShop(shop)) return () => {};
+  const vorher = store.load()?.learned ?? {};
+  const k = gelerntSchluessel(vorher, item) ?? lower(item);
+  const alt = vorher[k];
+  update((s) => ({ ...s, learned: abgehakt(s.learned ?? {}, item, shop, todayIso()) }));
+  return () =>
+    update((s) => {
+      const learned = { ...(s.learned ?? {}) };
+      if (alt) learned[k] = alt;
+      else delete learned[k];
+      return { ...s, learned };
+    });
+}
+
+/**
+ * Laden selbst geändert (Ergebnis-Karte „Rewe · wie immer ⌄“, Zeilen-Fenster):
+ * gilt ab sofort für diese Sache und wird gemerkt – das nächste Mal kommt sie
+ * gleich in den neuen Laden. Eine feste Regel für einen anderen Laden zieht
+ * mit um. Liefert Rücknahme (alles wie vorher).
+ */
+export function ladenKorrigieren(item: string, shop: string): () => void {
   const key = lower(item);
+  const before = store.load();
+  if (!key || !before) return () => {};
   const clean = cleanShop(shop);
-  if (!key || !clean) return null;
-  let ask = false;
   update((s) => {
-    if (s.shopRules?.[key]) return s;
-    const prev = s.learned?.[key];
-    const entry = prev && lower(prev.shop) === lower(clean) ? { shop: clean, n: prev.n + 1 } : { shop: clean, n: 1 };
-    const learned = { ...(s.learned ?? {}), [key]: entry };
-    if (entry.n < 2) return { ...s, learned };
-    const asked = s.learnAsked ?? [];
-    ask = !asked.includes(key);
-    return { ...s, learned, itemShops: { ...s.itemShops, [key]: clean }, learnAsked: ask ? [...asked, key] : asked };
+    const shopRules = { ...(s.shopRules ?? {}) };
+    if (shopRules[key] && lower(shopRules[key]) !== lower(clean)) {
+      if (clean) shopRules[key] = clean;
+      else delete shopRules[key];
+    }
+    // Gewählter Laden weicht dem Gelernten (sonst gewinnt er beim nächsten Mal); „Egal wo“ bleibt bewusst
+    const itemShops = { ...s.itemShops };
+    if (clean) delete itemShops[key];
+    else itemShops[key] = "";
+    return { ...s, shopRules, itemShops, learned: korrigiert(s.learned ?? {}, item, clean, todayIso()) };
   });
-  return ask ? "frage" : null;
+  return () => update((s) => ({ ...s, shopRules: before.shopRules, itemShops: before.itemShops, learned: before.learned }));
+}
+
+/** Einstellungen → Mia → „Was ich mir gemerkt hab“: Gelerntes vergessen (die Sache sortiert sich wieder neu) */
+export function gelerntVergessen(item: string) {
+  update((s) => {
+    const learned = { ...(s.learned ?? {}) };
+    const k = gelerntSchluessel(learned, item);
+    if (k) delete learned[k];
+    return { ...s, learned };
+  });
 }
 
 /** Ohne KI: „Tomaten kaufe ich immer bei Rewe“, „Butter nur bei Lidl“ → Regel; „… nicht mehr bei Rewe“, „Milch egal wo“ → weg */

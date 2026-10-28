@@ -2,8 +2,8 @@
 // - Laden leer: „Für Edeka steht nichts drauf.“ + Vorschläge „Oft bei Edeka“
 //   (was hier gekauft bzw. gemerkt wurde), sonst „Zuletzt gekauft“, sonst „Beliebt“.
 // - Abgehakt = Häkchen orange, 1 s sichtbar (nochmal tippen = doch nicht),
-//   dann gleitet die Zeile nach unten in „Schon im Wagen“ (zugeklappt).
-// - „Einkauf fertig“: alles aus „Schon im Wagen“ nach „Im Haus“ (nur mit
+//   dann gleitet die Zeile nach unten in „Im Wagen“ (zugeklappt).
+// - „Einkauf fertig“: alles aus „Im Wagen“ nach „Im Haus“ (nur mit
 //   Baustein), Meldung „Fertig. Liegt jetzt bei Im Haus.“ bzw. „Fertig.“, mit
 //   Rückgängig (wieder im Wagen, wieder raus aus Im Haus).
 
@@ -19,7 +19,7 @@ export { GLEITEN_MS, STEHEN_MS } from "@/lib/core/abhaken";
 
 const lower = (s: string) => s.trim().toLowerCase();
 
-/** Laden-Seite aufteilen: oben noch zu holen (und gerade Abgehaktes), unten „Schon im Wagen“ */
+/** Laden-Seite aufteilen: oben noch zu holen (und gerade Abgehaktes), unten „Im Wagen“ */
 export function wagenTeilen(items: ListItem[], bleibt: string[]): { hier: ListItem[]; wagen: ListItem[] } {
   return {
     hier: items.filter((i) => !i.checked || bleibt.includes(i.key)),

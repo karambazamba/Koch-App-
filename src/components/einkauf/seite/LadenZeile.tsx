@@ -1,8 +1,10 @@
 "use client";
 
-// Eine Zeile der Laden-Seite: großer Kreis (abhaken), Symbol, Name, Menge
-// leise, darunter klein der Rezept-Hinweis („250 ml für Lasagne“). Abgehakt =
-// Häkchen orange, Zeile blasser (nie durchgestrichen). Lange drücken = ändern.
+// Eine Zeile der Laden-Seite (A-040, Tafel 127): großer Kreis (abhaken),
+// Symbol und Name – sonst nichts; eine Menge nur, wenn man sie selbst gesagt
+// hat („2 Liter“). Wofür und die Rezeptmenge stehen erst im Fenster: Zeile
+// antippen = `SacheFenster`. Abgehakt = Häkchen orange, Zeile blasser (nie
+// durchgestrichen). Lange drücken = „Wo kaufst du das?“.
 
 import { useRef } from "react";
 import { Check } from "lucide-react";
@@ -11,7 +13,7 @@ import { ItemSymbol } from "@/components/einkauf/kacheln/ItemSymbol";
 import { symbolFor } from "@/lib/einkauf/kacheln/symbols";
 import { AddedBy } from "@/components/konten/AddedBy";
 
-export function LadenZeile({ item, products, neuVon, onTick, onLongPress }: { item: ListItem; products: Record<string, string>; neuVon?: string; onTick: () => void; onLongPress: () => void }) {
+export function LadenZeile({ item, products, neuVon, onTick, onOpen, onLongPress }: { item: ListItem; products: Record<string, string>; neuVon?: string; onTick: () => void; onOpen: () => void; onLongPress: () => void }) {
   const press = useRef<{ x: number; y: number; timer: ReturnType<typeof setTimeout> | null; fired: boolean } | null>(null);
   const clear = () => {
     if (press.current?.timer) clearTimeout(press.current.timer);
@@ -51,16 +53,20 @@ export function LadenZeile({ item, products, neuVon, onTick, onLongPress }: { it
         <Check className="h-5 w-5" strokeWidth={3} aria-hidden />
       </button>
       <ItemSymbol id={symbolFor(item.name, products)} name={item.name} className={`h-7 w-7 shrink-0 ${item.checked ? "opacity-50" : ""}`} />
-      <span className={`flex min-w-0 flex-1 flex-col ${item.checked ? "opacity-50" : ""}`}>
-        <span className="truncate text-[17px] font-semibold text-ink">{item.name}</span>
-        {item.hinweis && (
-          <span className="truncate text-[13px] text-muted" data-hinweis>
-            {item.hinweis}
-          </span>
-        )}
-      </span>
-      {!item.checked && (neuVon !== undefined ? <span className="shrink-0 text-sm font-semibold text-warn-ink">{neuVon ? `Neu von ${neuVon}` : "Neu"} · gerade eben</span> : <AddedBy owner={item.von} />)}
-      {item.amount && <span className={`shrink-0 text-[15px] tabular-nums text-muted ${item.checked ? "opacity-50" : ""}`}>{item.amount}</span>}
+      <button
+        type="button"
+        onClick={() => {
+          if (press.current?.fired) return;
+          onOpen();
+        }}
+        aria-label={`${item.name} öffnen`}
+        className={`flex min-h-11 min-w-0 flex-1 items-center gap-3 text-left ${item.checked ? "opacity-50" : ""}`}
+        data-zeile-oeffnen
+      >
+        <span className="min-w-0 flex-1 truncate text-[17px] font-semibold text-ink">{item.name}</span>
+        {!item.checked && (neuVon !== undefined ? <span className="shrink-0 text-sm font-semibold text-warn-ink">{neuVon ? `Neu von ${neuVon}` : "Neu"} · gerade eben</span> : <AddedBy owner={item.von} />)}
+        {item.amount && <span className="shrink-0 text-[15px] tabular-nums text-muted">{item.amount}</span>}
+      </button>
     </div>
   );
 }

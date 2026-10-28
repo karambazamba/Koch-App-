@@ -22,12 +22,17 @@ describe("Texte der Seiten-Tipps", () => {
     expect(ersterBesuch({ ...EMPTY_DENKT }, "/aufgaben")).toBe("Hier steht, was ansteht. Was heute nicht klappt, nehm ich mit auf morgen.");
   });
 
-  it("jeder Tipp: zwei kurze Sätze, im Ton, ohne Druck, ohne Fachwort", () => {
+  it("jeder Tipp: zwei kurze Sätze (Einkaufsliste: drei kurze Zeilen, A-040/A-041), im Ton, ohne Druck, ohne Fachwort", () => {
     const druck = /(?<![a-zäöüß])(fehlt|offen|überfällig|verpasst|noch zu erledigen|du musst|du solltest|vergiss nicht|alles da)(?![a-zäöüß])/i;
     const fach = /(?<![a-zäöüß])(titel|funktion|modul|feature|eintrag|einträge|kategorie|button|tab|app)(?![a-zäöüß])/i;
-    for (const { seite } of VORSTELLEN) {
-      expect(seite.split(/(?<=[.!?])\s+/), seite).toHaveLength(2);
-      expect(seite.length, seite).toBeLessThanOrEqual(110);
+    for (const { seite, tile } of VORSTELLEN) {
+      if (tile === "einkauf") {
+        expect(seite.split("\n"), seite).toHaveLength(3);
+        for (const zeile of seite.split("\n")) expect(zeile.length, zeile).toBeLessThanOrEqual(65);
+      } else {
+        expect(seite.split(/(?<=[.!?])\s+/), seite).toHaveLength(2);
+        expect(seite.length, seite).toBeLessThanOrEqual(110);
+      }
       expect(tidyMiaText(seite), seite).toBe(seite);
       expect(seite, seite).not.toMatch(druck);
       expect(seite, seite).not.toMatch(fach);

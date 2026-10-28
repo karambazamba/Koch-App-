@@ -90,17 +90,22 @@ describe("Mia merkt sich den Laden", () => {
     expect(saved().shopRules).toEqual({ butter: "Aldi" });
   });
 
-  it("Lernen: zweimal hintereinander im selben Laden → still gemerkt, einmal fragen", async () => {
+  it("Lernen (A-041): jedes Abhaken wird gemerkt (Laden, Zähler, Datum), still; anderer Laden zählt neu; Rücknahme", async () => {
     const { noteShopCheck } = await import("@/lib/einkauf/shopRules");
-    expect(noteShopCheck("Butter", "Lidl")).toBeNull();
+    noteShopCheck("Butter", "Lidl");
     expect(saved().itemShops.butter).toBeUndefined();
-    expect(noteShopCheck("Butter", "Lidl")).toBe("frage");
-    expect(saved().itemShops.butter).toBe("Lidl");
-    expect(noteShopCheck("Butter", "Lidl")).toBeNull();
-    // Anderer Laden zählt neu
-    expect(noteShopCheck("Käse", "Edeka")).toBeNull();
-    expect(noteShopCheck("Käse", "Rewe")).toBeNull();
-    expect(saved().itemShops["käse"]).toBeUndefined();
+    expect(saved().learned.butter).toMatchObject({ shop: "Lidl", n: 1 });
+    expect(shopForItem("Butter", saved())).toBe("Lidl");
+    noteShopCheck("Butter", "Lidl");
+    expect(saved().learned.butter.n).toBe(2);
+    // Anderer Laden zählt neu (zuletzt gilt)
+    noteShopCheck("Butter", "Edeka");
+    expect(saved().learned.butter).toMatchObject({ shop: "Edeka", n: 1 });
+    // nochmal tippen in der Sekunde = zurück
+    const zurueck = noteShopCheck("Käse", "Rewe");
+    expect(saved().learned["käse"]).toBeDefined();
+    zurueck();
+    expect(saved().learned["käse"]).toBeUndefined();
   });
 
   it("„Was kauf ich wo?“ – Übersicht je Laden", () => {

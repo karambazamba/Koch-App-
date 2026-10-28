@@ -8,6 +8,9 @@
 // Laden“ mit Chips zum Antippen oder Draufziehen und „Mia sortiert“. Alles
 // Seltene steckt im „···“. Kein Einkaufsmodus, keine Abteilungen, keine
 // Hinweiszeilen: Abhaken geht auf der Laden-Seite (zu Hause und im Laden).
+// Wochenplan-Zutaten sind ein Angebot oben auf der Laden-Seite (A-040); ohne
+// eigene Läden steht „Für deinen Wochenplan“ hier. Beim ersten Mal stellt
+// sich die Liste mit Mias Tipp vor (drei Zeilen, `EINKAUF_LISTE_SEITE`).
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
@@ -36,6 +39,9 @@ import { useEinkaufBeispiel } from "@/components/einkauf/EinkaufBeispiel";
 import { LadenKarteView } from "@/components/einkauf/seite/LadenKarten";
 import { OhneLadenZone } from "@/components/einkauf/seite/OhneLaden";
 import { EinkaufMenue } from "@/components/einkauf/seite/EinkaufMenue";
+import { WochenplanAngebot } from "@/components/einkauf/seite/WochenplanAngebot";
+import { alleDazu, alsEintrag, angebotFuer } from "@/lib/einkauf/angebot/angebot";
+import { EINKAUF_LISTE_SEITE } from "@/lib/mia/denktmit/seiten/einkauf";
 
 const SKELETON = <div className={`${CARD} m-4 h-64 animate-pulse`} />;
 const GROSS = "hit flex min-h-[88px] flex-col items-start justify-center gap-1 rounded-card px-4 py-3 text-left active:scale-[0.98]";
@@ -127,6 +133,7 @@ export function EinkaufSeite() {
         title="Einkauf"
         subtitle={isNext ? `Nächste Woche · ${formatWeekRange(weekStart)}` : undefined}
         tippZeigMal={() => setShopsOpen(true)}
+        tipp={{ seite: EINKAUF_LISTE_SEITE }}
         action={
           <EinkaufMenue
             weekStart={weekStart}
@@ -157,6 +164,19 @@ export function EinkaufSeite() {
         </div>
 
         <AntwortZeile />
+
+        {/* Ohne eigene Läden: das Wochenplan-Angebot hier (sonst oben auf der Laden-Seite) */}
+        {meine?.shopsAsked && !myShops.length && (
+          <WochenplanAngebot
+            angebot={angebotFuer(null, list.angebot, settings.alwaysList)}
+            products={settings.products}
+            onDazu={(items) => items.forEach((i) => addManualItem(weekStart, alsEintrag(i)))}
+            onAlle={() => {
+              alleDazu(angebotFuer(null, list.angebot, settings.alwaysList)).forEach((i) => addManualItem(weekStart, alsEintrag(i)));
+              showToast({ text: "Steht drauf.", seconds: 2, small: true });
+            }}
+          />
+        )}
 
         {meine && !meine.shopsAsked && !zeigBeispiel && <LadenFrage shops={settings.shops} preselected={vorauswahl(settings.itemShops)} />}
 

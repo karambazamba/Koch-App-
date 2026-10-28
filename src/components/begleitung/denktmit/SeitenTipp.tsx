@@ -68,7 +68,7 @@ export function SeitenTipp({ text, onOk, zeigMal, aktion, children, pfeil, label
       <div className="flex min-w-0 flex-1 flex-col gap-2">
         <div>
           <p className="text-[12px] font-extrabold tracking-wider text-accent-strong uppercase">{helperName()}</p>
-          <p className="text-[15px] font-semibold leading-snug">{tidyMiaText(text)}</p>
+          <p className="whitespace-pre-line text-[15px] font-semibold leading-snug">{tidyMiaText(text)}</p>
         </div>
         {children}
         <div className="flex flex-wrap gap-2">

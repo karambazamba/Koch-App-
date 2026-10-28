@@ -34,7 +34,7 @@ describe("Zwei klare Momente (seit „Einkauf neu“: Laden-Seite statt Einkaufs
     const src = readFileSync("src/components/einkauf/LadenSeite.tsx", "utf8");
     expect(src).toMatch(/onTick=\{\(\) => tick\(item\)\}/);
     // Im Laden: erst „Einkauf fertig“ legt es nach „Im Haus“
-    expect(src).toMatch(/toggleChecked\(weekStart, item, todayIso, \{ imHaus: false \}\)/);
+    expect(readFileSync("src/lib/einkauf/wagen/useAbhaken.ts", "utf8")).toMatch(/toggleChecked\(weekStart, item, today, \{ imHaus: false \}\)/);
     expect(readFileSync("src/components/einkauf/seite/LadenZeile.tsx", "utf8")).toMatch(/role="checkbox"/);
   });
 });

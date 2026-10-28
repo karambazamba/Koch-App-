@@ -22,6 +22,7 @@ import { loadEntries } from "@/lib/kalender/store";
 import { leuchtenVergessen } from "@/lib/heute/aufleuchten";
 import { CARD, chipClass } from "@/components/ui/styles";
 import { RaumZeile } from "@/components/kalender/raum/RaumBestaetigung";
+import { ErgebnisLaden } from "@/components/einkauf/merken/ErgebnisLaden";
 
 const SYMBOL: Record<ErgebnisArt, LucideIcon> = {
   termin: CalendarDays,
@@ -142,7 +143,14 @@ function ErgebnisKarte({ karte, index, undone, onClose, vorschau }: { karte: Erg
         <span ref={text} className={`text-[15px] font-bold leading-snug text-ink [overflow-wrap:anywhere] ${undone ? "line-through" : ""}`} data-ergebnis-text>
           {karte.text}
         </span>
-        {karte.raum && karte.eintragId && !offenerVorschlag ? <RaumZeile eintrag={{ id: karte.eintragId, raum: karte.raum }} art={karte.artText} aus={undone} /> : <span className="text-[13px] font-semibold leading-snug text-muted">{unterzeile(karte, raumName)}</span>}
+        {karte.raum && karte.eintragId && !offenerVorschlag ? (
+          <RaumZeile eintrag={{ id: karte.eintragId, raum: karte.raum }} art={karte.artText} aus={undone} />
+        ) : karte.laden && !offenerVorschlag ? (
+          // Einkauf (A-041): „Rewe · wie immer ⌄“, antippen = anderer Laden
+          <ErgebnisLaden sache={karte.laden.sache} gesagt={karte.laden.gesagt} art={karte.artText} aus={undone} />
+        ) : (
+          <span className="text-[13px] font-semibold leading-snug text-muted">{unterzeile(karte, raumName)}</span>
+        )}
       </div>
       {offenerVorschlag ? (
         <button type="button" onClick={() => vorschau!.onUebernehmen(karte.id)} className="hit relative z-10 inline-flex h-9 shrink-0 items-center rounded-full bg-accent px-3.5 text-[14px] font-extrabold text-on-accent active:scale-95">

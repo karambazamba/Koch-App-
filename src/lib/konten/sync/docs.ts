@@ -164,16 +164,18 @@ const shopSettings = (value: Value | null) => ({
   learned: value?.learned ?? {},
   learnAsked: value?.learnAsked ?? [],
   alwaysList: value?.alwaysList ?? [],
+  angebotAb: typeof value?.angebotAb === "string" ? value.angebotAb : "",
 });
 
 const einkauf: Adapter = {
   name: "einkauf",
   key: "wasgibts.einkaufsliste",
-  version: 7,
+  version: 8,
   typs: ["einkauf", "einkauf-woche", "einkauf-einstellungen"],
-  // v4–v6 (noch nicht neu gespeichert): wie beim Laden der App (`migrateStore`: „Meine Läden“,
-  // feste Regeln, v6 → v7 Doppeltes zusammen – der weggefallene Eintrag wird als gelöscht markiert)
-  upgrade: (value) => (value.version === 7 ? null : (migrateStore(value) as unknown as Value | null)),
+  // v4–v7 (noch nicht neu gespeichert): wie beim Laden der App (`migrateStore`: „Meine Läden“,
+  // feste Regeln, v6 → v7 Doppeltes zusammen – der weggefallene Eintrag wird als gelöscht markiert;
+  // v7 → v8 Gelerntes mit Datum, Wochenplan als Angebot)
+  upgrade: (value) => (value.version === 8 ? null : (migrateStore(value) as unknown as Value | null)),
   toDocs: (value) => {
     const docs: LocalDoc[] = [];
     const weeks = isObj(value.weeks) ? value.weeks : {};
@@ -205,7 +207,7 @@ const einkauf: Adapter = {
         Object.assign(week(w as string), rest);
       } else if (d.typ === "einkauf" && isObj(data.item)) (week(data.week).manual as Value[]).push(d.besitzer ? { ...data.item, von: d.besitzer } : data.item);
     }
-    return { version: 7, weeks, ...settings };
+    return { version: 8, weeks, ...settings };
   },
 };
 

@@ -6,7 +6,7 @@
 import { spaeter } from "@/lib/begleitung/wishTools";
 import { HOME_ACTIONS, HOME_TILES, type HomeAction, type HomeTileId } from "@/lib/core/homeLayout";
 import { WEEKDAYS } from "@/lib/einstellungen/profile";
-import { buildShoppingList } from "@/lib/einkauf/shoppingList";
+import { buildShoppingList, loadShoppingSettings, planAlsAngebot } from "@/lib/einkauf/shoppingList";
 import { formatWeekRange } from "@/lib/essen/weekPlan";
 import { weekOf } from "@/lib/begleitung/ops";
 import type { BegleitungTool } from "@/lib/begleitung/registry";
@@ -246,12 +246,15 @@ export const HOME_TOOLS: BegleitungTool[] = [
     },
     run: (ctx, raw) => {
       const weekStart = weekStartOf(ctx, (raw as Input | null)?.woche);
-      const list = buildShoppingList(weekOf(ctx.data, weekStart), ctx.data.recipes, ctx.data.shopping[weekStart]);
+      const angebot = planAlsAngebot(weekStart, loadShoppingSettings().angebotAb);
+      const list = buildShoppingList(weekOf(ctx.data, weekStart), ctx.data.recipes, ctx.data.shopping[weekStart], undefined, { angebot });
       const items = list.items.filter((i) => !i.hidden);
       return {
         content: JSON.stringify({
           zeitraum: formatWeekRange(weekStart),
           artikel: items.map((i) => ({ name: i.name, menge: i.amount, fuer: [...i.dishes, ...i.days].join(", "), abgehakt: i.checked })),
+          // A-040: Zutaten aus dem Wochenplan stehen nicht von selbst drauf, sie liegen oben auf der Laden-Seite als Angebot
+          ...(list.angebot.length ? { wochenplan_angebot: list.angebot.map((i) => i.name) } : {}),
         }),
       };
     },

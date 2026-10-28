@@ -37,6 +37,8 @@ export type Ergebnis = {
   eintragId: string | null;
   /** Aufleuchten in der Kachel (null = gar nicht, Schlüssel "" = Kachel als Ganzes) */
   leuchten: Leuchten | null;
+  /** Einkauf (A-041): welche Sache, welcher Laden gesagt wurde (null = Mia sucht ihn aus: „Rewe · wie immer ⌄“) */
+  laden?: { sache: string; gesagt: string | null };
 };
 
 const FUER_ALLE = "für alle";
@@ -72,7 +74,7 @@ function ergebnisVon(op: ChangeOp): Ergebnis | null {
     case "done_entry":
       return karte(op, { art: "aufgabe", kachel: "aufgaben", text: op.title, artText: "Aufgabe", nachsatz: null, pille: "Abgehakt", href: "/aufgaben", leuchten: null });
     case "add_shopping":
-      return karte(op, { art: "einkauf", kachel: "einkauf", text: op.name, artText: "Einkauf", nachsatz: FUER_ALLE, pille: "Steht drauf", href: "/einkaufsliste", leuchten: { kachel: "einkauf", schluessel: leuchtSchluessel("einkauf", op.name) } });
+      return karte(op, { art: "einkauf", kachel: "einkauf", text: op.name, artText: "Einkauf", nachsatz: FUER_ALLE, pille: "Steht drauf", href: "/einkaufsliste", leuchten: { kachel: "einkauf", schluessel: leuchtSchluessel("einkauf", op.name) }, laden: { sache: op.name, gesagt: op.shop?.trim() || null } });
     case "set_shop_rule":
       return karte(op, { art: "einkauf", kachel: "einkauf", text: op.shop ? `${op.name} immer bei ${op.shop}` : `${op.name} egal wo`, artText: "Einkauf", nachsatz: FUER_ALLE, pille: "Gemerkt", href: "/einkaufsliste", leuchten: null });
     case "add_pin":
