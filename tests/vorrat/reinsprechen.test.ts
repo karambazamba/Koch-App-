@@ -155,3 +155,11 @@ describe("Füllt sich selbst – auch in den neuen Gruppen", () => {
     expect(isGone(it8("Nudeln", "2026-10-20"), T)).toBe(false);
   });
 });
+
+describe("Blase „Schreiben & sprechen“ (Bildschirmfoto 28.10.)", () => {
+  it("wartet auf „Im Haus“, damit sie nicht über „Was koch ich daraus?“ liegt", () => {
+    const src = readFileSync("src/components/begleitung/MiaButton.tsx", "utf8");
+    expect(src).toMatch(/SEITEN_MIT_KNOPF_UEBER_LEISTE = \["\/vorrat"\]/);
+    expect(src).toMatch(/!erster\.ruhig && !ueberLeiste/);
+  });
+});
