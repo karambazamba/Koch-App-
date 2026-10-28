@@ -2822,3 +2822,6 @@ Fehler in `docs/aufraeumen-nachher.md`.
 - Längen: Alltag ≤ 120 Zeichen, Rat/Wissen ≤ 240, außer „erklär mal genau“.
   Kurzes Plaudern (Danke, Gruß, „Bin platt“) geht an Haiku.
 - Prüfstand „Ton“: 30 Sätze, Ziel ≥ 90 %, unter „Für Entwickler“.
+- Fehler gefunden (Durchklick „zuhoeren“): Antwortete Mia schneller als
+  300 ms (jetzt oft bei „Passt.“), hörte sie danach nicht weiter zu. Jetzt
+  hört sie auch nach einer sehr schnellen Antwort gleich wieder zu.

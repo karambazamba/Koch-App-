@@ -105,4 +105,10 @@ describe("Eine Bühne für alles", () => {
   it("nach Mias Antwort wartet sie – kurz mithören nur bei einer Rückfrage mit Knöpfen", () => {
     expect(read("src/components/begleitung/HelperPanel.tsx")).toMatch(/endsWith\("\?"\) && withButtons && viaVoice/);
   });
+
+  // Fehler v0.134.0 (Durchklick „zuhoeren“): antwortete Mia schneller als 300 ms
+  // („Passt.“), hörte sie danach nicht weiter zu – der Zeitgeber fiel beim Ende weg
+  it("Weiterhören auch nach einer sehr schnellen Antwort", () => {
+    expect(read("src/components/begleitung/HelperPanel.tsx")).toMatch(/if \(readsVoice\) return;\s*const t = window\.setTimeout\(\(\) => again\.current\(\), busy \? 300 : 0\);/);
+  });
 });
