@@ -1,7 +1,8 @@
 // „Mia auf den Home-Bildschirm“ (A-027, Erster Start rund für Testfreunde):
 // Nur im Browser (nie als Home-Bildschirm-App) steht EINMAL eine ruhige Karte
-// oben auf der Startseite – ab dem ersten Öffnen nach „Für wen soll ich
-// sortieren?“. Je Gerät/Browser:
+// oben auf der Startseite – beim ersten Öffnen der echten Startseite (nicht
+// solange der Beispiel-Tag nach „Für wen soll ich sortieren?“ läuft). Je
+// Gerät/Browser:
 //   iPhone + Safari:  „Mia als App: unten auf Teilen ⬆︎ tippen, dann ‚Zum
 //                     Home-Bildschirm‘.“ + „Zeig’s mir“ (3 Schritte) / „Später“
 //   iPhone + anderer Browser bzw. App-Vorschau (Chrome, Instagram, WhatsApp …):
@@ -178,13 +179,13 @@ export function homeKarteArt(p: Plattform, angebotDa: boolean): HomeKarteArt | n
 
 /**
  * Steht die Karte jetzt auf der Startseite? (rein)
- * Nur im Browser, nicht in der Zeit-Vorschau, nur wenn das Gerät sie heute
- * dran hat. (Die Startseite gibt es erst nach dem ersten Start – also ab dem
- * ersten Öffnen nach „Für wen“; wer die App schon vorher im Browser hatte,
- * bekommt die Karte ebenso einmal.)
+ * Nur im Browser, nicht in der Zeit-Vorschau, nicht solange der Beispiel-Tag
+ * läuft (`beispiel`), nur wenn das Gerät sie heute dran hat. Sie erscheint
+ * also beim ersten Öffnen der echten (eigenen) Startseite; wer die App schon
+ * vorher im Browser hatte, bekommt die Karte ebenso einmal.
  */
-export function homeKarteZeigen(o: { art: HomeKarteArt | null; standalone: boolean; vorschau: boolean; faellig: boolean }): boolean {
-  return Boolean(o.art) && !o.standalone && !o.vorschau && o.faellig;
+export function homeKarteZeigen(o: { art: HomeKarteArt | null; standalone: boolean; vorschau: boolean; beispiel: boolean; faellig: boolean }): boolean {
+  return Boolean(o.art) && !o.standalone && !o.vorschau && !o.beispiel && o.faellig;
 }
 
 /** Texte (knapp, ohne Druck); `teilen`/`menue` = dort steht ein Linien-Icon */

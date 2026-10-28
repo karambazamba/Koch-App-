@@ -142,7 +142,7 @@ export const dreiBildschirme = async (page, check, device) => {
   }
 };
 
-/** A-027: Karte „Mia auf den Home-Bildschirm“ – nur im Browser, nie als App; „Später“ = nach 2 Tagen einmal wieder; Android mit Installier-Angebot */
+/** A-027: Karte „Mia auf den Home-Bildschirm“ – nur im Browser, nie als App, nicht im Beispiel-Tag; „Später“ = nach 2 Tagen einmal wieder; Android mit Installier-Angebot */
 export const homeKarte = async (page, check, device) => {
   const browser = page.context().browser();
   const ios = /iPhone/.test(device);
@@ -152,7 +152,12 @@ export const homeKarte = async (page, check, device) => {
   await p.addInitScript(() => window.addEventListener("beforeinstallprompt", (e) => e.stopImmediatePropagation(), { capture: true }));
   try {
     await hello(p);
-    check(await karte(p).waitFor({ timeout: 6000 }).then(() => true, () => false), "im Browser: Karte oben auf der Startseite (ab dem ersten Öffnen nach „Für wen“)");
+    await p.waitForTimeout(1200);
+    check(!(await karte(p).count()), "Beispiel-Tag: noch keine Karte");
+    // Eigene Startseite (Beispiel-Tag vorbei): beim ersten Öffnen die Karte
+    await seedFamily(p);
+    await p.reload();
+    check(await karte(p).waitFor({ timeout: 6000 }).then(() => true, () => false), "im Browser: Karte oben auf der echten Startseite");
     check((await karte(p).getAttribute("data-home-karte")) === (ios ? "ios-safari" : "android-menue"), ios ? "iPhone/Safari: Teilen → Zum Home-Bildschirm" : "Android ohne Angebot: „Menü ⋮ → App installieren“");
     check((await karte(p).count()) === 1 && (await p.locator("[data-tipp=leiste-neu], [data-tipp=startseite-halten]").count()) === 0, "höchstens EIN Hinweis unter der Jetzt-Karte");
     check((await karte(p).locator("[data-home-skizze] svg").count()) >= 2, "kleine Skizze mit Linien-Icons");
@@ -199,6 +204,8 @@ export const homeKarte = async (page, check, device) => {
       window.matchMedia = (q) => (q.includes("display-mode: standalone") ? { matches: true, media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, onchange: null, dispatchEvent: () => false } : mm(q));
     });
     await hello(app);
+    await seedFamily(app);
+    await app.reload();
     await app.waitForTimeout(1200);
     check(!(await karte(app).count()), "als Home-Bildschirm-App: keine Karte");
   } finally {
@@ -210,6 +217,9 @@ export const homeKarte = async (page, check, device) => {
     const a = await newPage(browser, device, { homeKarte: true });
     try {
       await hello(a);
+      await seedFamily(a);
+      await a.reload();
+      await a.getByRole("tab", { name: "Heute", selected: true }).waitFor();
       await a.evaluate(() => {
         const e = new Event("beforeinstallprompt", { cancelable: true });
         window.__angebot = { gezeigt: 0 };

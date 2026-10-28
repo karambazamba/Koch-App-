@@ -2981,7 +2981,8 @@ Fehler in `docs/aufraeumen-nachher.md`.
 - Einladung (/e/…): E-Mail-Code → Startseite; der Zugangscode erst beim
   ersten KI-Versuch (`codeErstBeimKiVersuch`).
 - „Mia auf den Home-Bildschirm“: einmal eine ruhige Karte oben auf der
-  Startseite, nur im Browser (iPhone/Safari mit Skizze und „Zeig’s mir“,
+  Startseite, nur im Browser und nicht im Beispiel-Tag (erst auf der echten
+  Startseite) (iPhone/Safari mit Skizze und „Zeig’s mir“,
   iPhone in anderem Browser „Öffne mich in Safari …“, Android
   `beforeinstallprompt` → „Mia installieren“ bzw. „Menü ⋮ → App
   installieren“); „Später“ = nach 2 Tagen einmal wieder, dann nie mehr;
@@ -2990,3 +2991,8 @@ Fehler in `docs/aufraeumen-nachher.md`.
 - KI-OK aufgeräumt: „Mia braucht kurz dein OK“ nennt ElevenLabs nur, wenn
   Mias Stimme bzw. Ohr vom Server aktiv ist; „Nicht jetzt“ schließt nur die
   Karte (Einwilligung bleibt unerteilt, Zugangscode unberührt).
+- Fehler behoben: `wasgibts.hinweise` stand im Speicher-Verzeichnis UND bei
+  den ausgemusterten Schlüsseln (Rest aus v0.25) – `removeRetiredKeys` löschte
+  die Hinweis-Warteschlange bei jedem Start, „jeder Hinweis nur einmal“ galt
+  so nicht. Jetzt nur noch lebender Schlüssel; Test: kein Schlüssel aus dem
+  Verzeichnis wird beim Start gelöscht.

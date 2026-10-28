@@ -54,12 +54,14 @@ describe("Gerät und Browser erkennen", () => {
 });
 
 describe("Karte nur im Browser", () => {
-  const zeigen = (o: Partial<Parameters<Modul["homeKarteZeigen"]>[0]> = {}) => m.homeKarteZeigen({ art: "ios-safari", standalone: false, vorschau: false, faellig: true, ...o });
+  const zeigen = (o: Partial<Parameters<Modul["homeKarteZeigen"]>[0]> = {}) => m.homeKarteZeigen({ art: "ios-safari", standalone: false, vorschau: false, beispiel: false, faellig: true, ...o });
 
-  it("erscheint im Browser; nicht als App, nicht in der Zeit-Vorschau, nicht am Computer", () => {
+  it("erscheint im Browser; nicht als App, nicht in der Zeit-Vorschau, nicht im Beispiel-Tag, nicht am Computer", () => {
     expect(zeigen()).toBe(true);
     expect(zeigen({ standalone: true })).toBe(false);
     expect(zeigen({ vorschau: true })).toBe(false);
+    // nicht im Beispiel-Tag, erst auf der echten Startseite
+    expect(zeigen({ beispiel: true })).toBe(false);
     expect(zeigen({ art: m.homeKarteArt("computer", false) })).toBe(false);
     expect(zeigen({ faellig: false })).toBe(false);
   });
@@ -161,6 +163,7 @@ describe("Startseite: höchstens EIN Hinweis", () => {
     const src = readFileSync("src/components/heute/TodayPage.tsx", "utf8");
     expect(src).toMatch(/const hinweis = homeKarte && hinweisRoh !== "mia-name-neu" \? null : hinweisRoh;/);
     expect(src).toMatch(/besetzt: Boolean\(hinweis\) \|\| homeKarteSteht/);
+    expect(src).toContain("beispiel: demoOn");
     const karte = readFileSync("src/components/heute/HomeBildschirmKarte.tsx", "utf8");
     expect(karte).toContain("Zeig’s mir");
     expect(karte).toContain("Später");

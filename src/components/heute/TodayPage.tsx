@@ -284,8 +284,8 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
   const lookOn = showLookTip(darkState, data.todayIso, data.profile.look);
   const gezeigt = useHinweiseGezeigt();
   const leisteNeu = useHintSeen("leiste-neu");
-  // A-027: „Mia auf den Home-Bildschirm“ (nur im Browser) belegt den einen Hinweis-Platz – nur „Ich heiße jetzt Mia“ (schützt Daten) geht vor
-  const homeKarte = useHomeBildschirmKarte({ today: data.todayIso, vorschau: Boolean(preview) });
+  // A-027: „Mia auf den Home-Bildschirm“ (nur im Browser, nicht im Beispiel-Tag) belegt den einen Hinweis-Platz – nur „Ich heiße jetzt Mia“ (schützt Daten) geht vor
+  const homeKarte = useHomeBildschirmKarte({ today: data.todayIso, vorschau: Boolean(preview), beispiel: demoOn });
   const hinweisRoh = gezeigt
     ? naechsterHinweis(
         {

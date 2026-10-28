@@ -113,7 +113,8 @@ export type StorageKey = (typeof STORAGE)[number]["key"];
  */
 const RETIRED_KEYS = [
   "wasgibts.bewertungen",
-  "wasgibts.hinweise",
+  // „wasgibts.hinweise“ war hier früher auch eingetragen (alte Hinweise bis v0.101), ist seit v0.102 aber wieder
+  // die Hinweis-Warteschlange der Startseite – nie hier eintragen, sonst ginge „jeder Hinweis nur einmal“ bei jedem Start verloren (A-027)
   "wasgibts.kennenlernen",
   "wasgibts.twists",
   "wasgibts.wetter",

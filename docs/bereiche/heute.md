@@ -49,10 +49,9 @@
   Zugangscode kommt erst beim ersten KI-Versuch (`codeErstBeimKiVersuch`).
 - Karte „Mia auf den Home-Bildschirm“ (`core/homeBildschirm.ts`,
   `heute/HomeBildschirmKarte.tsx`): nur im Browser (nie als
-  Home-Bildschirm-App, nicht in der Zeit-Vorschau, nicht am Computer),
-  einmal oben auf der Startseite ab dem ersten Öffnen nach „Für wen“ (auch
-  während des Beispiel-Tags: auf dem iPhone hat die Home-Bildschirm-App
-  einen eigenen Speicher, also lieber gleich), im Stil der Seiten-Tipps,
+  Home-Bildschirm-App, nicht in der Zeit-Vorschau, nicht am Computer, nicht
+  solange der Beispiel-Tag läuft), einmal oben auf der Startseite beim
+  ersten Öffnen der echten (eigenen) Startseite, im Stil der Seiten-Tipps,
   belegt den einen Hinweis-Platz unter der Jetzt-Karte (nur „Ich heiße jetzt
   Mia“ geht vor; „Mia denkt mit“ wartet). iPhone/Safari: „Mia als App: unten
   auf Teilen [Teilen-Symbol] tippen, dann ‚Zum Home-Bildschirm‘.“ mit kleiner
@@ -471,7 +470,7 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
 - `tests/core/`: `kachelAnordnung.test.ts`, `startseite.test.ts`,
   `beispielTag.test.ts`, `beispielTagSpeicher.test.ts`, `wischen.test.ts`.
 - `tests/einstellungen/ersterStart.test.ts`, `tests/begleitung/werkzeugeStartseite.test.ts`.
-- Durchklick `e2e/ablaeufe/start.mjs`: `hallo`, `ersterStart`, `dreiBildschirme` (höchstens 3 Bildschirme, allein/zu zweit/Familie, mit und ohne Zugangscode), `homeKarte` (nur im Browser, nicht als App, „Später“-Regel, Android-Angebot), `bearbeiten`, `wischen`; `testcode.mjs` (Zugangscode falsch/richtig/nachsichtig/später), `datenschutz.mjs` `vorDemStart` (Häkchen im Hallo), `konten.mjs` (Einladung: Zugangscode erst beim KI-Versuch).
+- Durchklick `e2e/ablaeufe/start.mjs`: `hallo`, `ersterStart`, `dreiBildschirme` (höchstens 3 Bildschirme, allein/zu zweit/Familie, mit und ohne Zugangscode), `homeKarte` (nur im Browser, nicht als App, nicht im Beispiel-Tag, „Später“-Regel, Android-Angebot), `bearbeiten`, `wischen`; `testcode.mjs` (Zugangscode falsch/richtig/nachsichtig/später), `datenschutz.mjs` `vorDemStart` (Häkchen im Hallo), `konten.mjs` (Einladung: Zugangscode erst beim KI-Versuch).
 - Unit: `tests/heute/homeBildschirm.test.ts`, `tests/begleitung/ersterStart.test.ts`, `tests/begleitung/codeAbfrage.test.ts`, `tests/begleitung/kiOk.test.ts`.
 
 ## Kopf und „neu hinzufügen“ (v0.67)

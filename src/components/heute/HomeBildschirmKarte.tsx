@@ -42,13 +42,13 @@ export function useGeraet(): Geraet | null {
 }
 
 /** Welche Karte steht heute? null = keine */
-export function useHomeBildschirmKarte(o: { today: string; vorschau: boolean }): HomeKarteArt | null {
+export function useHomeBildschirmKarte(o: { today: string; vorschau: boolean; beispiel: boolean }): HomeKarteArt | null {
   const geraet = useGeraet();
   const angebot = useInstallAngebot();
   const state = useHomeKarteState();
   if (!geraet || state === undefined) return null;
   const art = homeKarteArt(geraet.plattform, angebot);
-  return homeKarteZeigen({ art, standalone: geraet.standalone, vorschau: o.vorschau, faellig: homeKarteFaellig(state, o.today) }) ? art : null;
+  return homeKarteZeigen({ art, standalone: geraet.standalone, vorschau: o.vorschau, beispiel: o.beispiel, faellig: homeKarteFaellig(state, o.today) }) ? art : null;
 }
 
 const kopieren = async () => {
