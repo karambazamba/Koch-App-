@@ -352,20 +352,18 @@ export const neueVersion = async (page, check) => {
   }
 };
 
-/** Stammartikel-Chips lassen sich antippen (die vergrößerte Tippfläche lag darüber) */
+/** Stammliste (seit „Einkauf neu“ im „···“ der Seite „Einkauf“): Standard-Stammartikel sichtbar */
 export const stammartikel = async (page, check) => {
   await hello(page);
   await seedFamily(page);
   await page.goto(BASE + "/einkaufsliste");
   await page.waitForTimeout(1000);
-  const items = () => page.evaluate(() => Object.values(JSON.parse(localStorage.getItem("wasgibts.einkaufsliste") ?? "{}").weeks ?? {}).flatMap((w) => w.manual.map((i) => i.name)));
-  // Seit „Einkaufsliste aufgeräumt“ (v0.119): EINE leise Zeile „Bald wieder fällig: …“ mit „Dazu“
-  const bald = page.locator("[data-bald-faellig]");
-  check((await bald.innerText()).includes("Brot"), "„Bald wieder fällig: Brot …“");
-  await bald.getByRole("button", { name: "Dazu" }).tap();
-  await page.waitForTimeout(600);
-  check((await items()).includes("Brot"), "„Dazu“ setzt Brot auf die Liste");
-  check(!(await bald.count()), "danach ist die Zeile weg");
+  check(!(await page.locator("[data-bald-faellig]").count()), "keine Extra-Zeile „Bald wieder fällig“ mehr");
+  await page.getByRole("button", { name: "Mehr" }).tap();
+  await page.getByRole("dialog", { name: "Einkauf" }).getByRole("button", { name: "Stammliste" }).tap();
+  const sheet = page.getByRole("dialog", { name: "Stammliste" });
+  check(await sheet.waitFor({ timeout: 3000 }).then(() => true, () => false), "„···“ → „Stammliste“");
+  check(await sheet.getByText("Brot").first().isVisible(), "Stammliste mit Brot");
 };
 
 /** Sport-Kachel (Tafel 25): Do antippen → eigene Zeit 18:30 → Kachel zeigt „18:30“ und „Als Nächstes“; ändern; absagen + Rückgängig */

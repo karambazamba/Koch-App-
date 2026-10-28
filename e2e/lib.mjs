@@ -397,13 +397,44 @@ export async function mehrDetails(page) {
   await page.waitForTimeout(500);
 }
 
-/** Einkaufsliste: ＋ oben → „Mehr Details“ = Katalog „Mehr hinzufügen“ */
-export async function katalog(page) {
-  await page.getByRole("button", { name: "Etwas auf die Einkaufsliste setzen" }).first().tap();
-  await mehrDetails(page);
-  const sheet = page.getByRole("dialog", { name: "Mehr hinzufügen" });
-  await sheet.waitFor({ timeout: 5000 });
-  return sheet;
+/** Einkauf „Aussuchen“ öffnen (optional einen Laden wählen) */
+export async function aussuchen(page, laden) {
+  await page.goto(BASE + "/einkaufsliste/aussuchen");
+  await page.locator("[data-aussuchen-oben]").waitFor({ timeout: 8000 });
+  if (laden) await page.locator(`[data-aussuchen-laden="${laden}"]`).tap();
+  await page.waitForTimeout(300);
+}
+
+/** In „Aussuchen“ suchen und die erste passende Kachel antippen (Suche wieder leeren) */
+export async function aussuchenTippen(page, name) {
+  const feld = page.locator("[data-aussuchen-oben] input");
+  await feld.fill(name);
+  await page.locator(`[data-treffer] [data-kachel="${name}"]`).first().tap();
+  await page.waitForTimeout(250);
+  await feld.fill("");
+}
+
+/**
+ * Echtes Ziehen per Touch (CDP – iOS bricht Pointer-Events beim Scrollen ab):
+ * Finger auf `von`, `halten` ms ruhig, dann in Schritten zu `nach`, loslassen.
+ */
+export async function ziehen(page, von, nach, { halten = 450, steps = 14, ms = 420 } = {}) {
+  const a = await von.boundingBox();
+  const b = await nach.boundingBox();
+  const cdp = await page.context().newCDPSession(page);
+  const p = (x, y) => [{ x: Math.round(x), y: Math.round(y), id: 1 }];
+  const x0 = a.x + a.width / 2;
+  const y0 = a.y + a.height / 2;
+  const x1 = b.x + b.width / 2;
+  const y1 = b.y + b.height / 2;
+  await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: p(x0, y0) });
+  await page.waitForTimeout(halten);
+  for (let i = 1; i <= steps; i++) {
+    await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: p(x0 + ((x1 - x0) * i) / steps, y0 + ((y1 - y0) * i) / steps) });
+    await page.waitForTimeout(ms / steps);
+  }
+  await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+  await cdp.detach();
 }
 
 /** Schnelleingabe: Satz tippen, ➤ (Return; mehrzeilig bei Notiz/Pinnwand nur ➤), Fenster zu */

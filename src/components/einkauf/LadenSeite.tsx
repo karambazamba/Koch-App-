@@ -171,6 +171,7 @@ export function LadenSeite() {
             {name} <span className="font-bold text-muted">· {sachenText(anzahl)}</span>
           </p>
         </section>
+        {active?.tripId && <p className="-mt-2 px-1 text-sm text-muted">Die Familie weiß Bescheid.</p>}
 
         {hier.length > 0 ? (
           <ul className="overflow-hidden rounded-card border border-line bg-surface shadow-card" aria-label={name}>
