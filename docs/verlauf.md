@@ -3100,3 +3100,26 @@ Fehler in `docs/aufraeumen-nachher.md`.
     zusammengefassten Hinzufügen nimmt nur die dazugekommene Menge heraus.
     Laden-Vergleich beim Zusammenfassen über den gemerkten Laden des Namens;
     bei Mia-Vorschlägen hängt der Laden ohnehin am Namen. Eier als 6er/10er.
+
+
+## Mia schneller und flüssiger (vX)
+- Auftrag A-019: einfache Sachen in unter 1,5 s nach dem letzten Wort, bei
+  großen sofort eine Reaktion. Messen zuerst: `begleitung/tempo.ts`
+  (`wasgibts.tempo`, nur Zahlen, nur Gerät), Server schickt seine Zeiten mit,
+  „Tempo: Median der letzten 20“ unter Für Entwickler.
+- Stille 2,5 s → 1,2 s, Ring 0,8 s; Fortsetzung innerhalb 1,5 s nach dem
+  Abschicken hängt an (Frage zurückgezogen, beides zusammen neu).
+- Sofort-Weg ohne Warten auf die KI für eindeutige Kurzbefehle (Einkauf aus
+  dem Katalog, Termin mit Uhrzeit, Aufgabe, Notiz, Pinnwand, Timer), die KI
+  prüft im Hintergrund und korrigiert nur bei anderer Lesart; Prüfstand 74
+  Kurzsätze (100 %, Ziel ≥ 98 %). CLAUDE.md „KI zuerst“ um diese Ausnahme ergänzt.
+- Modellwahl vor dem Aufruf, Haiku Standard für den Alltag (effort low), kein
+  „erst Haiku, dann Sonnet“ mehr außer bei echtem Fehler. Eine Runde bei
+  kleinen Werkzeugen (Bestätigung aus dem Ergebnis).
+- Erster Satz wird schon beim Streamen vorgelesen, Rest nahtlos; „Mhm.“ nach
+  1,2 s ohne Antwort, einmal. Mias Stimme: erster Satz als eigenes Stück.
+- Kontext nur mit den Daten, die die Nachricht braucht (−58 % Zeichen im
+  nicht gecachten Kontext bei 10 Alltagsfragen), Cache des festen Teils 1 Stunde.
+- Fehler Mikro belegt (Video 28.10. 09:09): keine Neustart-Schleife mehr –
+  höchstens ein stiller Neustart ohne Ton, dann „Mikro ist gerade belegt.
+  Lieber schreiben?“.

@@ -50,6 +50,19 @@ describe("Prüfstand Sofort-Weg", () => {
     expect((lokal.length - falsch.length) / lokal.length).toBeGreaterThanOrEqual(0.98);
   });
 
+  it("saubere Titel: ohne Tageszeit, Füllwörter und „Timer“", () => {
+    const ctx = pruefKontext();
+    const titel = (t: string) => {
+      const op = sofortErkennen(t, ctx)?.ops[0];
+      return op?.type === "upsert_entry" ? op.entry.data.title : op?.type === "add_timer" ? op.name : null;
+    };
+    expect(titel("heute abend 20 uhr kino")).toBe("Kino");
+    expect(titel("Ich muss am Mittwoch nächste Woche um 9 zum Arzt")).toBe("Arzt");
+    expect(titel("Irgendwann mal den Keller aufräumen")).toBe("Keller aufräumen");
+    expect(titel("Timer für die Eier 7 Minuten")).toBe("Eier");
+    expect(titel("Stell einen Timer auf 5 Minuten")).toBe("");
+  });
+
   it("schon auf der Liste → nicht lokal (die KI sagt „steht schon drauf“)", () => {
     expect(sofortErkennen("Milch auf die Liste", { ...pruefKontext(), aufDerListe: ["Milch (Rewe)"] })).toBeNull();
   });

@@ -435,11 +435,12 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
   const readingOn = shouldRead(speechSettings.mode, viaVoice);
   const readCount = useMiaSprechen({ turns: chat.turns, readingOn, voice, busy, streaming, hoert: speech.listening && nachhoeren, sofort: sofortAktiv, speechFor: spontan.speechFor });
 
-  // Vorlesen an: direkt nach der gesprochenen Frage kurz weiterhören (Fortsetzung nach Denkpause),
-  // dann still aufhören – Mia liest vor und hört danach wie gewohnt wieder zu
+  // Direkt nach der gesprochenen Frage weiterhören (Fortsetzung nach Denkpause; auch wenn der
+  // Sofort-Weg ohne Warten antwortet). Vorlesen an: nach dem Fenster still aufhören – Mia liest
+  // vor und hört danach wie gewohnt wieder zu
   useEffect(() => {
     if (!nachhoeren) return;
-    if (readsVoice && !speech.listening && !speech.blocked && speech.supported !== false) {
+    if (!speech.listening && !speech.blocked && speech.supported !== false) {
       weiterHoeren.current = false;
       speech.start();
     }

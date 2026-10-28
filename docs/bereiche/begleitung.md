@@ -188,9 +188,9 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
   Einstieg („Selbstverständlich!“, „Gerne helfe ich dir dabei.“). Besteht
   alles nur aus Floskeln, bleibt der erste Satz.
 - Modell: kurzes Plaudern (Danke, Lob, Gruß, „Bin platt“, „Wie geht’s?“,
-  `plauderArt` in `mia/plaudern.ts`) geht wie klare Kurzbefehle an Haiku;
+  `plauderArt` in `mia/plaudern.ts`) geht wie der ganze Alltag an Haiku;
   „Passt“/„Okay“ direkt nach einer Rückfrage von Mia zählt als Antwort und
-  geht an Sonnet. Der Testmodus antwortet darauf mit festen lockeren Sätzen
+  gehört zum Thema davor (seit vX: Sonnet nur im laufenden großen Thema). Der Testmodus antwortet darauf mit festen lockeren Sätzen
   (`PLAUDER_ANTWORT`); steife Testmodus-Sätze sind gelockert („Hat grad nicht
   geklappt. Nochmal?“, „Hab in eurer Nähe grad nix gefunden.“).
 - Prüfstand „Ton“ (`pruefstand/ton.ts`): 30 Alltagssätze, bestanden nur mit
@@ -209,11 +209,13 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
   und wird beim nächsten „online“ auf der Bühne nachgeholt (KitchenHelper).
   Tageslimit: „Für heute hab ich genug geredet. Listen und Termine gehen
   natürlich weiter.“ (`UNAVAILABLE_TEXT` in `client.ts`).
-- Modell (`engine.ts`): Haiku nur für klare Kurzbefehle (`isShortCommand`:
-  kurz, keine Frage, eindeutige Aktion wie Liste/Timer/Termin mit Zeit) und
-  seit vX für kurzes Plaudern (`isSmallTalk`), sonst Sonnet. Zweite Chance: antwortet Haiku ohne Aktion unsicher oder gar
-  nicht (`HEDGE`), übernimmt Sonnet. Sonnet mit effort „medium“ bei Fragen,
-  „low“ bei Aktionen. Kosten je Anfrage wie bisher; Übersicht „KI-Kosten
+- Modell (`modellwahl.ts`, seit vX „Mia schneller“): einmal vor dem Aufruf.
+  Haiku ist Standard für den Alltag (effort „low“); Sonnet für Planen,
+  Rezepte, Mails, Ideen, Rat, offene Vorschläge, lange Texte, mehrere Dinge,
+  den Wochencheck und kurze Antworten im laufenden großen Thema. Keine zweite
+  Chance mehr („erst Haiku, dann Sonnet“); hochgeschaltet wird nur bei echtem
+  Fehler (Ablehnung, abgeschnitten, KI-Fehler außer Limit). Sonnet mit effort
+  „medium“ bei Fragen, „low“ bei Aktionen. Kosten je Anfrage wie bisher; Übersicht „KI-Kosten
   letzte 7 Tage“ unter Einstellungen → Daten & App → „Für Entwickler“
   (`/profil/admin`).
 - Machen statt fragen: Sind alle Vorschläge einer Antwort klein und sicher
@@ -265,7 +267,8 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
 
 - `HelperPanel.route`: Ist die KI bereit (`status.ready`), geht JEDE
   Nachricht an `ask` – die festen Regeln (`rules`) sind nur der Ersatz,
-  falls die KI-Anfrage scheitert. Ohne KI greifen sofort die Regeln, sonst
+  falls die KI-Anfrage scheitert. Ausnahme Sofort-Weg (seit vX): eindeutige
+  Kurzbefehle erledigt `ask` selbst, die KI prüft im Hintergrund. Ohne KI greifen sofort die Regeln, sonst
   „Hm, das hab ich nicht verstanden.“ bzw. offline „Ich bin gerade offline –
   was du einträgst, speichere ich trotzdem.“ (`unavailableText`).
 - Ausnahme: ein selbst geöffneter Spontan-Modus nimmt Zutaten direkt an; ein
@@ -369,10 +372,17 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
 - Bühne (`useSpeechInput({ buehne: true })`): beendet der Browser nach
   Stille, hört Mia still weiter (`continuous`, Neustart nur nach echtem
   Ende – auf dem iPhone also höchstens ein Systemton je Pause; im Test 1
-  Neustart je Atempause). Abgeschickt wird nach 2,5 s Stille nach dem letzten
-  Wort (`STILLE_MS`), beim Antippen von Mia oder bei „fertig“/„das war’s“,
-  höchstens 2 Minuten. Ab 0,6 s Stille blinzelt Mia und ein dünner Ring läuft
-  ab („Gleich schick ich’s ab“). Sagt niemand etwas, hört sie nach 8 s auf.
+  Neustart je Atempause). Abgeschickt wird nach 1,2 s Stille nach dem letzten
+  Wort (`STILLE_MS`, seit vX; vorher 2,5 s), beim Antippen von Mia oder bei
+  „fertig“/„das war’s“, höchstens 2 Minuten. Ab 0,4 s Stille blinzelt Mia und
+  ein dünner Ring läuft 0,8 s ab (`PAUSE_RING_MS`, „Gleich schick ich’s ab“).
+  Spricht man innerhalb 1,5 s nach dem Abschicken weiter, hängt es an
+  (`nachklapp.ts`, siehe unten). Sagt niemand etwas, hört sie nach 8 s auf.
+- Mikro belegt (seit vX, Video 28.10.): endet eine Sitzung schneller als
+  1,5 s ohne Ton (kein onaudiostart, kein Ergebnis), startet Mia höchstens
+  EINMAL still neu; danach ruhig „Mikro ist gerade belegt. Lieber
+  schreiben?“ unter Mia, Knopf bereit. Mikro-Protokoll: „kein Ton, einmal
+  neu“ / „Mikro belegt, kein Ton, aufgehört“.
 - Weiterreden: Vorlesen aus → das Mikro bleibt an, während Mia denkt und
   antwortet; Vorlesen an → erst sprechen, dann sofort wieder zuhören. Was in
   der Antwortzeit gesagt wird, steht als Blase „wartet“ da und geht nach
@@ -494,8 +504,8 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
   bzw. bei Fehlern liest die Stimme des Handys den Rest (`ersatz`).
 - Hören (nur Bühne, `useSpeechInput` → `aufnahme.ts`): getUserMedia +
   MediaRecorder, Pegel alle 50 ms (`lauschen.ts`, rein): Sprechen ab ~150 ms
-  am Stück über dem Grundrauschen, Ring nach 0,6 s Stille, abgeschickt nach
-  2,5 s, nichts gesagt → nach 8 s leise aus, höchstens 60 s. Danach „denkt“
+  am Stück über dem Grundrauschen, Ring nach 0,4 s Stille, abgeschickt nach
+  1,2 s, nichts gesagt → nach 8 s leise aus, höchstens 60 s. Danach „denkt“
   Mia, `aufnahmeVerstehen` schickt den Ton; Fehler einmal still nochmal,
   dann „Hat grad nicht geklappt. Nochmal?“; 503 → bis zum Neuladen Browser.
 - Mikro-Check mit Server-Ohr: nur „Mikrofon erlaubt“ und „Ton kommt an“.
@@ -843,3 +853,80 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
   auf der Jetzt-Karte, nur ohne Karte heute, nie derselbe in 30 Tagen.
 - Tests: `tests/mia/denktMit.test.ts`, `tests/mia/seitenTipp.test.ts`,
   Durchklick `ersterBesuchKarte` (startseite-heim), `imHausEssen` (essen).
+
+## Mia schneller und flüssiger (vX)
+
+Ziel: einfache Sachen in unter 1,5 s nach dem letzten Wort, bei großen
+Sachen sofort eine Reaktion.
+
+- **Messen** (`begleitung/tempo.ts`, `wasgibts.tempo`, nur Gerät, nicht in
+  der Sicherung, nur Zahlen in ms, die letzten 20): je Gespräch Letztes Wort →
+  abgeschickt (`useSpeechInput.letztesWortAm`), abgeschickt → Server erhalten
+  (Antwort-Kopf), Server → erstes Wort des Modells (`zeit.token` im
+  `done`-Ereignis von `/api/lotte`), abgeschickt → erstes Wort, → erster Satz
+  vorgelesen (`speak({ beginnt })`), → fertig; Weg „sofort“ oder „ki“.
+  Anzeige: Einstellungen → Daten & App → Für Entwickler, „Tempo: Median der
+  letzten 20“ (`TempoSection.tsx`) mit „Letztes Wort → erste Reaktion“.
+- **Stille 1,2 s** (`STILLE_MS`), Ring 0,8 s (`PAUSE_RING_MS`). **Denkpause**
+  (`nachklapp.ts`): erstes Wort einer neuen Aufnahme bis 1,5 s (+0,4 s
+  Erkenner-Verzug) nach dem Abschicken = Fortsetzung → `zurueckziehen`
+  (Anfrage abgebrochen, sofort Erledigtes rückgängig, Blasen weg, alter
+  Vorschlag zurück) und beides zusammen neu (`zusammen`). Vorlesen an: Mia
+  hört nach einer gesprochenen Frage kurz nach (`nachhoeren`), das Vorlesen
+  wartet so lange, still → leise aus, danach wie gewohnt.
+- **Sofort-Weg** (`sofort/erkennen.ts`, `sofort/einkauf.ts`, rein):
+  Einkauf (nur Katalog-Artikel aus den Abteilungen plus Drogerie/Haushalt,
+  auch Aufzählung, mit Laden; schon auf der Liste → KI), Termin mit
+  ausdrücklicher Uhrzeit (Tag + Uhrzeit oder heute und noch nicht vorbei;
+  schon eingetragen, Serie, „ab“, mehrere → KI), Aufgabe (Ding + Tätigkeit
+  ohne Uhrzeit wie „Tim antworten“, „Rechnung bezahlen“, „… kündigen“;
+  „Erinner mich …“, mit Uhrzeit dann mit Erinnerung; „Lisa soll …“ → KI),
+  Notiz („merk dir“, „notier“, „schreib auf“), Pinnwand („Pinnwand:“, „an
+  alle:“, „sag Lisa, …“ ohne Auftrag), Timer mit Dauer. Nie raten: Fragen,
+  Änderungen, Verneinung, Regeln („immer“, „nur“), Planen/Kochen, mehrere
+  Lesarten → `null`. Ausdrücklich Angesagtes (Timer/Notiz/Pinnwand) geht vor.
+  Ausführung wie sichere Ops (`commitOps`, `runInstantOps`): Bestätigung aus
+  `bestaetigung.ts` („Is drauf.“, „Fr 19:30 Elternabend, steht drin.“,
+  „Läuft.“), „Rückgängig“, „Mia hat schon …“. Die KI bekommt die Nachricht
+  trotzdem (`sofort` im Request, kleines Modell): passt es, antwortet sie
+  „OK“ (`SOFORT_OK`) und nichts passiert; versteht sie etwas anderes, nimmt
+  die App ihres zurück und zeigt die Lesart der KI an derselben Stelle.
+  Nicht bei offenem Vorschlag, nicht ohne KI (dann wie bisher die Regeln).
+  „Was steht heute an?“ war schon lokal (`isDayQuestion`).
+  Prüfstand `pruefstand/sofort.ts` (74 Kurzsätze, Ziel ≥ 98 %, heute 100 %)
+  und Gegenprobe: alles, was aus dem großen Prüfstand lokal erledigt wird,
+  muss dort richtig sein (`tests/begleitung/sofortPruefstand.test.ts`).
+- **Modellwahl vor dem Aufruf** (`modellwahl.ts`, siehe oben). Haiku mit
+  effort „low“ (vorher Standard „medium“ = denkt länger).
+- **Eine Runde** (`bestaetigung.ts`, Engine): ruft das Modell nur kleine,
+  sichere Werkzeuge auf (`EINE_RUNDE_WERKZEUGE`: Einkauf, Termin/Aufgabe/Notiz
+  anlegen, Listeneintrag, Timer, Pinnwand) und merken alle sauber genau etwas
+  vor, ist die Antwort fertig: eigener Text des Modells oder die Bestätigung
+  aus dem Ergebnis. Keine zweite Modell-Runde nur für den Text. Nicht bei
+  offenem Vorschlag, Fehlern, `nur_vorschlag`, lesenden oder großen Werkzeugen.
+- **Sofort sprechen** (`useMiaSprechen.ts`, `satzweise.ts`): der erste
+  vollständige Satz wird schon beim Streamen vorgelesen (`ersterSatz`: Daten,
+  Uhrzeiten, Abkürzungen trennen nicht), der Rest nahtlos angehängt
+  (`speak({ anhaengen })`, `nochZuSagen`). Mias Stimme vom Server: erster
+  Satz als eigenes Stück (`stueckeFuerStimme`).
+- **Sofort reagieren**: nach dem Abschicken „denkt“ Mia (Augen, Punkte); bei
+  > 1,2 s ohne Antwort einmal „Mhm.“ (`mhmFaellig`; nie beim Sofort-Weg, nie
+  während sie zuhört, nur wenn vorgelesen wird). „Mhm.“ und die
+  Bestätigungen sind feste Sätze (`FESTE_SAETZE`, zwischengespeichert).
+- **Kontext schlanker** (`kontextThemen.ts`): aus den letzten drei eigenen
+  Nachrichten die Themen (Kalender, Einkauf, Essen, Vorrat, Notizen,
+  Pinnwand, Wetter, Tag, Mail, App); nur deren Daten kommen in den Kontext,
+  Namen und Allergien immer, laufender Timer/Kochmodus immer. Kein Thema
+  erkannt, offener Vorschlag, „[…]“-Nachrichten → alles wie bisher. Plaudern
+  → keine Daten. Der feste Teil (Ton, Arbeitsweise, Werkzeuge) bleibt
+  gecacht, jetzt 1 Stunde (`ttl: "1h"`).
+- **Stimme**: ElevenLabs bleibt bei `eleven_flash_v2_5` (schnellstes
+  Modell), gestreamt, satzweise; Standard „Mias Stimme“, wenn eingerichtet,
+  sonst wie bisher die Stimme des Handys; „Probe hören“ unter Einstellungen →
+  Mia (Stimme).
+- Tests: `tests/begleitung/schneller.test.ts` (eine Runde, Prüfung nach dem
+  Sofort-Weg, Kontext −40 %, Tempo), `fluessig.test.ts` (Stille, Denkpause,
+  erster Satz vor dem Ende, „Mhm“ einmal, satzweise), `sofortPruefstand.test.ts`,
+  `modellwahl.test.ts` (kein Doppelaufruf), `spracherkennung.test.ts`
+  (Mikro belegt). e2e: `zuhoeren` (neue Zeiten, 2b Denkpause), `miasprechen`,
+  `serverstimme`, `mikroBelegt`.

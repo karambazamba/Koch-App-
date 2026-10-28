@@ -59,13 +59,8 @@ function timer(t: string): ChangeOp[] | null {
   const n = /^\d/.test(d[1]) ? Number(d[1].replace(",", ".")) : ZAHLWORT[d[1].toLowerCase()];
   const minutes = /^(stunde|std)/i.test(d[2]) ? n * 60 : n;
   if (!minutes || minutes <= 0 || minutes > 600) return null;
-  const name = clean(
-    t
-      .replace(d[0], " ")
-      .replace(re("stell\\w*|mach\\w*|setz\\w*|bitte|mal|einen|nen|'nen|ein|timer|wecker|auf|für|die|den|das|von|mit|starten?"), " ")
-      .replace(re("stell\\w*|mach\\w*|setz\\w*|bitte|mal|einen|nen|'nen|ein|timer|wecker|auf|für|die|den|das|von|mit|starten?"), " ")
-      .replace(/\s+/g, " "),
-  );
+  const fuell = re("stell\\w*|mach\\w*|setz\\w*|bitte|mal|einen|nen|'nen|ein|timer|wecker|auf|für|die|den|das|von|mit|starten?", "gi");
+  const name = clean(t.replace(d[0], " ").replace(fuell, " ").replace(/\s+/g, " "));
   // Übrig bleibt höchstens ein kurzer Name („Nudeln“, „Eier“)
   const words = name.split(" ").filter(Boolean);
   if (words.length > 2 || /\d/.test(name)) return null;
@@ -114,15 +109,18 @@ function schonDa(ctx: SofortKontext, date: string, title: string): boolean {
 
 /** „Zahnarzt Donnerstag 16 Uhr“, „13 Uhr Zahnarzt“, „morgen halb drei Friseur“ */
 function termin(t: string, ctx: SofortKontext): ChangeOp[] | null {
-  if (!UHRZEIT.test(t) || re("erinner\\w*|bis|vom|ab").test(t) || splitTermine(t, ctx.today).length > 1) return null;
+  // Mehrere Dinge („Brot alle und Mathis hat Freitag 15 Uhr Fußball“) oder Spannen: die KI
+  if (!UHRZEIT.test(t) || re("erinner\\w*|bis|vom|ab|und|alle|leer|sowie|plus").test(t) || splitTermine(t, ctx.today).length > 1) return null;
   const cmd = parseCalendar(t, ctx.today, ctx.persons);
   if (cmd?.kind !== "create" || cmd.draft.typ !== "termin") return null;
   const d = cmd.draft.data;
   const satz = readSentence(t, ctx.today);
   // Ohne Tag = heute, aber nicht, wenn die Uhrzeit schon vorbei ist (morgen gemeint?)
   if (!satz.date && Number(d.start.slice(0, 2)) * 60 + Number(d.start.slice(3, 5)) <= ctx.nowMinutes) return null;
-  if (d.title.length < 2 || d.title.split(" ").length > 5 || schonDa(ctx, d.date, d.title)) return null;
-  return [{ id: "sofort-1", type: "upsert_entry", isNew: true, entry: createEntry("termin", d, { raum: cmd.draft.raum }) as CalendarEntry }];
+  // Tageszeit-Wörter gehören nicht in den Titel („heute abend 20 uhr kino“ → „Kino“)
+  const title = cap(clean(d.title.replace(re("abends?|morgens|früh|vormittags?|nachmittags?|mittags?", "gi"), " ").replace(/^(?:zum|zur|zu|beim|bei|den|die|das)\s+/i, "")));
+  if (title.length < 2 || title.split(" ").length > 5 || schonDa(ctx, d.date, title)) return null;
+  return [{ id: "sofort-1", type: "upsert_entry", isNew: true, entry: createEntry("termin", { ...d, title }, { raum: cmd.draft.raum }) as CalendarEntry }];
 }
 
 /** Tätigkeiten am Ende („Tim antworten“, „Rechnung bezahlen“, „Kita-Formular abgeben“) */
@@ -141,7 +139,14 @@ function aufgabe(t: string, ctx: SofortKontext): ChangeOp[] | null {
     if (/^(schreib|setz|pack|kauf|bestell|hol|bring|trag|mach|sag|gib|leg|stell|lass)\w*\s/i.test(kern) || ctx.persons.some((p) => new RegExp(`^${p.name}\\s+(soll|muss)`, "i").test(kern))) return null;
   } else if (re("an\\s+(?:den|die|das|meine?n?|unsere?n?)|daran|dass|zu").test(t) === false) return null;
   const read = readQuickText(t, ctx.today);
-  const title = cap(clean(read.title.replace(/^(?:erinner\w*\s+(?:mich|uns)\s+(?:bitte\s+)?(?:daran,?\s+)?(?:an\s+)?|ich\s+muss\s+(?:noch\s+)?|noch\s+)/i, "").replace(/^(den|die|das)\s+/i, "")));
+  const title = cap(
+    clean(
+      read.title
+        .replace(/^(?:erinner\w*\s+(?:mich|uns)\s+(?:bitte\s+)?(?:daran,?\s+)?(?:an\s+)?|ich\s+muss\s+(?:noch\s+)?|noch\s+)/i, "")
+        .replace(/^(?:(?:irgendwann|mal|noch|bald|diese\s+woche)\s+)+/i, "")
+        .replace(/^(den|die|das)\s+/i, ""),
+    ),
+  );
   if (title.length < 2 || title.split(" ").length > 6) return null;
   const time = read.time;
   // Uhrzeit nur beim „Erinner mich …“ (sonst ist es ein Termin)

@@ -106,6 +106,7 @@ export const SOFORT_SAETZE: SofortSatz[] = [
   S("Danke dir", null),
   S("Moin", null),
   S("Milch auf die Liste und Zahnarzt Freitag 10 Uhr", null),
+  S("Moin! Brot alle und Mathis hat Freitag 15 Uhr Fußball", null),
 ];
 
 /** Passt die lokale Lesart zum erwarteten Satz? (Gründe = was nicht passt) */
