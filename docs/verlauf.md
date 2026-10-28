@@ -3176,3 +3176,33 @@ Fehler in `docs/aufraeumen-nachher.md`.
   gar keinen an (`src/lib/core/fensterVerlauf.ts`, `useBackCloses.ts` nur
   noch Hülle). Test `tests/core/fensterVerlauf.test.ts` mit asynchronem
   Verlauf; Durchklick `erinnerungFrage` war vorher schwankend.
+
+## Pinnwand: Wörter klarer, Erledigtes geht sofort von der Tür (A-024, Version folgt beim Mergen)
+
+- Wörter überall gleich (`pinnwand/woerter.ts`): großer Knopf „Aufhängen“
+  (statt „Anpinnen“), Toast „Hängt.“ (statt „Angepinnt“), Schalter „Bleibt
+  hängen“ mit lucide Pin und leisem „Verschwindet nicht von selbst, z. B.
+  fürs WLAN.“ (statt „Anheften“; an = roter Pin in der Vorschau), Menü
+  „Nicht mehr festhalten“ (statt „Nicht mehr anheften“), Zeile „Lisa ·
+  bleibt hängen“, Schnelleingabe „Hängt: …“, Seiten-Tipp und leere Tür
+  „Kurze Zettel für alle. Abhaken räumt auf, ‚Bleibt hängen‘ bleibt.“
+  Notizen behalten ihr „Anheften“ (eigener Bereich). Intern bleibt `pinned`.
+- Abhaken: blass mit Haken, Toast „Erledigt · Rückgängig“ (5 s), nach 3 s
+  gleitet der Zettel weich ins Archiv „Ältere“ (`ABHAK_MS`, Bewegung 0,9 s
+  im letzten Teil, reduziert nur Überblenden). Rückgängig holt ihn zurück an
+  die Tür, auch aus dem Archiv. Die 24-Stunden-Wartezeit ist weg. Nicht
+  Erledigtes wie bisher nach 7 Tagen ins Archiv, „Bleibt hängen“ nie.
+- Archiv: nach 30 Tagen still gelöscht (`isForgotten`, `forgetOldArchive`
+  beim Start über `tidyPinboard`), als Lösch-Markierung über den Abgleich;
+  der Server räumt die Dateien wie bisher nur für gelöschte Einträge weg.
+  Speicherformat unverändert (v4). Datenschutzerklärung und Datenkarte
+  angepasst. Leitbild: Rückgängig auch beim Abhaken.
+- Mia: `pinnwand_schreiben` kennt `bleibt_haengen` („Häng dauerhaft an die
+  Pinnwand: …“, ohne KI `pinStays`), Beschreibung mit den neuen Regeln,
+  Prüfstand +1 Satz (195).
+- Behoben (Bildschirmfoto v0.138, iPhone 15 Pro): Die Tür war mit einem
+  Zettel fast bildschirmhoch (Mindesthöhe 420 → 220 px, wächst mit dem
+  Inhalt), und der schmale lange Griff rechts sah wie ein innerer
+  Scrollbalken aus (jetzt kurzer, kräftiger Bügel mit Rand und Schatten).
+  „Felix · gest…“ wurde abgeschnitten – Name · Zeit bricht jetzt lieber
+  um, der Haken-Kreis behält seinen Platz.

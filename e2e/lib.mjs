@@ -541,13 +541,13 @@ export async function schnell(page, text, { close = true } = {}) {
   return sheet;
 }
 
-/** Pinnwand (Kühlschranktür, Tafel 106): ＋ → „Neuer Zettel“ → Text auf den Zettel → „Anpinnen“ */
+/** Pinnwand (Kühlschranktür, Tafel 106): ＋ → „Neuer Zettel“ → Text auf den Zettel → „Aufhängen“ */
 export async function pinnwandSchreiben(page, text) {
   await page.getByRole("button", { name: /^(Neuer Zettel|Erster Zettel)$/ }).filter({ visible: true }).first().click();
   const sheet = page.getByRole("dialog", { name: "Neuer Zettel" });
   await sheet.waitFor({ timeout: 5000 });
   await sheet.getByRole("textbox", { name: "Text auf dem Zettel" }).fill(text);
-  await sheet.getByRole("button", { name: "Anpinnen" }).click();
+  await sheet.getByRole("button", { name: "Aufhängen" }).click();
   await sheet.waitFor({ state: "detached", timeout: 4000 }).catch(() => {});
   await page.waitForTimeout(300);
 }

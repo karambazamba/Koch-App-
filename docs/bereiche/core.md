@@ -138,7 +138,7 @@ Sortier-Regeln, Design-System, Service Worker, App-Icons und Manifest.
   Min Erinnerung), Aufgabe (Startseite: heute; Aufgaben-Seite: ohne Tag),
   Einkauf (alles auf die Liste, Unsicheres so wie getippt), Notiz, Pinnwand
   (mit Zitat bei Antworten). Meldung „Eingetragen: …“ / „Auf der Liste: …“ /
-  „Notiert: …“ / „Angepinnt: …“ mit Rückgängig (auch `undoLast`). Das Feld
+  „Notiert: …“ / „Hängt: …“ mit Rückgängig (auch `undoLast`). Das Feld
   bleibt leer und offen für die nächste.
 - „Mehr Details“ schließt und öffnet das volle Formular mit dem Getippten
   (`EntryForm` für Termine und Aufgaben, Einkauf-Fenster, `PinWriteSheet`,

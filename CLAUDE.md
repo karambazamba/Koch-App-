@@ -67,9 +67,9 @@ Die frühere Lieblingsfarbe ist „Meine Farbe im Kalender“ (Profil
   auf Unterseiten = eine Ebene zurück.
 - Erster Start: höchstens 3 Bildschirme (Hallo mit Zustimmungs-Häkchen → „Für
   wen?“ → Zugangscode nur wenn nötig), Details in `docs/bereiche/heute.md`.
-- Rückgängig nur bei echtem Löschen („Gelöscht · Rückgängig“, 3 s) und in der
-  Schnelleingabe („Eingetragen: … · Rückgängig“); sonst meldet sich
-  Hinzufügen still. Typografischer Apostroph überall („Was gibt’s?“).
+- Rückgängig nur bei echtem Löschen („Gelöscht · Rückgängig“, 3 s), beim
+  Abhaken („Erledigt · Rückgängig“) und in der Schnelleingabe; sonst meldet
+  sich Hinzufügen still. Typografischer Apostroph überall („Was gibt’s?“).
 
 ## 2. Gespräch zuerst
 - Die Begleitung (Sprache/Chat) ist der Hauptweg; jede Funktion ist auch per
