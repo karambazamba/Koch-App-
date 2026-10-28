@@ -18,12 +18,14 @@ type Props = {
  * höchstens ein Knopf (＋ oder „···“), darunter der große Titel (30/800). Zur
  * Startseite führt die Leiste unten (`ui/Leiste`). Direkt darunter, im
  * normalen Seitenfluss (nicht im festen Kopf), steht beim ersten Besuch Mias
- * Tipp für diese Seite (`ErsterBesuch`).
+ * Tipp für diese Seite (`ErsterBesuch`). Ist ein Fenster aus dem Kopf offen
+ * („···“), fällt der Weichzeichner weg – sonst wäre der Kopf der Rahmen für
+ * `position: fixed` und das Fenster nur so hoch wie der Kopf.
  */
 export function PageHeader({ title, backHref = "/", action, subtitle, tippZeigMal }: Props) {
   return (
     <>
-      <header data-sticky-header className="sticky top-0 z-10 flex flex-col bg-background/90 px-4 pb-2 pt-[env(safe-area-inset-top)] backdrop-blur">
+      <header data-sticky-header className="sticky top-0 z-10 flex flex-col bg-background/90 px-4 pb-2 pt-[env(safe-area-inset-top)] backdrop-blur has-[[role=dialog]]:z-30 has-[[role=dialog]]:backdrop-filter-none">
         <div className="flex h-12 items-center justify-between gap-3">
           <BackButton fallback={backHref} />
           {action}

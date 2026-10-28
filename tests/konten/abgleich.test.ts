@@ -27,7 +27,7 @@ const FULL = {
   "wasgibts.notizen": { version: 2, notes: [{ id: "n1", typ: "notiz", raum: "arbeit", besitzer: "lokal", erstellt: T0, geaendert: T0, data: { title: "WLAN", text: "abc" } }] },
   "wasgibts.pinnwand": { version: 4, messages: [{ id: "p1", typ: "pinnwand", raum: "familie", besitzer: "lokal", erstellt: T0, geaendert: T0, data: { text: "Hallo" } }], memos: [{ id: "m1", typ: "memo" }] },
   "wasgibts.einkaufsliste": {
-    version: 6,
+    version: 7,
     weeks: { "2026-10-19": { manual: [{ id: "i1", name: "Milch", amount: "", section: "kuehl", done: false }], checked: ["k1"], have: [] } },
     products: { milch: "Hafermilch" },
     shops: ["REWE"],

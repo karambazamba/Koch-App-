@@ -12,11 +12,13 @@ import { fromIsoDate } from "@/lib/core/now";
 import { weekStartFor, weekdayName } from "@/lib/essen/weekPlan";
 import { addManualItem, removeManualItems } from "@/lib/einkauf/listEdits";
 import { sectionFor } from "@/lib/einkauf/sections";
-import { mengeText, parseZutat, type LinkRezept, type LinkZutat } from "@/lib/essen/rezeptLink/lesen";
+import { alsEinkauf } from "@/lib/einkauf/zusammen/packung";
+import { parseZutat, type LinkRezept, type LinkZutat } from "@/lib/essen/rezeptLink/lesen";
 
 /** Zutaten auf die Einkaufsliste der Woche; liefert Rückgängig */
 export function linkAufDieListe(rezept: LinkRezept, toList: LinkZutat[], weekStart: string): () => void {
-  const ids = toList.map((z) => addManualItem(weekStart, { name: z.name, amount: mengeText(z), section: sectionFor(z.name), dish: rezept.title }));
+  // Rezeptmengen als Einkaufsmengen (Packung), die Rezeptmenge nur als Hinweis
+  const ids = toList.map((z) => addManualItem(weekStart, { name: z.name, ...alsEinkauf(z.name, z.amount, z.unit), section: sectionFor(z.name), dish: rezept.title }));
   return () => removeManualItems(weekStart, ids);
 }
 

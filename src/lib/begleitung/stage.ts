@@ -63,6 +63,7 @@ export function stageTopic(mode: string | undefined): string | undefined {
   if (mode === "wochencheck") return "WOCHENCHECK";
   if (mode === "kochtipp") return "KOCHIDEE";
   if (mode === "imhaus") return "IM HAUS";
+  if (mode === "einkauf") return "EINKAUF";
   return undefined;
 }
 

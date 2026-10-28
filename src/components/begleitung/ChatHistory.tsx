@@ -25,6 +25,8 @@ import type { ChatState, ChatTurnView } from "@/components/begleitung/chatTypes"
 import { ProposalCard } from "@/components/begleitung/ProposalCard";
 import { ImHausKarte } from "@/components/vorrat/ImHausKarte";
 import { isImHausVorschlag } from "@/lib/vorrat/reinsprechen";
+import { EinsprechenKarte, EinsprechenLive } from "@/components/einkauf/EinsprechenKarte";
+import { isEinkaufVorschlag } from "@/lib/einkauf/einsprechen";
 import { AdjustSheet, EarlierIdeas, SpontanAnswer } from "@/components/begleitung/SpontanBoard";
 import { TipBubble } from "@/components/begleitung/TipBubble";
 import { kiOkKarteZeigen, stimmeVomServer } from "@/lib/begleitung/kiOk";
@@ -131,7 +133,7 @@ export function ChatHistory({ scrollRef, inputRef, status, data, voice, consentL
               </span>
             </p>
           ) : greeting ? (
-            <MiaBubble lead>{greetingText(now().getHours(), now().getMinutes())}</MiaBubble>
+            <MiaBubble lead>{chat.einkauf ? "Zähl einfach auf." : greetingText(now().getHours(), now().getMinutes())}</MiaBubble>
           ) : null}
           {/* Kochidee geht ohne KI – der Zugangscode schiebt sich nicht davor */}
           {data && status && kiOkKarteZeigen({ askConsent: status.askConsent, weggeklickt: consentLater, kochtipp: Boolean(chat.kochtipp) }) && (
@@ -222,7 +224,7 @@ export function ChatHistory({ scrollRef, inputRef, status, data, voice, consentL
 
           {heard && (
             <OwnBubble live wartet={heardWaits}>
-              {heard}
+              {chat.einkauf ? <EinsprechenLive text={heard} /> : heard}
             </OwnBubble>
           )}
           {waiting && <OwnBubble wartet>{waiting}</OwnBubble>}
@@ -239,7 +241,10 @@ export function ChatHistory({ scrollRef, inputRef, status, data, voice, consentL
               onAdjust={() => onListen?.()}
             />
           )}
-          {chat.proposal && data && !busy && !(chat.imHaus && isImHausVorschlag(chat.proposal.ops)) && (
+          {chat.proposal && data && !busy && chat.einkauf && isEinkaufVorschlag(chat.proposal.ops) && (
+            <EinsprechenKarte ops={chat.proposal.ops} selected={chat.proposal.selected} onToggle={toggleOp} onApply={() => chat.proposal && onApply(chat.proposal.selected)} onMore={() => onListen?.()} />
+          )}
+          {chat.proposal && data && !busy && !(chat.imHaus && isImHausVorschlag(chat.proposal.ops)) && !(chat.einkauf && isEinkaufVorschlag(chat.proposal.ops)) && (
             <ProposalCard
               data={data}
               proposal={chat.proposal}

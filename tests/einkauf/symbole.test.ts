@@ -3,7 +3,7 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { SYMBOLS, symbolFor } from "@/lib/einkauf/kacheln/symbols";
-import { BASICS } from "@/lib/einkauf/kacheln/basics";
+import { BELIEBT } from "@/lib/einkauf/aussuchen/katalog";
 import { abteilungSymbol } from "@/lib/einkauf/kacheln/abteilung";
 import { sectionFor } from "@/lib/einkauf/sections";
 
@@ -32,8 +32,8 @@ describe("eigene Zeichnungen (Tafel 102)", () => {
     for (const id of SYMBOLS) expect(SRC, id).toMatch(new RegExp(`\\n  ${id}: \\(`));
   });
 
-  it("jedes Grundsortiment hat eine Zeichnung", () => {
-    expect(BASICS.filter((b) => !symbolFor(b.name)).map((b) => b.name)).toEqual([]);
+  it("jede „Beliebt“-Sache in Aussuchen hat eine Zeichnung", () => {
+    expect(BELIEBT.filter((n) => !symbolFor(n))).toEqual([]);
   });
 });
 

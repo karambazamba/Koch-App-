@@ -21,6 +21,7 @@ const PAGES = (process.argv.slice(2).filter((a) => a.startsWith("/")).length
   "/kochbuch",
   "/kochbuch/rezept?id=sp",
   "/einkaufsliste",
+  "/einkaufsliste/aussuchen",
   "/vorrat",
   "/pinnwand",
   "/notizen",

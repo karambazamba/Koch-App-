@@ -1,11 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Info, Plus, Trash2 } from "lucide-react";
+import { Check, Plus, Trash2 } from "lucide-react";
 import { Sheet } from "@/components/ui/Sheet";
 import { istGrundsache } from "@/lib/einkauf/kacheln/gruppen";
 import { setImmerAufDieListe } from "@/lib/einkauf/meineLaeden";
-import { AddedBy } from "@/components/konten/AddedBy";
 import { CARD_LIST, INPUT, INPUT_BASE, LABEL, buttonClass, chipClass } from "@/components/ui/styles";
 import { compareText } from "@/lib/core/sort";
 import {
@@ -19,68 +18,6 @@ import {
   type ShoppingSettings,
 } from "@/lib/einkauf/shoppingList";
 import { showDeleted } from "@/lib/core/toast";
-
-/** Inhalt einer Artikelzeile: Häkchen, Name, Menge rechtsbündig, optional Info */
-export function ItemContent({
-  item,
-  onToggle,
-  onInfo,
-  infoOpen,
-  neuVon,
-}: {
-  item: ListItem;
-  onToggle: () => void;
-  onInfo: () => void;
-  infoOpen: boolean;
-  /** Während des Einkaufs von jemand anderem dazugesetzt (Name, "" = unbekannt) */
-  neuVon?: string;
-}) {
-  return (
-    <>
-      <div className="flex min-h-12 items-center gap-3 py-1.5 pl-3 pr-3">
-        <button
-          type="button"
-          role="checkbox"
-          aria-checked={item.checked}
-          aria-label={`${item.name} ${item.checked ? "nicht mehr abhaken" : "abhaken"}`}
-          onClick={onToggle}
-          className={`hit flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 transition active:scale-90 ${
-            item.checked ? "border-accent bg-accent text-on-accent" : "border-line-strong bg-surface text-transparent"
-          }`}
-        >
-          <Check className="h-4 w-4" strokeWidth={3} aria-hidden />
-        </button>
-        <span className={`min-w-0 flex-1 truncate text-base font-semibold ${item.checked ? "text-faint line-through" : "text-ink"}`}>
-          {item.name}
-          {item.optional && <span className="ml-1.5 text-xs font-normal text-muted">optional</span>}
-          {item.dishes.length > 0 && !item.checked && (
-            <span className="ml-1.5 inline-block max-w-[9rem] truncate rounded-full bg-fill px-2 py-0.5 align-middle text-[11px] font-semibold text-muted">{item.dishes[0].replace(/\s*\([^)]*\)\s*$/, "")}</span>
-          )}
-        </span>
-        {item.dishes.length > 0 && (
-          <button
-            type="button"
-            onClick={onInfo}
-            aria-label={`Wofür: ${item.name}`}
-            aria-expanded={infoOpen}
-            className="hit -mx-1 flex h-8 w-8 shrink-0 items-center justify-center text-faint"
-          >
-            <Info className="h-4 w-4" strokeWidth={2} aria-hidden />
-          </button>
-        )}
-        {!item.checked && (neuVon !== undefined ? <span className="shrink-0 text-sm font-semibold text-warn-ink">{neuVon ? `Neu von ${neuVon}` : "Neu"} · gerade eben</span> : <AddedBy owner={item.von} />)}
-        <span className={`shrink-0 text-right text-sm tabular-nums ${item.checked ? "text-faint line-through" : "text-muted"}`}>
-          {item.amount}
-        </span>
-      </div>
-      {infoOpen && item.dishes.length > 0 && (
-        <p className="px-14 pb-2 text-xs text-muted" role="note">
-          Für {item.dishes.join(", ")}
-        </p>
-      )}
-    </>
-  );
-}
 
 /** Artikel bearbeiten: umbenennen ("Immer so?"), Laden, bei eigenen Artikeln Menge */
 export function EditItemSheet({

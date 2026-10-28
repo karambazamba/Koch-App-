@@ -93,6 +93,9 @@ export function bewerte(satz: PruefSatz, reply: AssistantReply, ms: number): Pru
     const bad = reply.ops.map((op) => ("name" in op && typeof op.name === "string" ? op.name : "")).filter((n) => n && re.test(n));
     if (bad.length) gruende.push(`Satzteil als Sache: ${bad.join(", ")}`);
   }
+  const einkauf = reply.ops.flatMap((op) => (op.type === "add_shopping" ? [op] : []));
+  if (satz.anzahl !== undefined && einkauf.length !== satz.anzahl) gruende.push(`${einkauf.length} statt ${satz.anzahl} Sachen (${einkauf.map((op) => op.name).join(", ") || "keine"})`);
+  if (satz.menge && !einkauf.some((op) => op.amount.trim().startsWith(satz.menge!))) gruende.push(`Menge ${satz.menge} nicht übernommen`);
   const max = satz.max ?? 2;
   if (sentenceCount(reply.reply) > max) gruende.push(`mehr als ${max} Sätze`);
   if ((reply.reply.match(/\?/g) ?? []).length > 1) gruende.push("mehr als eine Rückfrage");

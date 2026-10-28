@@ -82,7 +82,7 @@ describe("Tipp im Seitenfluss unter dem Titel", () => {
   });
 
   it("„Zeig mal“ nur, wo es schon etwas zu zeigen gibt: Einkauf öffnet „Meine Läden“", () => {
-    expect(read("src/components/einkauf/ShoppingListView.tsx")).toMatch(/<PageHeader title="Einkaufsliste" tippZeigMal=\{\(\) => setShopsOpen\(true\)\}/);
+    expect(read("src/components/einkauf/EinkaufSeite.tsx")).toMatch(/title="Einkauf"[\s\S]*?tippZeigMal=\{\(\) => setShopsOpen\(true\)\}/);
     expect(read("src/components/kalender/TasksView.tsx")).not.toMatch(/tippZeigMal/);
   });
 });

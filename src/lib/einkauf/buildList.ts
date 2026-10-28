@@ -2,6 +2,10 @@
 // bei jedem Anzeigen neu zusammengerechnet ("Doppelt kochen" = doppelte
 // Mengen, kleiner Haushalt = auf die Personen des Tages umgerechnet) und mit
 // den eigenen Artikeln der Woche nach Abteilung sortiert.
+// Nachtrag A-018: Rezeptmengen werden auf übliche Packungen gerundet (die
+// Rezeptmenge steht klein als Hinweis „250 ml für Lasagne“), und gleiche
+// Sachen im selben Laden stehen nur einmal da (`einkauf/zusammen`) – auch
+// Rezept-Zutat und eigener Artikel. Gespeichert bleibt alles wie es ist.
 
 import type { Recipe } from "@/lib/essen/cookbook";
 import type { PlanWeek } from "@/lib/essen/mealPlan";
@@ -10,6 +14,8 @@ import { SECTIONS, sectionFor } from "@/lib/einkauf/sections";
 import { SHOPPING, sortBy } from "@/lib/core/sort";
 import { EMPTY_LIST, lower, type ListItem, type ShoppingList, type ShoppingSettings, type WeekList } from "@/lib/einkauf/listModel";
 import { shopChoice } from "@/lib/einkauf/shopRules";
+import { gleicheSache, mengenAddieren, normalform } from "@/lib/einkauf/zusammen/zusammen";
+import { einkaufsMenge, rezeptHinweis } from "@/lib/einkauf/zusammen/packung";
 
 export function buildShoppingList(
   week: PlanWeek,
@@ -71,26 +77,48 @@ export function buildShoppingList(
     return choice === "" ? { shop: "", anywhere: true } : { shop: choice ?? "" };
   };
 
-  const generated: ListItem[] = [...acc.entries()].map(([key, a]) => {
+  // Gleiche Sache aus mehreren Rezepten (Einzahl/Mehrzahl, andere Einheit) = eine Zeile.
+  // Schlüssel bleibt der der ersten Zutat („zutat|einheitenfamilie“) – Häkchen bleiben gültig.
+  const gruppen = new Map<string, { key: string; teile: Acc[] }>();
+  for (const [key, a] of acc) {
+    const g = gruppen.get(normalform(a.name) || key);
+    if (g) g.teile.push(a);
+    else gruppen.set(normalform(a.name) || key, { key, teile: [a] });
+  }
+  const menge = (a: Acc) => (a.hasAmount ? formatTotal(a.scaled ? roundSmall(a.total, a.family) : a.total, a.family) : "");
+
+  const generated: ListItem[] = [...gruppen.values()].map(({ key, teile }) => {
+    const a = teile[0];
     const name = display(key, a.name);
+    const dishes = [...new Set(teile.flatMap((t) => t.dishes))];
+    const rezeptMenge = teile.map(menge).reduce(mengenAddieren, "");
+    // Packung statt Rezeptmenge (nur bei einer Einheit – sonst alles stehen lassen, nichts verlieren)
+    const mit = teile.filter((t) => t.hasAmount);
+    const total = mit.length ? mit.reduce((n, t) => n + (t.scaled ? roundSmall(t.total, t.family) : t.total), 0) : null;
+    const amount = teile.every((t) => t.family === a.family) ? einkaufsMenge(a.name, total, a.family) : rezeptMenge;
+    const hinweis = rezeptHinweis(amount === rezeptMenge ? "" : rezeptMenge, dishes);
     return {
       key,
       name,
       originalName: a.name,
-      amount: a.hasAmount ? formatTotal(a.scaled ? roundSmall(a.total, a.family) : a.total, a.family) : a.family,
+      amount,
       section: sectionFor(a.name),
-      dishes: a.dishes,
-      days: a.days,
+      dishes,
+      days: [...new Set(teile.flatMap((t) => t.days))],
       ...shopOf(name, a.name),
-      optional: a.optional,
+      optional: teile.every((t) => t.optional),
       checked: list.checked.includes(key),
       hidden: list.have.includes(key),
+      ...(hinweis ? { hinweis } : {}),
+      ...(list.fertig?.includes(key) ? { fertig: true } : {}),
     };
   });
   const manual: ListItem[] = list.manual.map((m) => {
     const name = settings.products[lower(m.name)] ?? m.name;
+    const key = `m:${m.id}`;
+    const hinweis = m.rezeptMenge ? rezeptHinweis(m.rezeptMenge, m.dish ? [m.dish] : []) : "";
     return {
-      key: `m:${m.id}`,
+      key,
       name,
       originalName: m.name,
       amount: m.amount,
@@ -103,10 +131,12 @@ export function buildShoppingList(
       ...(m.now ? { now: true } : {}),
       checked: m.done,
       hidden: false,
+      ...(m.rezeptMenge ? { hinweis } : {}),
+      ...(list.fertig?.includes(key) ? { fertig: true } : {}),
     };
   });
 
-  const items = sortBy([...generated, ...manual], ...SHOPPING);
+  const items = sortBy(zusammenlegen([...generated, ...manual]), ...SHOPPING);
   const visible = items.filter((i) => !i.hidden);
   return {
     items,
@@ -114,6 +144,34 @@ export function buildShoppingList(
     openCount: visible.filter((i) => !i.checked).length,
     doneCount: visible.filter((i) => i.checked).length,
   };
+}
+
+/**
+ * Gleiche Sache im selben Laden (gleicher Stand: offen bzw. abgehakt) = eine
+ * Zeile: eigene Artikel kommen zur Rezept-Zutat bzw. zum ersten eigenen
+ * Artikel dazu (`teile`, Mengen addiert). Ausgeblendetes bleibt für sich.
+ */
+function zusammenlegen(items: ListItem[]): ListItem[] {
+  const out: ListItem[] = [];
+  for (const i of items) {
+    const ziel = i.manualId && !i.hidden ? out.find((o) => !o.hidden && o.checked === i.checked && Boolean(o.fertig) === Boolean(i.fertig) && lower(o.shop) === lower(i.shop) && Boolean(o.anywhere) === Boolean(i.anywhere) && gleicheSache(o.name, i.name)) : undefined;
+    if (!ziel) {
+      out.push(i);
+      continue;
+    }
+    const merged: ListItem = {
+      ...ziel,
+      amount: mengenAddieren(ziel.amount, i.amount),
+      dishes: [...new Set([...ziel.dishes, ...i.dishes])],
+      days: [...new Set([...ziel.days, ...i.days])],
+      teile: [...(ziel.teile ?? []), i.manualId!],
+      ...(i.now ? { now: true } : {}),
+      ...(!ziel.hinweis && i.hinweis ? { hinweis: i.hinweis } : {}),
+      ...(!ziel.von && i.von ? { von: i.von } : {}),
+    };
+    out[out.indexOf(ziel)] = merged;
+  }
+  return out;
 }
 
 /** Offene Artikel als Text zum Teilen (WhatsApp, Nachricht …) – optional nur ein Laden */

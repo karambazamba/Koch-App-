@@ -345,7 +345,7 @@ export const memosTeilen = async (page, check, device) => {
 
 // Einkauf Teil 6: „Familie Bescheid sagen“ – A öffnet „Bei REWE“, sagt „Ja,
 // immer“; B bekommt den Hinweis, setzt per Schnellknopf-Link „Butter“ drauf;
-// bei A erscheint es gelb („Neu von …“); „Fertig eingekauft“ kommt bei B an.
+// bei A erscheint es gelb („Neu von …“); „Einkauf fertig“ kommt bei B an.
 export const einkaufUnterwegs = async (page, check, device) => {
   const tag = device.replace(/\W/g, "").toLowerCase() + Date.now();
   await hello(page);
@@ -362,9 +362,9 @@ export const einkaufUnterwegs = async (page, check, device) => {
     await pageB.evaluate((p) => localStorage.setItem("familienkueche.haushaltsprofil", p), profile);
     await joinViaLink(pageB, link, `lisa-weg-${tag}@example.com`);
 
-    await page.goto(BASE + "/einkaufsliste/laden?name=REWE");
+    await page.goto(BASE + "/einkaufsliste/laden?name=REWE&unterwegs=1");
     const ask = page.getByRole("dialog", { name: "Familie Bescheid sagen?" });
-    check(await ask.waitFor({ timeout: 10000 }).then(() => true, () => false), "Frage „Familie Bescheid sagen?“ beim ersten Einkaufsmodus");
+    check(await ask.waitFor({ timeout: 10000 }).then(() => true, () => false), "Frage „Familie Bescheid sagen?“ beim ersten Einkauf (unterwegs geöffnet)");
     await ask.getByRole("button", { name: "Ja, immer" }).click();
     await ask.waitFor({ state: "detached" });
     check(await page.getByText("Die Familie weiß Bescheid.").isVisible(), "A: „Die Familie weiß Bescheid“");
@@ -378,11 +378,11 @@ export const einkaufUnterwegs = async (page, check, device) => {
     check(/Neu von .+ · gerade eben/.test((await neu.textContent()) ?? ""), "A: „Neu von … · gerade eben“");
 
     await neu.getByRole("checkbox").click();
-    await page.getByRole("button", { name: "Fertig eingekauft" }).click();
+    await page.getByRole("button", { name: "Einkauf fertig" }).click();
     check(await waitFor(pageB, () => /"end":"/.test(localStorage.getItem("wasgibts.einkaufswege") ?? "")), "B: „Eingekauft ✓“ kommt an");
 
-    await page.goto(BASE + "/einkaufsliste/laden?name=REWE");
-    await page.getByRole("button", { name: "Fertig eingekauft" }).waitFor();
+    await page.goto(BASE + "/einkaufsliste/laden?name=REWE&unterwegs=1");
+    await page.getByRole("button", { name: "Einkauf fertig" }).waitFor();
     check(!(await page.getByRole("dialog", { name: "Familie Bescheid sagen?" }).isVisible()), "Antwort gemerkt: keine zweite Frage");
   } finally {
     await pageB.context().close();

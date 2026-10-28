@@ -170,6 +170,18 @@ export function newDuringTrip(items: ListItem[], active: ActiveTrip | null, me: 
   return new Set(items.filter((i) => i.von && i.von !== me && !i.checked && !active.known.includes(i.key)).map((i) => i.key));
 }
 
+/**
+ * Steht die Sache auf der Laden-Seite? Alles dieses Ladens – und während
+ * eines Einkaufs dort auch, was andere seitdem ohne Laden dazugesetzt haben
+ * (man steht ja gerade im Laden; abgehakt bleibt es im Korb sichtbar).
+ */
+export function aufLadenSeite(item: ListItem, shop: string, active: ActiveTrip | null, me: string | null): boolean {
+  const s = shop.trim().toLowerCase();
+  if (s && item.shop.trim().toLowerCase() === s) return true;
+  if (!s || !active || !me || active.shop.trim().toLowerCase() !== s || item.shop.trim()) return false;
+  return Boolean(item.von && item.von !== me && !active.known.includes(item.key));
+}
+
 /** Wie viele Sachen seit dem Start in den Korb kamen */
 export const boughtCount = (items: ListItem[], active: ActiveTrip | null) =>
   items.filter((i) => i.checked && !i.hidden && !(active?.doneBefore ?? []).includes(i.key)).length;

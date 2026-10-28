@@ -107,7 +107,7 @@ export const familieTeilen = async (page, check, device) => {
     check(!(await page.getByText("Meeting Lisa").count()), "Felix: Tag ohne Lisas Arbeit");
 
     // --- Einkauf live: Felix im Laden, Lisa sagt’s Mia --------------------------
-    await page.goto(BASE + "/einkaufsliste/laden?name=REWE");
+    await page.goto(BASE + "/einkaufsliste/laden?name=REWE&unterwegs=1");
     const ask = page.getByRole("dialog", { name: "Familie Bescheid sagen?" });
     check(await ask.waitFor({ timeout: 10000 }).then(() => true, () => false), "Felix: „Familie Bescheid sagen?“");
     await ask.getByRole("button", { name: "Ja, immer" }).click();

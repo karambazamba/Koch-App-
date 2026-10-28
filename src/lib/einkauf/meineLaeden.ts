@@ -1,17 +1,14 @@
 // Läden bewusst wählen (Tafel 88): „Meine Läden“ in gewählter Reihenfolge,
 // die einmalige Frage „Wo kaufst du meistens ein?“ (Fertig oder Später, nie
-// wieder), die Laden-Reihe der Einkaufsliste (Alle + meine Läden, auch ohne
-// Artikel, + andere mit offenen Sachen + „Ohne Laden“ nur wenn nötig) und die
-// Vorwahl beim Hinzufügen (gemerkter Laden → offener Reiter → nichts =
+// wieder) und die Vorwahl beim Hinzufügen (gemerkter Laden → offener Reiter → nichts =
 // „noch ohne Laden“; „Egal wo“ nur, wenn bewusst gewählt).
 // Reine Logik + Ändern im Speicher der Einkaufsliste.
 
 import { useExternalStore } from "@/lib/core/useExternalStore";
-import { SHOP_GROUPS, SHOPS, sortBy } from "@/lib/core/sort";
-import { lower, type ListItem, type ShoppingListStore } from "@/lib/einkauf/listModel";
+import { SHOPS, sortBy } from "@/lib/core/sort";
+import { lower, type ShoppingListStore } from "@/lib/einkauf/listModel";
 import { store, update } from "@/lib/einkauf/listStore";
 import { SHOP_SUGGESTIONS } from "@/lib/einkauf/shops";
-import type { ChipInfo, ShopChip } from "@/lib/einkauf/kacheln/view";
 
 export type MeineLaeden = { myShops: string[]; shopsAsked: boolean };
 
@@ -97,34 +94,6 @@ export function setImmerAufDieListe(name: string, on: boolean) {
 
 /** Aus „Meine Läden“ nehmen (gemerkte Läden an Artikeln bleiben) */
 export const removeMyShop = (name: string) => update((s) => ({ ...s, myShops: s.myShops.filter((x) => lower(x) !== lower(name)) }));
-
-/**
- * Laden-Reihe: „Alle“ + meine Läden (immer, auch mit 0) + andere Läden mit
- * offenen Sachen (meiste zuerst) + „Ohne Laden“ nur, wenn es Läden UND
- * Sachen ohne Laden gibt. Ohne „Meine Läden“ wie bisher.
- */
-export function shopRow(open: ListItem[], myShops: string[]): ChipInfo[] {
-  const count = (shop: string) => open.filter((i) => lower(i.shop) === lower(shop)).length;
-  const others = new Map<string, { shop: string; count: number }>();
-  for (const i of open) if (i.shop && !has(myShops, i.shop)) others.set(lower(i.shop), { shop: others.get(lower(i.shop))?.shop ?? i.shop, count: (others.get(lower(i.shop))?.count ?? 0) + 1 });
-  const rest = sortBy([...others.values()], ...SHOP_GROUPS);
-  const shops = [...myShops.map((shop) => ({ shop, count: count(shop) })), ...rest];
-  const without = open.filter((i) => !i.shop).length;
-  return [
-    { id: "alle", label: "Alle", count: open.length },
-    ...shops.map((s) => ({ id: `laden:${s.shop}` as ShopChip, label: s.shop, count: s.count, shop: s.shop })),
-    ...(shops.some((s) => s.count) && without ? [{ id: "ohne" as ShopChip, label: "Ohne Laden", count: without }] : []),
-  ];
-}
-
-/** Gemerkter Reiter → angezeigter (ein Laden, den es in der Reihe nicht mehr gibt → „Alle“) */
-export function chipIn(row: ChipInfo[], stored: string): ShopChip {
-  if (stored === "meist") return row.find((c) => c.shop && c.count)?.id ?? "alle";
-  return row.find((c) => lower(c.id) === lower(stored))?.id ?? "alle";
-}
-
-/** Knopf in den Einkaufsmodus */
-export const shopModeLabel = (shop: string) => `Bei ${shop} einkaufen`;
 
 /** Gemerkter Laden eines Artikels (auch über euer Produkt); "" = egal wo oder noch ohne Laden */
 export function rememberedShop(name: string, itemShops: Record<string, string>, products: Record<string, string> = {}): string {

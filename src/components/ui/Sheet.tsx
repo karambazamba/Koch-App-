@@ -45,6 +45,8 @@ export function Sheet({
   // Am Kopf nach unten ziehen schließt
   const drag = useRef<number | null>(null);
   const [dy, setDy] = useState(0);
+  // Danebentippen zählt nur, wenn der Finger auch auf der Fläche aufgesetzt hat
+  const scrimDown = useRef(false);
   // Escape schließt; Seite dahinter nicht mitscrollen
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
@@ -62,7 +64,13 @@ export function Sheet({
       <button
         type="button"
         aria-label="Schließen"
-        onClick={onClose}
+        onPointerDown={() => (scrimDown.current = true)}
+        onClick={(e) => {
+          // Danebentippen schließt – aber nicht der Klick vom Loslassen nach langem Drücken, der das Fenster geöffnet hat (Android)
+          if (e.detail !== 0 && !scrimDown.current) return;
+          scrimDown.current = false;
+          onClose();
+        }}
         className="absolute inset-0 bg-scrim"
       />
       <div

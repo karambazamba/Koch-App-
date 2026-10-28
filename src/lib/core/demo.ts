@@ -230,3 +230,6 @@ export const DEMO_SHOPS: { shop: string; names: string[] }[] = [
   { shop: "Lidl", names: ["Bananen", "Nudeln"] },
   { shop: "Rossmann", names: ["Zahnpasta", "Küchenrolle"] },
 ];
+
+/** Beispiel „Noch ohne Laden“ auf der Seite „Einkauf“ (zwei Chips) */
+export const DEMO_OHNE = ["Spinat", "Haferflocken"];

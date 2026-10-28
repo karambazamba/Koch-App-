@@ -173,9 +173,9 @@ export function KitchenHelper() {
         }
         setOpen(true);
         // Neues Gespräch ab hier (Früheres steht im „Verlauf“)
-        setChat((c) => ({ ...c, since: c.turns.length, topic: stageTopic(mode), imHaus: mode === "imhaus", proposal: mode === "imhaus" ? null : c.proposal }));
+        setChat((c) => ({ ...c, since: c.turns.length, topic: stageTopic(mode), imHaus: mode === "imhaus", einkauf: mode === "einkauf", proposal: mode === "imhaus" || mode === "einkauf" ? null : c.proposal }));
         // Mia holen: sie hört gleich zu, wenn das Mikro erlaubt ist (sonst ist das Tippen-Feld dran)
-        if (mode === "voice" || mode === "imhaus" || ask) setStart({ listen: mode === "voice" || mode === "imhaus", ask });
+        if (mode === "voice" || mode === "imhaus" || mode === "einkauf" || ask) setStart({ listen: mode === "voice" || mode === "imhaus" || mode === "einkauf", ask });
         else if (!mode && micState().granted) setStart({ listen: true });
         // Kochidee (Knopf in der Essen-Kachel oder Nachfrage): Mia fragt nicht, sie schlägt
         // gleich drei Gerichte vor (das Gespräch füllt sie, sobald es offen ist) – kein Mikro davor
@@ -205,8 +205,9 @@ export function KitchenHelper() {
     return () => clearTimeout(timer);
   }, [undone]);
 
-  const apply = async (selected: Set<string>) => {
-    if (!data || !chat.proposal) return;
+  /** Übernehmen; liefert das Zurücknehmen (Einsprechen zeigt es in der Meldung „9 drauf · Rückgängig“) */
+  const apply = async (selected: Set<string>): Promise<(() => void) | undefined> => {
+    if (!data || !chat.proposal) return undefined;
     const prompt = [...chat.turns].reverse().find((t) => t.role === "user")?.text ?? "";
     // Erst hier geladen (das Gespräch hat es schon geholt) – hält das Layout klein
     const { commitOps } = await import("@/lib/begleitung/client");
@@ -227,6 +228,7 @@ export function KitchenHelper() {
     const deleting = chat.proposal.ops.some((op) => selected.has(op.id) && (DELETING.has(op.type) || (op.type === "home" && op.change.action === "ausblenden")));
     if (deleting) setUndo({ run, key: Date.now() });
     setUndone(false);
+    return run;
   };
 
   // Keine Leiste beim ersten Start, im Notiz-Editor, Kochmodus, Anmelden und auf Rechtsseiten
@@ -260,7 +262,7 @@ export function KitchenHelper() {
             setOpen(false);
             setStart(null);
             // Spontan-Modus und „Was ist da?“ enden mit dem Schließen (nichts fängt danach Nachrichten ab)
-            setChat((c) => (c.spontan || c.imHaus ? { ...c, spontan: null, imHaus: false } : c));
+            setChat((c) => (c.spontan || c.imHaus || c.einkauf ? { ...c, spontan: null, imHaus: false, einkauf: false } : c));
             // Fokus zurück auf den Knopf
             setTimeout(() => fabRef.current?.focus(), 0);
           }}

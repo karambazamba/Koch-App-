@@ -1,31 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { knownShop, shopModeLists, shopModeRequest } from "@/lib/einkauf/shopMode";
-import type { ListItem } from "@/lib/einkauf/shoppingList";
+import { knownShop, shopModeRequest } from "@/lib/einkauf/shopMode";
 import { jetztTopics, type JetztInput } from "@/lib/heute/jetztTopics";
 import { jetztInput } from "../helpers";
 
 const SHOPS = ["Aldi", "Lidl", "Edeka", "Rewe", "Rossmann", "dm", "Wochenmarkt", "Bäcker", "Hofladen"];
-const item = (name: string, shop = "", checked = false): ListItem => ({ key: name, name, originalName: name, amount: "", section: "sonstiges", dishes: [], days: [], shop, checked, hidden: false });
-
-describe("Einkaufsmodus „Bei REWE“", () => {
-  const items = [item("Milch", "Rewe"), item("Brot", "Rewe", true), item("Äpfel"), item("Zahnpasta", "Rossmann"), item("Shampoo", "Rossmann"), item("Eier", "Edeka"), item("Butter", "", true)];
-
-  it("hier · egal wo · andere Läden (meiste zuerst) · im Korb", () => {
-    const l = shopModeLists(items, "REWE");
-    expect(l.here.map((i) => i.name)).toEqual(["Milch"]);
-    expect(l.anywhere.map((i) => i.name)).toEqual(["Äpfel"]);
-    expect(l.elsewhere).toEqual([
-      { shop: "Rossmann", names: ["Zahnpasta", "Shampoo"] },
-      { shop: "Edeka", names: ["Eier"] },
-    ]);
-    expect(l.done.map((i) => i.name)).toEqual(["Brot", "Butter"]);
-  });
-
-  it("Ausgeblendetes („Haben wir schon“) taucht nicht auf", () => {
-    const l = shopModeLists([{ ...item("Mehl", "Rewe"), hidden: true }], "Rewe");
-    expect(l.here).toEqual([]);
-  });
-});
 
 describe("„Ich bin bei REWE“ erkennen (ohne KI)", () => {
   it("bekannte Läden, Groß/klein egal, Schreibweise der Familie", () => {
@@ -48,12 +26,12 @@ describe("„Ich bin bei REWE“ erkennen (ohne KI)", () => {
   });
 });
 
-describe("Jetzt-Karte „Auf dem Heimweg?“ öffnet den Einkaufsmodus", () => {
-  it("echte Liste → /einkaufsliste/laden?name=…, Beispiel-Tag → Einkaufsliste", () => {
+describe("Jetzt-Karte „Auf dem Heimweg?“ öffnet die Laden-Seite (unterwegs)", () => {
+  it("echte Liste → /einkaufsliste/laden?name=…&unterwegs=1, Beispiel-Tag → Einkaufsliste", () => {
     const shop = { shop: "REWE", names: ["Milch", "Brot", "Butter"] };
     const find = (x: JetztInput) => jetztTopics(x).find((t) => t.kind === "einkauf");
     const real = find(jetztInput(16 * 60 + 40, { shop, demo: false }));
-    expect(real?.target).toEqual({ href: "/einkaufsliste/laden?name=REWE" });
+    expect(real?.target).toEqual({ href: "/einkaufsliste/laden?name=REWE&unterwegs=1" });
     const demo = find(jetztInput(16 * 60 + 40, { shop, demo: true }));
     expect(demo?.target).toEqual({ href: "/einkaufsliste" });
   });

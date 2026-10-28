@@ -1,7 +1,7 @@
-// Läden bewusst wählen (Tafel 88): Frage beim ersten Besuch, Laden-Reihe mit
-// 0 Artikeln, ＋ → „Mehr Details“, „Bei Lidl einkaufen ›“, Vorwahl beim Hinzufügen,
-// „Später“ fragt nie wieder.
-import { BASE, hello, katalog, seedFamily, store } from "../lib.mjs";
+// Läden bewusst wählen (Tafel 88, seit „Einkauf neu“ mit Laden-Karten): Frage
+// beim ersten Besuch, Karten auch mit 0 Sachen, Aussuchen mit dem gewählten
+// Laden, Laden-Seite, „Meine Läden bearbeiten“ im „···“, „Später“ fragt nie wieder.
+import { BASE, aussuchen, hello, seedFamily, store } from "../lib.mjs";
 
 const open = async (page) => {
   await hello(page);
@@ -22,33 +22,27 @@ export const laedenWaehlen = async (page, check) => {
   check(!(await card.count()), "Karte weg");
   const list = await store(page, "wasgibts.einkaufsliste");
   check(JSON.stringify(list.myShops) === JSON.stringify(["Lidl", "Rossmann"]), "Meine Läden: Lidl, Rossmann");
-  const row = page.locator("[data-laden-reihe]");
-  check(await row.getByRole("radio", { name: /^Rossmann/ }).isVisible(), "Rossmann in der Reihe, auch mit 0");
-  await row.getByRole("radio", { name: /^Lidl/ }).tap();
-  check(!(await page.locator("[data-einkauf-knopf]").count()), "kein fester Knopf unten (＋ ist der eine Weg)");
-  check(!(await page.locator("[data-einkaufsmodus]").count()), "ohne Artikel kein Einkaufsmodus-Knopf");
-  // Hinzufügen über ＋ → „Mehr Details“: Lidl vorgewählt
-  const sheet = await katalog(page);
-  check((await sheet.getByRole("radio", { name: /Lidl/ }).getAttribute("aria-checked")) === "true", "Laden-Wahl: Lidl vorgewählt");
-  await sheet.getByLabel("Suchen oder eintragen").fill("Joghurt");
-  await sheet.getByLabel("Suchen oder eintragen").press("Enter");
-  await sheet.getByRole("button", { name: "Fertig" }).tap();
-  await page.waitForTimeout(600);
+  check(await page.locator('[data-laden-karte="Rossmann"]').isVisible(), "Rossmann als Karte, auch mit 0");
+  check(!(await page.locator("[data-einkaufsmodus]").count()), "kein Einkaufsmodus-Knopf");
+  // Aussuchen: Lidl wählen, Joghurt antippen → bei Lidl gemerkt
+  await page.locator("[data-aussuchen]").tap();
+  await page.waitForURL(/\/einkaufsliste\/aussuchen/, { timeout: 5000 }).catch(() => {});
+  await aussuchen(page, "Lidl");
+  await page.locator('[data-abschnitt="kuehlregal"] [data-kachel="Joghurt"]').tap();
+  await page.waitForTimeout(300);
   const after = await store(page, "wasgibts.einkaufsliste");
   check(after.itemShops.joghurt === "Lidl", "Joghurt bei Lidl gemerkt");
-  const modus = page.locator("[data-einkaufsmodus]");
-  check(await modus.isVisible(), "„Bei Lidl einkaufen ›“");
-  // Nochmal tippen öffnet keinen Einkaufsmodus mehr
-  await row.getByRole("radio", { name: /^Lidl/ }).tap();
-  await page.waitForTimeout(300);
-  check(page.url().endsWith("/einkaufsliste"), "nochmal tippen bleibt auf der Liste");
-  await modus.tap();
-  await page.waitForURL(/\/einkaufsliste\/laden/, { timeout: 5000 }).catch(() => {});
-  check(page.url().includes("/einkaufsliste/laden"), "Knopf öffnet den Einkaufsmodus");
-  // ＋ in der Reihe: Meine Läden
   await page.goto(BASE + "/einkaufsliste");
   await page.waitForTimeout(800);
-  await page.getByRole("button", { name: "Meine Läden" }).tap();
+  await page.locator('[data-laden-karte="Lidl"]').tap();
+  await page.waitForURL(/\/einkaufsliste\/laden/, { timeout: 5000 }).catch(() => {});
+  check(page.url().includes("/einkaufsliste/laden?name=Lidl"), "Karte öffnet die Laden-Seite");
+  check(await page.getByRole("checkbox", { name: "Joghurt abhaken" }).isVisible(), "Joghurt auf der Lidl-Seite");
+  // „···“ → Meine Läden bearbeiten
+  await page.goto(BASE + "/einkaufsliste");
+  await page.waitForTimeout(800);
+  await page.getByRole("button", { name: "Mehr" }).tap();
+  await page.getByRole("dialog", { name: "Einkauf" }).getByRole("button", { name: "Meine Läden bearbeiten" }).tap();
   const meine = page.locator("[data-meine-laeden]");
   await meine.getByLabel("Anderer Laden").fill("Hofladen");
   await meine.getByRole("button", { name: "Laden dazu" }).tap();
@@ -68,5 +62,6 @@ export const laedenSpaeter = async (page, check) => {
   await page.reload();
   await page.waitForTimeout(1100);
   check(!(await page.locator("[data-laden-frage]").count()), "Später: nie wieder gefragt");
-  check(await page.getByRole("button", { name: "Etwas auf die Einkaufsliste setzen" }).isVisible(), "Liste wie bisher");
+  check(await page.locator("[data-einsprechen]").isVisible(), "Einsprechen und Aussuchen wie immer");
+  check(await page.getByRole("button", { name: "Läden wählen" }).isVisible(), "ohne Läden: „Läden wählen“");
 };

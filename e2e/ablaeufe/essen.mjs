@@ -1,5 +1,5 @@
 // Essen, Rezept, Einkauf, Im Haus
-import { BASE, FAKE_HOEREN, hello, katalog, seedFamily, store } from "../lib.mjs";
+import { BASE, FAKE_HOEREN, aussuchen, hello, seedFamily, store } from "../lib.mjs";
 
 const RECIPE = { id: "sp", title: "Spaghetti Bolognese", category: "fleisch", servings: 4, prepMinutes: 30, ingredients: [{ id: "a", amount: 500, unit: "g", name: "Spaghetti" }, { id: "b", amount: 400, unit: "g", name: "Hackfleisch" }], steps: ["Zwiebeln schneiden.", "Anbraten.", "Köcheln lassen."], note: "", source: "eigenes", ai: null, favorite: true, thumbsUp: 0, thumbsDown: 0, cookedCount: 3, lastCookedAt: null, known: true, createdAt: "2026-10-01", updatedAt: "2026-10-01" };
 export const RECIPE_DATA = { "wasgibts.kochbuch": { version: 2, recipes: { sp: RECIPE } } };
@@ -26,47 +26,52 @@ export const rezept = async (page, check) => {
   check(await page.getByText("Hackfleisch").first().isVisible(), "Zutaten");
 };
 
+// Einkauf (Einkauf neu): aussuchen → Laden-Karte → Laden-Seite: Kreis = gekauft,
+// „Zuletzt gekauft“ im „···“, lange drücken = „Wo kaufst du das?“ → Ändern
 export const einkauf = async (page, check) => {
   await family(page, "/einkaufsliste");
-  // ＋ → „Mehr Details“ = „Mehr hinzufügen“: tippen (mehrere mit Komma), Fertig
-  const sheet = await katalog(page);
-  await sheet.getByLabel("Suchen oder eintragen").fill("Milch, Brot");
-  await sheet.getByLabel("Suchen oder eintragen").press("Enter");
-  await sheet.getByText("2 ausgewählt").waitFor();
-  await sheet.getByRole("button", { name: "Bananen", exact: true }).tap();
-  check(await sheet.getByText("3 ausgewählt").isVisible(), "Katalog: „3 ausgewählt“");
-  await sheet.getByRole("button", { name: "Fertig" }).tap();
-  await page.waitForTimeout(600);
-  const milch = page.getByRole("button", { name: "Milch: Laden wählen" });
-  check((await milch.isVisible()) && (await page.getByRole("button", { name: "Bananen: Laden wählen" }).isVisible()), "Milch und Bananen als Kacheln");
-  // Tippen = „Wo kaufst du das?“ (nie gekauft, Tafel 99); gekauft nur über „Schon gekauft“
-  await milch.tap();
-  const wo = page.getByRole("dialog", { name: "Wo kaufst du das?" });
-  check(await wo.waitFor({ timeout: 3000 }).then(() => true, () => false), "Antippen → „Wo kaufst du das?“");
+  await page.locator("[data-laden-frage]").getByRole("button", { name: "Rewe" }).tap();
+  await page.locator("[data-laden-frage]").getByRole("button", { name: "Fertig" }).tap();
+  await aussuchen(page, "Rewe");
+  for (const n of ["Milch", "Brot", "Bananen"]) await page.locator(`[data-abschnitt="oft"] [data-kachel="${n}"]`).tap();
+  check(/Rewe 3/.test(await page.locator("[data-aussuchen-leiste]").innerText()), "Aussuchen: „Rewe 3“");
+  await page.locator("[data-aussuchen-leiste]").getByRole("button", { name: "Fertig" }).tap();
+  await page.waitForURL(/\/einkaufsliste$/, { timeout: 5000 }).catch(() => {});
+  await page.locator('[data-laden-karte="Rewe"]').tap();
+  await page.waitForURL(/\/einkaufsliste\/laden/, { timeout: 5000 }).catch(() => {});
+  const milch = page.getByRole("checkbox", { name: "Milch abhaken" });
+  // die Laden-Seite lädt kurz (Skelett) – erst dann nachsehen
+  const sichtbar = (l) => l.waitFor({ timeout: 5000 }).then(() => true, () => false);
+  check((await sichtbar(milch)) && (await sichtbar(page.getByRole("checkbox", { name: "Bananen abhaken" }))), "Milch und Bananen auf der Rewe-Seite");
   const done = async () => Object.values((await store(page, "wasgibts.einkaufsliste")).weeks).some((w) => w.manual.some((m) => m.name === "Milch" && m.done));
-  check(!(await done()), "Antippen ändert nicht „gekauft“");
-  await wo.getByRole("button", { name: "Schon gekauft" }).tap();
-  await page.waitForTimeout(2600);
-  check(await done(), "„Schon gekauft“ hakt ab");
-  // „Zuletzt gekauft“ ist zugeklappt (Einkauf aufgeräumt, v0.119): aufklappen
-  const zuletzt = page.getByRole("region", { name: "Zuletzt gekauft" });
-  await zuletzt.getByRole("button", { name: /^Zuletzt gekauft/ }).tap();
-  await page.waitForTimeout(400);
-  check(await zuletzt.getByRole("button", { name: /Milch/ }).isVisible(), "abgehakt → „Zuletzt gekauft“");
-  // Lange drücken = ändern
-  const brot = page.getByRole("button", { name: "Brot: Laden wählen" });
-  await brot.scrollIntoViewIfNeeded();
-  await page.waitForTimeout(300);
+  await milch.tap();
+  await page.waitForTimeout(2200);
+  check(await done(), "Kreis hakt ab");
+  const wagen = page.getByRole("region", { name: "Schon im Wagen" });
+  check((await wagen.isVisible()) && !(await wagen.getByText("Milch").isVisible()), "abgehakt → „Schon im Wagen“ (zugeklappt)");
+  await wagen.getByRole("button", { name: "Schon im Wagen" }).tap();
+  check(await wagen.getByText("Milch").isVisible(), "aufklappen: Milch im Wagen");
+  // Lange drücken = „Wo kaufst du das?“ (anderer Laden, Ändern, Löschen)
+  const brot = page.locator('[data-laden-zeile="Brot"]');
   const box = await brot.boundingBox();
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
   await page.mouse.down();
   await page.waitForTimeout(700);
   await page.mouse.up();
-  check(await page.getByRole("dialog", { name: "Artikel bearbeiten" }).isVisible(), "lange drücken → „Artikel bearbeiten“");
+  const wo = page.getByRole("dialog", { name: "Wo kaufst du das?" });
+  check(await wo.waitFor({ timeout: 3000 }).then(() => true, () => false), "lange drücken → „Wo kaufst du das?“");
+  await wo.getByRole("button", { name: "Ändern" }).tap();
+  check(await page.getByRole("dialog", { name: "Artikel bearbeiten" }).waitFor({ timeout: 3000 }).then(() => true, () => false), "„Ändern“ → „Artikel bearbeiten“");
+  // „Zuletzt gekauft“ steckt im „···“
+  await page.goto(BASE + "/einkaufsliste");
+  await page.waitForTimeout(800);
+  await page.getByRole("button", { name: "Mehr" }).tap();
+  await page.getByRole("dialog", { name: "Einkauf" }).getByRole("button", { name: "Zuletzt gekauft" }).tap();
+  check(await page.locator("[data-zuletzt-gekauft]").getByText("Milch").waitFor({ timeout: 3000 }).then(() => true, () => false), "„···“ → „Zuletzt gekauft“ mit Milch");
 };
 
-// „Im Haus“ (Tafel 102): Chips in Gruppen, oranger Punkt = bald; Brot im
-// Einkauf abhaken („Schon gekauft“) → steht unter „Brot“ → Chip = Fenster →
+// „Im Haus“ (Tafel 102): Chips in Gruppen, oranger Punkt = bald; Brot auf der
+// Laden-Seite abhaken (Kreis) und „Einkauf fertig“ → steht unter „Brot“ → Chip = Fenster →
 // „Aufgebraucht“ → Zeile „Aufgebraucht: Brot“ → „Auf die Liste“; „Was koch
 // ich daraus?“ schwebt über der Leiste und öffnet Spontan kochen.
 export const imHaus = async (page, check) => {
@@ -80,15 +85,17 @@ export const imHaus = async (page, check) => {
   const koch = await page.locator("[data-was-koch-ich]").boundingBox();
   const leiste = await page.locator("[data-leiste]").boundingBox();
   check(koch && leiste && koch.y + koch.height <= leiste.y + 1, `„Was koch ich daraus?“ über der Leiste (${Math.round(koch?.y + koch?.height)} ≤ ${Math.round(leiste?.y)})`);
-  await page.goto(BASE + "/einkaufsliste");
-  const sheet = await katalog(page);
-  await sheet.getByLabel("Suchen oder eintragen").fill("Brot");
-  await sheet.getByLabel("Suchen oder eintragen").press("Enter");
-  await sheet.getByRole("button", { name: "Fertig" }).tap();
-  // Zu Hause abhaken nur über „Schon gekauft“ (Tafel 99)
-  await page.getByRole("button", { name: "Brot: Laden wählen" }).tap();
-  await page.getByRole("dialog", { name: "Wo kaufst du das?" }).getByRole("button", { name: "Schon gekauft" }).tap();
-  check(await page.getByText("Im Haus: Brot").waitFor({ timeout: 5000 }).then(() => true, () => false), "Meldung „Im Haus: Brot“");
+  // Laden-Seite: „Was noch bei Rewe?“ → Brot, Kreis = gekauft → kommt ins Haus
+  await page.goto(BASE + "/einkaufsliste/laden?name=Rewe");
+  await page.locator("[data-was-noch]").fill("Brot");
+  await page.locator("[data-was-noch]").press("Enter");
+  await page.getByRole("checkbox", { name: "Brot abhaken" }).tap();
+  // erst gleitet Brot in „Schon im Wagen“ (1 s + 0,8 s), dann steht der Knopf still
+  await page.waitForTimeout(2000);
+  await page.locator("[data-einkauf-fertig]").tap();
+  check(await page.getByText("Fertig. Liegt jetzt bei Im Haus.").waitFor({ timeout: 5000 }).then(() => true, () => false), "„Einkauf fertig“ → „Fertig. Liegt jetzt bei Im Haus.“");
+  await page.waitForURL(/\/einkaufsliste$/, { timeout: 5000 }).catch(() => {});
+  check(/\/einkaufsliste$/.test(page.url()), "zurück zur Übersicht");
   await page.goto(BASE + "/vorrat");
   const brot = page.getByRole("region", { name: "Brot" }).getByRole("button", { name: "Brot", exact: true });
   check(await brot.waitFor({ timeout: 5000 }).then(() => true, () => false), "Brot steht unter „Brot“");

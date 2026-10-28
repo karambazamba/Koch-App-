@@ -1,13 +1,9 @@
-// Einkauf nach Läden: gemerkter Chip der Einkaufsliste („Alle“ oder ein
-// Laden), der Einkaufsmodus „Bei REWE“ (nur, was es dort gibt, dazu
-// „Egal wo“ und – eingeklappt – die anderen Läden) und das Lernen: wird im
-// Laden etwas ohne Laden abgehakt, merkt sich die Liste den Laden dafür.
-// Reine Logik + kleiner Speicher; Oberfläche in components/shopping/ShopMode.
+// Einkauf nach Läden: der gemerkte Laden (pro Gerät – seit „Einkauf neu“ der
+// aktive Laden in „Aussuchen“; früher der Chip der Liste, gleiches Format),
+// der Weg auf die Laden-Seite unterwegs und „Ich bin bei REWE“ erkennen.
 
 import { createLocalStore } from "@/lib/core/localStore";
 import { useExternalStore } from "@/lib/core/useExternalStore";
-import { compareText } from "@/lib/core/sort";
-import type { ListItem } from "@/lib/einkauf/shoppingList";
 import type { ShopChip } from "@/lib/einkauf/kacheln/view";
 
 /** Gemerkter Chip der Einkaufsliste; „meist“ = früher „Nach Laden“ (der Laden mit den meisten Sachen) */
@@ -29,7 +25,7 @@ const viewStore = createLocalStore("wasgibts.einkaufsansicht", migrateShopView);
 
 const loadChip = (): StoredChip => viewStore.load()?.chip ?? "alle";
 
-/** Gemerkter Chip der Einkaufsliste (pro Gerät) */
+/** Gemerkter Laden (pro Gerät): „laden:Rewe“ = aktiver Laden in „Aussuchen“ */
 export function useShopChip(): StoredChip {
   return useExternalStore(viewStore.subscribe, loadChip, () => "alle" as const);
 }
@@ -38,34 +34,8 @@ export const setShopChip = (chip: ShopChip) => viewStore.save({ version: 2, chip
 
 const lower = (s: string) => s.trim().toLowerCase();
 
-/** Link in den Einkaufsmodus */
-export const shopModeHref = (shop: string) => `/einkaufsliste/laden?name=${encodeURIComponent(shop)}`;
-
-export type ShopModeLists = {
-  /** Gibt es hier (offen) */
-  here: ListItem[];
-  /** Ohne Laden – kann man hier mitnehmen */
-  anywhere: ListItem[];
-  /** Andere Läden (offen), meiste zuerst */
-  elsewhere: { shop: string; names: string[] }[];
-  /** Hier schon im Korb */
-  done: ListItem[];
-};
-
-/** Liste für den Einkaufsmodus in einem Laden */
-export function shopModeLists(items: ListItem[], shop: string): ShopModeLists {
-  const visible = items.filter((i) => !i.hidden);
-  const isHere = (i: ListItem) => lower(i.shop) === lower(shop);
-  const open = visible.filter((i) => !i.checked);
-  const other = new Map<string, string[]>();
-  for (const i of open) if (i.shop && !isHere(i)) other.set(i.shop, [...(other.get(i.shop) ?? []), i.name]);
-  return {
-    here: open.filter(isHere),
-    anywhere: open.filter((i) => !i.shop),
-    elsewhere: [...other.entries()].map(([s, names]) => ({ shop: s, names })).sort((a, b) => b.names.length - a.names.length || compareText(a.shop, b.shop)),
-    done: visible.filter((i) => i.checked && (isHere(i) || !i.shop)),
-  };
-}
+/** Unterwegs in den Laden („Ich bin bei REWE“, „Auf dem Heimweg?“): Laden-Seite, der Einkauf beginnt gleich */
+export const shopModeHref = (shop: string) => `/einkaufsliste/laden?name=${encodeURIComponent(shop)}&unterwegs=1`;
 
 /** Den Laden so schreiben, wie die Familie ihn kennt (Groß/klein egal) */
 export function knownShop(name: string, shops: string[]): string | null {
