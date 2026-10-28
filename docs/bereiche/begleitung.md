@@ -128,9 +128,10 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
   Vorschlag dagegen verstoßen würde, keine Oberflächen-Erklärungen, ehrlich KI
   (keine menschlichen Erlebnisse; „Ich bin müde“ → „Dann mach heute langsam.
   Soll ich das Abendessen übernehmen?“).
-- Mehreres auf einmal = kurzer Satz (seit v0.108): Erledigt Mia mit einer
-  Antwort 2+ Dinge sofort, steht nur „Erledigt.“ da (Vorlesen auch; eigene
-  Fassung bis 2 Wörter wie „Steht alles.“ bleibt), plus höchstens EIN Satz,
+- Kurzer Satz zu den Karten (seit v0.108, A-037 auch bei EINER Sache): Erledigt
+  Mia mit einer Antwort etwas sofort, steht nur „Steht drin.“ da (Vorlesen auch;
+  eigene Fassung bis 2 Wörter wie „Is drauf.“ bleibt; bei einer Sache dazu der
+  Hinweis, wo es steht; `kurzeBestaetigung` mehrere Arten ebenso), plus höchstens EIN Satz,
   wenn etwas unklar war oder nicht ging (`shortDoneReply`, ohne
   Anschluss-Angebote). Prüfstand: 3 Mehrfach-Sätze (`alle`, `woerter: 2`).
 - Ergebnis-Karten wie im Clip (A-037, Tafel 126, ersetzt die Text-Übersicht

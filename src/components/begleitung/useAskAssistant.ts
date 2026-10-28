@@ -96,8 +96,9 @@ export function useAskAssistant({ data, today, ready, chat, setChat, setInput, s
       const timerUndo = done;
       done = timerUndo ? () => (committed.undo(), timerUndo()) : committed.undo;
       karten = ergebnisse(result.ops);
-      if (karten.length >= 2) result = { ...result, ops: [], reply: shortDoneReply(result.reply, karten.length) };
-      else result = { ...result, ops: [], reply: committed.notes.length ? `${result.reply}\n${committed.notes.join(" ")}` : result.reply };
+      // Mit Karten nur kurz „Steht drin.“ (A-037); bei einer Sache bleibt der Hinweis, wo es steht
+      const kurz = shortDoneReply(result.reply, karten.length);
+      result = { ...result, ops: [], reply: karten.length <= 1 && committed.notes.length ? `${kurz}\n${committed.notes.join(" ")}` : kurz };
     }
     const tipsWhere = result.tips?.length ? unlockTips() : null;
     const turn: ChatTurnView = {
@@ -135,7 +136,8 @@ export function useAskAssistant({ data, today, ready, chat, setChat, setInput, s
       notes = [...notes, ...committed.notes];
     }
     const karten = ergebnisse(instant.rest);
-    const turn: ChatTurnView = { role: "assistant", text: notes.length ? `${s.reply}\n${notes.join(" ")}` : s.reply, undo, quick: true, ...(karten.length ? { ergebnisse: karten } : {}) };
+    const satz = shortDoneReply(s.reply, karten.length);
+    const turn: ChatTurnView = { role: "assistant", text: notes.length ? `${satz}\n${notes.join(" ")}` : satz, undo, quick: true, ...(karten.length ? { ergebnisse: karten } : {}) };
     setChat((c) => ({ ...c, turns: [...c.turns, { role: "user", text: display ?? question, send: display ? question : undefined }, turn] }));
     tempoMarke("fertig");
     const abbrechen = new AbortController();

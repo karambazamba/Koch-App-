@@ -32,10 +32,10 @@ export function kurzBestaetigbar(ops: ChangeOp[]): boolean {
   return ops.length > 0 && ops.every((op) => KURZ.has(op.type) && (op.type !== "add_shopping" || !op.vorschlag) && (op.type !== "upsert_entry" || op.isNew) && (op.type !== "upsert_note" || op.isNew || Boolean(op.change)));
 }
 
-/** Kurze Bestätigung; mehrere Arten auf einmal = „Erledigt.“ (die App zeigt die Übersicht) */
+/** Kurze Bestätigung; mehrere Arten auf einmal = „Steht drin.“ (die App zeigt die Ergebnis-Karten, A-037) */
 export function kurzeBestaetigung(ops: ChangeOp[], today: string): string {
   const arten = new Set(ops.map((op) => op.type));
-  if (arten.size > 1) return "Erledigt.";
+  if (arten.size > 1) return "Steht drin.";
   const op = ops[0];
   if (!op) return "Erledigt.";
   switch (op.type) {

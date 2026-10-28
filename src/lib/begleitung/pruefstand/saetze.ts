@@ -33,7 +33,7 @@ export type PruefSatz = {
   max?: number;
   /** Alle erwarteten Aktionen müssen kommen (Mehrfach-Aktion) */
   alle?: boolean;
-  /** Höchstens so viele Wörter (Mehrfach-Aktion: „Erledigt.“) */
+  /** Höchstens so viele Wörter (Mehrfach-Aktion: „Steht drin.“) */
   woerter?: number;
   /** Jeder Einkaufs-Vorschlag gehört in diesen Laden (Läden bewusst wählen) */
   laden?: string;
@@ -265,7 +265,7 @@ export const PRUEFSAETZE: PruefSatz[] = [
   S("Ich bin müde", ANTWORT),
   S("äh ja also nee doch nicht", ANTWORT),
 
-  // Mehreres auf einmal: alle Aktionen, Text nur „Erledigt.“ (3)
+  // Mehreres auf einmal: alle Aktionen, Text nur „Steht drin.“ (3)
   S("Pack Milch, Brot und Eier auf die Liste und Kita-Formular und Geschenk für Oma in die Aufgaben", ["add_shopping", "upsert_entry"], { alle: true, woerter: 2 }),
   S("Zahnarzt Montag 10 Uhr, Turnen Freitag 16 Uhr und Butter auf die Liste", ["upsert_entry", "add_shopping"], { alle: true, woerter: 2, lage: ["ohne-zahnarzt"] }),
   S("Kaffee und Klopapier auf die Liste, Mathis Freitag 15 Uhr Fußball und Steuer bis Mittwoch als Aufgabe", ["add_shopping", "upsert_entry"], { alle: true, woerter: 2, lage: ["ohne-steuer"] }),

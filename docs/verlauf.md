@@ -3434,6 +3434,9 @@ Fehler in `docs/aufraeumen-nachher.md`.
 - Aufleuchten: nach dem Schließen der Bühne bzw. bei der Rückkehr zur
   Startseite leuchtet der neue Eintrag einmal 1,5 s weich orange in seiner
   Kachel (Zeile oder Kachel als Ganzes), Merker nur im Arbeitsspeicher.
+- Mias Satz dazu ist bei 1 oder mehr Karten nur „Steht drin.“ (wie im Clip;
+  früher „Erledigt.“ bei Mehrerem), auch in `kurzeBestaetigung`, Prompt und
+  Prüfstand. Abhaken und Sonstiges behalten „Erledigt.“.
 - Neue Tokens `--app-good-pill`/`--app-on-good-pill`, `--app-leuchten`,
   `--app-leuchten-flaeche` (hell und dunkel).
 - Testmodus: mehrere Sätze werden einzeln gelesen, wenn das Ganze nicht

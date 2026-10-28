@@ -1,5 +1,5 @@
 // Mehreres auf einmal (Testmodus, seit A-037 als Ergebnis-Karten): „Wir
-// brauchen Milch, Brot und Eier“ → Mia sagt nur „Erledigt.“, darunter je
+// brauchen Milch, Brot und Eier“ → Mia sagt nur „Steht drin.“, darunter je
 // Sache eine Karte „… · Einkauf · für alle · Steht drauf“; EIN „Rückgängig“
 // nimmt alles zurück.
 import { BASE, hello, miaTippen, seedFamily, store } from "../lib.mjs";
@@ -22,7 +22,7 @@ export const miaUebersicht = async (page, check) => {
   const texte = (await karten.locator("[data-ergebnis-text]").allInnerTexts()).map((t) => t.trim());
   check(texte.join(" · ") === "Milch · Brot · Eier", `je Sache eine Karte (${texte.join(" · ")})`);
   check((await karten.getByText("Einkauf · für alle").count()) === 3, "darunter „Einkauf · für alle“");
-  check(await page.getByText("Erledigt.", { exact: true }).last().isVisible(), "Mia sagt nur „Erledigt.“");
+  check(await page.getByText("Steht drin.", { exact: true }).last().isVisible(), "Mia sagt nur „Steht drin.“");
   check(!(await karten.getByText(/^\d+$/).count()), "keine Zahlen in den Karten");
   const names = await open(page);
   check(["Milch", "Brot", "Eier"].every((n) => names.includes(n)), `alles auf der Liste (${names.join(", ")})`);

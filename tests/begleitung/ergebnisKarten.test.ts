@@ -13,6 +13,8 @@ import { PRUEF_HEUTE, PRUEF_UHR, pruefHaushalt } from "@/lib/begleitung/pruefsta
 import { ERGEBNIS_MAX, ergebnisse, ergebnisSummary, leuchtZiele, nachUebernehmen, sichtbareErgebnisse, unterzeile, vorschauAlsKarten, weitereText } from "@/lib/begleitung/ergebnis";
 import { buehneGeoeffnet, geleuchtet, leuchtenJetzt, leuchtenMerken, leuchtenVergessen, leuchtenZuruecksetzen, leuchtSchluessel } from "@/lib/heute/aufleuchten";
 import type { AssistantData, ChangeOp } from "@/lib/begleitung/ops";
+import { shortDoneReply } from "@/lib/begleitung/uebersicht";
+import { kurzeBestaetigung } from "@/lib/begleitung/bestaetigung";
 import { aufgabe, termin, WOCHEN } from "./werkzeugKontext";
 
 const SATZ = "Freitag 16 Uhr Zahnarzt mit Jonne. Und wir brauchen Milch.";
@@ -40,6 +42,9 @@ describe("Ergebnis-Karten aus dem Testmodus", () => {
     expect(karten.map((k) => k.kachel)).toEqual(["termine", "einkauf"]);
     expect(karten[0].eintragId).toBeTruthy();
     expect(ergebnisSummary(karten)).toBe("Termin: Fr 16:00 Zahnarzt mit Jonne; Einkauf: Milch");
+    // Mia sagt dazu nur kurz „Steht drin.“ (wie im Clip), die Karten zeigen den Rest
+    expect(shortDoneReply(reply.reply, karten.length)).toBe("Steht drin.");
+    expect(kurzeBestaetigung(reply.ops, PRUEF_HEUTE)).toBe("Steht drin.");
   });
 
   it("„nur für mich“ bleibt Ich – auch mit Kind", async () => {
