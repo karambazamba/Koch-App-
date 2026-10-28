@@ -3,7 +3,8 @@
 // Zettel, Return = neue Zeile, Schalter „Bleibt hängen“) → „Aufhängen“ →
 // „Hängt. · Rückgängig“, der neue Zettel liegt vorn im Fächer; Tipp auf den
 // Zettel = Pinnwand mit ihm hervorgehoben; Wischen über der Kachel wechselt
-// die Seite. Seite: Tür mit zwei Spalten, Antippen bzw. lange drücken = Menü
+// die Seite. Seite: Tür mit zwei Spalten, Antippen = Menü, lange drücken =
+// Fenster „Größe und Platz“ (Tafel 123 C, mehr in `pinnwandordnen.mjs`); Menü
 // (Erledigt, Antworten, In Notizen, Bleibt hängen, Löschen nur eigene), ❤️ →
 // „❤️ Lisa“, Haken-Kreis = erledigt wie Aufgaben/Einkauf (Häkchen orange,
 // „erledigt von dir“, nie durchgestrichen, nochmal tippen innerhalb 1 s =
@@ -119,10 +120,16 @@ export const pinnwandGesten = async (page, check) => {
   await page.waitForTimeout(400);
   check(await page.getByText("❤️ Lisa").first().isVisible(), "„❤️ Lisa“ unter dem Zettel");
 
-  // lange drücken (Touch) → Menü → „Antworten“ = „Antwort an …“
+  // lange drücken (Touch) → Fenster „Größe und Platz“ (Tafel 123 C), kein Menü; Antippen → Menü → „Antworten“ = „Antwort an …“
   const b = await other.boundingBox();
   await hold(page, b.x + b.width / 2, b.y + 20);
-  check(await menu(page).waitFor({ timeout: 3000 }).then(() => true, () => false), "lange drücken → Menü");
+  const groesse = page.getByRole("dialog", { name: "„Bin um 20 Uhr da“" });
+  check(await groesse.waitFor({ timeout: 3000 }).then(() => true, () => false), "lange drücken → Fenster mit Klein | Groß");
+  check(!(await menu(page).count()), "lange drücken öffnet nicht das Menü");
+  await page.keyboard.press("Escape");
+  await groesse.waitFor({ state: "detached", timeout: 3000 }).catch(() => {});
+  await other.click();
+  await menu(page).waitFor({ timeout: 3000 });
   await menu(page).getByRole("menuitem", { name: "Antworten" }).click();
   check(await page.getByRole("dialog", { name: /^Antwort an / }).waitFor({ timeout: 4000 }).then(() => true, () => false), "„Antworten“ → neuer Zettel mit Bezug");
   await page.getByRole("dialog", { name: /^Antwort an / }).getByRole("button", { name: "Schließen" }).last().click();

@@ -44,7 +44,7 @@ export function kurzeBestaetigung(ops: ChangeOp[], today: string): string {
     case "add_timer":
       return "Läuft.";
     case "add_pin":
-      return "Hängt an der Pinnwand.";
+      return op.privat ? "Hängt, sieht nur du." : "Hängt an der Pinnwand.";
     case "upsert_note":
       return op.isNew ? "Notiert." : "Steht drin.";
     case "upsert_entry": {

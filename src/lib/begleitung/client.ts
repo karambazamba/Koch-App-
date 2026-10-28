@@ -182,7 +182,7 @@ function trimmed(data: AssistantData, currentWeekStart: string, pantry: Assistan
     mail: loadMailStyle(),
     // Sprachnachrichten nur als „[Sprachnachricht 0:12]“ – den Inhalt kennt Mia nicht
     pinnwand: [
-      ...activePins(loadPins(), now().getTime()).map((m) => ({ author: m.data.author, text: m.data.text || "[Foto]", at: m.erstellt })),
+      ...activePins(loadPins(), now().getTime()).map((m) => ({ author: m.data.author, text: `${m.data.text || "[Foto]"}${m.data.privat ? " (nur für mich)" : ""}`, at: m.erstellt })),
       ...activeMemos(loadMemos(), now().getTime()).map((m) => ({ author: m.data.author, text: `[Sprachnachricht ${formatDauer(m.data.dauer)}]`, at: m.erstellt })),
     ]
       .sort((a, b) => b.at.localeCompare(a.at))
@@ -436,7 +436,7 @@ function commitSideOps(ops: ChangeOp[], author = "Ich"): () => void {
   }
   for (const op of ops) {
     if (op.type !== "add_pin") continue;
-    const pin = createPin(op.text, author, null, { pinned: op.pinned === true });
+    const pin = createPin(op.text, author, null, { pinned: op.pinned === true, privat: op.privat === true });
     if (!pin) continue;
     changePins((all) => addPin(all, pin));
     undo.push(() => changePins((all) => removePin(all, pin.id)));

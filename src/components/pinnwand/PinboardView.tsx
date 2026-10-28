@@ -1,22 +1,28 @@
 "use client";
 
-// Seite /pinnwand als Kühlschranktür (Tafel 106/1): Kopf „‹ Heute“, rechts
-// das orange ＋ (= „Neuer Zettel“), großer Titel. Darunter die Tür (heller
-// Verlauf, feiner Rand, Griff rechts, so hoch wie der Inhalt – Tafel 123)
-// mit den Zetteln in zwei Spalten; ein Foto antippen = groß im Fenster –
-// „Bleibt hängen“ oben links, sonst neueste zuerst. Antippen oder lange
-// drücken = Menü, Haken-Kreis = Erledigt (Häkchen orange, 1 s stehen, dann
-// weich ins Archiv). Unter der Tür „Ältere · n ›“ (Archiv, nach 30 Tagen still weg).
+// Seite /pinnwand als Kühlschranktür (Tafel 106/1, Tafel 123): Kopf „‹ Heute“,
+// rechts das orange ＋ (= „Neuer Zettel“), großer Titel. Darunter die Tür
+// (heller Verlauf, feiner Rand, Griff rechts, so hoch wie der Inhalt) mit den
+// Zetteln in zwei Spalten, große quer über beide – „Bleibt hängen“ (OBEN)
+// vorn, sonst nach Platz. Antippen = Menü (Foto: groß im Fenster), lange
+// drücken = Fenster (Größe, Nach oben, Nur für mich, Erledigt), halten und
+// ziehen = verschieben; Haken-Kreis = Erledigt (Häkchen orange, 1 s stehen,
+// dann weich ins Archiv). Ganz unten unter einer gestrichelten Linie die Ecke „Nur für mich
+// · sieht nur du“ (einklappbar, pro Gerät gemerkt; ohne private Zettel und im
+// Haushalt „allein“ keine Linie). Unter der Tür „Ältere · n ›“ (Archiv, nach
+// 30 Tagen still weg).
 // Sieht ein eigener Zettel nach Notiz aus, fragt Mia einmal. Aus der Kachel
 // geöffnet (`?n=<id>`) springt die Seite zum Zettel und hebt ihn kurz hervor.
 
-import { useEffect, useState, type ReactNode } from "react";
-import { ChevronRight, Plus } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ChevronDown, ChevronRight, ChevronUp, Lock, Plus } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { CARD, PAGE_MAIN, PAGE_PLUS, buttonClass } from "@/components/ui/styles";
 import { Sheet } from "@/components/ui/Sheet";
 import { useProfile } from "@/lib/einstellungen/useProfile";
-import { PINNWAND_TIPP, changePins, guessHeight, markPinsRead, papierFor, twoColumns, usePins } from "@/lib/pinnwand";
+import { NUR_FUER_MICH, NUR_FUER_MICH_ZEILE, PINNWAND_TIPP, changePins, markPinsRead, papierFor, usePins, wandBereiche } from "@/lib/pinnwand";
+import { setPrivatZu, usePrivatZu } from "@/lib/pinnwand/ansicht";
+import { useHaushalt } from "@/lib/einstellungen/useHaushalt";
 import { NOTIZ_FRAGE, markNoteAsked, noteQuestionFor } from "@/lib/pinnwand/notizBruecke";
 import { quoteOf } from "@/lib/pinnwand/schreiben";
 import { now, todayIso } from "@/lib/core/now";
@@ -27,27 +33,12 @@ import { useBoard, type BoardItem } from "@/components/pinnwand/useBoard";
 import { Zettel } from "@/components/pinnwand/Zettel";
 import { NeuerZettel, type ZettelArt } from "@/components/pinnwand/NeuerZettel";
 import { ReactionMenu } from "@/components/pinnwand/ReactionMenu";
-import { moveToNotes, toggleDone } from "@/components/pinnwand/boardActions";
+import { moveItem, moveToNotes, toggleDone } from "@/components/pinnwand/boardActions";
+import { Wand } from "@/components/pinnwand/Wand";
+import { ZettelFenster } from "@/components/pinnwand/ZettelFenster";
 import { FotoFenster } from "@/components/pinnwand/FotoFenster";
 import { MicStrip } from "@/components/ui/MicPermission";
 import type { PinQuote } from "@/lib/pinnwand";
-
-const heightOf = (i: BoardItem) => (i.kind === "memo" ? guessHeight("memo") : guessHeight(i.pin.data.papier, i.pin.data.text));
-
-function Spalten({ items, render }: { items: BoardItem[]; render: (i: BoardItem) => ReactNode }) {
-  const [left, right] = twoColumns(items, heightOf);
-  return (
-    <div className="grid grid-cols-2 gap-x-3.5">
-      {[left, right].map((col, c) => (
-        <ul key={c} className="flex min-w-0 flex-col gap-5 pt-3" aria-label={c === 0 ? "Zettel links" : "Zettel rechts"}>
-          {col.map((i) => (
-            <li key={i.id}>{render(i)}</li>
-          ))}
-        </ul>
-      ))}
-    </div>
-  );
-}
 
 export function PinboardView() {
   const profile = useProfile();
@@ -59,8 +50,13 @@ export function PinboardView() {
   const [held, setHeld] = useState<{ id: string; archived: boolean } | null>(null);
   const [focus, setFocus] = useState<string | null>(null);
   const [older, setOlder] = useState(false);
+  const [arrange, setArrange] = useState<string | null>(null);
   const [foto, setFoto] = useState<string | null>(null);
+  const allein = useHaushalt() === "allein";
+  const privatZu = usePrivatZu();
   const list = board.items;
+  const bereiche = wandBereiche(list ?? [], (i) => i.kind === "pin" && i.pin.data.privat, allein);
+  const arrangeItem = arrange ? (list?.find((i) => i.id === arrange) ?? null) : null;
   const fotoItem = foto ? (list?.find((i) => i.id === foto) ?? null) : null;
   const heldItem = held ? ((held.archived ? board.archived : list)?.find((i) => i.id === held.id) ?? null) : null;
   const question = pins ? noteQuestionFor(pins, me, board.nowMs) : null;
@@ -91,8 +87,15 @@ export function PinboardView() {
     return () => (clearTimeout(on), clearTimeout(off));
   }, [hasList]);
 
-  /** Antippen: Foto groß im Fenster (Tafel 123), sonst das Menü */
+  /** Antippen: Foto groß im Fenster, sonst das Menü */
   const open = (item: BoardItem) => (item.kind === "pin" && item.pin.data.papier === "foto" ? setFoto(item.id) : setHeld({ id: item.id, archived: false }));
+  const renderZettel = (item: BoardItem, lifted: boolean) => (
+    <Zettel item={item} me={me} household={board.household} highlight={focus === item.id} lifted={lifted} holdOpens={false} onOpen={() => open(item)} onDone={() => toggleDone(item, me)} />
+  );
+  const drop = (section: BoardItem[]) => (id: string, to: number) => {
+    const item = section.find((i) => i.id === id);
+    if (item) moveItem(item, section, to);
+  };
   const reply = (item: BoardItem) => setWriting({ quote: quoteOf(item.kind === "pin" ? item.pin : { id: item.id, data: { author: item.memo.data.author } }), art: "zettel" });
   const answer = (yes: boolean) => {
     if (!question) return;
@@ -133,7 +136,7 @@ export function PinboardView() {
           ) : demo ? (
             <>
               <span className="absolute right-6 top-2 z-10 rounded-full bg-surface px-2 py-0.5 text-[11px] font-bold text-muted">Beispiel</span>
-              <Spalten
+              <Wand
                 items={[
                   { kind: "pin", id: demo.pins[0].id, at: demo.pins[0].erstellt, pinned: false, pin: demo.pins[0] },
                   { kind: "memo", id: demo.memos[0].id, at: demo.memos[0].erstellt, memo: demo.memos[0] },
@@ -142,18 +145,43 @@ export function PinboardView() {
                 render={(item) => <Zettel item={item} me={me} household={board.household} demo tone={item.id === demo.mia ? "mia" : undefined} onOpen={() => setWriting({ quote: null, art: "zettel" })} />}
               />
             </>
-          ) : list.length === 0 ? (
-            <div className="flex flex-col items-center justify-center gap-3 px-4 py-10 text-center">
+          ) : list.length === 0 || bereiche.alle.length === 0 ? (
+            <div className={`flex flex-col items-center justify-center gap-3 px-4 text-center ${list.length === 0 ? "py-10" : "py-5"}`}>
               <p className="text-[16px] font-semibold text-muted">{PINNWAND_TIPP}</p>
               <button type="button" onClick={() => setWriting({ quote: null, art: "zettel" })} className={buttonClass("soft", "sm")}>
                 Erster Zettel
               </button>
             </div>
           ) : (
-            <Spalten
-              items={list}
-              render={(item) => <Zettel item={item} me={me} household={board.household} highlight={focus === item.id} onOpen={() => open(item)} onDone={() => toggleDone(item, me)} />}
-            />
+            <Wand items={bereiche.alle} render={renderZettel} ordnen={{ onHold: setArrange, onDrop: drop(bereiche.alle) }} label={allein ? "Zettel" : "Zettel für alle"} />
+          )}
+          {list && !demo && bereiche.privat.length > 0 && (
+            <div className="mt-4" data-privat-ecke>
+              {/* Gestrichelte Linie links und rechts, in der Mitte die Beschriftung – antippen klappt zu bzw. auf */}
+              <button type="button" aria-expanded={!privatZu} onClick={() => setPrivatZu(!privatZu)} className="flex min-h-11 w-full items-center gap-2 text-[13px] font-bold text-fridge-soft" data-privat-linie>
+                <span className="wand-privat-linie h-0 flex-1" aria-hidden />
+                <span className="flex shrink-0 items-center gap-1.5">
+                  {privatZu ? (
+                    <>
+                      {NUR_FUER_MICH}
+                      <ChevronDown className="h-4 w-4" strokeWidth={2.5} aria-hidden />
+                    </>
+                  ) : (
+                    <>
+                      <Lock className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
+                      {NUR_FUER_MICH_ZEILE}
+                      <ChevronUp className="h-4 w-4" strokeWidth={2.5} aria-hidden />
+                    </>
+                  )}
+                </span>
+                <span className="wand-privat-linie h-0 flex-1" aria-hidden />
+              </button>
+              {!privatZu && (
+                <div className="wand-privat-auf">
+                  <Wand items={bereiche.privat} render={renderZettel} ordnen={{ onHold: setArrange, onDrop: drop(bereiche.privat) }} label={NUR_FUER_MICH} />
+                </div>
+              )}
+            </div>
           )}
         </section>
         {board.archived.length > 0 && (
@@ -166,15 +194,16 @@ export function PinboardView() {
       {older && (
         <Sheet title="Ältere Zettel" onClose={() => setOlder(false)} tall>
           <div className="kuehlschrank mb-4 py-2 pl-3 pr-5">
-            <Spalten items={board.archived} render={(item) => <Zettel item={item} me={me} household={board.household} onOpen={() => setHeld({ id: item.id, archived: true })} />} />
+            <Wand items={board.archived} render={(item) => <Zettel item={item} me={me} household={board.household} onOpen={() => setHeld({ id: item.id, archived: true })} />} label="Ältere Zettel" />
           </div>
         </Sheet>
       )}
       {heldItem && held && (
-        <ReactionMenu item={heldItem} me={me} household={board.household} archived={held.archived} onReply={() => reply(heldItem)} onClose={() => setHeld(null)}>
+        <ReactionMenu item={heldItem} me={me} household={board.household} archived={held.archived} onReply={() => reply(heldItem)} onArrange={held.archived ? undefined : () => setArrange(heldItem.id)} onClose={() => setHeld(null)}>
           <Zettel item={heldItem} me={me} household={board.household} onOpen={() => setHeld(null)} />
         </ReactionMenu>
       )}
+      {arrangeItem && <ZettelFenster item={arrangeItem} all={list ?? []} me={me} onClose={() => setArrange(null)} />}
       {fotoItem && fotoItem.kind === "pin" && <FotoFenster item={fotoItem} me={me} onMore={() => (setFoto(null), setHeld({ id: fotoItem.id, archived: false }))} onClose={() => setFoto(null)} />}
       {writing && <NeuerZettel me={me} household={board.household} karo={karo} quote={writing.quote} art={writing.art} onClose={() => setWriting(null)} />}
     </>

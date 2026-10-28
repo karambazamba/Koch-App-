@@ -35,8 +35,20 @@ export const ARCHIV_MS = 7 * 86_400_000;
 /** So lange liegt ein Zettel im Archiv, bevor er still gelöscht wird */
 export const VERGESSEN_MS = 30 * 86_400_000;
 
+/** Größe an der Tür (Tafel 123): klein = halbe Breite, groß = volle Breite */
+export type Groesse = "klein" | "gross";
+
 /** Was alle Einträge an der Tür gemeinsam haben (Zettel und Sprachnachrichten) */
-export type DoorEntry = { id: string; erstellt: string; data: { author: string; pinned?: boolean; erledigt: Done | null; archiv: string | null; farbe: ZettelFarbe | null } };
+export type DoorEntry = {
+  id: string;
+  erstellt: string;
+  data: { author: string; pinned?: boolean; erledigt: Done | null; archiv: string | null; farbe: ZettelFarbe | null; groesse?: Groesse; sort?: number | null; privat?: boolean };
+};
+
+export const readGroesse = (v: unknown): Groesse => (v === "gross" ? "gross" : "klein");
+
+/** Platz an der Tür (kleiner = weiter vorn); null = nach der Zeit (neueste vorn) */
+export const readSort = (v: unknown): number | null => (typeof v === "number" && Number.isFinite(v) ? v : null);
 
 export const readFarbe = (v: unknown): ZettelFarbe | null => (typeof v === "number" && Number.isInteger(v) && v >= 0 && v < ZETTEL_FARBEN ? (v as ZettelFarbe) : null);
 
@@ -120,10 +132,11 @@ export const FAECHER_WINKEL = [-10, -2, 7] as const;
 /**
  * Kachel: die neuesten Einträge an der Tür (neueste zuerst) – gerade
  * Abgehaktes bleibt wie an der Tür 1 s mit Häkchen und gleitet dann weg;
+ * nur Zettel für alle („Nur für mich“ nie auf der Startseite);
  * „Bleibt hängen“ zählt nur mit, wenn weniger als `count` neue da sind.
  */
 export function faecherOf<T extends DoorEntry>(items: T[], nowMs: number, count: number): T[] {
-  const live = items.filter((e) => onDoor(e, nowMs)).sort((a, b) => b.erstellt.localeCompare(a.erstellt));
+  const live = items.filter((e) => onDoor(e, nowMs) && !e.data.privat).sort((a, b) => b.erstellt.localeCompare(a.erstellt));
   const fresh = live.filter((e) => !e.data.pinned);
   const pinned = live.filter((e) => e.data.pinned);
   return [...fresh, ...pinned].slice(0, count);
@@ -160,11 +173,12 @@ export function twoColumns<T>(items: T[], heightOf: (item: T) => number): [T[], 
   return cols;
 }
 
-/** Geschätzte Höhe für die Spalten (Text-Länge und Zeilen; Foto und Kassenbon fest) */
-export function guessHeight(kind: "zettel" | "karo" | "foto" | "memo", text = ""): number {
+/** Geschätzte Höhe für die Spalten (Text-Länge und Zeilen; Foto quadratisch, Kassenbon fest; groß = doppelt so breit) */
+export function guessHeight(kind: "zettel" | "karo" | "foto" | "memo", text = "", gross = false): number {
   if (kind === "memo") return 120;
-  if (kind === "foto") return 200 + (text ? 24 : 0);
-  const lines = text.split("\n").reduce((n, l) => n + Math.max(1, Math.ceil(l.length / 16)), 0);
+  if (kind === "foto") return (gross ? 300 : 200) + (text ? 24 : 0);
+  const perLine = gross ? 34 : 16;
+  const lines = text.split("\n").reduce((n, l) => n + Math.max(1, Math.ceil(l.length / perLine)), 0);
   return 70 + lines * 22;
 }
 

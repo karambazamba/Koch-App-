@@ -520,6 +520,45 @@ export async function ziehen(page, von, nach, { halten = 450, steps = 14, ms = 4
 /** Das EINE Fenster „Neue Aufgabe“ bzw. „Neuer Termin“ (Tafel 114) – auch zum Ändern („Aufgabe“/„Termin“) */
 export const eintragFenster = (page, art) => page.locator(art ? `[role=dialog]:has([data-fenster="${art}"])` : "[role=dialog]:has([data-fenster])");
 
+/** Lange drücken (echter Touch) mitten auf `loc` und ohne Bewegung loslassen */
+export async function halten(page, loc, ms = 650) {
+  const b = await loc.boundingBox();
+  const cdp = await page.context().newCDPSession(page);
+  const p = [{ x: Math.round(b.x + b.width / 2), y: Math.round(b.y + Math.min(24, b.height / 2)), id: 1 }];
+  await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: p });
+  await page.waitForTimeout(ms);
+  await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+  await cdp.detach();
+}
+
+/** Zettel an der Kühlschranktür im Format v5 (Tafel 123) – für Abläufe und Bilder */
+const tafelZettel = (id, text, extra = {}, erstellt = "2026-10-21T08:00:00.000Z") => ({
+  id,
+  typ: "pinnwand",
+  raum: "familie",
+  besitzer: "lokal",
+  erstellt,
+  geaendert: erstellt,
+  data: { text, author: "Lisa", reactions: {}, replyTo: null, readBy: ["Lisa", "Felix"], pinned: false, farbe: null, papier: "zettel", foto: null, erledigt: null, archiv: null, notizFrage: true, groesse: "klein", sort: null, privat: false, ...extra },
+});
+
+/** Die Wand von Tafel 123: groß und oben, zwei Spalten mit Polaroid, unten „Nur für mich“ */
+export const TAFEL_123 = {
+  "wasgibts.pinnwand": {
+    version: 5,
+    messages: [
+      tafelZettel("t123-oma", "Samstag Omas Geburtstag. Wer backt den Kuchen?", { pinned: true, groesse: "gross", farbe: 1 }, "2026-10-19T09:00:00.000Z"),
+      tafelZettel("t123-eltern", "Elternabend Do 19:30", { farbe: 0 }, "2026-10-20T09:00:00.000Z"),
+      tafelZettel("t123-foto", "Fürs Wohnzimmer?", { author: "Felix", papier: "foto", foto: { path: null, w: 3, h: 4 }, farbe: 0 }, "2026-10-21T11:46:00.000Z"),
+      tafelZettel("t123-ole", "Ole: Gummistiefel mit", { author: "Felix", farbe: 2 }, "2026-10-21T10:10:00.000Z"),
+      tafelZettel("t123-hallo", "Hallo", { author: "Mathis", farbe: 3 }, "2026-10-21T10:08:00.000Z"),
+      tafelZettel("t123-geschenk", "Geschenk Lisa: die Kette von Markt 5", { privat: true }, "2026-10-21T09:02:00.000Z"),
+      tafelZettel("t123-steuer", "Steuerbüro anrufen", { privat: true }, "2026-10-21T07:40:00.000Z"),
+    ],
+    memos: [],
+  },
+};
+
 /** Schnelleingabe bzw. Fenster Aufgabe/Termin: Satz tippen, ➤ (Return; mehrzeilig bei Notiz/Pinnwand nur ➤), Fenster zu */
 export async function schnell(page, text, { close = true } = {}) {
   const sheet = page.getByRole("dialog", { name: "Schnelleingabe" }).or(eintragFenster(page));

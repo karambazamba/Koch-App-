@@ -3,7 +3,7 @@
 // (IndexedDB `wasgibts-fotos`, `fotoStore.ts`), mit Konto zusätzlich im
 // Haushalt (Supabase Storage, Bucket „fotos“, nur Mitglieder – RLS). Nicht in
 // „Daten sichern“. Geteilt wird der Zettel erst, wenn das Bild oben liegt
-// (`foto.path`). Rein.
+// (`foto.path`). Bilder von „Nur für mich“-Zetteln bleiben auf dem Gerät. Rein.
 
 import type { PinMessage } from "@/lib/pinnwand/model";
 import type { Result } from "@/lib/konten/model";
@@ -38,11 +38,11 @@ export type FotoUploadDeps = {
   setPath(id: string, path: string): void;
 };
 
-/** Fotos ohne geteilten Pfad hochladen (nur, was auf diesem Gerät liegt); Fehler halten nichts auf */
+/** Fotos ohne geteilten Pfad hochladen (nur, was auf diesem Gerät liegt; „Nur für mich“ nie); Fehler halten nichts auf */
 export async function uploadPendingFotos(deps: FotoUploadDeps): Promise<number> {
   let done = 0;
   for (const pin of deps.pins()) {
-    if (pin.data.papier !== "foto" || !pin.data.foto || pin.data.foto.path) continue;
+    if (pin.data.papier !== "foto" || !pin.data.foto || pin.data.foto.path || pin.data.privat) continue;
     const blob = await deps.load(pin).catch(() => null);
     if (!blob || blob.size > FOTO_MAX_BYTES) continue;
     const path = fotoPath(deps.householdId, pin);

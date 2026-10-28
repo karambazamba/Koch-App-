@@ -20,6 +20,7 @@ import * as kochtipp from "./ablaeufe/kochtipp.mjs";
 import * as mehrideen from "./ablaeufe/mehrideen.mjs";
 import * as miazuerst from "./ablaeufe/miazuerst.mjs";
 import * as pinnwandgesten from "./ablaeufe/pinnwandgesten.mjs";
+import * as pinnwandordnen from "./ablaeufe/pinnwandordnen.mjs";
 import * as sprachnachricht from "./ablaeufe/sprachnachricht.mjs";
 import * as mianame from "./ablaeufe/mianame.mjs";
 import * as startseite from "./ablaeufe/startseite.mjs";
@@ -52,7 +53,7 @@ import * as erledigt from "./ablaeufe/erledigt.mjs";
 import * as abgeschnitten from "./ablaeufe/abgeschnitten.mjs";
 import * as raumwahl from "./ablaeufe/raumwahl.mjs";
 
-const ALL = { ...start, ...alltag, ...essen, ...mehr, ...konten, ...vorfuehren, ...mikrofon, ...termin, ...stimme, ...wochencheck, ...kochtipp, ...mehrideen, ...miazuerst, ...pinnwandgesten, ...sprachnachricht, ...mianame, ...startseite, ...schnelleingabe, ...kalendertag, ...mails, ...datenschutz, ...mikrocheck, ...zuhoeren, ...serverstimme, ...ohrlive, ...miasprechen, ...wischen, ...abhaken, ...uebersicht, ...ergebniskarten, ...testcode, ...notizen, ...sprechenhaengt, ...heim, ...essenkachel, ...wochenkarte, ...laeden, ...familieTeilen, ...einsortieren, ...einkaufneu, ...kochmodus, ...vorschau, ...erledigt, ...abgeschnitten, ...raumwahl };
+const ALL = { ...start, ...alltag, ...essen, ...mehr, ...konten, ...vorfuehren, ...mikrofon, ...termin, ...stimme, ...wochencheck, ...kochtipp, ...mehrideen, ...miazuerst, ...pinnwandgesten, ...pinnwandordnen, ...sprachnachricht, ...mianame, ...startseite, ...schnelleingabe, ...kalendertag, ...mails, ...datenschutz, ...mikrocheck, ...zuhoeren, ...serverstimme, ...ohrlive, ...miasprechen, ...wischen, ...abhaken, ...uebersicht, ...ergebniskarten, ...testcode, ...notizen, ...sprechenhaengt, ...heim, ...essenkachel, ...wochenkarte, ...laeden, ...familieTeilen, ...einsortieren, ...einkaufneu, ...kochmodus, ...vorschau, ...erledigt, ...abgeschnitten, ...raumwahl };
 const pick = process.argv.slice(2);
 const flows = Object.entries(ALL).filter(([name, run]) => typeof run === "function" && (!pick.length || pick.includes(name)));
 const stop = await startServer();

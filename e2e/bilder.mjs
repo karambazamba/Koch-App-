@@ -4,7 +4,7 @@
 // npm run bilder:vergleich – vergleicht aktuell mit basis (Abweichung > 0,1 %
 // wird gemeldet, Unterschiedsbild in .bilder/unterschied).
 import { mkdirSync } from "node:fs";
-import { BASE, DEVICES, FAKE_MIC, FAKE_VOICES, hello, launch, miaTippen, newPage, seedFamily, setDark, startServer, tippenFeld } from "./lib.mjs";
+import { BASE, DEVICES, FAKE_MIC, FAKE_VOICES, TAFEL_123, halten, hello, launch, mehrDetails, miaTippen, newPage, seedFamily, setDark, startServer, tippenFeld } from "./lib.mjs";
 import { RECIPE_DATA } from "./ablaeufe/essen.mjs";
 
 /** Warten, bis Netz ruhig und alle Bilder (auch live gezeichnete Gerichte) fertig sind */
@@ -124,7 +124,21 @@ const homeKarte = async (page) => {
   await page.locator("[data-home-karte]").waitFor({ timeout: 8000 });
   await settle(page);
 };
+/** Pinnwand wie Tafel 123: groß und oben, Polaroid, Ecke „Nur für mich“ (mit `fenster`: lange gedrückt, Tafel 123 C) */
+const pinnwand123 = async (page, fenster = false) => {
+  await page.evaluate((data) => {
+    for (const [k, v] of Object.entries(data)) localStorage.setItem(k, JSON.stringify(v));
+  }, TAFEL_123);
+  await page.goto(BASE + "/pinnwand");
+  await page.waitForTimeout(1200);
+  if (fenster) {
+    await halten(page, page.locator("[data-flip]", { has: page.getByRole("button", { name: /^Zettel von .*: Elternabend/ }) }).first());
+    await page.getByRole("dialog").last().waitFor({ timeout: 4000 });
+  }
+};
 const SCENES = [
+  ["pinnwand-tafel123", (page) => pinnwand123(page)],
+  ["pinnwand-fenster", (page) => pinnwand123(page, true)],
   ["zugangscode", codeScreen],
   ["home-karte", homeKarte],
   ["home-anleitung", async (page) => (await homeKarte(page), await page.getByRole("button", { name: "Zeig’s mir" }).click(), await page.waitForTimeout(900))],

@@ -10,7 +10,7 @@ import { parseSportCommand } from "@/lib/sport/model";
 import { parseNoteCommand } from "@/lib/notizen/chat";
 import { schnellnotizCommand } from "@/lib/notizen/schnellnotiz";
 import { noteFromText } from "@/lib/notizen/model";
-import { isPinboardQuery, pinStays, pinWriteCommand } from "@/lib/pinnwand/model";
+import { isPinboardQuery, pinForAllCommand, pinPrivate, pinStays, pinWriteCommand } from "@/lib/pinnwand/model";
 import { eventsIn, greetingCommand, localNewMail, localReply, looksLikeMail, parseHistoryDraft, REPLY_CHOICES, reviseDraft, revisionOf, splitInstruction, styleFromContext, type MailDraft } from "@/lib/begleitung/mail";
 import type Anthropic from "@anthropic-ai/sdk";
 import { parseCalendar, type Draft } from "@/lib/kalender/parse";
@@ -128,7 +128,8 @@ export function dayUses(latest: string, system: string): Anthropic.Beta.BetaMess
 
 export function pinWeatherUses(latest: string, system: string): Anthropic.Beta.BetaMessage | null {
   const write = pinWriteCommand(latest);
-  if (write) return tools([{ name: "pinnwand_schreiben", input: { text: write, ...(pinStays(latest) ? { bleibt_haengen: true } : {}) } }]);
+  if (write) return tools([{ name: "pinnwand_schreiben", input: { text: write, ...(pinStays(latest) ? { bleibt_haengen: true } : {}), ...(pinPrivate(latest) ? { nur_fuer_mich: true } : {}) } }]);
+  if (pinForAllCommand(latest) !== null) return tools([{ name: "app_befehl", input: { text: latest } }]);
   if (isPinboardQuery(latest)) {
     const line = system.match(/^Pinnwand: (.*)$/m)?.[1] ?? "leer";
     return text(line === "leer" ? "Auf der Pinnwand steht gerade nichts. (Testmodus)" : `Auf der Pinnwand: ${line} (Testmodus)`);

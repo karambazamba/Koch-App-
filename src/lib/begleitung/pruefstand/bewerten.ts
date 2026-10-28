@@ -94,6 +94,10 @@ export function bewerte(satz: PruefSatz, reply: AssistantReply, ms: number): Pru
     const bad = reply.ops.map((op) => ("name" in op && typeof op.name === "string" ? op.name : "")).filter((n) => n && re.test(n));
     if (bad.length) gruende.push(`Satzteil als Sache: ${bad.join(", ")}`);
   }
+  if (satz.privat !== undefined) {
+    const pins = reply.ops.flatMap((op) => (op.type === "add_pin" ? [op] : []));
+    if (pins.some((op) => (op.privat === true) !== satz.privat)) gruende.push(satz.privat ? "nicht „Nur für mich“" : "ungefragt „Nur für mich“");
+  }
   const einkauf = reply.ops.flatMap((op) => (op.type === "add_shopping" ? [op] : []));
   if (satz.anzahl !== undefined && einkauf.length !== satz.anzahl) gruende.push(`${einkauf.length} statt ${satz.anzahl} Sachen (${einkauf.map((op) => op.name).join(", ") || "keine"})`);
   if (satz.menge && !einkauf.some((op) => op.amount.trim().startsWith(satz.menge!))) gruende.push(`Menge ${satz.menge} nicht übernommen`);

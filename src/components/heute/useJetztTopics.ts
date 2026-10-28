@@ -99,7 +99,7 @@ export function useJetztTopics(src: JetztSource) {
   const timed = src.upcoming.filter((i) => i.time).map(termin);
   // Neueste ungelesene Nachricht bzw. ungehörte Sprachnachricht (nur „Sprachnachricht · 0:12“, nie ein Inhalt)
   const unread = [
-    ...(src.pins ? activePins(src.pins, src.nowMs).filter((m) => m.data.author !== src.me && !m.data.readBy.includes(src.me)) : []).map((m) => ({ id: m.id, erstellt: m.erstellt, data: { author: m.data.author, text: m.data.text } })),
+    ...(src.pins ? activePins(src.pins, src.nowMs).filter((m) => m.data.author !== src.me && !m.data.privat && !m.data.readBy.includes(src.me)) : []).map((m) => ({ id: m.id, erstellt: m.erstellt, data: { author: m.data.author, text: m.data.text } })),
     ...(src.memos ? activeMemos(src.memos, src.nowMs).filter((m) => memoUnheard(m, src.me)) : []).map((m) => ({ id: m.id, erstellt: m.erstellt, data: { author: m.data.author, text: `Sprachnachricht · ${formatDauer(m.data.dauer)}` } })),
   ].sort((a, b) => b.erstellt.localeCompare(a.erstellt))[0];
   const birthday = (list: DayItem[], when: "heute" | "morgen") => list.filter((i) => /geburtstag/i.test(i.title) || /geburtstag/i.test(i.label ?? "")).map((i) => ({ title: i.title, date: i.date, when }));

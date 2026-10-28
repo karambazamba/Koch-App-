@@ -320,7 +320,7 @@ describe("Migration v3 → v4", () => {
       memos: [createMemo({ author: "Ole", dauer: 4, mime: "audio/mp4", wave: [0.2] })],
     };
     const v4 = migratePinStore(v3)!;
-    expect(v4.version).toBe(4);
+    expect(v4.version).toBe(5);
     expect(v4.messages[0].data).toMatchObject({ text: "Bin um 20 Uhr da", pinned: true, farbe: null, papier: "zettel", erledigt: null, archiv: null, reactions: { Felix: "❤️" } });
     expect(farbeOf(v4.messages[0], ["Felix", "Lisa"])).toBe(1);
     expect(v4.memos[0].data).toMatchObject({ farbe: null, erledigt: null, archiv: null });

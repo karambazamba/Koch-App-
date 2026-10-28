@@ -275,7 +275,7 @@ function describe(
     case "remove_note":
       return { opId: op.id, group: "Notizen", order: 25_000, label: "löschen", before: op.title, after: "gelöscht" };
     case "add_pin":
-      return { opId: op.id, group: "Pinnwand", order: 25_600, label: "📌 Pinnwand", before: null, after: op.pinned ? `${op.text} · bleibt hängen` : op.text };
+      return { opId: op.id, group: "Pinnwand", order: 25_600, label: "📌 Pinnwand", before: null, after: [op.text, op.pinned ? "bleibt hängen" : "", op.privat ? "nur für mich" : ""].filter(Boolean).join(" · ") };
     case "set_household":
       return { opId: op.id, group: "Familie", order: 25_660, label: "Wer dazugehört", before: null, after: householdIntroSummary(op.intro, state.profile) };
     case "set_dislike":

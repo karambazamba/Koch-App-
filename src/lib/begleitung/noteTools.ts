@@ -229,10 +229,12 @@ const TOOLS: BegleitungTool[] = [
     area: "alltag",
     definition: {
       name: "pinnwand_schreiben",
-      description: "Zettel an die Pinnwand hängen (Kühlschranktür für alle im Haushalt, bis 140 Zeichen, in der Farbe der Person; abgehakt geht er gleich ins Archiv „Ältere“, sonst nach 7 Tagen; im Archiv nach 30 Tagen weg): 'Schreib an die Pinnwand: Bin um 20 Uhr da' → text 'Bin um 20 Uhr da'. bleibt_haengen nur, wenn er dauerhaft hängen soll ('…, das soll hängen bleiben', Gäste-WLAN) – dann heißt es in der App „Bleibt hängen“ und er geht nie von selbst. Was nur für mich ist (Passwort, WLAN, Liste zum Merken) gehört in die Notizen (notiz_anlegen). Erledigte Zettel stehen nicht im Kontext. Sprachnachrichten ([Sprachnachricht 0:12]) nimmt die Familie selbst auf; ihren Inhalt kennst du nicht und du schreibst nie welche ('Spiel das Memo von Lisa ab' → app_befehl).",
+      description: "Zettel an die Pinnwand hängen (Kühlschranktür für alle im Haushalt, bis 140 Zeichen, in der Farbe der Person; abgehakt geht er gleich ins Archiv „Ältere“, sonst nach 7 Tagen; im Archiv nach 30 Tagen weg): 'Schreib an die Pinnwand: Bin um 20 Uhr da' → text 'Bin um 20 Uhr da'. bleibt_haengen nur, wenn er dauerhaft hängen soll ('…, das soll hängen bleiben', Gäste-WLAN) – dann heißt es in der App „Bleibt hängen“ und er geht nie von selbst. nur_fuer_mich nur, wenn ausdrücklich gewünscht ('Häng nur für mich an die Pinnwand: Geschenk für Lisa') – dann liegt der Zettel in der Ecke „Nur für mich“, die nur die Person selbst sieht. Was nur zum Merken ist (Passwort, WLAN, Liste) gehört sonst in die Notizen (notiz_anlegen). Einen „Nur für mich“-Zettel für alle sichtbar machen ('Mach den Zettel mit dem Geschenk für alle sichtbar') → app_befehl mit genau diesem Satz. Erledigte Zettel stehen nicht im Kontext. Sprachnachrichten ([Sprachnachricht 0:12]) nimmt die Familie selbst auf; ihren Inhalt kennst du nicht und du schreibst nie welche ('Spiel das Memo von Lisa ab' → app_befehl).",
       input_schema: {
         type: "object",
-        properties: { text: { type: "string", description: "Die Nachricht, kurz, ohne Anführungszeichen" }, bleibt_haengen: { type: "boolean", description: "„Bleibt hängen“: nie von selbst ins Archiv (nur wenn gewünscht)" } },
+        properties: { text: { type: "string", description: "Die Nachricht, kurz, ohne Anführungszeichen" }, bleibt_haengen: { type: "boolean", description: "„Bleibt hängen“: nie von selbst ins Archiv (nur wenn gewünscht)" },
+          nur_fuer_mich: { type: "boolean", description: "„Nur für mich“: sieht nur die Person selbst (nur wenn ausdrücklich gesagt)" },
+        },
         required: ["text"],
         additionalProperties: false,
       },
@@ -242,8 +244,9 @@ const TOOLS: BegleitungTool[] = [
       const text = str(input?.text).slice(0, PIN_MAX);
       if (!text) return fail("text angeben.");
       const pinned = input?.bleibt_haengen === true;
-      propose(ctx, { id: nextId(ctx), type: "add_pin", text, ...(pinned ? { pinned } : {}) });
-      return { content: `Vorgemerkt: hängt dann an der Pinnwand${pinned ? " und bleibt hängen" : ""} (Startseite, Kachel Pinnwand).` };
+      const privat = input?.nur_fuer_mich === true;
+      propose(ctx, { id: nextId(ctx), type: "add_pin", text, ...(pinned ? { pinned } : {}), ...(privat ? { privat } : {}) });
+      return { content: privat ? "Vorgemerkt: hängt dann in der Ecke „Nur für mich“ an der Pinnwand (sieht nur die Person selbst)." : `Vorgemerkt: hängt dann an der Pinnwand${pinned ? " und bleibt hängen" : ""} (Startseite, Kachel Pinnwand).` };
     },
   },
   {

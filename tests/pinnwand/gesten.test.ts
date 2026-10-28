@@ -44,18 +44,18 @@ describe("Reaktionen wie bei WhatsApp", () => {
   it("Speicher v2 → v4: Reaktionen umgedreht, Nachrichten bleiben", () => {
     const v2 = { version: 2, messages: [{ ...pin("a", "Lisa"), data: { text: "Hallo", author: "Lisa", reactions: { "❤️": ["Felix"] }, readBy: [] } }], memos: [] };
     const v4 = migratePinStore(v2)!;
-    expect(v4.version).toBe(4);
+    expect(v4.version).toBe(5);
     expect(v4.messages[0].data.reactions).toEqual({ Felix: "❤️" });
     expect(v4.messages[0].data.replyTo).toBeNull();
-    expect(STORAGE.find((s) => s.key === "wasgibts.pinnwand")).toMatchObject({ version: 4, backup: true });
+    expect(STORAGE.find((s) => s.key === "wasgibts.pinnwand")).toMatchObject({ version: 5, backup: true });
   });
 
   it("Abgleich trägt Reaktionen und Antworten mit (verlustfrei hin und zurück)", () => {
     const a = ADAPTERS.find((x) => x.name === "pinnwand")!;
-    expect(a.version).toBe(4);
+    expect(a.version).toBe(5);
     const m = toggleReaction([pin("a", "Lisa")], "a", "😮", "Felix", "2026-10-21T09:00:00.000Z")[0];
     const withReply = { ...m, data: { ...m.data, replyTo: { id: "x", author: "Felix", text: "Wer holt Jonne?" } } };
-    const value = { version: 4, messages: [withReply], memos: [] };
+    const value = { version: 5, messages: [withReply], memos: [] };
     const back = a.fromDocs(a.toDocs(value), value) as { messages: PinMessage[] };
     expect(back.messages[0].data.reactions).toEqual({ Felix: "😮" });
     expect(back.messages[0].data.replyTo?.text).toBe("Wer holt Jonne?");
@@ -88,9 +88,10 @@ describe("Fehler aus dem Durchklick (Pixel 7)", () => {
     expect(src).toMatch(/if \(!armed\.current && e\.detail !== 0\)/);
   });
 
-  it("Android: langes Drücken kommt als „contextmenu“ – öffnet das Menü wie Antippen", () => {
+  it("Android: langes Drücken kommt als „contextmenu“ – öffnet das Menü wie Antippen (an der Tür übernimmt die Wand: Fenster bzw. Ziehen)", () => {
     const src = readFileSync("src/components/pinnwand/Zettel.tsx", "utf8");
-    expect(src).toMatch(/onContextMenu=\{\(e\) => \{\s*e\.preventDefault\(\);\s*onOpen\(\);/);
+    expect(src).toMatch(/onContextMenu=\{\(e\) => \{\s*e\.preventDefault\(\);\s*if \(holdOpens\) onOpen\(\);/);
+    expect(readFileSync("src/components/pinnwand/PinboardView.tsx", "utf8")).toMatch(/holdOpens=\{false\}/);
     expect(src).toMatch(/onClick=\{onOpen\}/);
     expect(src).toMatch(/\[-webkit-touch-callout:none\]/);
   });

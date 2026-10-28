@@ -3457,3 +3457,32 @@ Fehler in `docs/aufraeumen-nachher.md`.
   Zettelfarbe dunkel), der Text hat rechts Platz.
 - Entschieden: „OBEN“ nur an „Bleibt hängen“-Zettel (die stehen vorn);
   eigene Zettel heißen weiter „Du“ (Tafel: „Ich“).
+
+## Pinnwand: Größe, Ordnen, „Nur für mich“ (A-028 Teil 2, Tafel 123, Version folgt beim Mergen)
+
+- Lange drücken hebt den Zettel an (Schatten, 1,06); loslassen = Fenster wie
+  Tafel 123 C (Titel = Zettel in „…“, Klein | Groß, Nach oben, Nur für mich
+  bzw. Für alle, Erledigt, „Zum Verschieben: halten und ziehen“); halten und
+  ziehen = verschieben, die anderen rutschen weich nach (FLIP, 0,8 s, nur
+  transform; reduziert ohne Gleiten). Gespeichert wird `sort` nur am
+  gezogenen Zettel (zwischen den Nachbarn); ohne `sort` zählt die Zeit – so
+  behalten alte Zettel ihre Reihenfolge ohne Umschreiben.
+  `wasgibts.pinnwand` v5 (Größe, Platz, privat; alte Zettel klein, nach der
+  Zeit, für alle). Im Menü „Größe und Platz“ für VoiceOver/Tastatur.
+- Ecke „Nur für mich“: private Zettel unter einer gestrichelten Linie ganz
+  unten („Nur für mich · sieht nur du“, grau-weiß, grauer Pin, Schloss in
+  der Meta-Zeile); ohne private Zettel und im Haushalt „allein“ keine Linie.
+  Einklappbar (Nachtrag 7a): Linie antippen = nur „Nur für mich ⌄“, ohne
+  Anzahl; pro Gerät gemerkt (`wasgibts.pinnwandansicht`, nicht in der
+  Sicherung), Standard auf. Kachel, Push, Jetzt-Karte, „ungelesen“ ohne
+  private Zettel. Supabase: owner-only wie „Arbeit“ (Migration
+  `20261101130000_pinnwand_nur_fuer_mich.sql`), Bilder privater Zettel
+  bleiben auf dem Gerät; „Nur für mich“ an = neue ID, damit der Zettel auch
+  bei den anderen verschwindet. Test-Backend mit denselben Regeln.
+- Mia: `pinnwand_schreiben` mit `nur_fuer_mich`, „Mach den Zettel mit dem
+  Geschenk für alle sichtbar“ über `app_befehl` (ohne KI: `pinForAllCommand`,
+  `pinToShare`), fünf neue Prüfstand-Sätze (mit Prüfung `privat`).
+- Entschieden: „Nach oben“ = vor alle anderen, „Bleibt hängen“ bleibt davor.
+  Sprachnachrichten haben Größe und Platz, aber kein „Nur für mich“ (sie
+  sind für die anderen). Kein „Nur für mich“-Schalter beim Schreiben (nur
+  im Fenster und per Mia).

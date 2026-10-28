@@ -16,7 +16,7 @@ const pin = (id: string, author: string, text: string, farbe: ZettelFarbe | null
   id: `beispiel:${id}`,
   typ: "pinnwand",
   erstellt: at,
-  data: { text, author, reactions: {}, replyTo: null, readBy: [], pinned: false, farbe, papier: "zettel", foto: null, erledigt: null, archiv: null, notizFrage: true },
+  data: { text, author, reactions: {}, replyTo: null, readBy: [], pinned: false, farbe, papier: "zettel", foto: null, erledigt: null, archiv: null, notizFrage: true, groesse: "klein", sort: null, privat: false },
 });
 
 /** Die drei Beispiele, neueste zuerst; `mia` = der orange Zettel vorn */
@@ -28,7 +28,7 @@ export function demoBoard(helper: string): { pins: PinMessage[]; memos: MemoMess
     id: "beispiel:memo",
     typ: "memo",
     erstellt: "2000-01-01T00:02:00.000Z",
-    data: { author: "Lisa", dauer: 8, mime: "audio/mp4", wave: [0.3, 0.6, 0.9, 0.5, 0.7, 0.4, 0.8, 0.5, 0.3, 0.6, 0.9, 0.4, 0.6, 0.3], gehoertVon: [], alleGehoertAm: null, reactions: {}, storagePath: null, farbe: 1, erledigt: null, archiv: null },
+    data: { author: "Lisa", dauer: 8, mime: "audio/mp4", wave: [0.3, 0.6, 0.9, 0.5, 0.7, 0.4, 0.8, 0.5, 0.3, 0.6, 0.9, 0.4, 0.6, 0.3], gehoertVon: [], alleGehoertAm: null, reactions: {}, storagePath: null, farbe: 1, erledigt: null, archiv: null, groesse: "klein", sort: null },
   };
   return { pins: [mia, ole], memos: [memo], mia: mia.id };
 }

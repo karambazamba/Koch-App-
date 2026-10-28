@@ -7,14 +7,15 @@
 // roter Pin), unten Avatar-Kreis mit Initiale, Name und Zeit, rechts der
 // Haken-Kreis für „Erledigt“ – wie Aufgaben und Einkauf: Häkchen orange,
 // „erledigt von Lisa“, 1 s stehen (nochmal tippen = doch nicht), dann gleitet
-// er 0,8 s weich ins Archiv; nie durchgestrichen. Antippen oder lange drücken öffnet das Menü
-// (Foto: Antippen = groß im Fenster). Tafel 123: Foto als Polaroid in
-// Zettelgröße (quadratisch, object-fit cover), „OBEN“ klein rechts oben an
-// Zetteln, die hängen bleiben (der Text bekommt rechts Platz). Die Meta-Zeile ist eine Zeile: Name und
-// Zeit, bei Platzmangel nur die Zeit – nie „Du · angeh…“.
+// er 0,8 s weich ins Archiv; nie durchgestrichen. Antippen öffnet das Menü
+// (Foto: groß im Fenster). Tafel 123: Foto als Polaroid in Zettelgröße
+// (quadratisch, object-fit cover), „OBEN“ klein rechts oben an Zetteln, die
+// hängen bleiben (der Text bekommt rechts Platz), „Nur für mich“ grau-weiß
+// mit grauem Pin und Schloss in der Meta-Zeile. Die Meta-Zeile ist eine
+// Zeile: Name und Zeit, bei Platzmangel nur die Zeit – nie „Du · angeh…“.
 
 import { useEffect, useMemo, useState } from "react";
-import { Check, ImageIcon, Play } from "lucide-react";
+import { Check, ImageIcon, Lock, Play } from "lucide-react";
 import { GLEIT_MS, OBEN, formatDauer, doneLine, leavesIn, magnetOf, memoUnheard, reactionLine, tiltOf, zettelTon, type DoorEntry, type PinMessage, type ZettelFarbe } from "@/lib/pinnwand";
 import { fotoStore } from "@/lib/pinnwand/fotoStore";
 import { pinMetaPartsOf } from "@/components/pinnwand/PinSheets";
@@ -86,6 +87,10 @@ type Props = {
   onDone?: () => void;
   tone?: ZettelFarbe | "mia";
   demo?: boolean;
+  /** Lange gedrückt: angehoben (Schatten, 1,06) */
+  lifted?: boolean;
+  /** Langes Drücken öffnet das Menü (Archiv, Menü); an der Tür übernimmt das die Wand (Fenster, Ziehen) */
+  holdOpens?: boolean;
 };
 
 /** Name · Zeit in EINER Zeile: passt der Name nicht mehr, rutscht er in die (unsichtbare) zweite Zeile – die Zeit bleibt */
@@ -98,38 +103,42 @@ function MetaZeile({ wer, wann }: { wer: string; wann: string }) {
   );
 }
 
-export function Zettel({ item, me, household, highlight = false, onOpen, onDone, tone: forced, demo = false }: Props) {
+export function Zettel({ item, me, household, highlight = false, onOpen, onDone, tone: forced, demo = false, lifted = false, holdOpens = true }: Props) {
   const entry = entryOf(item);
-  const tone = zettelTon(forced ?? toneOf(item, household));
+  const privat = item.kind === "pin" && item.pin.data.privat;
+  const tone = privat && !forced ? { bg: "var(--app-zettel-privat)", mag: "var(--app-zettel-privat-mag)" } : zettelTon(forced ?? toneOf(item, household));
   const done = entry.data.erledigt;
   const pinned = item.kind === "pin" && item.pin.data.pinned;
   const papier = item.kind === "memo" ? "memo" : item.pin.data.papier;
+  const gross = entry.data.groesse === "gross";
   const parts = pinMetaPartsOf(entry, me);
   const meta = demo ? entry.data.author : done ? doneLine(done, me) : `${parts.wer} · ${parts.wann}`;
   // Abgehakt an der Tür: 1 s stehen, dann weich hinaus
   const gehtIn = useGehtIn(entry, Boolean(onDone));
   const reacted = reactionLine(entry.data.reactions);
   const player = useMemoPlayer();
-  const paperClass = papier === "karo" ? "zettel-karo" : papier === "foto" ? "zettel-papier p-2 pb-2.5" : papier === "memo" ? "zettel-papier zettel-bon" : "";
+  const paperClass = papier === "karo" ? (privat ? "zettel-privat" : "zettel-karo") : papier === "foto" ? "zettel-papier p-2 pb-2.5" : papier === "memo" ? "zettel-papier zettel-bon" : "";
   const label =
     item.kind === "memo" ? `Sprachnachricht von ${entry.data.author}, ${formatDauer(item.memo.data.dauer)}` : `${item.pin.data.papier === "foto" ? "Foto" : "Zettel"} von ${entry.data.author}: ${item.pin.data.text}`;
   return (
     <div
       id={onDone ? `n-${item.id}` : undefined}
-      className={`zettel relative select-none [-webkit-touch-callout:none] ${paperClass} ${highlight ? "zettel-hervor" : ""} ${gehtIn !== null ? "zettel-geht" : ""}`}
+      className={`zettel relative select-none [-webkit-touch-callout:none] ${paperClass} ${highlight ? "zettel-hervor" : ""} ${gehtIn !== null ? "zettel-geht" : ""} ${lifted ? "zettel-hebt" : ""}`}
       style={{ ["--kippen" as string]: `${tiltOf(item.id)}deg`, ...(gehtIn !== null ? { ["--geht-in" as string]: `${gehtIn}ms` } : {}), ...(papier === "zettel" ? { background: tone.bg } : {}) }}
       data-erledigt={done ? "" : undefined}
       data-papier={papier}
+      data-groesse={entry.data.groesse ?? "klein"}
+      data-privat={privat ? "" : undefined}
     >
       <button
         type="button"
         className="absolute inset-0 z-0"
         style={{ borderRadius: "inherit" }}
-        aria-label={`${label}. ${meta}${pinned ? ", bleibt hängen" : ""}. Antippen für mehr`}
+        aria-label={`${label}. ${meta}${pinned ? ", bleibt hängen" : ""}${privat ? ", nur für mich" : ""}. Antippen für mehr`}
         onClick={onOpen}
         onContextMenu={(e) => {
           e.preventDefault();
-          onOpen();
+          if (holdOpens) onOpen();
         }}
       />
       <span className="pointer-events-none absolute -top-2.5 left-1/2 z-10 -translate-x-1/2">
@@ -144,9 +153,9 @@ export function Zettel({ item, me, household, highlight = false, onOpen, onDone,
         {item.kind === "pin" && item.pin.data.replyTo && (
           <span className="text-[12px] font-bold text-fridge-soft">↪ {item.pin.data.replyTo.author}</span>
         )}
-        {item.kind === "pin" && item.pin.data.papier === "foto" && <FotoBild pin={item.pin} square />}
+        {item.kind === "pin" && item.pin.data.papier === "foto" && <FotoBild pin={item.pin} square={!gross} />}
         {item.kind === "pin" && item.pin.data.text && (
-          <p className={`zettel-text whitespace-pre-line break-words font-bold leading-snug ${papier === "foto" ? `px-1 pt-1 text-[15px] ${pinned ? "pr-10" : ""}` : "text-[16px]"}`}>{item.pin.data.text}</p>
+          <p className={`zettel-text whitespace-pre-line break-words font-bold leading-snug ${papier === "foto" ? `px-1 pt-1 text-[15px] ${pinned ? "pr-10" : ""}` : gross ? "text-[17px]" : "text-[16px]"}`}>{item.pin.data.text}</p>
         )}
         {item.kind === "memo" && (
           <>
@@ -169,6 +178,7 @@ export function Zettel({ item, me, household, highlight = false, onOpen, onDone,
         <span className={`flex min-h-[30px] items-center gap-1.5 pr-8 text-[12px] font-semibold leading-tight text-fridge-soft ${papier === "foto" ? "px-1" : ""}`} data-meta>
           <ZettelAvatar name={entry.data.author} color={tone.mag} />
           {demo || done ? <span className="min-w-0 break-words">{meta}</span> : <MetaZeile wer={parts.wer} wann={parts.wann} />}
+          {privat && <Lock className="h-3 w-3 shrink-0" strokeWidth={2.5} aria-hidden />}
           {item.kind === "memo" && memoUnheard(item.memo, me) && !done && <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: tone.mag }} aria-label="Noch nicht gehört" />}
         </span>
       </div>

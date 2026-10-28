@@ -15,7 +15,17 @@ export const NICHT_MEHR_FESTHALTEN = "Nicht mehr festhalten";
 /** Seiten-Tipp und leere Tür */
 export const PINNWAND_TIPP = "Kurze Zettel für alle. Abhaken räumt auf, ‚Bleibt hängen‘ bleibt.";
 
-// --- Aufgeräumt (Tafel 123) ----------------------------------------------------------
+// --- Ordnen, Größe, „Nur für mich“ (Tafel 123) ------------------------------------
 
 /** Kleine Markierung (Großbuchstaben, Zettelfarbe dunkel) an Zetteln, die hängen bleiben – sie stehen vorn */
 export const OBEN = "Oben";
+/** Fenster nach langem Drücken: an den Anfang (vor alle anderen; „Bleibt hängen“ bleibt davor) */
+export const NACH_OBEN = "Nach oben";
+/** Fenster: nur ich sehe den Zettel (unter der gestrichelten Linie) */
+export const NUR_FUER_MICH = "Nur für mich";
+/** Fenster: wieder für alle im Haushalt */
+export const FUER_ALLE = "Für alle";
+/** Beschriftung der gestrichelten Linie (mit Schloss) */
+export const NUR_FUER_MICH_ZEILE = "Nur für mich · sieht nur du";
+/** Leise im Fenster nach langem Drücken */
+export const VERSCHIEBEN_HINWEIS = "Zum Verschieben: halten und ziehen";

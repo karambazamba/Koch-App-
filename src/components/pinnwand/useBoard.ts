@@ -1,7 +1,8 @@
 "use client";
 
-// Die Kühlschranktür als eine Liste: Zettel und Sprachnachrichten nach Zeit
-// gemischt („Bleibt hängen“ oben, sonst neueste zuerst), dazu das Archiv
+// Die Kühlschranktür als eine Liste: Zettel und Sprachnachrichten gemischt
+// („Bleibt hängen“ vorn, sonst nach Platz – ohne Platz neueste zuerst,
+// `ordnen.ts`), dazu das Archiv
 // „Ältere“, der Haushalt (für Farben und „alle gehört“) und ob es
 // Ungelesenes/Ungehörtes gibt. Abgehaktes gleitet nach 1,8 s ins Archiv – dafür
 // rechnet die Liste genau dann neu. Für Kachel und Seite.
@@ -10,6 +11,7 @@ import { useEffect, useState } from "react";
 import { now } from "@/lib/core/now";
 import { useProfile } from "@/lib/einstellungen/useProfile";
 import { PINS, sortBy, via } from "@/lib/core/sort";
+import { doorOrderBy } from "@/lib/pinnwand/ordnen";
 import { ABHAK_MS, archivedMemos, archivedPins, farbeOf, hasUnread, householdNames, memoUnheard, useMemos, usePins, visibleMemos, visiblePins, type MemoMessage, type PinMessage, type ZettelFarbe } from "@/lib/pinnwand";
 
 export type BoardItem = { kind: "pin"; id: string; at: string; pinned: boolean; pin: PinMessage } | { kind: "memo"; id: string; at: string; pinned?: undefined; memo: MemoMessage };
@@ -32,7 +34,7 @@ export function useBoard(me: string) {
   const nowMs = pins === undefined ? 0 : now().getTime();
   const liveMemos = memos && pins !== undefined ? visibleMemos(memos, nowMs) : [];
   const items: BoardItem[] | undefined = pins === undefined ? undefined : [...visiblePins(pins, nowMs).map(ofPin), ...liveMemos.map(ofMemo)];
-  const sorted = items && sortBy(items, ...via((i: BoardItem) => ({ pinned: i.kind === "pin" && i.pin.data.pinned, at: i.at }), PINS));
+  const sorted = items && doorOrderBy(items, entryOf);
   const archived = pins === undefined ? [] : sortBy([...archivedPins(pins, nowMs).map(ofPin), ...archivedMemos(memos ?? [], nowMs).map(ofMemo)], ...via((i: BoardItem) => ({ at: i.at }), PINS));
   // Sobald der nächste abgehakte Zettel seine 1,8 s hinter sich hat: neu rechnen (er geht ins Archiv)
   const [, tick] = useState(0);

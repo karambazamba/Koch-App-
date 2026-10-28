@@ -73,7 +73,7 @@ describe("Nachrichten", () => {
     const raw = { ...pin("Hi"), raum: "arbeit", data: { text: " Hi  du ", author: " ", reactions: { "👍": ["Lisa", 3], "❤️": [], "🔥": ["x"] }, readBy: "Lisa", pinned: "ja" } };
     const p = sanitizePin(raw)!;
     expect(p.raum).toBe("familie");
-    expect(p.data).toEqual({ text: "Hi du", author: "Ich", reactions: { Lisa: "👍" }, replyTo: null, readBy: [], pinned: false, farbe: null, papier: "zettel", foto: null, erledigt: null, archiv: null, notizFrage: false });
+    expect(p.data).toEqual({ text: "Hi du", author: "Ich", reactions: { Lisa: "👍" }, replyTo: null, readBy: [], pinned: false, farbe: null, papier: "zettel", foto: null, erledigt: null, archiv: null, notizFrage: false, groesse: "klein", sort: null, privat: false });
   });
 
   it("nach 24 Std. noch da (kein Verschwinden mehr) – Angeheftetes oben, sonst neueste zuerst", () => {
@@ -263,9 +263,9 @@ describe("Speicher `wasgibts.pinnwand` v4", () => {
 
   it("v1 → v4: Nachrichten bleiben, Memos leer; Unsinn fällt raus", () => {
     const p = pin("Hallo");
-    expect(migratePinStore({ version: 1, messages: [p, { typ: "x" }], memos: [memo()] })).toEqual({ version: 4, messages: [p], memos: [] });
+    expect(migratePinStore({ version: 1, messages: [p, { typ: "x" }], memos: [memo()] })).toEqual({ version: 5, messages: [p], memos: [] });
     expect(migratePinStore({ version: 2, messages: "x", memos: [memo(), null] })?.memos).toHaveLength(1);
-    expect(migratePinStore({ version: 5 })).toBeNull();
+    expect(migratePinStore({ version: 6 })).toBeNull();
     expect(migratePinStore(null)).toBeNull();
   });
 
@@ -274,7 +274,7 @@ describe("Speicher `wasgibts.pinnwand` v4", () => {
     local.setItem("wasgibts.pinnwand", JSON.stringify({ version: 1, messages: [p] }));
     expect(loadPins()).toEqual([p]);
     expect(loadMemos()).toEqual([]);
-    expect(stored().version).toBe(4);
+    expect(stored().version).toBe(5);
   });
 
   it("leer ohne Speicher", () => {

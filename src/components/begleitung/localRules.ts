@@ -12,7 +12,7 @@ import { CALENDAR_IMPORT_REPLY, isCalendarImportRequest } from "@/lib/kalender/i
 import { anbieterIn, openMitbringen } from "@/lib/kalender/mitbringen/angebot";
 import { einladenWunsch } from "@/lib/konten/einladenHinweis";
 import { changeHome, describeHomeChange, requestHomeEdit, unlockHomeTile } from "@/lib/core/homeLayout";
-import { addPin, changeMemos, changePins, createPin, formatDauer, householdNames, isPinboardQuery, loadMemos, loadPins, memoPlayRequest, memoToPlay, pinStays, pinWriteCommand, setMemoHeard, activeMemos, activePins } from "@/lib/pinnwand";
+import { addPin, changeMemos, changePins, createPin, formatDauer, householdNames, isPinboardQuery, loadMemos, loadPins, memoPlayRequest, memoToPlay, pinForAllCommand, pinPrivate, pinStays, pinToShare, pinWriteCommand, setMemoHeard, updatePin, activeMemos, activePins } from "@/lib/pinnwand";
 import { playMemo } from "@/lib/pinnwand/memoPlayer";
 import { dayAnswer, umbrellaAnswer, weatherQuestion } from "@/lib/wetter/forecast";
 import { windAnswer, type Wind } from "@/lib/wetter/wind";
@@ -160,12 +160,25 @@ export function boardRule(ctx: RuleContext, t: string): boolean {
   const write = pinWriteCommand(t);
   if (write) {
     setInput("");
-    const pin = createPin(write, me, null, { pinned: pinStays(t) });
+    const pin = createPin(write, me, null, { pinned: pinStays(t), privat: pinPrivate(t) });
     if (!pin) return false;
     pushUndo("die Pinnwand-Nachricht", changePins((all) => addPin(all, pin)));
     setFeature("pinnwand", true);
     const shown = unlockHomeTile("pinnwand");
-    say(`Hängt an der Pinnwand ✓ „${pin.data.text}“${pin.data.pinned ? " Bleibt hängen." : ""}${shown ? " Die Pinnwand steht jetzt oben auf der Startseite." : ""}`);
+    say(`Hängt an der Pinnwand ✓ „${pin.data.text}“${pin.data.privat ? " Sieht nur du." : pin.data.pinned ? " Bleibt hängen." : ""}${shown ? " Die Pinnwand steht jetzt oben auf der Startseite." : ""}`);
+    return true;
+  }
+  // „Mach den Zettel mit dem Geschenk für alle sichtbar“ (Tafel 123)
+  const share = pinForAllCommand(t);
+  if (share !== null) {
+    setInput("");
+    const pin = pinToShare(loadPins(), share, me, now().getTime());
+    if (!pin) {
+      say("Welchen Zettel meinst du? Halt ihn an der Pinnwand gedrückt, dann „Für alle“.");
+      return true;
+    }
+    pushUndo("Für alle sichtbar", changePins((all) => updatePin(all, pin.id, { privat: false }, now().toISOString())));
+    say(`Sehen jetzt alle: „${pin.data.text || "Foto"}“.`);
     return true;
   }
   if (isPinboardQuery(t)) {

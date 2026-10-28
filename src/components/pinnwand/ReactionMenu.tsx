@@ -6,10 +6,12 @@
 // „In Notizen“ (nur Text), „Bleibt hängen“ bzw. „Nicht mehr festhalten“ (nur
 // Zettel), „Löschen“ (nur eigene, sofort ganz weg mit Rückgängig); im Archiv
 // nur Antworten, In Notizen und Löschen. Bei der eigenen
-// Sprachnachricht „Gehört von“. Schließt per Danebentippen, Escape und Zurück.
+// Sprachnachricht „Gehört von“. „Größe und Platz“ öffnet das Fenster vom
+// langen Drücken (Tafel 123 C) – auch für VoiceOver und Tastatur.
+// Schließt per Danebentippen, Escape und Zurück.
 
 import { useEffect, useRef, type ReactNode } from "react";
-import { Check, CircleCheck, NotebookPen, Pin, Reply, Trash2 } from "lucide-react";
+import { Check, CircleCheck, LayoutGrid, NotebookPen, Pin, Reply, Trash2 } from "lucide-react";
 import { useBackCloses } from "@/lib/core/useBackCloses";
 import { now } from "@/lib/core/now";
 import { PersonAvatar } from "@/components/ui/PersonAvatar";
@@ -18,7 +20,7 @@ import { deleteItem, mayDelete, moveToNotes, reactTo, reactionsOf, toggleDone, t
 import { entryOf } from "@/components/pinnwand/useBoard";
 import type { BoardItem } from "@/components/pinnwand/useBoard";
 
-type Props = { item: BoardItem; me: string; household: string[]; archived?: boolean; onReply: () => void; onClose: () => void; children: ReactNode };
+type Props = { item: BoardItem; me: string; household: string[]; archived?: boolean; onReply: () => void; onArrange?: () => void; onClose: () => void; children: ReactNode };
 
 function MenuRow({ icon: Icon, label, danger = false, onClick }: { icon: typeof Reply; label: string; danger?: boolean; onClick: () => void }) {
   return (
@@ -29,7 +31,7 @@ function MenuRow({ icon: Icon, label, danger = false, onClick }: { icon: typeof 
   );
 }
 
-export function ReactionMenu({ item, me, household, archived = false, onReply, onClose, children }: Props) {
+export function ReactionMenu({ item, me, household, archived = false, onReply, onArrange, onClose, children }: Props) {
   useBackCloses(onClose);
   const armed = useRef(false);
   useEffect(() => {
@@ -73,6 +75,7 @@ export function ReactionMenu({ item, me, household, archived = false, onReply, o
           <MenuRow icon={Reply} label="Antworten" onClick={run(onReply)} />
           {item.kind === "pin" && item.pin.data.text && <MenuRow icon={NotebookPen} label="In Notizen" onClick={run(() => moveToNotes(item))} />}
           {item.kind === "pin" && !archived && <MenuRow icon={Pin} label={item.pin.data.pinned ? NICHT_MEHR_FESTHALTEN : BLEIBT_HAENGEN} onClick={run(() => togglePinned(item))} />}
+          {onArrange && <MenuRow icon={LayoutGrid} label="Größe und Platz" onClick={run(onArrange)} />}
           {mayDelete(item, me) && <MenuRow icon={Trash2} label="Löschen" danger onClick={run(() => deleteItem(item, me))} />}
         </div>
       </div>

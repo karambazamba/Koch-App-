@@ -18,7 +18,7 @@ import { arbeitsWorte, guessRoom, raumUnklar, type RaumHilfen, type RaumWort } f
 import { quickTaskData, readQuickText } from "@/lib/kalender/quick";
 import { readSentence, splitTermine } from "@/lib/kalender/sentence";
 import { createNote } from "@/lib/notizen/model";
-import { PIN_MAX } from "@/lib/pinnwand/model";
+import { PIN_MAX, pinForAllCommand } from "@/lib/pinnwand/model";
 import { kurzeBestaetigung } from "@/lib/begleitung/bestaetigung";
 import { einkaufErkennen } from "@/lib/begleitung/sofort/einkauf";
 
@@ -182,6 +182,8 @@ export function sofortErkennen(text: string, ctx: SofortKontext): Sofort | null 
   const t = text.trim().replace(/^(?:moin|hey|hallo|okay|ok)[,!]?\s+/i, "");
   if (!t || t.length > 90 || /[?\n]/.test(t) || t.startsWith("[")) return null;
   if (NIE.test(t)) return null;
+  // „Zettel für alle sichtbar machen“ ist Bedienung der Pinnwand (Tafel 123), keine Aufgabe
+  if (pinForAllCommand(t) !== null) return null;
   const treffer = (
     [
       ["timer", timer(t)],

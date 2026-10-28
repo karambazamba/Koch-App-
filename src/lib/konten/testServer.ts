@@ -71,8 +71,15 @@ function holder(data: unknown, key: "fuer" | "zurueck"): unknown {
   return inner[key] || d[key] || "";
 }
 
-/** Sichtbar wie in der Datenbank (`entry_visible`, A-034): Familie alle; Ich/Arbeit nur der Besitzer, bei Aufgaben auch Empfänger und wer sie zurückgab */
+/** Wie `entry_privat` in der Datenbank: Pinnwand „Nur für mich“ (data.data.privat, zur Sicherheit auch data.privat) */
+const entryPrivat = (data: unknown) => {
+  const d = (data ?? {}) as { privat?: unknown; data?: { privat?: unknown } };
+  return d.privat === true || d.data?.privat === true;
+};
+
+/** Sichtbar wie in der Datenbank (`entry_visible`, A-034 + Tafel 123): „Nur für mich“ nur der Besitzer; Familie alle; Ich/Arbeit nur der Besitzer, bei Aufgaben auch Empfänger und wer sie zurückgab */
 function visible(d: { typ: string; raum: string; besitzer: string; data: unknown }, uid: string): boolean {
+  if (d.typ !== "aufgabe" && entryPrivat(d.data)) return d.besitzer === uid;
   if (!nurBesitzer(d.raum)) return true;
   if (d.besitzer === uid) return true;
   return d.typ === "aufgabe" && (holder(d.data, "fuer") === uid || holder(d.data, "zurueck") === uid);
@@ -267,7 +274,9 @@ export function testKonten(body: Record<string, unknown>, nowMs = Date.now()): R
         const old = rows.get(d.id);
         const raum = roomOf(d.raum);
         // Vorher sichtbar, und danach weiter: so nimmt niemand dem Besitzer etwas weg
-        if (old && (!visible(old, user.id) || !visible({ typ: d.typ, raum, besitzer: old.besitzer, data: d.data }, user.id))) {
+        // (auch nicht, indem er einen fremden Zettel „Nur für mich“ macht – wie entries_update)
+        const fremdPrivat = old && old.typ !== "aufgabe" && entryPrivat(d.data) && old.besitzer !== user.id;
+        if (old && (!visible(old, user.id) || fremdPrivat || !visible({ typ: d.typ, raum, besitzer: old.besitzer, data: d.data }, user.id))) {
           skipped.push(d.id);
           continue;
         }

@@ -1,4 +1,4 @@
-// Speicher der Pinnwand (`wasgibts.pinnwand` v4, lokal – geteilt über die
+// Speicher der Pinnwand (`wasgibts.pinnwand` v5, lokal – geteilt über die
 // Konten, Tabelle "eintraege" mit typ "pinnwand" bzw. "memo").
 // v2: Sprachnachrichten (`memos`, nur die Einträge – der Ton liegt in
 // IndexedDB); v1 bekommt eine leere Liste. v3: Reaktionen je Person
@@ -6,7 +6,9 @@
 // v4 (Kühlschranktür, Tafel 106): Farbe, Papier, Foto, Erledigt, Archiv –
 // alle vorhandenen Zettel bleiben, ihre Farbe ist die der Person. Altes
 // liegt im Archiv „Ältere“; nach 30 Tagen dort räumt `forgetOldArchive`
-// (beim Start) es still weg – das Format bleibt gleich.
+// (beim Start) es still weg – das Format bleibt gleich. v5 (Tafel 123):
+// Größe, Platz (`sort`) und „Nur für mich“ (`privat`) – alte Zettel klein,
+// nach der Zeit, für alle (bisherige Reihenfolge bleibt).
 
 import { createLocalStore } from "@/lib/core/localStore";
 import { useExternalStore } from "@/lib/core/useExternalStore";
@@ -30,21 +32,21 @@ export function loadMemos(): MemoMessage[] {
 }
 
 function save(messages: PinMessage[], memos: MemoMessage[]) {
-  store.save({ version: 4, messages, memos });
+  store.save({ version: 5, messages, memos });
 }
 
 /** Änderung anwenden; liefert "Rückgängig" */
 export function changePins(change: (list: PinMessage[]) => PinMessage[]): () => void {
   const before = loadPins();
   save(change(before), loadMemos());
-  return () => store.save({ version: 4, messages: before, memos: loadMemos() });
+  return () => store.save({ version: 5, messages: before, memos: loadMemos() });
 }
 
 /** Änderung der Sprachnachrichten; liefert "Rückgängig" */
 export function changeMemos(change: (list: MemoMessage[]) => MemoMessage[]): () => void {
   const before = loadMemos();
   save(loadPins(), change(before));
-  return () => store.save({ version: 4, messages: loadPins(), memos: before });
+  return () => store.save({ version: 5, messages: loadPins(), memos: before });
 }
 
 /** Beim Start: was 30 Tage im Archiv lag, still löschen (nur speichern, wenn sich etwas ändert) */
