@@ -43,7 +43,7 @@ function MiniZettel({ item, tone: forced, household, lines, demo, className = ""
       </span>
     </>
   );
-  const cls = `zettel block ${papier === "karo" ? "zettel-karo" : papier === "zettel" ? "" : "zettel-papier"} ${className}`;
+  const cls = `zettel ${className.includes("absolute") ? "" : "relative"} block ${papier === "karo" ? "zettel-karo" : papier === "zettel" ? "" : "zettel-papier"} ${className}`;
   const st = { ...style, ...(papier === "zettel" ? { background: tone.bg } : {}) };
   return demo ? (
     <Link href="/pinnwand" className={cls} style={st} aria-label={`Beispiel: ${text}`}>

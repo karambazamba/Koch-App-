@@ -73,7 +73,7 @@ export function Zettel({ item, me, household, highlight = false, onOpen, onDone,
   return (
     <div
       id={onDone ? `n-${item.id}` : undefined}
-      className={`zettel select-none [-webkit-touch-callout:none] ${paperClass} ${highlight ? "zettel-hervor" : ""}`}
+      className={`zettel relative select-none [-webkit-touch-callout:none] ${paperClass} ${highlight ? "zettel-hervor" : ""}`}
       style={{ ["--kippen" as string]: `${tiltOf(item.id)}deg`, ...(papier === "zettel" ? { background: tone.bg } : {}) }}
       data-erledigt={done ? "" : undefined}
       data-papier={papier}

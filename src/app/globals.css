@@ -1288,8 +1288,8 @@ body:has(.mia-buehne-hintergrund, .mia-geist-schleier) [data-mia-knopf] { opacit
   background: var(--app-fridge-handle);
   pointer-events: none;
 }
+/* Ohne eigene position: die Klassen am Element (relative/absolute) entscheiden */
 .zettel {
-  position: relative;
   color: var(--app-fridge-ink);
   box-shadow: var(--app-fridge-shadow);
   border-radius: 3px 3px 14px 3px;

@@ -117,6 +117,14 @@ describe("Farbe = Person", () => {
     }
     expect(css).toMatch(/Kühlschranktür dunkel: Edelstahl/);
   });
+
+  it("Fehler: .zettel setzte position (ohne Ebene schlägt es „absolute“) – der Fächer lag übereinander", () => {
+    const css = readFileSync("src/app/globals.css", "utf8");
+    const rule = css.slice(css.indexOf(".zettel {"), css.indexOf("}", css.indexOf(".zettel {")));
+    expect(rule).not.toMatch(/position/);
+    expect(readFileSync("src/components/pinnwand/Zettel.tsx", "utf8")).toMatch(/zettel relative/);
+    expect(readFileSync("src/components/pinnwand/Faecher.tsx", "utf8")).toMatch(/className\.includes\("absolute"\) \? "" : "relative"/);
+  });
 });
 
 describe("Papierarten und Magnete", () => {

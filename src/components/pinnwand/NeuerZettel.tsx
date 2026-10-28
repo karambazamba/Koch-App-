@@ -74,7 +74,7 @@ export function NeuerZettel({ me, household, karo, onClose, quote = null, art: s
       <div className="flex flex-col gap-4 pb-2">
         {/* Vorschau = der echte Zettel */}
         <div className="px-3 pt-3">
-          <div className={`zettel ${papier === "karo" ? "zettel-karo" : papier === "zettel" ? "" : papier === "memo" ? "zettel-papier zettel-bon" : "zettel-papier p-2"}`} style={{ ["--kippen" as string]: "-1deg", ...(papier === "zettel" ? { background: tone.bg } : {}) }}>
+          <div className={`zettel relative ${papier === "karo" ? "zettel-karo" : papier === "zettel" ? "" : papier === "memo" ? "zettel-papier zettel-bon" : "zettel-papier p-2"}`} style={{ ["--kippen" as string]: "-1deg", ...(papier === "zettel" ? { background: tone.bg } : {}) }}>
             <span className="pointer-events-none absolute -top-3 left-1/2 z-10 -translate-x-1/2">
               <Magnet form={magnetOf(papier, pinned)} color={tone.mag} size={26} />
             </span>
