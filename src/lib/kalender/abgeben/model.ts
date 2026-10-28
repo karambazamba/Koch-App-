@@ -54,6 +54,22 @@ export function fromLabel(entry: TaskLike, me: string | null, members: Member[])
 }
 
 /**
+ * Konto-IDs, die `fromLabel` bräuchte, aber in der (zwischengespeicherten)
+ * Mitgliederliste noch nicht stehen – z. B. Lisa ist eben erst beigetreten
+ * und hat schon abgehakt. Dann die Mitgliederliste neu holen, sonst fehlte
+ * „erledigt von Lisa“ bis zum nächsten Öffnen der Konto-Seite.
+ */
+export function unbekannteMitglieder(entry: TaskLike, me: string | null, members: Member[]): string[] {
+  if (entry.typ !== "aufgabe" || me === null) return [];
+  const ids: string[] = [];
+  const done = entry.data.doneBy;
+  if (entry.data.doneOn && done && done !== me) ids.push(done);
+  const role = taskRole(entry, me);
+  if (role === "bekommen" || role === "familie") ids.push(entry.besitzer);
+  return ids.filter((id) => id !== LOCAL_OWNER && memberName(members, id) === null);
+}
+
+/**
  * Wer hat abgehakt (A-034): neu erledigte Aufgaben bekommen `doneBy` = Konto,
  * wieder geöffnete verlieren es. Ohne Konto (`wer` null) bleibt alles, wie es ist.
  */

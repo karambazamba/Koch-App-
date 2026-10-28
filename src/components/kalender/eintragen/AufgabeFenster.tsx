@@ -39,7 +39,8 @@ export function AufgabeFenster({ entry, date, onClose }: { entry?: Aufgabe; date
 
   const [text, setText] = useState(entry?.data.title ?? "");
   // Von Hand gewählt (null = was der Satz sagt bzw. der Standard)
-  const [ab, setAb] = useState<string | null>(entry ? (entry.data.date ?? today) : (date ?? null));
+  // `date` (Einstieg, z. B. Kachel-＋ = heute) ist nur der Rückfall: ein Tag im Satz geht vor (wie bei Terminen)
+  const [ab, setAb] = useState<string | null>(entry ? (entry.data.date ?? today) : null);
   const [erinnern, setErinnern] = useState<Erinnern | null | undefined>(entry ? erinnernVon(entry.data, today) : undefined);
   const [wieder, setWieder] = useState<Wiederholen>(wiederholenVon(entry?.data.repeat));
   const [an, setAn] = useState<string | null>(null);
@@ -50,14 +51,14 @@ export function AufgabeFenster({ entry, date, onClose }: { entry?: Aufgabe; date
   const wahl = useRaumWahl("aufgabe", entry?.raum ?? null, text);
   const gelesen = entry ? null : aufgabeLesen(text, today, wahl.hilfen);
   const title = entry ? text.trim() : (gelesen?.title ?? "");
-  const tag = ab ?? gelesen?.ab ?? null;
+  const tag = ab ?? gelesen?.ab ?? date ?? null;
   const glocke = erinnern === undefined ? (gelesen?.erinnern ?? null) : erinnern;
   const bereit = Boolean(title);
 
   const reset = () => {
     setText("");
     wahl.zuruecksetzen();
-    setAb(date ?? null);
+    setAb(null);
     setErinnern(undefined);
     setWieder("nie");
     setAn(null);
@@ -78,6 +79,14 @@ export function AufgabeFenster({ entry, date, onClose }: { entry?: Aufgabe; date
     else reset();
   };
 
+  // Erst das Fenster „Liste einfügen“ laden, dann dieses schließen: so übernimmt es
+  // den Verlaufseintrag sofort (sonst nähme das verspätete Zurück es gleich wieder weg)
+  const listeOeffnen = (v: string) =>
+    void import("@/components/kalender/liste/ListeEinfuegen").then(() => {
+      onClose();
+      openListe(v);
+    });
+
   const vorschlaege = glockeVorschlaege(today, minutes);
   return (
     <Sheet title={entry ? "Aufgabe" : "Neue Aufgabe"} onClose={onClose} inset={inset}>
@@ -94,7 +103,7 @@ export function AufgabeFenster({ entry, date, onClose }: { entry?: Aufgabe; date
           value={text}
           onChange={setText}
           // Eine ganze To-do-Liste eingefügt → „Liste einfügen“ mit Vorschau
-          onPaste={(v) => !entry && looksLikeList(v) && (onClose(), openListe(v), true)}
+          onPaste={(v) => !entry && looksLikeList(v) && (listeOeffnen(v), true)}
           placeholder="Was steht an?"
           label={entry ? "Aufgabe" : "Neue Aufgabe"}
           bereit={bereit}

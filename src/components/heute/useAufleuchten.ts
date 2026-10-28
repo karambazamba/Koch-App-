@@ -8,7 +8,7 @@
 // ist CSS (opacity, Ring über `--app-leuchten`). Im Bearbeiten nie.
 
 import { useEffect, useRef, useSyncExternalStore, type RefObject } from "react";
-import { geleuchtet, leuchtenAbo, leuchtenJetzt, leuchtVersion, LEUCHT_MS, type Leuchten } from "@/lib/heute/aufleuchten";
+import { geleuchtet, leuchtenAbo, leuchtenJetzt, leuchtenWarten, leuchtVersion, LEUCHT_MS, NACHSEHEN_MS, type Leuchten } from "@/lib/heute/aufleuchten";
 
 /** Kurz warten, bis die Kacheln ihre Zeilen haben (Daten laden nach) */
 const WARTEN_MS = 450;
@@ -26,13 +26,20 @@ export function useAufleuchten(board: RefObject<HTMLElement | null>, aus: boolea
   const an = useRef(new Set<HTMLElement>());
   useEffect(() => {
     if (aus || !leuchtenJetzt().length) return;
-    const t = window.setTimeout(() => {
+    let versuch = 0;
+    const los = () => {
       const root = board.current;
       const ziele = leuchtenJetzt();
-      if (!root || !ziele.length) return;
+      if (!ziele.length) return;
+      const treffer = root ? ziele.map((z) => zielIn(root, z)) : [];
+      // Kacheln noch nicht da (Rückkehr zur Startseite, die Kacheln laden nach): kurz weiter warten
+      if (leuchtenWarten(treffer.filter(Boolean).length, ziele.length, versuch++)) {
+        t = window.setTimeout(los, NACHSEHEN_MS);
+        return;
+      }
       // Verbraucht – leuchtet nie ein zweites Mal (auch wenn die Kachel fehlt)
       geleuchtet(ziele);
-      for (const el of new Set(ziele.map((z) => zielIn(root, z)).filter((el): el is HTMLElement => el !== null))) {
+      for (const el of new Set(treffer.filter((el): el is HTMLElement => el !== null))) {
         el.removeAttribute("data-leuchtet");
         void el.offsetWidth;
         el.setAttribute("data-leuchtet", "");
@@ -42,7 +49,8 @@ export function useAufleuchten(board: RefObject<HTMLElement | null>, aus: boolea
           an.current.delete(el);
         }, LEUCHT_MS);
       }
-    }, WARTEN_MS);
+    };
+    let t = window.setTimeout(los, WARTEN_MS);
     return () => window.clearTimeout(t);
   }, [version, aus, board]);
   // Beim Verlassen nichts leuchtend stehen lassen

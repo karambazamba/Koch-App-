@@ -12,6 +12,18 @@ export type Leuchten = { kachel: HomeTileId; schluessel: string };
 /** So lange leuchtet es (ein- und ausblenden) */
 export const LEUCHT_MS = 1500;
 
+/** Fehlt eine Kachel noch (die Startseite lädt nach), so oft im Abstand nachsehen */
+export const NACHSEHEN_MS = 250;
+const NACHSEHEN_MAL = 12;
+
+/**
+ * Noch warten statt verbrauchen? Ja, solange nicht jedes Ziel seine Kachel
+ * gefunden hat und die Startseite noch nachladen kann (höchstens ~3 s) –
+ * sonst wäre der Eintrag bei der Rückkehr zur Startseite schon verbraucht,
+ * bevor seine Kachel da ist.
+ */
+export const leuchtenWarten = (gefunden: number, gesamt: number, versuch: number): boolean => gefunden < gesamt && versuch < NACHSEHEN_MAL;
+
 let wartend: Leuchten[] = [];
 let buehneOffen = false;
 let version = 0;
