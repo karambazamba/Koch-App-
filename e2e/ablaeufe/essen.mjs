@@ -40,7 +40,9 @@ export const einkauf = async (page, check) => {
   await page.locator('[data-laden-karte="Rewe"]').tap();
   await page.waitForURL(/\/einkaufsliste\/laden/, { timeout: 5000 }).catch(() => {});
   const milch = page.getByRole("checkbox", { name: "Milch abhaken" });
-  check((await milch.isVisible()) && (await page.getByRole("checkbox", { name: "Bananen abhaken" }).isVisible()), "Milch und Bananen auf der Rewe-Seite");
+  // die Laden-Seite lädt kurz (Skelett) – erst dann nachsehen
+  const sichtbar = (l) => l.waitFor({ timeout: 5000 }).then(() => true, () => false);
+  check((await sichtbar(milch)) && (await sichtbar(page.getByRole("checkbox", { name: "Bananen abhaken" }))), "Milch und Bananen auf der Rewe-Seite");
   const done = async () => Object.values((await store(page, "wasgibts.einkaufsliste")).weeks).some((w) => w.manual.some((m) => m.name === "Milch" && m.done));
   await milch.tap();
   await page.waitForTimeout(2600);

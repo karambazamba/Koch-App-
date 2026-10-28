@@ -179,11 +179,23 @@ describe("Oberfläche: klebt, springt, dunkle Leiste ohne Schwarz", () => {
   it("Suchfeld + Chip-Reihe kleben oben, Abschnitts-Überschriften kleben darunter, Chip = springen, aktiver hervorgehoben", () => {
     expect(src).toMatch(/data-aussuchen-oben/);
     expect(src.match(/className="sticky/g)?.length).toBeGreaterThanOrEqual(2);
-    expect(src).toMatch(/onClick=\{\(\) => springen\(a\.id\)\}/);
+    expect(src).toMatch(/onClick=\{\(e\) => springen\(a\.id, e\.timeStamp\)\}/);
     expect(src).toMatch(/scrollIntoView\(\{ block: "start", behavior: "smooth" \}\)/);
     expect(src).toMatch(/aria-pressed=\{aktivAbschnitt === a\.id\}/);
     expect(src).toMatch(/IntersectionObserver/);
     expect(src).toMatch(/data-no-swipe data-abschnitt-chips/);
+  });
+
+  it("Sprung per Chip: der getippte Abschnitt bleibt hervorgehoben, auch wenn er nicht bis nach oben kommt (Durchklick: Drogerie & Haushalt)", () => {
+    expect(src).toMatch(/sprung\.current = zeit;\s*setAktivAbschnitt\(id\)/);
+    expect(src).toMatch(/onClick=\{\(e\) => springen\(a\.id, e\.timeStamp\)\}/);
+    expect(src).toMatch(/if \(sichtbar && sichtbar\.time - sprung\.current > SPRUNG_MS\) setAktivAbschnitt/);
+  });
+
+  it("Halten = Menge: der Klick beim Loslassen schließt „Wie viel?“ nicht gleich wieder (Android, Danebentippen nur mit Aufsetzen)", () => {
+    const sheet = readFileSync("src/components/ui/Sheet.tsx", "utf8");
+    expect(sheet).toMatch(/onPointerDown=\{\(\) => \(scrimDown\.current = true\)\}/);
+    expect(sheet).toMatch(/if \(e\.detail !== 0 && !scrimDown\.current\) return;/);
   });
 
   it("untere Leiste bleibt sichtbar (über der Leiste unten), dunkles Token, „Fertig“ orange", () => {

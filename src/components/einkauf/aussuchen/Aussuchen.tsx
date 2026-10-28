@@ -34,6 +34,8 @@ import { MeineLaedenSheet } from "@/components/einkauf/MeineLaeden";
 import { AussuchenKachel } from "@/components/einkauf/aussuchen/AussuchenKachel";
 
 const lower = (s: string) => s.trim().toLowerCase();
+/** So lange nach einem Sprung per Chip zählt das Scrollen nicht für die Hervorhebung */
+const SPRUNG_MS = 1500;
 
 /** Heute hier gewählt: in welchem Laden, wie es vorher war (Rückweg) und ob wir es neu angelegt haben */
 type Wahl = { name: string; shop: string; zurueck: () => void; manualId?: string };
@@ -54,6 +56,7 @@ export function Aussuchen() {
   const [kopf, setKopf] = useState(0);
   const oben = useRef<HTMLDivElement>(null);
   const [obenHoehe, setObenHoehe] = useState(0);
+  const sprung = useRef(0);
   const myShops = meine?.myShops ?? [];
   const laeden = myShops.length ? myShops : FRAGE_LAEDEN.slice(0, 4);
   const gemerkt = stored.startsWith("laden:") ? stored.slice(6) : "";
@@ -88,7 +91,8 @@ export function Aussuchen() {
     const io = new IntersectionObserver(
       (entries) => {
         const sichtbar = entries.filter((e) => e.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
-        if (sichtbar) setAktivAbschnitt(sichtbar.target.getAttribute("data-abschnitt") as AbschnittId);
+        // Nach einem Sprung per Chip bleibt der getippte Abschnitt hervorgehoben (der letzte kommt oft nicht bis ganz nach oben)
+        if (sichtbar && sichtbar.time - sprung.current > SPRUNG_MS) setAktivAbschnitt(sichtbar.target.getAttribute("data-abschnitt") as AbschnittId);
       },
       { rootMargin: `-${kopf + obenHoehe + 4}px 0px -55% 0px` },
     );
@@ -142,7 +146,9 @@ export function Aussuchen() {
     setMenge({ key: `neu:${e.name}`, name: e.name, originalName: e.name, amount: "", section: e.section, dishes: [], days: [], shop: aktiv, checked: false, hidden: false });
   };
 
-  const springen = (id: AbschnittId) => {
+  /** `zeit` = Zeitstempel des Tipps (gleiche Uhr wie die Einträge des IntersectionObserver) */
+  const springen = (id: AbschnittId, zeit: number) => {
+    sprung.current = zeit;
     setAktivAbschnitt(id);
     document.querySelector(`[data-abschnitt="${id}"]`)?.scrollIntoView({ block: "start", behavior: "smooth" });
   };
@@ -210,7 +216,7 @@ export function Aussuchen() {
           {!treffer && (
             <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-0.5" data-no-swipe data-abschnitt-chips>
               {sichtbar.map((a) => (
-                <button key={a.id} type="button" aria-pressed={aktivAbschnitt === a.id} onClick={() => springen(a.id)} className={`${chipClass(aktivAbschnitt === a.id)} shrink-0`}>
+                <button key={a.id} type="button" aria-pressed={aktivAbschnitt === a.id} onClick={(e) => springen(a.id, e.timeStamp)} className={`${chipClass(aktivAbschnitt === a.id)} shrink-0`}>
                   {a.id === "oft" ? a.label.replace(/ · .*$/, "") : a.label}
                 </button>
               ))}
