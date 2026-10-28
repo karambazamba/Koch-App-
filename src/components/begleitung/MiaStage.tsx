@@ -14,7 +14,7 @@ import { StageSheet } from "@/components/ui/Sheet";
 import { BegleitungAvatar } from "@/components/begleitung/BegleitungAvatar";
 import { useMiaLook } from "@/components/begleitung/useMiaLook";
 import type { AvatarZustand } from "@/lib/core/avatarState";
-import { STAGE_CENTER, STAGE_SIZE, stageRing, type StageState } from "@/lib/begleitung/stage";
+import { PAUSE_RING_MS, STAGE_CENTER, STAGE_SIZE, stageRing, type StageState } from "@/lib/begleitung/stage";
 
 /** So lange fliegt Mia beim Schließen zurück an ihren Knopf */
 const CLOSE_MS = 800;
@@ -111,7 +111,7 @@ export function StageMia({ state, size = STAGE_SIZE.big, hint, label, done = fal
             data-pause-ring
             data-ring
           >
-            <circle cx="50" cy="50" r="48.5" fill="none" stroke="var(--app-accent)" strokeWidth="2.5" vectorEffect="non-scaling-stroke" strokeLinecap="round" pathLength="100" transform="rotate(-90 50 50)" />
+            <circle style={{ animationDuration: `${PAUSE_RING_MS}ms` }} cx="50" cy="50" r="48.5" fill="none" stroke="var(--app-accent)" strokeWidth="2.5" vectorEffect="non-scaling-stroke" strokeLinecap="round" pathLength="100" transform="rotate(-90 50 50)" />
           </svg>
         )}
       </button>

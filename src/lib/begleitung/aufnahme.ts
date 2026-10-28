@@ -95,7 +95,24 @@ export function aufnahmeStarten(rueck: Rueckmeldung): Aufnahme {
           return pegelVon(buf);
         };
       }
+      // Mikro-Wachhund (wie bei Spracherkennung und live): liefert die Spur nach 1,5 s keinen Ton, ist das Mikro belegt
+      const spur = st.getAudioTracks()[0];
+      let tonGesehen = false;
       takt = setInterval(() => {
+        if (!tonGesehen) {
+          tonGesehen = Boolean(spur) && !spur.muted && spur.readyState === "live";
+          if (!tonGesehen && performance.now() - beginn > 1500) {
+            micLog("Ohr: Mikro belegt, kein Ton");
+            vorbei = true;
+            if (rec && rec.state !== "inactive") {
+              rec.onstop = null;
+              rec.stop();
+            }
+            aufraeumen();
+            return rueck.fehler("belegt");
+          }
+          if (!tonGesehen) return;
+        }
         const vorher = stand.gesprochen;
         const r = lauschSchritt(stand, messen ? messen() : 1, performance.now() - beginn);
         stand = messen ? r.s : { ...r.s, gesprochen: true, letzteLaut: performance.now() - beginn };

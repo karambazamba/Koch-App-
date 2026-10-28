@@ -1222,11 +1222,11 @@ body:has([role="dialog"][aria-modal], [role="alertdialog"], [data-code-screen], 
 @keyframes mia-zwinker { 0%, 90%, 100% { transform: scaleY(1); } 94% { transform: scaleY(.12); } }
 @keyframes mia-ton { 0%, 100% { transform: scaleY(.35); } 50% { transform: scaleY(1); } }
 .mia-zwinkern .av-eyes rect:last-of-type { transform-box: fill-box; transform-origin: center; animation: mia-zwinker 5s ease-in-out 2s infinite; }
-/* Bühne: Stille nach dem letzten Wort – dünner Ring läuft ab (1,9 s), dann wird abgeschickt */
+/* Bühne: Stille nach dem letzten Wort – dünner Ring läuft ab (0,8 s = PAUSE_RING_MS, im Code gesetzt), dann wird abgeschickt */
 /* Ablauf-Ring: Größe/Lage am Element (konzentrisch), Start oben über das SVG selbst, Lücke wächst im Uhrzeigersinn */
 @keyframes mia-pause-ring { from { stroke-dashoffset: 0; } to { stroke-dashoffset: -100; } }
 .mia-pause-ring { overflow: visible; }
-.mia-pause-ring circle { stroke-dasharray: 100 100; animation: mia-pause-ring 1.9s linear both; }
+.mia-pause-ring circle { stroke-dasharray: 100 100; animation: mia-pause-ring 0.8s linear both; }
 @media (prefers-reduced-motion: reduce) { .mia-pause-ring circle { animation: none; } }
 /* Live-Blase: wächst mit, sehr lang = die letzten Zeilen, oben leicht ausgeblendet */
 .live-blase { display: flex; flex-direction: column; justify-content: flex-end; max-height: 28dvh; overflow: hidden; }

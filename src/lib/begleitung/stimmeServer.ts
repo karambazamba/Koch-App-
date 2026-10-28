@@ -19,6 +19,8 @@ const ANBIETER = "https://api.elevenlabs.io";
 /** Schnelles Modell für kurze Antworten; Erkennung mit Scribe – beides per Variable änderbar */
 const sprachModell = () => process.env.ELEVENLABS_TTS_MODEL?.trim() || "eleven_flash_v2_5";
 const hoerModell = () => process.env.ELEVENLABS_STT_MODEL?.trim() || "scribe_v1";
+/** Live-Zuhören (Realtime); „aus“ schaltet es ab, dann wie bisher Browser bzw. Aufnahme */
+const liveModell = () => process.env.ELEVENLABS_LIVE_MODEL?.trim() || "scribe_v2_realtime";
 const schluessel = () => process.env.ELEVENLABS_API_KEY?.trim() ?? "";
 
 /** Was eingerichtet ist. Testmodus (`STIMME_MOCK=1`) nie in Produktion. */
@@ -32,6 +34,8 @@ export function stimmeSetup() {
     mock,
     sprechen: mock || (echt && Boolean(voice)),
     hoeren: mock || echt,
+    // Live nie im Testmodus: der Durchklick stellt den Websocket selbst nach
+    live: echt && liveModell() !== "aus",
     voice,
   };
 }
@@ -40,7 +44,7 @@ export function stimmeSetup() {
 export function stimmeStatus(): StimmeStatus {
   const s = stimmeSetup();
   const v = s.mock ? "mock" : createHash("sha256").update(`${s.voice}|${sprachModell()}`).digest("hex").slice(0, 10);
-  return { sprechen: s.sprechen, hoeren: s.hoeren, v };
+  return { sprechen: s.sprechen, hoeren: s.hoeren, live: s.live, v };
 }
 
 const fail = (code: AssistantErrorCode, status: number) => Response.json({ error: code }, { status, headers: { "Cache-Control": "no-store" } });
@@ -188,6 +192,56 @@ export async function aufnahmeHoeren(request: Request, abruf: Abruf = fetch): Pr
   const antwort = (await r.json().catch(() => ({}))) as { text?: unknown };
   const text = typeof antwort.text === "string" ? antwort.text.replace(/\s+/g, " ").trim().slice(0, 2000) : "";
   return Response.json({ text, sekunden }, { headers: { "Cache-Control": "no-store" } });
+}
+
+/** So lange gilt ein Einmal-Schlüssel beim Anbieter (Richtwert; verbraucht wird er beim Verbinden) */
+const TOKEN_GILT_MS = 15 * 60_000;
+
+/**
+ * POST { geraet }: Einmal-Schlüssel fürs Live-Zuhören (Typ `realtime_scribe`).
+ * Der echte Schlüssel bleibt hier; die App verbindet sich mit dem kurzlebigen
+ * Schlüssel direkt mit dem Anbieter und streamt den Ton – gespeichert wird er
+ * nirgends. Gleicher Zugangscode und gleiche Grenzen wie das Ohr.
+ */
+export async function ohrTokenHolen(request: Request, abruf: Abruf = fetch): Promise<Response> {
+  const s = stimmeSetup();
+  if (!s.live) return fail("aus", 503);
+  const raw = await request.text();
+  if (raw.length > 500) return fail("fehler", 413);
+  let body: { geraet?: unknown };
+  try {
+    body = JSON.parse(raw || "{}") as typeof body;
+  } catch {
+    return fail("fehler", 400);
+  }
+  const denied = pruefen(request, "hoeren", body.geraet, false);
+  if (denied) return denied;
+  const r = await abruf(`${ANBIETER}/v1/single-use-token/realtime_scribe`, {
+    method: "POST",
+    headers: { "xi-api-key": schluessel() },
+    signal: AbortSignal.timeout(5000),
+  }).catch(() => null);
+  if (!r?.ok) return anbieterFehler(r);
+  const antwort = (await r.json().catch(() => ({}))) as { token?: unknown };
+  if (typeof antwort.token !== "string" || !antwort.token) return anbieterFehler(null);
+  return Response.json({ token: antwort.token, modell: liveModell(), giltMs: TOKEN_GILT_MS }, { headers: { "Cache-Control": "no-store" } });
+}
+
+/**
+ * GET ?warm=1 (Bühne geht auf): Verbindung vorwärmen. Weckt diese
+ * Server-Funktion und öffnet die Verbindung zum Anbieter (Namensauflösung,
+ * TLS) mit einem HEAD-Abruf OHNE Schlüssel – kein Sprechen, kein Kontingent.
+ * Gleicher Zugangscode wie die KI, eigene kleine Grenze je Adresse; zählt
+ * nicht zum Tageslimit (kostet nichts).
+ */
+export async function vorwaermen(request: Request, abruf: Abruf = fetch): Promise<Response> {
+  const s = stimmeSetup();
+  if (!s.sprechen) return fail("aus", 503);
+  const denied = checkAccess(request);
+  if (denied) return fail(denied, denied === "limit" ? 429 : 401);
+  if (!allowRequest(`warm-ip:${clientIp(request)}`, 2)) return fail("limit", 429);
+  if (!s.mock) await abruf(`${ANBIETER}/`, { method: "HEAD", signal: AbortSignal.timeout(2000) }).catch(() => null);
+  return new Response(null, { status: 204, headers: { "Cache-Control": "no-store" } });
 }
 
 /** Anbieter-Fehler: ins Log nur der Status, nie Inhalte */

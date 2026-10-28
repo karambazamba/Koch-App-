@@ -57,6 +57,7 @@ import {
 import { now } from "@/lib/core/now";
 import { einwilligungErteilt, useEinwilligungen } from "@/lib/datenschutz/einwilligung";
 import { tidyMiaText } from "@/lib/begleitung/tidy";
+import { tempoMarke, tempoModell } from "@/lib/begleitung/tempo";
 import type { StorageKey } from "@/lib/core/storage";
 import { accessHeaders, deviceId, fetchStatus, forgetAccessCode, onCodeChange } from "@/lib/begleitung/zugang";
 import { onKiVersuchOhneCode } from "@/lib/begleitung/codeAbfrage";
@@ -229,7 +230,7 @@ function dayData(data: AssistantData): Partial<AssistantData> {
  * "Ich koche jetzt", den Wochencheck (eigenes Fenster) und den Kochtipp. Liefert die übrigen Änderungen (für die Vorschau) und
  * kurze Hinweise (z. B. wo der Timer steht).
  */
-export function runInstantOps(ops: ChangeOp[]): { rest: ChangeOp[]; notes: string[] } {
+export function runInstantOps(ops: ChangeOp[]): { rest: ChangeOp[]; notes: string[]; undo?: () => void } {
   const notes: string[] = [];
   const undo: (() => void)[] = [];
   let tileShown = false;
@@ -257,8 +258,8 @@ export function runInstantOps(ops: ChangeOp[]): { rest: ChangeOp[]; notes: strin
   // Timer-Kachel war ausgeblendet → startTimer hat sie eingeblendet; sagen, wo er steht
   if (tileShown) notes.push("Der Timer steht jetzt auf der Startseite.");
   // Rückwärts: jedes Zurücknehmen stellt den Stand vor seinem Schritt wieder her
-  if (undo.length) pushUndo("den Timer", () => [...undo].reverse().forEach((u) => u()));
-  return { rest: ops.filter((op) => !INSTANT_OP_TYPES.has(op.type) && !weekCheck(op) && !cookTip(op)), notes };
+  const back = undo.length ? pushUndo("den Timer", () => [...undo].reverse().forEach((u) => u())) : undefined;
+  return { rest: ops.filter((op) => !INSTANT_OP_TYPES.has(op.type) && !weekCheck(op) && !cookTip(op)), notes, ...(back ? { undo: back } : {}) };
 }
 
 type AskOptions = {
@@ -268,6 +269,12 @@ type AskOptions = {
   shoppingNames?: string[];
   /** Antworttext bisher (wächst Stück für Stück) */
   onText?: (soFar: string) => void;
+  /** Tempo messen (Standard ja; die stille Prüfung nach dem Sofort-Weg nicht) */
+  messen?: boolean;
+  /** Sofort-Weg: das hat die App schon selbst erledigt – die KI prüft nur und korrigiert, wenn sie etwas anderes versteht */
+  sofort?: string;
+  /** Abbrechen (Fortsetzung nach einer Denkpause ersetzt die Frage) */
+  signal?: AbortSignal;
 };
 
 export async function askAssistant(
@@ -298,15 +305,21 @@ export async function askAssistant(
         clock: opts.clock,
         shoppingNames: opts.shoppingNames?.slice(0, 80),
         stream: true,
+        ...(opts.sofort ? { sofort: opts.sofort } : {}),
       }),
+      signal: opts.signal,
     });
-  } catch {
+  } catch (e) {
+    if (opts.signal?.aborted) throw e;
     throw new BegleitungUnavailable("offline");
   }
+  const messen = opts.messen !== false;
+  if (messen) tempoMarke("server");
   if (!response.ok || !response.body || !(response.headers.get("content-type") ?? "").includes("ndjson")) {
     const body = (await response.json().catch(() => null)) as AssistantReply | AssistantError | null;
     if (response.ok && body && !("error" in body)) {
       recordUsage(today, body.usage);
+      if (messen) tempoMarke("fertig");
       return body;
     }
     const reason = body && "error" in body ? body.error : "fehler";
@@ -326,7 +339,8 @@ export async function askAssistant(
     let chunk: ReadableStreamReadResult<Uint8Array>;
     try {
       chunk = await reader.read();
-    } catch {
+    } catch (e) {
+      if (opts.signal?.aborted) throw e;
       throw new BegleitungUnavailable("offline");
     }
     if (chunk.done) break;
@@ -348,11 +362,16 @@ export async function askAssistant(
           freshRound = false;
         }
         text += event.d;
+        if (messen) tempoMarke("token");
         opts.onText?.(tidyMiaText(text));
       } else if (event.t === "round") {
         freshRound = true;
       } else if (event.t === "done") {
         recordUsage(today, event.usage);
+        if (messen) {
+          tempoModell(event.zeit?.token);
+          tempoMarke("fertig");
+        }
         return { reply: tidyMiaText(event.reply), ops: event.ops, mail: event.mail, chips: event.chips, tips: event.tips };
       } else if (event.t === "error") {
         if (event.error === "zugangscode") {

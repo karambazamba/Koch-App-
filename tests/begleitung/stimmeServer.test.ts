@@ -5,7 +5,7 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { aufnahmeHoeren, festenSatzSprechen, stimmeSetup, stimmeStatus, textSprechen } from "@/lib/begleitung/stimmeServer";
+import { aufnahmeHoeren, festenSatzSprechen, stimmeSetup, stimmeStatus, textSprechen, vorwaermen } from "@/lib/begleitung/stimmeServer";
 import { FESTE_SAETZE, GERAET_HEADER, STIMME_GRENZEN, ZEICHEN_HEADER, festerSatz } from "@/lib/begleitung/stimmeProtokoll";
 import { lauschSchritt, neuesLauschen, pegelVon, type LauschAktion } from "@/lib/begleitung/lauschen";
 import { addStimme, costSummary } from "@/lib/begleitung/usage";
@@ -227,16 +227,16 @@ describe("Satzende am Pegel (eigene Aufnahme)", () => {
   }
   const ersteZeit = (o: { t: number; a: LauschAktion }[], a: LauschAktion) => o.find((x) => x.a === a)?.t;
 
-  it("sprechen bis 2 s, dann still: Ring nach 0,6 s, abgeschickt nach 2,5 s Stille", () => {
+  it("sprechen bis 2 s, dann still: Ring nach 0,4 s, abgeschickt nach 1,2 s Stille", () => {
     const o = lauf((t) => (t < 2000 ? 0.12 : 0.004), 10_000);
-    expect(ersteZeit(o, "wartet")).toBe(2550);
-    expect(ersteZeit(o, "fertig")).toBe(4450);
+    expect(ersteZeit(o, "wartet")).toBe(2350);
+    expect(ersteZeit(o, "fertig")).toBe(3150);
   });
 
-  it("kurze Atempause schickt nichts ab", () => {
-    const o = lauf((t) => (t < 1000 || (t >= 2500 && t < 3500) ? 0.1 : 0.004), 10_000);
-    expect(o.filter((x) => x.t < 3500).some((x) => x.a === "fertig")).toBe(false);
-    expect(ersteZeit(o, "fertig")).toBe(5950);
+  it("kurze Atempause (0,8 s) schickt nichts ab", () => {
+    const o = lauf((t) => (t < 1000 || (t >= 1800 && t < 3000) ? 0.1 : 0.004), 10_000);
+    expect(o.filter((x) => x.t < 3000).some((x) => x.a === "fertig")).toBe(false);
+    expect(ersteZeit(o, "fertig")).toBe(4150);
   });
 
   it("niemand spricht (oder nur ein Klacken): nach 8 s leise aufhören", () => {
@@ -244,9 +244,12 @@ describe("Satzende am Pegel (eigene Aufnahme)", () => {
     expect(o.at(-1)).toEqual({ t: 8000, a: "nichts" });
   });
 
-  it("Grundrauschen zählt nicht als Sprechen; höchstens 60 s am Stück", () => {
+  it("Grundrauschen zählt nicht als Sprechen; Dauer-Laut hält nie offen (höchstens 20 s, A-026)", () => {
     expect(lauf(() => 0.015, 20_000).at(-1)?.a).toBe("nichts");
-    expect(lauf(() => 0.2, 70_000).at(-1)).toEqual({ t: STIMME_GRENZEN.aufnahmeMs, a: "fertig" });
+    const dauer = lauf(() => 0.2, 70_000).at(-1)!;
+    expect(dauer.a).toBe("fertig");
+    expect(dauer.t).toBeLessThanOrEqual(20_000);
+    expect(STIMME_GRENZEN.aufnahmeMs).toBe(60_000);
   });
 
   it("Pegel = Effektivwert", () => {
@@ -295,5 +298,34 @@ describe("Kosten, Mikro-Check, Pinnwand", () => {
     const dateien = (dir: string): string[] => readdirSync(dir, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? dateien(join(dir, e.name)) : [join(dir, e.name)]));
     const treffer = [...dateien("src/lib"), ...dateien("src/components"), ...dateien("src/app")].filter((f) => /process\.env\.ELEVENLABS/.test(readFileSync(f, "utf8")));
     expect(treffer).toEqual(["src/lib/begleitung/stimmeServer.ts"]);
+  });
+});
+
+describe("Vorwärmen (A-035): kein Sprechen, kein Schlüssel nach draußen", () => {
+  const warm = (headers: Record<string, string> = { [ACCESS_HEADER]: "sonne" }) => new Request("http://localhost/api/stimme?warm=1", { headers });
+
+  it("öffnet nur die Verbindung (HEAD ohne Schlüssel), kein Ton, 204", async () => {
+    echt();
+    const { abruf, calls } = anbieter();
+    const r = await vorwaermen(warm(), abruf);
+    expect(r.status).toBe(204);
+    expect(calls).toHaveLength(1);
+    expect(calls[0].url).toBe("https://api.elevenlabs.io/");
+    expect(calls[0].init.method).toBe("HEAD");
+    expect(JSON.stringify(calls[0].init)).not.toContain("test-stimme");
+    expect(calls[0].url).not.toContain("text-to-speech");
+  });
+
+  it("Zugangscode gilt, ohne Schlüssel „aus“, Anbieter weg = trotzdem 204", async () => {
+    echt();
+    const { abruf, calls } = anbieter();
+    expect((await vorwaermen(warm({}), abruf)).status).toBe(401);
+    expect(calls).toHaveLength(0);
+    const kaputt = vi.fn(async () => {
+      throw new Error("weg");
+    }) as unknown as typeof fetch;
+    expect((await vorwaermen(warm(), kaputt)).status).toBe(204);
+    vi.stubEnv("ELEVENLABS_API_KEY", "");
+    expect((await vorwaermen(warm(), abruf)).status).toBe(503);
   });
 });

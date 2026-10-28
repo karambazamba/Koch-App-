@@ -16,6 +16,7 @@ import { addDays } from "@/lib/core/now";
 import { APP_NAME } from "@/lib/core/app";
 import { LOCKER, steckbrief, TON_LAENGE } from "@/lib/mia/persona";
 import { haushaltOf, raumName } from "@/lib/core/haushalt";
+import type { Thema, Themen } from "@/lib/begleitung/kontextThemen";
 
 /** "Familie Müller" (ohne doppeltes "Familie"), ohne Namen "der Familie"; ohne Kinder "des Haushalts" */
 function familyLabel(profile: HouseholdProfile): string {
@@ -224,40 +225,59 @@ export function contextText(
   todayIso: string,
   weeks: { aktuell: string; naechste: string },
   tipsThisWeek = 0,
-  extra: { clock?: string; shopping?: string[]; abends?: boolean; feierabend?: boolean } = {},
+  extra: { clock?: string; shopping?: string[]; abends?: boolean; feierabend?: boolean; themen?: Themen } = {},
 ): string {
   const today = new Date(`${todayIso}T00:00:00Z`);
   const shoppingDay = data.profile.shoppingDay || "Montag";
   const planning = planningWeekStart(new Date(`${todayIso}T12:00:00`), shoppingDay);
   const recipes = Object.values(data.recipes);
-  return [
+  // Nur, was die Nachricht braucht (`kontextThemen`); ohne Themen-Angabe alles
+  const t = extra.themen;
+  const hat = (...th: Thema[]) => !t || th.some((x) => t.has(x));
+  const laufend = Boolean(data.timers?.length || data.stopwatch || data.kochen?.active);
+  const zeilen: (string | false)[] = [
     `Heute: ${WEEKDAY_FORMAT.format(today)} (${todayIso})${extra.clock ? `, jetzt ${extra.clock} Uhr` : ""} (Zeitzone Europe/Berlin)`,
     `Datumsliste: ${Array.from({ length: 14 }, (_, i) => addDays(todayIso, i)).map((iso) => `${SHORT_DAY.format(new Date(`${iso}T00:00:00Z`))} ${iso}`).join(", ")}`,
     "",
-    calendarContext(data.entries ?? [], todayIso, extra.abends, extra.feierabend),
-    notesContext(data.notes ?? []),
-    `Läden: ${data.laeden?.meine.length ? data.laeden.meine.join(", ") : "keine gewählt"}; feste Regeln: ${data.laeden && Object.keys(data.laeden.regeln).length ? Object.entries(data.laeden.regeln).map(([item, shop]) => `${item} → ${shop}`).join(", ") : "keine"} (ändern mit laden_regel)`,
-    `Pinnwand: ${data.pinnwand?.length ? data.pinnwand.map((p) => `${p.author}: ${JSON.stringify(p.text)}`).join(" · ") : "leer"}`,
-    `Wetter-Ort: ${data.wetterOrt ?? "Eutin"}`,
-    ...dayContextLines({ data, today: todayIso }),
-    `Bausteine an: ${BAUSTEINE.filter((b) => data.features?.includes(b.feature)).map((b) => b.name).join(", ") || "keine"}. Aus: ${BAUSTEINE.filter((b) => !data.features?.includes(b.feature) && !LAUNCH_AUS.includes(b.feature)).map((b) => `${b.name} (${b.feature}: ${b.text})`).join("; ") || "keine"}`,
+    hat("kalender") && calendarContext(data.entries ?? [], todayIso, extra.abends, extra.feierabend),
+    hat("notizen") && notesContext(data.notes ?? []),
+    hat("einkauf") && `Läden: ${data.laeden?.meine.length ? data.laeden.meine.join(", ") : "keine gewählt"}; feste Regeln: ${data.laeden && Object.keys(data.laeden.regeln).length ? Object.entries(data.laeden.regeln).map(([item, shop]) => `${item} → ${shop}`).join(", ") : "keine"} (ändern mit laden_regel)`,
+    hat("pinnwand") && `Pinnwand: ${data.pinnwand?.length ? data.pinnwand.map((p) => `${p.author}: ${JSON.stringify(p.text)}`).join(" · ") : "leer"}`,
+    hat("wetter") && `Wetter-Ort: ${data.wetterOrt ?? "Eutin"}`,
+    ...(hat("tag", "essen", "app") || laufend ? dayContextLines({ data, today: todayIso }) : []),
+    hat("app") && `Bausteine an: ${BAUSTEINE.filter((b) => data.features?.includes(b.feature)).map((b) => b.name).join(", ") || "keine"}. Aus: ${BAUSTEINE.filter((b) => !data.features?.includes(b.feature) && !LAUNCH_AUS.includes(b.feature)).map((b) => `${b.name} (${b.feature}: ${b.text})`).join("; ") || "keine"}`,
     launchLine(data.features ?? []),
-    mailContext(data),
-    data.home ? `Startseite (Reihenfolge): ${data.home.map((t) => `${t.id} ${t.visible ? t.size : "ausgeblendet"}`).join(", ")}` : "",
+    hat("mail") && mailContext(data),
+    hat("app") && Boolean(data.home) && `Startseite (Reihenfolge): ${data.home!.map((x) => `${x.id} ${x.visible ? x.size : "ausgeblendet"}`).join(", ")}`,
     "",
-    todayMealText(data, todayIso),
-    `Einkaufstag: ${shoppingDay} (eine Planungswoche beginnt am Einkaufstag)`,
-    `Aktuelle Planungswoche ("aktuell"): ${formatWeekRange(weeks.aktuell)}`,
-    `Nächste Planungswoche ("naechste"): ${formatWeekRange(weeks.naechste)}`,
-    `Planungswoche, wenn nichts gesagt wird: ${planning.isNext ? "naechste" : "aktuell"}`,
+    hat("essen", "kalender") && todayMealText(data, todayIso),
+    ...(hat("essen", "einkauf")
+      ? [
+          `Einkaufstag: ${shoppingDay} (eine Planungswoche beginnt am Einkaufstag)`,
+          `Aktuelle Planungswoche ("aktuell"): ${formatWeekRange(weeks.aktuell)}`,
+          `Nächste Planungswoche ("naechste"): ${formatWeekRange(weeks.naechste)}`,
+          `Planungswoche, wenn nichts gesagt wird: ${planning.isNext ? "naechste" : "aktuell"}`,
+        ]
+      : []),
     "",
-    profileSummary(data.profile),
-    `Gesundheits-Tipps: ${TIP_LABEL[data.profile.healthTips]}${data.profile.healthTips === "aus" ? "" : ` – diese Woche schon ${tipsThisWeek} gezeigt`}`,
+    hat("essen") ? profileSummary(data.profile) : personsSummary(data.profile),
+    hat("essen") && `Gesundheits-Tipps: ${TIP_LABEL[data.profile.healthTips]}${data.profile.healthTips === "aus" ? "" : ` – diese Woche schon ${tipsThisWeek} gezeigt`}`,
     "",
-    extra.shopping?.length ? `Einkaufsliste (steht schon drauf): ${extra.shopping.slice(0, 60).join(", ")}` : "Einkaufsliste: gerade leer",
-    pantryText(data, todayIso),
-    `Kochbuch: ${recipes.length} Rezepte${recipes.length ? ` – ${recipes.slice(0, 60).map((r) => `${r.title}${r.thumbsUp > 0 ? ` (👍${r.thumbsUp})` : ""}`).join(", ")}` : ""}`,
-  ].join("\n");
+    hat("einkauf", "essen") && (extra.shopping?.length ? `Einkaufsliste (steht schon drauf): ${extra.shopping.slice(0, 60).join(", ")}` : "Einkaufsliste: gerade leer"),
+    hat("vorrat") && pantryText(data, todayIso),
+    hat("essen") && `Kochbuch: ${recipes.length} Rezepte${recipes.length ? ` – ${recipes.slice(0, 60).map((r) => `${r.title}${r.thumbsUp > 0 ? ` (👍${r.thumbsUp})` : ""}`).join(", ")}` : ""}`,
+  ];
+  return zeilen
+    .filter((z): z is string => typeof z === "string")
+    .join("\n")
+    .replace(/\n{3,}/g, "\n\n");
+}
+
+/** Kurz: wer im Haushalt ist (Namen, Kind/erwachsen, Allergien) – reicht für Termine, Aufgaben, Einkauf */
+function personsSummary(profile: HouseholdProfile): string {
+  const lines = profileSummary(profile).split("\n");
+  const ende = lines.findIndex((l, i) => i > 0 && !l.startsWith("- "));
+  return lines.slice(0, ende < 0 ? lines.length : ende).join("\n");
 }
 
 /** Launch 1.0: was es (noch) nicht gibt – nicht anbieten, nicht einschalten @public für Tests */

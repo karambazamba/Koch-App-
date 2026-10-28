@@ -64,5 +64,15 @@ export function speechChunks(text: string, max = 200): string[] {
   return chunks.map((c) => c.trim()).filter(Boolean);
 }
 
+/**
+ * Stücke für Mias Stimme vom Server: der erste Satz allein (der erste Ton ist
+ * schneller da), danach längere Stücke bis ~300 Zeichen (natürlicher Fluss).
+ */
+export function stueckeFuerStimme(text: string, max = 300): string[] {
+  const [erster, ...rest] = speechChunks(text, 1);
+  if (!erster) return [];
+  return [erster, ...speechChunks(rest.join(" "), max)];
+}
+
 /** Was vorgelesen wird – bereinigt wie jede Antwort, dann sprechbar gemacht */
 export const vorlesText = (text: string) => cleanForSpeech(tidyMiaText(text));

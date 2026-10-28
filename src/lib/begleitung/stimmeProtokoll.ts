@@ -7,6 +7,8 @@ import { vorlesText } from "@/lib/begleitung/vorlesText";
 
 export const STIMME_ENDPOINT = "/api/stimme";
 export const HOEREN_ENDPOINT = "/api/hoeren";
+/** Kurzlebiger Einmal-Schlüssel fürs Live-Zuhören (der echte Schlüssel bleibt auf dem Server) */
+export const OHR_TOKEN_ENDPOINT = "/api/stimme/ohr-token";
 /** Gerätekennung bei Aufnahmen (der Körper ist der Ton selbst) */
 export const GERAET_HEADER = "x-mia-geraet";
 /** Vorgelesene Zeichen (Antwort-Header, für die Kosten-Übersicht) */
@@ -19,8 +21,8 @@ export const STIMME_GRENZEN = {
   aufnahmeMs: 60_000,
   /** Größte Aufnahme in Bytes (60 s Sprache sind weit darunter) */
   audioBytes: 3_000_000,
-  /** So lange darf die erste Silbe dauern, sonst spricht die Stimme des Handys */
-  ersteSilbeMs: 1000,
+  /** So lange darf die erste Silbe (und ein unbekannter Status) dauern; solange zeigt die Bühne das Denk-Zeichen */
+  ersteSilbeMs: 2500,
 };
 
 /** Was die App über die Server-Stimme wissen muss (Teil des KI-Status) */
@@ -31,6 +33,8 @@ export type StimmeStatus = {
   hoeren: boolean;
   /** Kennung von Stimme und Modell – ändert sich die Stimme, laden feste Sätze neu */
   v: string;
+  /** Live-Zuhören (Text beim Sprechen, Ende von selbst) ist eingerichtet – fehlt bei älteren Servern */
+  live?: boolean;
 };
 
 /**
@@ -48,6 +52,13 @@ export const FESTE_SAETZE = [
   "Moin! So klinge ich.",
   "Hat grad nicht geklappt. Nochmal?",
   "Bin grad offline. Ich mach’s, sobald wieder Netz da ist.",
+  // Auftrag „Mia schneller“: kurze Reaktion und Bestätigungen des Sofort-Wegs (nur hinten anhängen – die Nummern sind Adressen)
+  "Mhm.",
+  "Is drauf.",
+  "Steht alles drauf.",
+  "Läuft.",
+  "Notiert.",
+  "Hängt an der Pinnwand.",
 ] as const;
 
 const vergleich = (s: string) => vorlesText(s).toLowerCase();

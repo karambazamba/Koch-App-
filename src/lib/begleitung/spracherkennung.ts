@@ -48,7 +48,11 @@ const KURZ_MAX_MS = 60_000;
 /** Puffer über der erlaubten Zeit, bevor eine hängende Aufnahme beendet wird */
 const HAENGT_PUFFER_MS = 5000;
 export const NOCHMAL = "Hat grad nicht geklappt. Nochmal?";
-const NICHT_GEKLAPPT = "Spracheingabe hat nicht geklappt. Schreib’s einfach.";
+/** Mikro liefert keinen Ton (Bildschirmaufnahme, Telefonat): nach EINEM stillen Neustart ruhig aufhören */
+export const BELEGT = "Mikro ist gerade belegt. Lieber schreiben?";
+/** Endet eine Sitzung schneller als das ohne Ton, war das Mikro nicht wirklich da */
+export const LEER_MS = 1500;
+export const NICHT_GEKLAPPT = "Spracheingabe hat nicht geklappt. Schreib’s einfach.";
 
 const STOP_WORDS = /[\s,.]*(?:fertig|das\s+war[’']?s)[\s.!]*$/i;
 /** Langes Zuhören: „… fertig“ am Ende = Schluss (das Wort selbst gehört nicht zum Text) */
@@ -85,6 +89,8 @@ export class Spracherkennung {
   private heard = false;
   private bestaetigt = false;
   private gestartetAm = 0;
+  /** Neustarts nach Sitzungen ohne Ton (kurz, ohne onaudiostart/Ergebnis) – höchstens einer still */
+  private leereNeustarts = 0;
   private fertigAm = 0;
   private finishFn: () => void = () => {};
   private timers: ReturnType<typeof setTimeout>[] = [];
@@ -93,7 +99,15 @@ export class Spracherkennung {
   private frist: ReturnType<typeof setTimeout> | null = null;
 
   constructor(
-    private readonly o: { micId: string; long?: boolean; buehne?: boolean; klasse: () => RecognitionClass | null; anzeige: () => Anzeige },
+    private readonly o: {
+      micId: string;
+      long?: boolean;
+      buehne?: boolean;
+      klasse: () => RecognitionClass | null;
+      anzeige: () => Anzeige;
+      /** iPhone ohne Diktieren/Spracherkennung: true = jemand anderes hört zu (Mias eigene Aufnahme), keine Hilfe zeigen */
+      beiErkennungAus?: () => boolean;
+    },
   ) {}
 
   /** Läuft gerade eine Erkennung? */
@@ -165,6 +179,7 @@ export class Spracherkennung {
       this.clearFrist();
       this.aufnahme++;
       this.heard = false;
+      this.leereNeustarts = 0;
     }
     const aufnahme = this.aufnahme;
     this.detach();
@@ -172,6 +187,8 @@ export class Spracherkennung {
     let m: Mitschrift = fortsetzung ?? neueMitschrift();
     let stoppedByUser = false;
     let finished = false;
+    /** Kam in dieser Sitzung Ton an? (onaudiostart oder ein Ergebnis) */
+    let tonDa = false;
     if (weiter && etwasGesagt(m)) this.heard = true;
     const sinceSent = Date.now() - previousAt;
     let text = mitschriftText(m);
@@ -260,10 +277,14 @@ export class Spracherkennung {
     };
 
     recognition.onstart = lebt;
-    recognition.onaudiostart = lebt;
+    recognition.onaudiostart = () => {
+      tonDa = true;
+      lebt();
+    };
     recognition.onresult = (e) => {
       if (!aktuell()) return;
       lebt();
+      tonDa = true;
       const results = Array.from({ length: e.results.length }, (_, i) => ({ isFinal: e.results[i].isFinal, text: e.results[i][0]?.transcript ?? "" }));
       m = mitErgebnis(m, e.resultIndex, results);
       const said = mitschriftText(m);
@@ -291,6 +312,7 @@ export class Spracherkennung {
         this.detach();
         ui.interim("");
         ui.wartet(false);
+        if (block === "erkennung_aus" && this.o.beiErkennungAus?.()) return micLog("Zuhören: Spracherkennung aus, eigene Aufnahme");
         reportMicBlocked(block);
         return;
       }
@@ -302,6 +324,21 @@ export class Spracherkennung {
       if (!aktuell()) return;
       lebt();
       const elapsed = Date.now() - startedAt;
+      // Fehler (Video 28.10.): Mikro belegt → Sitzung endet sofort ohne Ton → Neustart-Schleife
+      // (Mikro an/aus, iOS „Audioaufnahme beenden?“). Höchstens EIN stiller Neustart ohne Ton.
+      const leer = !stoppedByUser && !tonDa && Date.now() - this.gestartetAm < LEER_MS;
+      if (leer && ++this.leereNeustarts > 1) {
+        micLog("Zuhören: Mikro belegt, kein Ton, aufgehört");
+        this.clearTimers();
+        this.clearFrist();
+        this.detach();
+        ui.interim("");
+        ui.wartet(false);
+        ui.error(BELEGT);
+        return;
+      }
+      if (leer) micLog("Zuhören: kein Ton, einmal neu");
+      else if (tonDa) this.leereNeustarts = 0;
       // Stille beendet nicht: still weiter zuhören und anhängen (lang: 5 Min., Bühne: 2 Min.)
       if (!stoppedByUser && ((long && elapsed < LONG_MS) || (buehne && elapsed < BUEHNE_MAX_MS))) {
         micLog(`Zuhören: Neustart ${neustarts + 1}`);

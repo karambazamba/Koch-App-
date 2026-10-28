@@ -7,7 +7,8 @@
 
 import Anthropic from "@anthropic-ai/sdk";
 import { connection } from "next/server";
-import { runAssistant, type CreateMessage, type ModelChoice } from "@/lib/begleitung/engine";
+import { runAssistant, type CreateMessage } from "@/lib/begleitung/engine";
+import type { ModelChoice } from "@/lib/begleitung/modellwahl";
 import { aiSetup } from "@/lib/begleitung/guard";
 import { createMockModel } from "@/lib/begleitung/mock";
 import { PRUEFSAETZE, type PruefSatz } from "@/lib/begleitung/pruefstand/saetze";

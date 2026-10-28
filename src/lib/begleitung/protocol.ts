@@ -26,6 +26,11 @@ export type AssistantRequest = {
   shoppingNames?: string[];
   /** Antwort Stück für Stück (NDJSON, siehe StreamEvent) */
   stream?: boolean;
+  /**
+   * Sofort-Weg: was die App schon selbst erledigt hat („Einkaufsliste: Milch“).
+   * Die KI prüft nur und korrigiert, wenn sie etwas anderes versteht.
+   */
+  sofort?: string;
   /** Nur Prüfstand (nie aus der App): feste Vorhersage statt Abruf */
   forecast?: Forecast | null;
 };
@@ -38,8 +43,11 @@ export type AssistantRequest = {
 export type StreamEvent =
   | { t: "text"; d: string }
   | { t: "round" }
-  | { t: "done"; reply: string; ops: ChangeOp[]; mail?: MailDraft; chips?: string[]; tips?: TipView[]; usage?: AssistantUsage }
+  | { t: "done"; reply: string; ops: ChangeOp[]; mail?: MailDraft; chips?: string[]; tips?: TipView[]; usage?: AssistantUsage; zeit?: ServerZeit }
   | { t: "error"; error: AssistantErrorCode };
+
+/** Zeiten auf dem Server in ms ab Eingang der Anfrage (nur Zahlen, fürs Tempo unter „Für Entwickler“): erstes Wort des Modells, fertig */
+type ServerZeit = { token: number | null; gesamt: number };
 
 /** Verbrauch einer Anfrage (fürs Guthaben später): Modellgröße, hochgeschaltet, Kosten in Millionstel US-Dollar */
 export type AssistantUsage = { size: "klein" | "gross"; upgraded: boolean; micro: number | null };

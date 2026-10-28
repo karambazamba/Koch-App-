@@ -4,6 +4,11 @@
 // Tippen-Modus und der kleine Bereichs-Kopf über Mias erster Blase.
 
 
+import { STILLE_MS, WARTEN_AB_MS } from "@/lib/begleitung/mitschrift";
+
+/** So lange läuft der Ring „Gleich schick ich’s ab“ – genau die Stille bis zum Abschicken */
+export const PAUSE_RING_MS = STILLE_MS - WARTEN_AB_MS;
+
 /** zuhören · überlegen · sprechen · warten – setzt die App automatisch */
 export type StageState = "zuhoeren" | "ueberlegen" | "sprechen" | "warten";
 

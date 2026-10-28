@@ -1,10 +1,10 @@
 // Mias Stimme und Ohr über den Server (ElevenLabs) – der Server wird hier
 // nachgestellt (Status, Ton, erkannter Text), der echte Anbieter nie gerufen:
 // „Wer spricht?“ in den Einstellungen, Probe hören über den Server, Stimme des
-// Handys ohne Server, Antwort vorlesen mit stillem Rückfall aufs Handy,
-// Zuhören mit eigener Aufnahme (Satzende an der Stille, keine Spracherkennung
-// des Browsers).
-import { BASE, FAKE_HOEREN, FAKE_VOICES, hello, miaTippen, seedFamily, tippenFeld } from "../lib.mjs";
+// Handys ohne Server, Antwort vorlesen (Fehler: still nochmal, erst nach dem 2. das Handy),
+// Zuhören mit eigener Aufnahme (letzter Ersatz seit A-026: ohne Live und ohne
+// Spracherkennung im Browser; Satzende an der Stille).
+import { BASE, FAKE_VOICES, MIKRO_REGLER, OHNE_ERKENNUNG, hello, miaTippen, seedFamily, tippenFeld } from "../lib.mjs";
 
 /** 0,1 s Stille als WAV (für die nachgestellte Stimme) */
 function stilleWav() {
@@ -25,7 +25,7 @@ function stilleWav() {
   return buf;
 }
 
-/** Server nachstellen: Status mit Stimme, /api/stimme (Ton oder Fehler), /api/hoeren (Text) */
+/** Server nachstellen: Status mit Stimme (ohne Live), /api/stimme (Ton oder Fehler), /api/hoeren (Text) */
 async function serverMitStimme(page, { stimmeKaputt = false, gehoert = "Was steht heute an", antwortMs = 0 } = {}) {
   const log = { stimme: [], hoeren: [] };
   await page.route("**/api/lotte", async (route) => {
@@ -59,23 +59,6 @@ const HANDY_MITSCHRIFT = () => {
   synth.speak = (u) => (u.text.trim() && window.__gesagt.push(u.text), speak(u));
 };
 
-/** Mikrofon mit regelbarer Lautstärke: `__laut(0.6)` = sprechen, `__laut(0)` = still */
-const MIKRO_REGLER = () => {
-  window.__gumAufrufe = 0;
-  navigator.mediaDevices.getUserMedia = () => {
-    window.__gumAufrufe++;
-    const ctx = new AudioContext();
-    const dest = ctx.createMediaStreamDestination();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    gain.gain.value = 0;
-    osc.connect(gain).connect(dest);
-    osc.start();
-    window.__laut = (v) => (gain.gain.value = v);
-    return Promise.resolve(dest.stream);
-  };
-};
-
 export const stimmeServer = async (page, check) => {
   await page.addInitScript(FAKE_VOICES);
   await page.addInitScript(HANDY_MITSCHRIFT);
@@ -88,9 +71,11 @@ export const stimmeServer = async (page, check) => {
   check(!(await page.getByRole("radiogroup", { name: "Stimme" }).count()), "bei Mias Stimme keine Handy-Stimmenliste");
   await page.getByRole("button", { name: "Probe hören" }).click();
   await page.waitForTimeout(800);
-  const probe = log.stimme.find((s) => s.method === "POST");
-  check(Boolean(probe), "Probe hören: Ton vom Server");
-  check(probe && JSON.parse(probe.body).text.includes("18 Uhr 30"), "Text bereinigt (18:30 → 18 Uhr 30)");
+  // Satzweise (seit A-019): erster Satz als eigenes Stück, der Rest danach – zusammen die ganze Probe
+  const probe = log.stimme.filter((s) => s.method === "POST").map((s) => JSON.parse(s.body).text);
+  check(probe.length > 0, "Probe hören: Ton vom Server");
+  const probeText = probe.join(" ");
+  check(probeText.includes("18 Uhr 30") && !probeText.includes("18:30"), "Text bereinigt (18:30 → 18 Uhr 30)");
   check((await page.evaluate(() => window.__gesagt.length)) === 0, "Handy-Stimme schweigt, solange Mias Stimme kommt");
 
   // Stimme des Handys: Liste wie bisher, Probe ohne Server
@@ -114,18 +99,24 @@ export const stimmeServer = async (page, check) => {
   await page.waitForTimeout(3500);
   check(log.stimme.length > vorAntwort, "Antwort mit Mias Stimme vorgelesen");
 
+  // Server-Stimme kaputt (A-035): erst still einmal nachladen, nach dem 2. Fehler
+  // spricht das Handy bis Gesprächsende – mit kleinem Hinweis unter Mia
   await page.unrouteAll({ behavior: "ignoreErrors" });
-  await serverMitStimme(page, { stimmeKaputt: true });
+  const kaputt = await serverMitStimme(page, { stimmeKaputt: true });
   await page.evaluate(() => (window.__gesagt.length = 0));
   const feld = await tippenFeld(page);
   await feld.fill("Und morgen?");
   await feld.press("Enter");
   await page.waitForTimeout(4000);
-  check((await page.evaluate(() => window.__gesagt.length)) > 0, "Server-Stimme kaputt: still mit der Stimme des Handys");
+  check(kaputt.stimme.filter((s) => s.method === "POST").length >= 2, "Server-Stimme kaputt: erst still nochmal geladen");
+  check((await page.evaluate(() => window.__gesagt.length)) > 0, "nach dem 2. Fehler: Stimme des Handys");
+  const protokoll = await page.evaluate(() => JSON.parse(localStorage.getItem("wasgibts.mikroprotokoll") ?? "{}").entries?.map((e) => e.text) ?? []);
+  check(protokoll.some((l) => l.startsWith("Stimme: still nochmal")) && protokoll.some((l) => l.startsWith("Stimme: Ersatz Handy-Stimme bis Gesprächsende")), "Mikro-Protokoll: still nochmal, dann Handy mit Grund");
 };
 
 export const ohrServer = async (page, check) => {
-  await page.addInitScript(FAKE_HOEREN);
+  // Letzter Ersatz: kein Live (Status ohne `live`) und keine Spracherkennung im Browser
+  await page.addInitScript(OHNE_ERKENNUNG);
   await page.addInitScript(MIKRO_REGLER);
   // Mia antwortet langsam: währenddessen hört sie weiter zu (Vorlesen aus)
   const log = await serverMitStimme(page, { antwortMs: 3000, gehoert: "Was gibt es morgen bei uns zum Essen" });
@@ -136,9 +127,9 @@ export const ohrServer = async (page, check) => {
   await page.getByRole("button", { name: /^Sag .*was ansteht/ }).first().click();
   await page.getByRole("dialog").last().waitFor({ timeout: 5000 });
   await page.waitForFunction(() => window.__gumAufrufe > 0 && window.__laut, null, { timeout: 5000 });
-  check((await page.evaluate(() => window.__starts)) === 0, "eigene Aufnahme statt Spracherkennung des Browsers");
+  check((await page.evaluate(() => window.__starts)) === 0, "ohne Live und Spracherkennung: eigene Aufnahme");
 
-  // Sprechen, kurze Pause, weitersprechen, dann still → nach 2,5 s Stille verstanden
+  // Sprechen, kurze Pause (0,9 s), weitersprechen, dann still → nach 1,2 s Stille verstanden
   await page.evaluate(() => window.__laut(0.6));
   await page.waitForTimeout(1200);
   await page.evaluate(() => window.__laut(0));
@@ -147,7 +138,7 @@ export const ohrServer = async (page, check) => {
   await page.waitForTimeout(800);
   check(log.hoeren.length === 0, "kurze Pause schickt nichts ab");
   await page.evaluate(() => window.__laut(0));
-  await page.waitForTimeout(1200);
+  await page.waitForTimeout(750);
   check((await page.locator("[data-pause-ring]").count()) === 1, "Stille: Ring läuft ab");
   await page.waitForFunction(() => [...document.querySelectorAll("[data-gespraech] .bg-accent.rounded-br-md")].some((e) => e.textContent.includes("Was gibt es morgen bei uns zum Essen")), null, { timeout: 8000 }).then(
     () => check(true, "nach der Stille: Ton an den Server, Text kommt als Nachricht"),

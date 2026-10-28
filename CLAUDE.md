@@ -92,8 +92,7 @@ Die frühere Lieblingsfarbe ist „Meine Farbe im Kalender“ (Profil
   Löschen) als Vorschau mit „Übernehmen“.
 - Mia ist nie halbgar: lieber weniger, aber richtig. Keine Regel-Antwort
   „nicht verstanden“ (offline: merken und nachholen; Fehler: einmal still
-  nochmal, dann „Hat grad nicht geklappt. Nochmal?“). Haiku nur für klare
-  Kurzbefehle und kurzes Plaudern (Danke, Gruß, „Bin platt“), sonst Sonnet. Was Mia kann, steht im Prompt automatisch aus den
+  nochmal, dann „Hat grad nicht geklappt. Nochmal?“). Modell vor dem Aufruf: Haiku für den Alltag, Sonnet für Planen, Rezepte, Mails, Ideen, Rat (`begleitung/modellwahl.ts`), hochschalten nur bei echtem Fehler. Was Mia kann, steht im Prompt automatisch aus den
   Werkzeugen; sonst „Kann ich noch nicht.“ (anonym gezählt, `mia_wuensche`).
   Neue Mia-Funktion nur mit Prüfstand-Sätzen (`begleitung/pruefstand/`,
   Ziel ≥ 95 %, vor jeder neuen Mia-Version unter „Für Entwickler“ laufen lassen).
@@ -106,8 +105,9 @@ Die frühere Lieblingsfarbe ist „Meine Farbe im Kalender“ (Profil
   sie sagt kurz, wo sie steht.
 - KI zuerst: Ist die KI erreichbar, bekommt IMMER sie die Nachricht. Feste
   Regeln (Stichwort-Erkennung) sind nur die Notlösung ohne KI – oder laufen,
-  wenn die KI es per `app_befehl` vorschlägt. Keine Regel darf einen Zustand
-  hinterlassen, der weitere Nachrichten abfängt.
+  wenn die KI es per `app_befehl` vorschlägt. Ausnahme Sofort-Weg (`begleitung/sofort/`, Prüfstand ≥ 98 %):
+  eindeutige Kurzbefehle erledigt die App sofort, die KI bekommt die Nachricht trotzdem im Hintergrund und
+  korrigiert nur, wenn sie etwas anderes versteht. Keine Regel darf einen Zustand hinterlassen, der weitere Nachrichten abfängt.
 
 ## 3. Räume
 - „Familie“ ist gemeinsam, „Arbeit“ ist persönlich. Ohne Angabe gehört etwas

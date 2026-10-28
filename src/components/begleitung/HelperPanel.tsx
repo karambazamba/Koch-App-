@@ -8,7 +8,6 @@
 import { onKiVersuchOhneCode } from "@/lib/begleitung/codeAbfrage";
 import { rezeptLinkIn } from "@/lib/essen/rezeptLink/lesen";
 import { listeAusChat, openListe } from "@/lib/kalender/liste/einfuegen";
-import { fetchRezeptLink } from "@/lib/essen/rezeptLink/abrufen";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from "react";
 import { isIdeaFilterRequest } from "@/lib/essen/spontan";
@@ -24,7 +23,8 @@ import { GuidedChat } from "@/components/begleitung/GuidedChat";
 import { isRegisteredUndo, pushUndo } from "@/lib/core/undo";
 import { useAssistantStatus } from "@/lib/begleitung/client";
 import { setAvatarFlag, triggerAvatar } from "@/lib/core/avatarState";
-import { shouldRead, speak, stopSpeaking, unlockSpeech, useSpeakingId, useSpeechSettings } from "@/lib/begleitung/speech";
+import { shouldRead, stopSpeaking, unlockSpeech, useSpeakingId, useSpeechSettings } from "@/lib/begleitung/speech";
+import { useStimmeGespraech, useStimmeHinweis, useStimmeWartet } from "@/lib/begleitung/stimmeClient";
 import type { AssistantData } from "@/lib/begleitung/ops";
 import { textFieldFocused, useKeyboardInset } from "@/lib/core/useMobileKeyboard";
 import { TIPPEN_ZU_MS, tippenSchliessen } from "@/lib/begleitung/tippModus";
@@ -42,6 +42,7 @@ import { onReleaseHelperVoice } from "@/lib/begleitung/open";
 import { isDayQuestion } from "@/lib/heute/deinTag";
 import { showToast } from "@/lib/core/toast";
 import { useModusChat } from "@/components/begleitung/useModusChat";
+import { showRezeptLink } from "@/components/begleitung/chatHelfer";
 
 import type { ChatState } from "@/components/begleitung/chatTypes";
 import type { RuleContext } from "@/components/begleitung/localRules";
@@ -51,6 +52,9 @@ import { MiaLayer, StageFoot, StageMia } from "@/components/begleitung/MiaStage"
 import { stageHint, stageLabel, stageLayout, stageState, stageTap } from "@/lib/begleitung/stage";
 import { SuggestionChips } from "@/components/begleitung/SuggestionChips";
 import { useAskAssistant } from "@/components/begleitung/useAskAssistant";
+import { useMiaSprechen } from "@/components/begleitung/useMiaSprechen";
+import { tempoBeginn } from "@/lib/begleitung/tempo";
+import { ERKENNER_VERZUG_MS, fuerNachklapp, istNachklapp, jetztMs, NACHKLAPP_MS, zusammen } from "@/lib/begleitung/nachklapp";
 import { useChatRules } from "@/components/begleitung/useChatRules";
 import { useMarketChat } from "@/components/begleitung/useMarketChat";
 import { useSpontanChat } from "@/components/begleitung/useSpontanChat";
@@ -130,10 +134,14 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
         })
       : [];
 
-  const { busy, streaming, ask, notUnderstood } = useAskAssistant({ data, today, ready, chat, setChat, setInput, setAdjusting, pantry, shopping, tipStore });
+  const { busy, streaming, ask, notUnderstood, zurueckziehen, sofortAktiv } = useAskAssistant({ data, today, ready, chat, setChat, setInput, setAdjusting, pantry, shopping, tipStore });
 
-  // Avatar der Begleitung: denkt, solange die Antwort lädt (noch kein Text da) …
-  const thinking = busy && !streaming;
+  // Ein Gespräch = Bühne auf bis zu: eine Stimme, Status gemerkt, Verbindung vorgewärmt (A-035)
+  useStimmeGespraech(shouldRead(speechSettings.mode, true) && speechSettings.quelle !== "handy");
+  const stimmeWartet = useStimmeWartet();
+  const stimmeHinweis = useStimmeHinweis();
+  // Avatar der Begleitung: denkt, solange die Antwort lädt (noch kein Text da) oder Mias erste Silbe noch unterwegs ist …
+  const thinking = (busy && !streaming) || stimmeWartet;
   useEffect(() => {
     if (!thinking) return;
     setAvatarFlag("denken", true);
@@ -187,27 +195,16 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
     }, 1100);
   };
 
-  /** Rezept-Link: kurz „schau rein“, dann die Karte (oder ein freundlicher Satz) */
-  const showRezeptLink = (url: string, said: string) => {
-    setChat((c) => ({ ...c, turns: [...c.turns, { role: "user", text: said, local: true }, { role: "assistant", text: "Moment, ich schau rein …", local: true }] }));
-    void fetchRezeptLink(url).then((r) =>
-      setChat((c) => {
-        const turns = [...c.turns];
-        const at = turns.map((x) => x.text).lastIndexOf("Moment, ich schau rein …");
-        const reply = "rezept" in r ? { role: "assistant" as const, text: "Hab’s gelesen. Das brauchst du dafür:", local: true, rezept: r.rezept } : { role: "assistant" as const, text: r.error, local: true };
-        if (at >= 0) turns[at] = reply;
-        else turns.push(reply);
-        return { ...c, turns };
-      }),
-    );
-  };
 
   /** Eingabe abschicken: neue Person, Reste-Modus oder Frage an die KI (`byVoice` = per Mikrofon) */
   const submit = (text: string, byVoice = false) => {
     const t = text.trim();
     if (!t || busy || !data || !today) return;
+    // Tempo messen (nur Zahlen): ab hier, gesprochen ab dem letzten Wort
+    tempoBeginn({ sprache: byVoice, letztesWortAm: byVoice ? speech.letztesWortAm() : null, liest: shouldRead(speechSettings.mode, byVoice) });
     // Aufnahme verwerfen – ihr Ende darf nichts mehr ins Feld schreiben
     speech.reset();
+    nachklapp.current = null;
     setSuggestionsGone(true);
     noteChatMessage();
     setViaVoice(byVoice);
@@ -224,7 +221,7 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
     const link = rezeptLinkIn(t);
     if (link) {
       setInput("");
-      showRezeptLink(link, t);
+      showRezeptLink(setChat, link, t);
       return;
     }
     // Eine eingefügte To-do-Liste ist ein App-Befehl: Vorschau „Liste einfügen“ (dort wird abgewählt und übernommen)
@@ -298,7 +295,7 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
   }, []);
 
   // Gesprochenes dieser Aufnahme anzeigen; wenn sie endet, wird genau das abgeschickt.
-  // Bühne: Atempausen schicken nichts ab (erst 2,5 s Stille, Antippen oder „fertig“).
+  // Bühne: Atempausen schicken nichts ab (erst 1,2 s Stille, Antippen oder „fertig“).
   // Spricht man weiter, während Mia antwortet, wird es gemerkt („wartet“) und danach geschickt.
   const [wartend, setWartend] = useState("");
   const busyNow = useRef(busy);
@@ -307,18 +304,45 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
   }, [busy]);
   /** Nach einer Sprach-Nachricht weiter zuhören (Vorlesen aus: sofort; an: nach dem Vorlesen) */
   const weiterHoeren = useRef(false);
+  // Denkpause (Auftrag „Mia schneller“): abgeschickt wird nach 1,2 s Stille; spricht man kurz
+  // danach weiter, wird die eben gesendete Frage zurückgezogen und beides zusammen geschickt
+  const gesendet = useRef<{ text: string; am: number } | null>(null);
+  const nachklapp = useRef<boolean | null>(null);
+  /** Von Hand beendet (Mia angetippt): die Frage ist fertig, nichts hängt mehr an */
+  const vonHand = useRef(false);
+  /** Direkt nach einer gesprochenen Frage hört Mia kurz weiter (Vorlesen an: so lange wartet das Vorlesen) */
+  const [nachhoeren, setNachhoeren] = useState(false);
+  const sprachSenden = (t: string, fertig = false) => {
+    gesendet.current = fuerNachklapp(t, jetztMs(), fertig);
+    submit(t, true);
+    weiterHoeren.current = true;
+    setNachhoeren(true);
+  };
   const speech = useSpeechInput({
     buehne: true,
-    onTranscript: (t) => setInput(t),
+    onTranscript: (t) => {
+      setInput(t);
+      // Erstes Wort dieser Aufnahme: Fortsetzung der eben gesendeten Frage?
+      if (t && nachklapp.current === null) nachklapp.current = istNachklapp(gesendet.current?.am, jetztMs());
+    },
     onEnd: (t) => {
       setInput("");
+      const fertig = vonHand.current;
+      vonHand.current = false;
+      const fortsetzung = nachklapp.current === true ? gesendet.current : null;
+      nachklapp.current = null;
       if (!t || !mounted.current) return;
+      if (fortsetzung && zurueckziehen(fortsetzung.text)) {
+        // Erst wenn die alte Frage weg ist, geht die zusammengesetzte raus (wie „wartet“)
+        setWartend(zusammen(fortsetzung.text, t));
+        gesendet.current = null;
+        return;
+      }
       if (busyNow.current) {
         setWartend((w) => `${w} ${t}`.trim());
         return;
       }
-      submit(t, true);
-      weiterHoeren.current = true;
+      sprachSenden(t, fertig);
     },
   });
 
@@ -333,8 +357,13 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
       return;
     }
     if (speech.listening) {
+      vonHand.current = true;
       speech.stop();
     } else {
+      // Von Hand neu angefangen = neue Frage, keine Fortsetzung der letzten
+      gesendet.current = null;
+      nachklapp.current = null;
+      vonHand.current = false;
       // Wer spricht, braucht keine Beispiele mehr
       setSuggestionsGone(true);
       stopSpeaking();
@@ -345,10 +374,15 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
 
   // Von der Startseite geöffnet: einmalig Mikrofon starten bzw. Frage stellen
   const stopListening = () => speech.listening && speech.stop();
-  const cancelIfSilent = () => speech.listening && !input.trim() && !speech.interim && speech.cancel();
-  const latest = useRef({ submit, toggleMic, stopListening, cancelIfSilent });
+  /** Still geblieben? Dann leise aufhören (true = aufgehört) */
+  const cancelIfSilent = () => {
+    if (!speech.listening || input.trim() || speech.interim) return false;
+    speech.cancel();
+    return true;
+  };
+  const latest = useRef({ submit, toggleMic, stopListening, cancelIfSilent, sprachSenden });
   useEffect(() => {
-    latest.current = { submit, toggleMic, stopListening, cancelIfSilent };
+    latest.current = { submit, toggleMic, stopListening, cancelIfSilent, sprachSenden };
   });
   const started = useRef(false);
   useEffect(() => {
@@ -402,8 +436,7 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
     if (busy || !wartend || speech.listening) return;
     const timer = window.setTimeout(() => {
       setWartend("");
-      latest.current.submit(wartend, true);
-      weiterHoeren.current = true;
+      latest.current.sprachSenden(wartend);
     }, 0);
     return () => window.clearTimeout(timer);
   }, [busy, wartend, speech.listening]);
@@ -411,26 +444,27 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
   // Schließen beendet das Vorlesen (Escape, Danebentippen, Zurück übernimmt das Fenster)
   useEffect(() => () => stopSpeaking(), []);
 
-  // Antworten vorlesen: an, wenn eingeschaltet – im Standard, wenn per Mikrofon gefragt
+  // Antworten vorlesen: an, wenn eingeschaltet – im Standard, wenn per Mikrofon gefragt.
+  // Der erste Satz schon beim Streamen, „Mhm.“ nach 1,2 s; während Mia nachhört, wartet das Vorlesen.
   const readingOn = shouldRead(speechSettings.mode, viaVoice);
+  const readCount = useMiaSprechen({ turns: chat.turns, readingOn, voice, busy, streaming, hoert: speech.listening && nachhoeren, sofort: sofortAktiv, speechFor: spontan.speechFor });
 
-  // Neue Antworten von Lotte vorlesen (nicht, was beim Öffnen schon dastand)
-  const speechRef = useRef(spontan.speechFor);
+  // Direkt nach der gesprochenen Frage weiterhören (Fortsetzung nach Denkpause; auch wenn der
+  // Sofort-Weg ohne Warten antwortet). Vorlesen an: nach dem Fenster still aufhören – Mia liest
+  // vor und hört danach wie gewohnt wieder zu
   useEffect(() => {
-    speechRef.current = spontan.speechFor;
-  });
-  const spokenUpTo = useRef(chat.turns.length);
-  const [readCount, setReadCount] = useState(0);
-  useEffect(() => {
-    const from = spokenUpTo.current;
-    spokenUpTo.current = chat.turns.length;
-    if (chat.turns.length <= from || !readingOn) return;
-    const fresh = chat.turns.map((t, i) => ({ t, i })).slice(from).filter(({ t }) => t.role === "assistant");
-    if (!fresh.length) return;
-    speak(fresh.map(({ t }) => speechRef.current(t)).join(" "), { id: `turn-${fresh[fresh.length - 1].i}`, gender: voice });
-    // Nach dem ersten Vorlesen: schönere Stimme anbieten (nur, wenn nötig – VoiceOffer)
-    setReadCount((n) => n + 1);
-  }, [chat.turns, readingOn, voice]);
+    if (!nachhoeren) return;
+    if (!speech.listening && !speech.blocked && speech.supported !== false) {
+      weiterHoeren.current = false;
+      speech.start();
+    }
+    const t = window.setTimeout(() => {
+      setNachhoeren(false);
+      if (readsVoice && latest.current.cancelIfSilent()) weiterHoeren.current = true;
+    }, NACHKLAPP_MS + ERKENNER_VERZUG_MS);
+    return () => window.clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nachhoeren]);
 
   const newChat = () => {
     // Verlauf, offener Vorschlag, Spontan-Modus und geführte Fragen weg – gespeicherte Daten bleiben
@@ -470,7 +504,8 @@ export function HelperPanel({ data, chat, setChat, onApply, onClose, startListen
     setTyping(false);
     if (!speech.listening) toggleMic();
   };
-  const hint = done ? "Erledigt" : stageHint(state, name, userTurns === 0);
+  // Mikro belegt bzw. hat nicht geklappt: der ruhige Satz statt des Hinweises, „Lieber schreiben“ steht darunter
+  const hint = done ? "Erledigt" : state === "warten" && speech.error ? speech.error : (stimmeHinweis ?? stageHint(state, name, userTurns === 0));
   const mia = <StageMia state={state} size={layout.size} hint={layout.field && !done ? undefined : speech.wartet ? "Gleich schick ich’s ab" : hint} label={stageLabel(state, mic)} done={done} pause={speech.wartet} onTap={tapMia} />;
 
   return (

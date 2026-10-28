@@ -6,7 +6,7 @@ import { createEntry } from "@/lib/core/entries";
 import { sanitizeEntry, type CalendarEntry } from "@/lib/kalender/model";
 import { isWeekCheckRequest, itemFromEntry, weekCheckKey, weekEntries, type WeekItem } from "@/lib/kalender/wochencheck";
 import { stripStopWord } from "@/lib/begleitung/useSpeechInput";
-import { isWeekCheck } from "@/lib/begleitung/engine";
+import { isWeekCheck } from "@/lib/begleitung/modellwahl";
 import { jetztTopics } from "@/lib/heute/jetztTopics";
 import { loadJetzt, weekCheckDone } from "@/lib/heute/jetztStore";
 import { kontext, rufe } from "../begleitung/werkzeugKontext";
