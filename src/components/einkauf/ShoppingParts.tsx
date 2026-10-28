@@ -1,11 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Info, Plus, Trash2 } from "lucide-react";
+import { Check, Plus, Trash2 } from "lucide-react";
 import { Sheet } from "@/components/ui/Sheet";
 import { istGrundsache } from "@/lib/einkauf/kacheln/gruppen";
 import { setImmerAufDieListe } from "@/lib/einkauf/meineLaeden";
-import { AddedBy } from "@/components/konten/AddedBy";
 import { CARD_LIST, INPUT, INPUT_BASE, LABEL, buttonClass, chipClass } from "@/components/ui/styles";
 import { compareText } from "@/lib/core/sort";
 import {

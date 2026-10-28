@@ -84,7 +84,5 @@ export function miaSortiert(items: ListItem[]): { count: number; undo: () => voi
   return { count: plan.length, undo: restore(before, plan.map((v) => lower(v.name))) };
 }
 
-const sachen = (n: number) => `${n} ${n === 1 ? "Sache" : "Sachen"}`;
-
 /** Meldung nach „Mia sortiert“: „5 einsortiert“ */
 export const sortiertText = (n: number) => `${n} einsortiert`;
