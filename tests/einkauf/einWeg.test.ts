@@ -47,7 +47,9 @@ describe("Sichtbarer Name „Einkaufsliste“", () => {
     expect(HOME_TILES.find((t) => t.id === "einkauf")?.label).toBe("Einkaufsliste");
     expect(pageLabel("/einkaufsliste")).toBe("Einkaufsliste");
     const tiles = read("src/components/heute/HomeTiles.tsx");
-    expect(tiles).toContain('<span className="truncate">Einkaufsliste</span>');
+    // Kachel-Kopf kurz „EINKAUF“ – nie abgeschnitten (Tafel 106, nebenbei)
+    expect(tiles).toContain('<span className="whitespace-nowrap">Einkauf</span>');
+    expect(tiles).toContain('aria-label="Einkaufsliste öffnen"');
     expect(tiles).not.toMatch(/aria-label=\{?[^}\n]*"Einkauf"/);
   });
 });

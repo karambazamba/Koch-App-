@@ -24,6 +24,13 @@ export const hallo = async (page, check) => {
   await page.waitForTimeout(900);
   check((await page.evaluate(() => JSON.parse(localStorage.getItem("familienkueche.haushaltsprofil") || "{}").look)) === "farbig", "Standard bleibt Farbig");
   check(await page.getByText("So sieht ein Tag aus").isVisible(), "danach die Startseite mit Beispiel-Tag");
+  // Pinnwand im Beispiel (Tafel 107): Mias oranger Zettel vorn, Ole, Sprachnachricht, „Beispiel“
+  const pinTile = page.getByRole("region", { name: "Pinnwand" });
+  if (await pinTile.count()) {
+    check(await pinTile.getByText("Moin! Hier hängen eure Zettel.").isVisible(), "Pinnwand-Beispiel: Mias Zettel vorn");
+    check((await pinTile.getByRole("link", { name: /^Beispiel: / }).count()) === 3, "Pinnwand-Beispiel: drei Zettel im Fächer");
+    check(await pinTile.getByText("Beispiel", { exact: true }).isVisible(), "Pinnwand-Beispiel klein markiert");
+  }
   check((await page.locator("[data-jetzt]").count()) > 0, "Jetzt-Karte oben");
   check((await page.locator("[data-mia-knopf].mia-zwinkern-einmal").count()) === 1, "Mia-Knopf zwinkert beim ersten Erscheinen");
   check(!(await page.getByText("Schreiben & sprechen").isVisible()), "in den ersten Sekunden kein weiterer Hinweis");

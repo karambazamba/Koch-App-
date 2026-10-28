@@ -107,7 +107,7 @@ export function LeererZettel({ onWrite, onRecord }: { onWrite: () => void; onRec
         Erster Zettel?
       </button>
       {onRecord && (
-        <button type="button" onClick={onRecord} className="hit flex items-center gap-1 text-[12px] font-semibold text-tile-accent">
+        <button type="button" onClick={onRecord} aria-label="Sprachnachricht aufnehmen" className="hit flex items-center gap-1 text-[12px] font-semibold text-tile-accent">
           Oder <Mic className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden /> Sprachnachricht
         </button>
       )}

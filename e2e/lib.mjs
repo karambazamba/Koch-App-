@@ -101,7 +101,7 @@ export async function hello(page) {
 
 const stamp = "2026-10-20T08:00:00.000Z";
 const entry = (id, typ, data, raum = "familie", at = stamp) => ({ id, typ, raum, besitzer: "lokal", erstellt: at, geaendert: at, data });
-/** Pinnwand: alles verschwindet nach 24 Std. – die Nachricht ist von gestern Abend */
+/** Pinnwand: ein Zettel von gestern Abend (bleibt bis „Erledigt“ bzw. 7 Tage) */
 const PIN_STAMP = "2026-10-20T18:00:00.000Z";
 
 /** Beispiel-Familie mit eigenen Einträgen (statt Beispiel-Tag) */
@@ -399,8 +399,25 @@ export async function schnell(page, text, { close = true } = {}) {
   return sheet;
 }
 
-/** Pinnwand: ＋ → Schnelleingabe „NACHRICHT AN ALLE“ → ➤ = angepinnt */
+/** Pinnwand (Kühlschranktür, Tafel 106): ＋ → „Neuer Zettel“ → Text auf den Zettel → „Anpinnen“ */
 export async function pinnwandSchreiben(page, text) {
-  await page.getByRole("button", { name: /^Nachricht an die Pinnwand/ }).first().click();
-  await schnell(page, text);
+  await page.getByRole("button", { name: /^(Neuer Zettel|Erster Zettel)$/ }).filter({ visible: true }).first().click();
+  const sheet = page.getByRole("dialog", { name: "Neuer Zettel" });
+  await sheet.waitFor({ timeout: 5000 });
+  await sheet.getByRole("textbox", { name: "Text auf dem Zettel" }).fill(text);
+  await sheet.getByRole("button", { name: "Anpinnen" }).click();
+  await sheet.waitFor({ state: "detached", timeout: 4000 }).catch(() => {});
+  await page.waitForTimeout(300);
+}
+
+/** Pinnwand-Sprachnachricht vorbereiten: leere Kachel = Mikro direkt, sonst „Neuer Zettel“ → „Sprachnachricht“; liefert Mikro und Bereich */
+export async function pinnwandMikro(page) {
+  const tile = page.getByRole("region", { name: "Pinnwand" });
+  const direct = tile.getByRole("button", { name: "Sprachnachricht aufnehmen" });
+  if (await direct.count()) return { mic: direct, scope: tile };
+  await tile.getByRole("button", { name: "Neuer Zettel" }).click();
+  const sheet = page.getByRole("dialog", { name: "Neuer Zettel" });
+  await sheet.waitFor({ timeout: 5000 });
+  await sheet.getByRole("radio", { name: "Sprachnachricht" }).click();
+  return { mic: sheet.getByRole("button", { name: "Aufnahme starten" }), scope: sheet };
 }

@@ -175,21 +175,21 @@ function ShopRows({ rows, rest, ohne, mine, products, demo = false }: TileRows &
         </Link>
       )}
       {mine && ohne.length > 0 && (
-        <Link href="/einkaufsliste#ohne-laden" onClick={() => setShopChip("alle")} className="flex min-h-[30px] items-center gap-1 truncate text-[12.5px] font-semibold text-muted" data-zeile data-ohne-laden-zeile>
-          {ohneLadenZeile(ohne.length)} · <span className="font-bold text-accent-strong">Sortieren ›</span>
+        <Link href="/einkaufsliste#ohne-laden" onClick={() => setShopChip("alle")} className="flex min-h-[30px] flex-wrap items-center gap-x-1 py-0.5 text-[12.5px] font-semibold leading-tight text-muted" data-zeile data-ohne-laden-zeile>
+          <span className="whitespace-nowrap">{ohneLadenZeile(ohne.length)} ·</span> <span className="whitespace-nowrap font-bold text-accent-strong">Sortieren ›</span>
         </Link>
       )}
     </>
   );
 }
 
-/** Kopf der Einkauf-Kachel; die übrige Fläche öffnet die ganze Liste („Alle“) */
+/** Kopf der Einkauf-Kachel „EINKAUF“ – kurz, damit er auch halb breit nie abgeschnitten wird; die übrige Fläche öffnet die ganze Liste („Alle“) */
 function ShoppingHead() {
   return (
-    <Link href="/einkaufsliste" onClick={() => setShopChip("alle")} className="mr-9 flex min-h-11 items-start" aria-label="Einkaufsliste öffnen">
-      <span className={`${HALF_LABEL} pr-6`}>
+    <Link href="/einkaufsliste" onClick={() => setShopChip("alle")} className="mr-8 flex min-h-11 items-start" aria-label="Einkaufsliste öffnen">
+      <span className={HALF_LABEL}>
         <ShoppingCart className="h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden />
-        <span className="truncate">Einkaufsliste</span>
+        <span className="whitespace-nowrap">Einkauf</span>
       </span>
     </Link>
   );

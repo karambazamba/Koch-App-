@@ -25,10 +25,10 @@ describe("Aufnahme-Leiste in der Kachel", () => {
     expect(parts).toMatch(/if \(e\.button !== 0 \|\| freeMode \|\| tapOnly\) return;/);
   });
 
-  it("leer: „Oder 🎙 Sprachnachricht“ nimmt gleich auf; im Fenster „Neuer Zettel“ Mikro antippen, nach dem Senden zu", () => {
+  it("leer: „Oder 🎙 Sprachnachricht“ nimmt gleich auf; im Fenster „Neuer Zettel“ Mikro antippen oder halten, nach dem Senden zu", () => {
     expect(tile).toMatch(/onRecord=\{canRecord \? \(\) => void recorder\.start\("tippen"\) : null\}/);
     const sheet = readFileSync("src/components/pinnwand/NeuerZettel.tsx", "utf8");
-    expect(sheet).toMatch(/<MemoMic recorder=\{recorder\} size=\{56\} tapOnly \/>/);
+    expect(sheet).toMatch(/<MemoMic recorder=\{recorder\} size=\{56\} \/>/);
     expect(sheet).toMatch(/useMemoRecorder\(\{ me, farbe, onSent: \(\) => onClose\(\) \}\)/);
   });
 });

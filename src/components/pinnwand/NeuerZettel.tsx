@@ -87,7 +87,7 @@ export function NeuerZettel({ me, household, karo, onClose, quote = null, art: s
                     <p className="text-[15px] text-fridge-soft">Auf diesem Gerät geht keine Aufnahme.</p>
                   ) : recorder.phase === "idle" ? (
                     <div className="flex flex-1 flex-col items-center justify-center gap-2">
-                      <MemoMic recorder={recorder} size={56} tapOnly />
+                      <MemoMic recorder={recorder} size={56} />
                       <span className="text-[14px] font-semibold text-fridge-soft">Antippen und sprechen</span>
                     </div>
                   ) : (

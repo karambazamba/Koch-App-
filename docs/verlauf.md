@@ -2880,3 +2880,45 @@ Fehler in `docs/aufraeumen-nachher.md`.
   Start, Ton, Spracheingabe), `docs/design.md`, `docs/testen.md`,
   `docs/ordner.md`, `docs/roadmap.md`. Neu unter „Arbeitsweise“: parallel wo
   getrennt, Überschneidendes nacheinander auf neuestem `main`, gestaffelte Tests.
+
+## Pinnwand als Kühlschranktür (vX, Tafel 106/107)
+- Ersetzt den Auftrag „Pinnwand – nichts verschwindet ungefragt“. Vorlagen
+  `docs/tafeln/tafel-106.png` (Tür, Kachel S/M, neuer Zettel) und
+  `tafel-107.png` (Kachel: Variante 1 „Fächer“, leer = Variante 4).
+- Rollen: Pinnwand = Zettel und Sprachnachrichten für die anderen (geteilt),
+  Notizen = für mich. Pinnwand ist ein Baustein: „Nur für mich“ aus, zu
+  zweit/Familie an, wer sie hatte, behält sie (Bausteine v6).
+- Tür: helle Kühlschranktür mit Griff (dunkel Edelstahl, Tokens
+  `--app-fridge-*`), Zettel in zwei Spalten, fest leicht schief, Magnete
+  (Punkt, Stern, Apfel, Herz; angeheftet roter Pin), Farbe = Person (5
+  Pastell `--app-zettel-<n>`), Papiere Haftnotiz / Karoblatt (Kinder) /
+  Kassenbon (Sprachnachricht) / Polaroid (Foto), Haken-Kreis = Erledigt.
+- Keine 24-Std.-Regel mehr: Erledigt = 24 Std. blass + durchgestrichen
+  („erledigt von Lisa“), dann Archiv „Ältere · n ›“; sonst nach 7 Tagen
+  leise ins Archiv; Angeheftete bleiben; gelöscht wird nur von Hand. Server
+  räumt nur Dateien gelöschter Einträge weg (`orphanFiles`, Buckets „memos“
+  und „fotos“).
+- „Neuer Zettel“ (＋, Ausnahme von der Schnelleingabe): Vorschau als echter
+  Zettel, Art Zettel / Sprachnachricht / Foto, 5 Farben, Anheften (Pin),
+  „Anpinnen“. Fotos verkleinert (1600 px, JPEG), IndexedDB
+  `wasgibts-fotos`, mit Konto Bucket „fotos“ (RLS nur Haushalt; Migration
+  `20261031120000_pinnwand_fotos.sql`). Datenkarte, Anbieter,
+  Datenschutzerklärung aktualisiert.
+- Menü (antippen/lange drücken): Erledigt, Antworten (↪ Lisa), In Notizen
+  (eigene Notiz, Zettel ins Archiv), Anheften, Löschen. Mia fragt einmal je
+  Zettel „Klingt nach Notiz. Soll ich’s bei deinen Notizen ablegen?“; liest
+  nur nicht Erledigtes vor. Prüfstand +3 Sätze (167).
+- Kachel „Fächer“: S drei aufgefächert (−10°, −2°, +7°), M drei
+  nebeneinander, L bis 6, leer gestrichelter Zettel „Erster Zettel?“ / „Oder
+  🎙 Sprachnachricht“; Beispiel-Tag mit Mias orangem Zettel, Ole und einer
+  Sprachnachricht („Beispiel“).
+- Speicher `wasgibts.pinnwand` v4 (alle Zettel bleiben, Farbe = Person),
+  Abgleich v4 (Foto-Zettel erst mit Bild geteilt).
+- Nebenbei: Einkauf-Kachel Kopf „EINKAUF“ ohne Abschneiden, Zeile „16 ohne
+  Laden · Sortieren ›“ vollständig (notfalls zweizeilig).
+- Entschieden ohne Rückfrage: Personenfarbe aus der Reihenfolge im Haushalt
+  (kein neues Profilfeld); Karoblatt automatisch für Kinder-Profile;
+  Kassenbon weiß (Personenfarbe an Magnet, Avatar, Tonwelle); „Für alle“
+  weggelassen (gilt immer); Umschalter im App-Stil statt schwarz;
+  „Weiterleiten an Mia“ und die Wisch-Gesten an Zetteln entfallen (Tippen
+  und lange Drücken öffnen das Menü); Archiv ohne „Wieder aufhängen“.

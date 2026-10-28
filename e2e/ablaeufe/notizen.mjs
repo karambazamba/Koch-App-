@@ -1,8 +1,8 @@
 // Notizen neu + Absätze (Tafel 93): Schnellfeld oben – Return = neue Zeile,
 // „Sichern“ erst mit Text, erste Zeile = Titel → Karte unter „Zuletzt“.
 // Notiz öffnen = Vollbild mit „Fertig“ und Werkzeugleiste, Liste: Return =
-// neuer Eintrag. Pinnwand: Return = neue Zeile, gesendet nur per ➤.
-import { BASE, hello, seedFamily, store } from "../lib.mjs";
+// neuer Eintrag. Pinnwand: Return = neue Zeile, angepinnt nur per „Anpinnen“.
+import { BASE, hello, pinnwandSchreiben, seedFamily, store } from "../lib.mjs";
 
 const notes = async (page) => (await store(page, "wasgibts.notizen"))?.notes ?? [];
 
@@ -56,18 +56,29 @@ export const notizen = async (page, check) => {
   await page.waitForTimeout(400);
   check((await notes(page)).length === count, "leere Notiz fällt weg");
 
-  // Pinnwand: Return = neue Zeile
+  // Pinnwand („Neuer Zettel“, Tafel 106): Return = neue Zeile, angepinnt nur per „Anpinnen“
   await page.goto(BASE + "/pinnwand");
-  await page.getByRole("button", { name: /^Nachricht an die Pinnwand/ }).first().click();
-  const sheet = page.getByRole("dialog", { name: "Schnelleingabe" });
-  const box = sheet.getByRole("textbox");
+  await page.getByRole("button", { name: "Neuer Zettel" }).first().click();
+  const sheet = page.getByRole("dialog", { name: "Neuer Zettel" });
+  const box = sheet.getByRole("textbox", { name: "Text auf dem Zettel" });
   await box.waitFor();
   await page.keyboard.type("Einkaufen:");
   await page.keyboard.press("Enter");
   await page.keyboard.type("Milch und Brot");
   check((await box.inputValue()) === "Einkaufen:\nMilch und Brot" && (await sheet.isVisible()), "Pinnwand: Return = neue Zeile");
-  await sheet.getByRole("button", { name: "Speichern" }).click();
-  await sheet.getByRole("button", { name: "Schließen" }).last().click();
-  const pin = page.getByText("Einkaufen:", { exact: false }).first();
+  await sheet.getByRole("button", { name: "Anpinnen" }).click();
+  await page.waitForTimeout(500);
+  const pin = page.locator(".zettel-text", { hasText: "Einkaufen:" }).first();
   check(await pin.evaluate((el) => getComputedStyle(el).whiteSpace === "pre-line" && el.textContent.includes("\n")), "Pinnwand zeigt die Zeilen");
+
+  // Brücke zu Notizen: WLAN-Zettel → Mia fragt EINMAL → „Ja“ = eigene Notiz, Zettel ins Archiv
+  await pinnwandSchreiben(page, "WLAN Gast: Tohuus2026");
+  const frage = page.getByText("Klingt nach Notiz. Soll ich’s bei deinen Notizen ablegen?");
+  check(await frage.isVisible(), "Mia fragt: „Klingt nach Notiz …“");
+  const vorher = (await notes(page)).length;
+  await page.getByRole("button", { name: "Ja", exact: true }).click();
+  await page.waitForTimeout(500);
+  check((await notes(page)).length === vorher + 1, "„Ja“ → eigene Notiz");
+  check(!(await frage.count()), "Frage kommt nicht wieder");
+  check(await page.getByRole("button", { name: /^Ältere · \d+/ }).isVisible(), "Zettel liegt im Archiv „Ältere“");
 };

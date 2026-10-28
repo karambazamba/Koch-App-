@@ -253,14 +253,31 @@ E-Mail bleibt immer der sichere Weg. Bitte am echten iPhone prüfen.
   Auf den anderen Geräten holt `memoAudio` den Ton beim ersten Abspielen
   (`setMemoRemote`) und legt ihn in IndexedDB ab. „Gehört von“ und
   Reaktionen gehen mit dem Eintrag.
-- Lebensdauer wie bisher: 24 Std. ab der Aufnahme (Tafel 72, statt „24 Std.
-  nach alle gehört“ aus dem Konten-Auftrag). Dateien älter als 25 Std. räumt
-  `/api/memos/aufraeumen` täglich weg (Vercel Cron 3:30 UTC, nur mit
-  `CRON_SECRET`, geheimer Schlüssel nur dort). Zusätzlich räumt die App
-  einmal je Start ihren Haushalt auf (`tidyMemoFiles` im Runner) – so klappt
-  es auch ohne `CRON_SECRET`.
-- Test-Backend: `upload_memo`, `download_memo`, `list_memos`, `remove_memos`
-  mit denselben Regeln. Tests: `tests/konten/memosTeilen.test.ts`.
+- Lebensdauer (Kühlschranktür, Tafel 106): nichts verschwindet nach Alter –
+  Sprachnachrichten gehen ins Archiv und behalten ihren Ton. Dateien, deren
+  Eintrag von Hand gelöscht wurde (oder nie ankam, mit einem Tag Luft),
+  räumt `/api/memos/aufraeumen` täglich weg (`orphanFiles`; Vercel Cron 3:30
+  UTC, nur mit `CRON_SECRET`, geheimer Schlüssel nur dort; liest die noch
+  vorhandenen Einträge des Haushalts aus `entries`). Die App räumt keine
+  Dateien mehr nach Alter (`tidyMemoFiles` ist weg).
+- Test-Backend: `upload_memo`, `download_memo` (und für Fotos
+  `upload_foto`, `download_foto`) mit denselben Regeln. Tests:
+  `tests/konten/memosTeilen.test.ts`.
+
+## Fotos der Pinnwand teilen (Kühlschranktür, Tafel 106)
+
+- Bild in Supabase Storage, Bucket `fotos` (privat, höchstens 1,5 MB, nur
+  JPEG), Pfad `<haushalt>/<zettel-id>.jpg` (`fotoPath` in
+  `src/lib/pinnwand/foto.ts`). Migration
+  `supabase/migrations/20261031120000_pinnwand_fotos.sql`: lesen und löschen
+  nur Mitglieder (`foto_household(name)` + `is_member`), ablegen nur in den
+  eigenen Haushalt, falsche Pfade nie. Test: `tests/datenbank/fotos.test.sql`.
+- Ablauf wie beim Ton: vor jedem Abgleich lädt der Runner neue Bilder hoch
+  (`uploadPendingFotos`, `backend.uploadFoto`) und vermerkt `foto.path` –
+  erst dann wird der Foto-Zettel geteilt (`pinShared` im Übersetzer
+  `pinnwand`, v4). Andere Geräte holen das Bild beim Anzeigen
+  (`setFotoRemote`, `downloadFoto`) und legen es in IndexedDB
+  `wasgibts-fotos` ab. Ohne Konto bleibt das Bild nur auf dem Gerät.
 
 ## Tests
 

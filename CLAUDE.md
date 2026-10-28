@@ -27,8 +27,8 @@ Die frühere Lieblingsfarbe ist „Meine Farbe im Kalender“ (Profil
   Einheitlichkeit.
 - Drin: Mia (sprechen, tippen, erledigen), Startseite, Termine (inkl.
   Kalender mitbringen per Link), Aufgaben, Einkauf, Essen (heute, Ideen,
-  Rezept, Kochmodus, Wochenkarte), Pinnwand + Sprachnachrichten, Notizen
-  (Kachel standardmäßig an), Im Haus mit Spontan kochen (Baustein an,
+  Rezept, Kochmodus, Wochenkarte), Pinnwand als Kühlschranktür (allein aus),
+  Notizen (Kachel standardmäßig an), Im Haus mit Spontan kochen (Baustein an,
   Bereich unter Essen mit „Was koch ich daraus?“, Kachel S/M nur über die
   Auswahl), Sport (Baustein, nur Wochen zählen), Wochenplan (Baustein),
   Wetter, Timer (Baustein), Familie teilen per E-Mail-Code, Datenschutz.
@@ -76,7 +76,7 @@ Die frühere Lieblingsfarbe ist „Meine Farbe im Kalender“ (Profil
   Gespräch erreichbar. Bildschirme dienen zum Nachschauen und Feinjustieren.
 - ＋ = schreiben, Mia = sprechen. Jedes ＋ öffnet eine Schnelleingabe (ein Feld,
   Tastatur sofort, Satz rein, ➤ speichert; `ui/QuickEntry`, `core/schnelleingabe`;
-  Ausnahme: das Seiten-Plus der Notizen öffnet eine leere Notiz). Absätze:
+  Ausnahmen: Notizen-Plus = leere Notiz, Pinnwand-Plus = „Neuer Zettel“). Absätze:
   Notiz und Pinnwand mehrzeilig (`ui/MehrzeilenFeld`, Return = neue Zeile,
   gespeichert nur per Knopf), angezeigt mit `whitespace-pre-line`.
   Sprechen geht immer über den Mia-Knopf. Kein eigenes Mikro in Eingabefeldern
@@ -235,8 +235,8 @@ Die frühere Lieblingsfarbe ist „Meine Farbe im Kalender“ (Profil
 ## Feste Regeln einzelner Bereiche
 Stehen jeweils oben in `docs/bereiche/<bereich>.md`: Tipps aus der Region
 und Name „KARAMBA Eis“ (`tipps`), Spendentopf, Wetter, Beispiel-Tag
-(`heute`), Konten (Supabase), Mails an Mia, Mia denkt mit und Mias Stimme
-(`begleitung`), Bilder der Gerichte (`essen`). Vor Änderungen dort lesen.
+(`heute`), Pinnwand, Konten (Supabase), Mails an Mia, Mia denkt mit und
+Mias Stimme (`begleitung`), Bilder der Gerichte (`essen`). Vor Änderungen dort lesen.
 
 ## Datenschutz
 - So wenig Daten wie möglich, so lange wie nötig, nie verkauft, keine Tracker,
