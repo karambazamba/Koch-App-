@@ -340,7 +340,9 @@ describe("Gleiche Anzeige überall: Familie ohne Kennzeichen, Ich Schloss, Arbei
     expect(src("src/components/kalender/Items.tsx")).toMatch(/<RaumChips /);
     expect(src("src/components/kalender/Items.tsx")).toMatch(/raumAktion\(r, haushalt\)/);
     expect(src("src/components/kalender/raum/RaumBestaetigung.tsx")).toMatch(/<RaumChips /);
-    expect(src("src/components/begleitung/ChatTurnItem.tsx")).toMatch(/<RaumBestaetigung eintrag=\{turn\.raum\} \/>/);
+    // Mias Bestätigung: die Raum-Zeile „Termin · Familie ⌄“ in der Ergebnis-Karte (A-037)
+    expect(src("src/components/begleitung/ErgebnisKarten.tsx")).toMatch(/<RaumZeile /);
+    expect(src("src/components/begleitung/ChatTurnItem.tsx")).toMatch(/<EintragErgebnis eintrag=\{turn\.raum\}/);
     expect(src("src/components/kalender/DayPanel.tsx")).toMatch(/onLang=\{\(\) => setMenu\(\{ item: i, start: "raum" \}\)\}/);
     expect(src("src/components/kalender/TasksView.tsx")).toMatch(/onLang=\{raumMenu\}/);
     expect(src("src/components/heute/MiniCards.tsx")).toMatch(/useLangDruecken\(onLang/);

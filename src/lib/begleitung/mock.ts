@@ -223,7 +223,36 @@ export function createMockModel(): CreateMessage {
   };
 }
 
+/** „Sag einfach, was ansteht“ – der Testmodus hat den Satz nicht verstanden */
+const UNKLAR = "Sag einfach, was ansteht (Testmodus).";
+/** Satz-Anfang, der nur verbindet („Und wir brauchen Milch.“) */
+const VERBINDER = /^(?:und|außerdem|ach ja|dann|noch was:?)\s+/i;
+
+/**
+ * Mehreres in einer Nachricht (Tafel 126: „Freitag 16 Uhr Zahnarzt mit Jonne.
+ * Und wir brauchen Milch.“): versteht der Testmodus das Ganze nicht, liest er
+ * jeden Satz einzeln – nur wenn JEDER Satz etwas einträgt, gehen alle
+ * Werkzeuge zusammen raus.
+ */
 function mockModel(): CreateMessage {
+  const einzeln = mockModelEinzeln();
+  return async (params, onText) => {
+    const message = await einzeln(params, onText);
+    const last = params.messages[params.messages.length - 1];
+    const erster = message.content[0];
+    if (typeof last.content !== "string" || erster?.type !== "text" || !erster.text.startsWith(UNKLAR)) return message;
+    const saetze = last.content.split(/(?<=[.!?])\s+/).map((s) => s.trim().replace(VERBINDER, "")).filter(Boolean);
+    if (saetze.length < 2) return message;
+    const teile = await Promise.all(saetze.map((s) => einzeln({ ...params, messages: [...params.messages.slice(0, -1), { role: "user", content: s }] })));
+    if (!teile.every((t) => t.stop_reason === "tool_use" && t.content.every((b) => b.type === "tool_use" && !READ_ONLY.test(b.name)))) return message;
+    return tools(teile.flatMap((t) => t.content.map((b) => b as Anthropic.Beta.BetaToolUseBlock).map((b) => ({ name: b.name, input: b.input as Record<string, unknown> }))));
+  };
+}
+
+/** Werkzeuge, die nur lesen – mit ihnen wird kein Satz „eingetragen“ */
+const READ_ONLY = /_(?:lesen|anzeigen|suchen|durchsuchen|statistik)$/;
+
+function mockModelEinzeln(): CreateMessage {
   return async (params) => {
     const msgs = params.messages;
     const system = (params.system as Anthropic.Beta.BetaTextBlockParam[]).map((b) => b.text).join("\n");
@@ -347,7 +376,7 @@ function mockModel(): CreateMessage {
       const actionable =
         intent.myDays.length || intent.wish || intent.restVeggie || intent.planWeek || intent.clear.length || intent.double.length || intent.swap.length >= 2 || intent.moveDish || intent.shopping;
       if (!actionable) {
-        return text("Sag einfach, was ansteht (Testmodus). Zum Beispiel: „Milch auf die Liste“ oder „Freitag gibt’s Pizza“.");
+        return text(`${UNKLAR} Zum Beispiel: „Milch auf die Liste“ oder „Freitag gibt’s Pizza“.`);
       }
       return tools([
         { name: "woche_lesen", input: { woche: intent.week } },

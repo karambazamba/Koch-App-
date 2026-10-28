@@ -9,6 +9,8 @@ import { useExternalStore } from "@/lib/core/useExternalStore";
 import { now, todayIso } from "@/lib/core/now";
 import type { ChangeOp } from "@/lib/begleitung/ops";
 import type { Room } from "@/lib/core/entries";
+import { ergebnisse, leuchtZiele } from "@/lib/begleitung/ergebnis";
+import { leuchtenMerken } from "@/lib/heute/aufleuchten";
 
 export type MiaDone = { id: string; text: string; href: string | null; day: string; at: number };
 type DoneState = { version: 1; items: MiaDone[] };
@@ -32,7 +34,7 @@ const SAFE_OP_TYPES = new Set<ChangeOp["type"]>(["add_shopping", "set_shop_rule"
 export const isSafeOp = (op: ChangeOp) => (SAFE_OP_TYPES.has(op.type) && !(op.type === "add_shopping" && op.vorschlag)) || ((op.type === "upsert_entry" || op.type === "upsert_note") && op.isNew);
 
 /** Kurz, was passiert ist – und wo es steht */
-export function doneLine(op: ChangeOp): { text: string; href: string | null } | null {
+function doneLine(op: ChangeOp): { text: string; href: string | null } | null {
   switch (op.type) {
     case "add_shopping":
       return { text: `${op.name} auf die Liste`, href: "/einkaufsliste" };
@@ -59,9 +61,10 @@ export function doneLine(op: ChangeOp): { text: string; href: string | null } | 
   }
 }
 
-/** Erledigtes merken (mit Rücknahme für diese Sitzung) */
+/** Erledigtes merken (mit Rücknahme für diese Sitzung); nach dem Schließen der Bühne leuchtet es in der Kachel (A-037) */
 export function noteMiaDone(ops: ChangeOp[], undo: () => void) {
   const day = todayIso();
+  leuchtenMerken(leuchtZiele(ergebnisse(ops)));
   const lines = ops.map(doneLine).filter((l): l is { text: string; href: string | null } => l !== null);
   if (!lines.length) return;
   const at = now().getTime();

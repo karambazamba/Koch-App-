@@ -23,7 +23,7 @@ const STAGE = [
   "src/components/begleitung/MarketBoard.tsx",
   "src/components/begleitung/BakingBoard.tsx",
   "src/components/begleitung/ProposalCard.tsx",
-  "src/components/begleitung/MiaDoneCard.tsx",
+  "src/components/begleitung/ErgebnisKarten.tsx",
   "src/components/begleitung/TipBubble.tsx",
   "src/components/begleitung/VoiceOffer.tsx",
   "src/components/begleitung/MailCard.tsx",

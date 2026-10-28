@@ -11,8 +11,8 @@ import { Lock } from "lucide-react";
 import type { Room } from "@/lib/core/entries";
 import { raumLabel, raumWahl, type Haushalt } from "@/lib/core/haushalt";
 
-/** Farben eines aktiven Raum-Chips (auch für den kleinen Chip unter Mias Bestätigung) */
-export const RAUM_AKTIV: Record<Room, string> = {
+/** Farben eines aktiven Raum-Chips */
+const RAUM_AKTIV: Record<Room, string> = {
   familie: "border-accent bg-accent-soft text-accent-strong",
   ich: "border-ich bg-ich-soft text-ich",
   arbeit: "border-work bg-work-soft text-work",

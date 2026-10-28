@@ -30,6 +30,7 @@ import { ItemMenu, roomBarProps } from "@/components/kalender/Items";
 import { withoutEmoji } from "@/lib/core/text";
 import { neuEintragen } from "@/lib/kalender/eintragen/oeffnen";
 import { useLangDruecken } from "@/components/ui/useLangDruecken";
+import { leuchtSchluessel } from "@/lib/heute/aufleuchten";
 
 /** Beispiel-Tag: Beispiele statt echter Einträge (Antippen erklärt, Abhaken nur hier) */
 export type DemoProps = { label?: string | null; done?: string[]; onToggle?: (item: DayItem) => void; onGone?: (item: DayItem) => void; onOpen: (item: DayItem) => void };
@@ -132,7 +133,7 @@ function TerminLine({ row, entering, onOpen, spalte, half }: { row: TerminRow; e
   const { item, state } = row;
   const next = state === "gleich" || state === "naechster";
   return (
-    <li className={next ? "bg-accent-soft/60" : undefined} style={entering} data-item={item.key} data-state={state ?? undefined} data-zeile>
+    <li className={next ? "bg-accent-soft/60" : undefined} style={entering} data-item={item.key} data-state={state ?? undefined} data-zeile data-leuchte={leuchtSchluessel("eintrag", item.entry.id)}>
       <button type="button" onClick={onOpen} className="flex h-[30px] w-full items-center gap-2 pl-2.5 pr-3 text-left" aria-label={`${item.time ? clockLabel(item.time) : "ganztägig"} ${item.title}${state === "laeuft" ? " – läuft" : state === "gleich" ? " – gleich" : ""} – Möglichkeiten`}>
         <span className={`h-3.5 w-[3px] shrink-0 rounded-full ${roomBarProps(item).className}`} style={roomBarProps(item).style} aria-hidden />
         <span className={`${spalte} shrink-0 whitespace-nowrap text-[13.5px] font-extrabold tabular-nums text-tile-accent`}>{item.time ? clockLabel(item.time) : <GanztagMarke title={item.title} label={item.label} kurz={half} />}</span>
@@ -182,7 +183,7 @@ export function TaskLine({ item, today, onOpen, onLang, onDone, leaving, enterin
   const checked = Boolean(item.done || leaving);
   const lang = useLangDruecken(onLang ? () => onLang(item) : null);
   return (
-    <li className="flex items-center gap-1 py-1 pr-3" style={entering ? { animation: "card-in 0.32s ease-out" } : undefined} data-item={item.key}>
+    <li className="flex items-center gap-1 py-1 pr-3" style={entering ? { animation: "card-in 0.32s ease-out" } : undefined} data-item={item.key} data-leuchte={leuchtSchluessel("eintrag", item.entry.id)}>
       <CheckBox item={item} checked={checked} onClick={() => onDone(item)} round />
       <button type="button" {...lang.griffe} onClick={() => lang.geklickt() && onOpen(item)} className="flex min-h-11 min-w-0 flex-1 items-center gap-2 py-1 text-left" aria-label={`${item.title} – Möglichkeiten`}>
         {isUrgent(item) && !checked && <UrgentMark />}
@@ -203,7 +204,7 @@ export function TaskLine({ item, today, onOpen, onLang, onDone, leaving, enterin
 /** Aufgaben-Zeile der Kachel (30 px): Kreis 20 px (Tippfläche 44 × 30), Titel, „!“ bei dringend, rechts nur „von Lisa“, Schloss („Ich“) bzw. „Arbeit“ */
 function TaskField({ item, leaving, entering, onOpen, onDone }: { item: DayItem; leaving: boolean; entering?: React.CSSProperties; onOpen: () => void; onDone: () => void }) {
   return (
-    <li className="flex min-w-0 items-center" style={leaving ? TASK_FADE : entering} data-item={item.key} data-zeile>
+    <li className="flex min-w-0 items-center" style={leaving ? TASK_FADE : entering} data-item={item.key} data-zeile data-leuchte={leuchtSchluessel("eintrag", item.entry.id)}>
       <button type="button" role="checkbox" aria-checked={leaving} aria-label={`${item.title} erledigt`} onClick={onDone} className="flex h-[30px] w-11 shrink-0 items-center justify-center">
         <span className={`flex h-5 w-5 items-center justify-center rounded-full border-2 ${leaving ? "border-good bg-good text-on-color" : "border-line-strong"}`} style={leaving ? { animation: "check-pop 0.4s ease-out" } : undefined}>
           {leaving && <Check className="h-3 w-3" strokeWidth={3.5} aria-hidden />}

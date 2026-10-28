@@ -44,6 +44,7 @@ import { NotifyHost } from "@/components/heute/mitteilungen/NotifyHost";
 import { showToast } from "@/lib/core/toast";
 import { onOpenListe } from "@/lib/kalender/liste/einfuegen";
 import { loadProfile, saveProfile } from "@/lib/einstellungen/profileStore";
+import { buehneGeoeffnet, leuchtenMerken } from "@/lib/heute/aufleuchten";
 
 // Das Gespräch (mit Mails, Backstube, Supermarkt …) wird erst gebraucht, wenn
 // man es öffnet – eigener Teil, der nach dem Laden der Seite im Leerlauf vorgeholt wird
@@ -76,6 +77,8 @@ export function KitchenHelper() {
   const [weekCheck, setWeekCheck] = useState(false);
   const [liste, setListe] = useState<string | null>(null);
   useEffect(() => onOpenListe(setListe), []);
+  // Aufleuchten in der Kachel erst, wenn die Bühne zu ist (A-037)
+  useEffect(() => buehneGeoeffnet(open), [open]);
   const voiceRef = useRef<HelperVoice>("weiblich");
 
   const profile = useProfile();
@@ -217,6 +220,9 @@ export function KitchenHelper() {
     // Erst hier geladen (das Gespräch hat es schon geholt) – hält das Layout klein
     const { commitOps } = await import("@/lib/begleitung/client");
     const { undo: run, notes } = commitOps(data, chat.proposal.ops, selected, prompt);
+    // Übernommenes leuchtet nach dem Schließen in seiner Kachel (A-037)
+    const { ergebnisse, leuchtZiele } = await import("@/lib/begleitung/ergebnis");
+    leuchtenMerken(leuchtZiele(ergebnisse(chat.proposal.ops.filter((op) => selected.has(op.id)))));
     // Gewählte Gerichte → deren Zutaten zählen als Vorliebe
     const chosen = chat.proposal.ops
       .filter((op) => selected.has(op.id))
@@ -234,6 +240,26 @@ export function KitchenHelper() {
     if (deleting) setUndo({ run, key: Date.now() });
     setUndone(false);
     return run;
+  };
+
+  /**
+   * Karten-Vorschau (A-037): EINE Karte übernehmen – sie wird grün
+   * („Eingetragen“), der Rest bleibt zur Wahl; die Bühne bleibt offen. Alles
+   * übernommen → die Karten stehen fertig im Verlauf.
+   */
+  const applyOne = async (opId: string) => {
+    if (!data || !chat.proposal) return;
+    const proposal = chat.proposal;
+    const prompt = [...chat.turns].reverse().find((t) => t.role === "user")?.text ?? "";
+    const [{ commitOps }, { ergebnisse, leuchtZiele, nachUebernehmen }] = await Promise.all([import("@/lib/begleitung/client"), import("@/lib/begleitung/ergebnis")]);
+    commitOps(data, proposal.ops, new Set([opId]), prompt);
+    leuchtenMerken(leuchtZiele(ergebnisse(proposal.ops.filter((op) => op.id === opId))));
+    setChat((c) => {
+      if (!c.proposal) return c;
+      const rest = nachUebernehmen(c.proposal, opId);
+      if (rest) return { ...c, proposal: rest };
+      return { ...c, proposal: null, turns: [...c.turns, { role: "assistant", text: "Steht drin.", local: true, ergebnisse: ergebnisse(c.proposal.ops) }] };
+    });
   };
 
   // Keine Leiste beim ersten Start, im Notiz-Editor, Kochmodus, Anmelden und auf Rechtsseiten
@@ -261,6 +287,7 @@ export function KitchenHelper() {
           chat={chat}
           setChat={setChat}
           onApply={apply}
+          onApplyOne={applyOne}
           startListening={start?.listen}
           initialAsk={start?.ask}
           onClose={() => {

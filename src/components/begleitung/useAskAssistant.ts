@@ -14,11 +14,12 @@
 import { newMiaConversation, reactToUser } from "@/lib/mia/reaktion";
 import { useRef, useState, type Dispatch, type SetStateAction } from "react";
 import { askAssistant, BegleitungUnavailable, commitOps, runInstantOps, unavailableText } from "@/lib/begleitung/client";
-import { eingetragenMitRaum, isSafeOp, noteMiaDone } from "@/lib/begleitung/miaDone";
+import { isSafeOp, noteMiaDone } from "@/lib/begleitung/miaDone";
 import { gelernteRaeume } from "@/lib/kalender/raum/gedaechtnis";
 import { isImHausFrage } from "@/lib/vorrat/reinsprechen";
 import { isEinkaufFrage } from "@/lib/einkauf/einsprechen";
-import { doneCount, doneGroups, doneSummary, shortDoneReply, type DoneGroup } from "@/lib/begleitung/uebersicht";
+import { shortDoneReply } from "@/lib/begleitung/uebersicht";
+import { ergebnisse, ergebnisSummary, type Ergebnis } from "@/lib/begleitung/ergebnis";
 import { queueForLater } from "@/lib/begleitung/nachholen";
 import type { AssistantErrorCode, AssistantReply } from "@/lib/begleitung/protocol";
 import { clockNow, isSameReply } from "@/lib/begleitung/localAnswers";
@@ -85,22 +86,18 @@ export function useAskAssistant({ data, today, ready, chat, setChat, setInput, s
     result = { ...result, ops: instant.rest, reply: instant.notes.length ? `${result.reply}\n${instant.notes.join(" ")}` : result.reply };
     // Machen statt fragen: nur kleine, sichere Dinge → sofort, mit „Rückgängig“ und in „Mia hat schon …“
     let done: (() => void) | null = instant.undo ?? null;
-    // Mehreres auf einmal: nur „Erledigt.“ + kompakte Übersicht (die KI bekommt die Liste im Verlauf)
-    let overview: DoneGroup[] | null = null;
-    // Ein neuer Termin bzw. eine neue Aufgabe: Raum-Chip „Familie ⌄“ unter der Bestätigung (A-034)
-    let raum: ChatTurnView["raum"] | null = null;
+    // Ergebnis-Karten (A-037): je Eintrag eine Karte unter Mias kurzem Satz (die KI bekommt die Liste im Verlauf);
+    // Termine und Aufgaben tragen dort „Termin · Familie ⌄“ zum Ändern (A-034)
+    let karten: Ergebnis[] = [];
     // „Was ist da?“ (Tafel 102) und „Einsprechen“ (Tafel 110): erst als Vorschau, nie sofort
     if (result.ops.length && !chat.proposal && !isEinkaufFrage(question) && !isImHausFrage(question) && result.ops.every(isSafeOp)) {
       const committed = commitOps(d, result.ops, new Set(result.ops.map((op) => op.id)), question);
       noteMiaDone(result.ops, committed.undo);
       const timerUndo = done;
       done = timerUndo ? () => (committed.undo(), timerUndo()) : committed.undo;
-      raum = eingetragenMitRaum(result.ops);
-      const groups = doneGroups(result.ops);
-      if (doneCount(groups) >= 2) {
-        overview = groups;
-        result = { ...result, ops: [], reply: shortDoneReply(result.reply, doneCount(groups)) };
-      } else result = { ...result, ops: [], reply: committed.notes.length ? `${result.reply}\n${committed.notes.join(" ")}` : result.reply };
+      karten = ergebnisse(result.ops);
+      if (karten.length >= 2) result = { ...result, ops: [], reply: shortDoneReply(result.reply, karten.length) };
+      else result = { ...result, ops: [], reply: committed.notes.length ? `${result.reply}\n${committed.notes.join(" ")}` : result.reply };
     }
     const tipsWhere = result.tips?.length ? unlockTips() : null;
     const turn: ChatTurnView = {
@@ -110,8 +107,7 @@ export function useAskAssistant({ data, today, ready, chat, setChat, setInput, s
       ...(result.chips?.length ? { chips: result.chips } : {}),
       ...(result.tips?.length ? { tips: result.tips } : {}),
       ...(done ? { undo: done, quick: true } : {}),
-      ...(raum && !overview ? { raum } : {}),
-      ...(overview ? { overview, send: `${result.reply} (${doneSummary(overview)})` } : {}),
+      ...(karten.length ? { ergebnisse: karten, send: `${result.reply} (${ergebnisSummary(karten)})` } : {}),
     };
     setChat((c) => {
       // Bisher abgewählte Punkte bleiben abgewählt, neue sind ausgewählt
@@ -138,8 +134,8 @@ export function useAskAssistant({ data, today, ready, chat, setChat, setInput, s
       undo = committed.undo;
       notes = [...notes, ...committed.notes];
     }
-    const raum = eingetragenMitRaum(instant.rest);
-    const turn: ChatTurnView = { role: "assistant", text: notes.length ? `${s.reply}\n${notes.join(" ")}` : s.reply, undo, quick: true, ...(raum ? { raum } : {}) };
+    const karten = ergebnisse(instant.rest);
+    const turn: ChatTurnView = { role: "assistant", text: notes.length ? `${s.reply}\n${notes.join(" ")}` : s.reply, undo, quick: true, ...(karten.length ? { ergebnisse: karten } : {}) };
     setChat((c) => ({ ...c, turns: [...c.turns, { role: "user", text: display ?? question, send: display ? question : undefined }, turn] }));
     tempoMarke("fertig");
     const abbrechen = new AbortController();

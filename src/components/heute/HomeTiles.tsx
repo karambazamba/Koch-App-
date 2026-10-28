@@ -47,6 +47,7 @@ import { KochideeKnopf } from "@/components/essen/kochtipp/KochideeKnopf";
 import { DishTile } from "@/components/essen/DishTile";
 import { KachelPille } from "@/components/ui/KachelPille";
 import { helperName } from "@/lib/einstellungen/profile";
+import { leuchtSchluessel } from "@/lib/heute/aufleuchten";
 
 const HALF = `${TILE} flex min-h-[92px] flex-col p-3.5`;
 const HALF_LABEL = `flex min-w-0 items-center gap-1.5 ${TILE_LABEL}`;
@@ -157,6 +158,7 @@ function ShopRow({ shop, label, names, count, href, products, demo }: { shop: st
         aria-label={`${label}: ${count} ${count === 1 ? "Sache" : "Sachen"}${demo ? " · Beispiel" : ""}`}
         data-zeile
         data-laden-zeile
+        data-leuchte={names.map((n) => leuchtSchluessel("einkauf", n)).join(" ")}
       >
         <span className="absolute inset-y-0 left-0 w-1" style={{ background: tone }} aria-hidden />
         <span className="min-w-0 flex-1 break-words text-[14px] font-bold leading-tight">{label}</span>
@@ -194,7 +196,7 @@ function ShopRows({ rows, rest, ohne, mine, products, demo = false }: TileRows &
         </Link>
       )}
       {mine && ohne.length > 0 && (
-        <Link href="/einkaufsliste#ohne-laden" className="flex min-h-[30px] flex-wrap items-center gap-x-1 py-0.5 text-[12.5px] font-semibold leading-tight text-muted" data-zeile data-ohne-laden-zeile>
+        <Link href="/einkaufsliste#ohne-laden" className="flex min-h-[30px] flex-wrap items-center gap-x-1 py-0.5 text-[12.5px] font-semibold leading-tight text-muted" data-zeile data-ohne-laden-zeile data-leuchte={ohne.map((n) => leuchtSchluessel("einkauf", n)).join(" ")}>
           <span className="whitespace-nowrap">{ohneLadenZeile(ohne.length)} ·</span> <span className="whitespace-nowrap font-bold text-accent-strong">Sortieren ›</span>
         </Link>
       )}
@@ -277,7 +279,7 @@ export function NotesTile({ size = "M" }: { size?: TileSize }) {
           <QuickButton icon={PenLine} label="Schnellnotiz schreiben" onClick={() => openQuick({ kind: "notiz" })} />
         </span>
         {size === "S" && top && (
-          <Link href={`/notizen/bearbeiten?id=${top.id}`} className="-mt-1 flex min-h-[30px] flex-col text-[13px] leading-[1.35]" data-zeile data-notiz-zeile>
+          <Link href={`/notizen/bearbeiten?id=${top.id}`} className="-mt-1 flex min-h-[30px] flex-col text-[13px] leading-[1.35]" data-zeile data-notiz-zeile data-leuchte={leuchtSchluessel("notiz", top.id)}>
             <span className="flex items-center gap-1 font-bold">
               {top.pinned && <Pin className="h-3 w-3 shrink-0 text-tile-accent" strokeWidth={2.25} aria-hidden />}
               <span className="truncate" data-freitext>{top.title}</span>
@@ -289,7 +291,7 @@ export function NotesTile({ size = "M" }: { size?: TileSize }) {
           <ul className="-mt-1 flex flex-col" aria-label="Notizen">
             {rows.map((r) => (
               <li key={r.id}>
-                <Link href={`/notizen/bearbeiten?id=${r.id}`} className="flex min-h-[30px] items-center gap-1.5 text-[13.5px]" data-zeile data-notiz-zeile>
+                <Link href={`/notizen/bearbeiten?id=${r.id}`} className="flex min-h-[30px] items-center gap-1.5 text-[13.5px]" data-zeile data-notiz-zeile data-leuchte={leuchtSchluessel("notiz", r.id)}>
                   {r.pinned ? <Pin className="h-3.5 w-3.5 shrink-0 text-tile-accent" strokeWidth={2.25} aria-hidden /> : <StickyNote className="h-3.5 w-3.5 shrink-0 text-tile-accent" strokeWidth={2} aria-hidden />}
                   <span className="min-w-0 flex-1 truncate" data-freitext>
                     <span className="font-semibold">{r.title}</span>

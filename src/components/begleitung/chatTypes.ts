@@ -13,7 +13,7 @@ import type { TipView } from "@/lib/tipps/model";
 import type { CookCard } from "@/lib/essen/kochtipp/pick";
 import type { IdeaTalk } from "@/lib/essen/kochtipp/idee";
 import type { LinkRezept } from "@/lib/essen/rezeptLink/lesen";
-import type { DoneGroup } from "@/lib/begleitung/uebersicht";
+import type { Ergebnis } from "@/lib/begleitung/ergebnis";
 
 export type ChatTurnView = ChatTurn & {
   /** Fehlermeldung – wird nicht an die KI geschickt */
@@ -40,10 +40,10 @@ export type ChatTurnView = ChatTurn & {
   deleted?: boolean;
   /** Mia hat es sofort erledigt: „Rückgängig“ steht 10 Sekunden da */
   quick?: boolean;
-  /** Eben eingetragener Termin bzw. eingetragene Aufgabe: Raum-Chip „Familie ⌄“ zum Ändern (A-034) */
+  /** Eben eingetragener Termin bzw. eingetragene Aufgabe (Regeln ohne KI): als Ergebnis-Karte mit „Termin · Familie ⌄“ (A-034/A-037) */
   raum?: { id: string; title: string; raum: Room; typ: "termin" | "aufgabe" };
-  /** Mehreres auf einmal erledigt: kompakte Übersicht statt Aufzählung (mit „Alles rückgängig“) */
-  overview?: DoneGroup[];
+  /** Was Mia eben eingetragen hat: je Eintrag eine Ergebnis-Karte, darunter einmal „Rückgängig“ (A-037, Tafel 126) */
+  ergebnisse?: Ergebnis[];
   /** Im Supermarkt: Ideen zum Produkt, darunter Liste und "Statt <Tag>" */
   market?: MarketAnswer & { target: MarketTarget | null };
   /** Backwunsch: passende Rezepte mit "Zusammen backen" */
@@ -63,7 +63,8 @@ export type ChatTurnView = ChatTurn & {
   idea?: { kind: "start" | "ergebnis"; cards: CookCard[]; planned: string | null; keywords?: string[]; remembered?: string; persons?: number; /** „Oder worauf hast du Lust?“ – Vorschlags-Knöpfe */ suggest?: string[] };
 };
 
-export type Proposal = { ops: ChangeOp[]; selected: Set<string> };
+/** `uebernommen`: in der Karten-Vorschau schon einzeln übernommen (grün „Eingetragen“) */
+export type Proposal = { ops: ChangeOp[]; selected: Set<string>; uebernommen?: string[] };
 /** `spontan`: Spontan kochen ("mit dem, was da ist") mit gewählten Filtern; null = aus */
 /** `since`: ab dieser Nachricht läuft das aktuelle Gespräch (Mia-Ansicht zeigt nur das, „Verlauf“ alles) */
 /** `kochtipp`: offene Kochidee – Erzähltes, schon Gezeigtes, heute geplantes Gericht; `fresh` = gerade geöffnet, Vorschläge folgen */

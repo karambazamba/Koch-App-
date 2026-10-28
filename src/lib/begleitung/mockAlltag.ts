@@ -250,24 +250,36 @@ function raumHilfenAusKontext(system: string): RaumHilfen {
   return { gelernt, arbeitWorte };
 }
 
+/**
+ * Wie die echte KI (Werkzeug: „familie (Kinder …)“): ein Termin MIT einem
+ * Kind aus dem Haushalt („Zahnarzt mit Jonne“) ist Familie, außer der Satz
+ * sagt „nur für mich“/„privat“ (Tafel 126).
+ */
+function mitKind(use: { name: string; input: Record<string, unknown> }, kinder: string[], latest: string) {
+  const who = Array.isArray(use.input.personen) ? (use.input.personen as string[]) : [];
+  const kind = use.name === "termin_anlegen" && use.input.raum === "ich" && who.some((p) => kinder.includes(p));
+  return kind && !/nur für mich|nur ich|privat|persönlich/i.test(latest) ? { ...use, input: { ...use.input, raum: "familie" } } : use;
+}
+
 export function calendarUses(latest: string, system: string): Anthropic.Beta.BetaMessage | null {
   const today = system.match(/^Heute: .*\((\d{4}-\d{2}-\d{2})\)/m)?.[1];
   if (!today) return null;
   const hilfen = raumHilfenAusKontext(system);
   // Personen aus dem Profil ("- Jonne; Kind, 6 J.") – Name als Kennung
   const persons = [...system.matchAll(/^- ([^;\n]+); (?:Kind|erwachsen)/gm)].map((m) => ({ id: m[1].trim(), name: m[1].trim() }));
+  const kinder = [...system.matchAll(/^- ([^;\n]+); Kind/gm)].map((m) => m[1].trim());
   // „Sag Lisa, sie soll den Turnbeutel waschen“ → Aufgabe für Lisa (Tafel 52 B)
   const give = parseGiveTask(latest);
   if (give) return tools([{ name: "aufgabe_anlegen", input: { titel: give.title, an: give.name } }]);
   // Mehrere Termine in einem Satz: je einer
   const teile = splitTermine(latest, today);
   if (teile.length > 1) {
-    const drafts = teile.map((t) => parseCalendar(t, today, persons, hilfen)).flatMap((c) => (c?.kind === "create" ? [draftInput(c.draft, today)] : []));
+    const drafts = teile.map((t) => parseCalendar(t, today, persons, hilfen)).flatMap((c) => (c?.kind === "create" ? [mitKind(draftInput(c.draft, today), kinder, latest)] : []));
     if (drafts.length === teile.length) return tools(drafts);
   }
   const cmd = parseCalendar(latest, today, persons, hilfen);
   if (!cmd) return null;
-  if (cmd.kind === "create") return tools([draftInput(cmd.draft, today)]);
+  if (cmd.kind === "create") return tools([mitKind(draftInput(cmd.draft, today), kinder, latest)]);
   if (cmd.kind === "show") return tools([cmd.days > 1 ? { name: "woche_anzeigen", input: { ab: cmd.from, tage: cmd.days, label: cmd.label } } : { name: "tag_anzeigen", input: { datum: cmd.from, label: cmd.label } }]);
   if (cmd.kind === "free") return tools([{ name: "tag_anzeigen", input: { datum: cmd.date, frei: [cmd.from, cmd.to], label: cmd.label } }]);
   // Ändern: Eintrag über den Titel finden (ungefähr)

@@ -38,6 +38,8 @@
   --color-good: var(--app-good);
   --color-good-soft: var(--app-good-soft);
   --color-good-ink: var(--app-good-ink);
+  --color-good-pill: var(--app-good-pill);
+  --color-on-good-pill: var(--app-on-good-pill);
   --color-warn-soft: var(--app-warn-soft);
   --color-warn-ink: var(--app-warn-ink);
   --color-work: var(--app-work);
@@ -168,6 +170,12 @@
   --app-good: #2e9e6b;
   --app-good-soft: #e8f6ee;
   --app-good-ink: #23794f;
+  /* Grüne Pille der Ergebnis-Karten (A-037): Schrift ≥ 4,5:1 */
+  --app-good-pill: #23794f;
+  --app-on-good-pill: #ffffff;
+  /* Aufleuchten in der Kachel (A-037): weicher oranger Ring und Hauch Fläche */
+  --app-leuchten: inset 0 0 0 2px var(--app-accent), 0 0 0 3px var(--app-accent-soft);
+  --app-leuchten-flaeche: rgb(242 107 33 / 0.12);
   --app-warn-soft: #fff3c4;
   --app-warn-ink: #6f5300;
   --app-work: #4c6fd9;
@@ -339,6 +347,9 @@
   --app-good: #4cc58d;
   --app-good-soft: #1d2d25;
   --app-good-ink: #7fdcb0;
+  --app-good-pill: #4cc58d;
+  --app-on-good-pill: #0d2117;
+  --app-leuchten-flaeche: rgb(255 138 76 / 0.16);
   --app-warn-soft: #3a3217;
   --app-warn-ink: #f0d27a;
   --app-work: #7f9bf0;
@@ -488,6 +499,9 @@
     --app-good: #4cc58d;
     --app-good-soft: #1d2d25;
     --app-good-ink: #7fdcb0;
+    --app-good-pill: #4cc58d;
+    --app-on-good-pill: #0d2117;
+    --app-leuchten-flaeche: rgb(255 138 76 / 0.16);
     --app-warn-soft: #3a3217;
     --app-warn-ink: #f0d27a;
     --app-work: #7f9bf0;
@@ -1093,6 +1107,22 @@ body {
 
 /* Mia stellt eine Kachel vor: leichter Ring, solange die Karte steht */
 [data-vorstellen] > div { border-radius: 20px; box-shadow: 0 0 0 4px var(--app-accent-soft), 0 0 0 5px var(--app-accent); }
+
+/* Ergebnis-Karten unter Mias Satz (A-037): nacheinander weich einblenden (Abstand 0,15 s am Element) */
+@keyframes ergebnis-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes ergebnis-fade { from { opacity: 0; } }
+.ergebnis-karte { animation: ergebnis-in 0.8s cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+/* Aufleuchten in der Kachel (A-037): einmal 1,5 s weich ein- und ausblenden (nur opacity) */
+@keyframes leuchten { 0% { opacity: 0; } 35% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes leuchten-still { 0%, 70% { opacity: 1; } 100% { opacity: 0; } }
+[data-leuchtet] { position: relative; }
+[data-leuchtet]::after { content: ""; position: absolute; inset: 0; z-index: 1; border-radius: inherit; pointer-events: none; background: var(--app-leuchten-flaeche); box-shadow: var(--app-leuchten); opacity: 0; animation: leuchten 1.5s cubic-bezier(0.16, 1, 0.3, 1) both; }
+@media (prefers-reduced-motion: reduce) {
+  .ergebnis-karte { animation: ergebnis-fade 0.3s ease-out both; }
+  /* nur kurz hervorgehoben, ohne Bewegung */
+  [data-leuchtet]::after { animation: leuchten-still 1.5s steps(1, end) both; }
+}
 
 /* Spendentopf: eine Münze fällt in den Topf */
 @keyframes pot-coin { 0% { transform: translateY(-14px); opacity: 0; } 30% { opacity: 1; } 80% { transform: translateY(22px); opacity: 1; } 100% { transform: translateY(24px); opacity: 0; } }

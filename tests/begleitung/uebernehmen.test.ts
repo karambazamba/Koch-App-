@@ -68,18 +68,19 @@ describe("commitOps", () => {
     expect(m.shopping.loadShoppingSettings().itemShops.feta).toBeUndefined();
   });
 
-  it("Mehreres auf einmal: Übersicht gruppiert, „Alles rückgängig“ nimmt alles dieser Antwort zurück", async () => {
-    const { doneGroups } = await import("@/lib/begleitung/uebersicht");
+  it("Mehreres auf einmal: je Eintrag eine Ergebnis-Karte, „Rückgängig“ nimmt alles dieser Antwort zurück", async () => {
+    const { ergebnisse, unterzeile } = await import("@/lib/begleitung/ergebnis");
     const ops: ChangeOp[] = [
       { id: "1", type: "add_shopping", weekStart: WOCHEN.aktuell, name: "Milch", amount: "", section: "kuehlregal" },
       { id: "2", type: "upsert_entry", isNew: true, entry: aufgabe({ title: "Kita-Formular" }) },
       { id: "3", type: "upsert_entry", isNew: true, entry: termin({ title: "Zahnarzt", date: "2026-10-26", start: "10:00" }) },
       { id: "4", type: "add_shopping", weekStart: WOCHEN.aktuell, name: "Brot", amount: "", section: "brot" },
     ];
-    expect(doneGroups(ops).map((g) => [g.label, g.items.join(" · ")])).toEqual([
-      ["Termine", "Mo 10:00 Zahnarzt"],
-      ["Aufgaben", "Kita-Formular"],
-      ["Einkaufsliste", "Milch · Brot"],
+    expect(ergebnisse(ops).map((k) => [k.text, unterzeile(k, "Familie")])).toEqual([
+      ["Milch", "Einkauf · für alle"],
+      ["Kita-Formular", "Aufgabe · Familie"],
+      ["Mo 10:00 Zahnarzt", "Termin · Familie"],
+      ["Brot", "Einkauf · für alle"],
     ]);
     const r = m.client.commitOps(daten({ entries: [] }), ops, alle(ops), "Pack Milch und Brot …");
     expect(m.entries.loadEntries().map((e) => e.data.title).sort()).toEqual(["Kita-Formular", "Zahnarzt"]);

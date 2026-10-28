@@ -24,6 +24,8 @@ import { useVorschau } from "@/components/essen/vorschau/useVorschau";
 import type { Kochidee } from "@/components/essen/kochtipp/useKochidee";
 import type { ChatState, ChatTurnView } from "@/components/begleitung/chatTypes";
 import { ProposalCard } from "@/components/begleitung/ProposalCard";
+import { ErgebnisKarten } from "@/components/begleitung/ErgebnisKarten";
+import { ergebnisse, vorschauAlsKarten } from "@/lib/begleitung/ergebnis";
 import { ImHausKarte } from "@/components/vorrat/ImHausKarte";
 import { isImHausVorschlag } from "@/lib/vorrat/reinsprechen";
 import { EinsprechenKarte, EinsprechenLive } from "@/components/einkauf/EinsprechenKarte";
@@ -71,6 +73,8 @@ type Props = {
   onSubmit: (text: string) => void;
   onAsk: (text: string) => void;
   onApply: (selected: Set<string>) => void;
+  /** Karten-Vorschau: eine Karte übernehmen (A-037) */
+  onApplyOne?: (opId: string) => void;
   onClose: () => void;
   /** Mia hört nochmal zu („Ändern“ in „Hab ich so verstanden:“) */
   onListen?: () => void;
@@ -93,7 +97,7 @@ type Props = {
 /** Mia stellt sich nie vor: „Was steht an?“, morgens (5–11 Uhr) „Moin! Was steht an?“ */
 export const greetingText = (hour: number, minute = 0) => (hour >= 22 || hour < 6 ? miaSatz("nachtWach", null, () => (minute % 4) / 4) : hour >= 5 && hour < 11 ? "Moin! Was steht an?" : "Was steht an?");
 
-export function ChatHistory({ scrollRef, inputRef, status, data, voice, consentLater, onConsentLater, chat, setChat, busy, streaming, speakingId, tipsOn, adjusting, setAdjusting, spontan, kochidee, market, rules, onSubmit, onAsk, onApply, onClose, onListen, from = 0, showGreeting = true, topic, heard, heardWaits = false, waiting = "", children }: Props) {
+export function ChatHistory({ scrollRef, inputRef, status, data, voice, consentLater, onConsentLater, chat, setChat, busy, streaming, speakingId, tipsOn, adjusting, setAdjusting, spontan, kochidee, market, rules, onSubmit, onAsk, onApply, onApplyOne, onClose, onListen, from = 0, showGreeting = true, topic, heard, heardWaits = false, waiting = "", children }: Props) {
   const { ideasFor, stockFor, headingFor, speechFor, takeIdea, moreIdeas, adjusting2, setAdjusting2, applyFilters, acceptUnsure } = spontan;
   /** Einen Punkt des offenen Vorschlags an- oder abwählen */
   const toggleOp = (id: string) =>
@@ -122,6 +126,8 @@ export function ChatHistory({ scrollRef, inputRef, status, data, voice, consentL
     window.setTimeout(() => el.scrollIntoView({ block: "start", behavior: "smooth" }), 400);
   };
   const greeting = showGreeting && data;
+  // Vorschau als Ergebnis-Karten (A-037): nur einfache neue Dinge, nicht in „Was ist da?“/„Einsprechen“
+  const karten = Boolean(chat.proposal && data && !busy && onApplyOne && !chat.imHaus && !chat.einkauf && vorschauAlsKarten(chat.proposal.ops) && ergebnisse(chat.proposal.ops).length === chat.proposal.ops.length);
   const stick = useStickToBottom(scrollRef);
   // Vorschläge erst anschauen, dann nehmen (A-038): Karte antippen = Rezept-Vorschau
   const vorschau = useVorschau();
@@ -267,7 +273,16 @@ export function ChatHistory({ scrollRef, inputRef, status, data, voice, consentL
           {chat.proposal && data && !busy && chat.einkauf && isEinkaufVorschlag(chat.proposal.ops) && (
             <EinsprechenKarte ops={chat.proposal.ops} selected={chat.proposal.selected} onToggle={toggleOp} onApply={() => chat.proposal && onApply(chat.proposal.selected)} onMore={() => onListen?.()} />
           )}
-          {chat.proposal && data && !busy && !(chat.imHaus && isImHausVorschlag(chat.proposal.ops)) && !(chat.einkauf && isEinkaufVorschlag(chat.proposal.ops)) && (
+          {/* Große Dinge als dieselben Ergebnis-Karten mit „Übernehmen“ (A-037, wie im Clip) */}
+          {karten && chat.proposal && (
+            <ErgebnisKarten
+              key={chat.proposal.ops.map((op) => op.id).join(" ")}
+              karten={ergebnisse(chat.proposal.ops)}
+              onClose={onClose}
+              vorschau={{ uebernommen: chat.proposal.uebernommen ?? [], onUebernehmen: (id) => onApplyOne?.(id) }}
+            />
+          )}
+          {chat.proposal && data && !busy && !karten && !(chat.imHaus && isImHausVorschlag(chat.proposal.ops)) && !(chat.einkauf && isEinkaufVorschlag(chat.proposal.ops)) && (
             <ProposalCard
               data={data}
               proposal={chat.proposal}
