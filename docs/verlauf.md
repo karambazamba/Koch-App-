@@ -3017,7 +3017,7 @@ Fehler in `docs/aufraeumen-nachher.md`.
   April 19 °C Sonnenbrille, nachts nichts, Regen schlägt Sonne, Moment,
   Logo, Token und reduzierte Bewegung).
 
-## Einkauf neu – einsprechen oder aussuchen (vX, Tafel 110/111)
+## Einkauf neu – einsprechen oder aussuchen (v0.142.0, Tafel 110/111)
 - Problem (Screenshots 28.10. 08:24): die Einkaufsliste war zu voll (Woche,
   Reiter, Einkaufsmodus-Knopf, Abteilungen, Zuletzt gekauft, Gerichte ohne
   Zutaten, Hinweistexte). Die Kachel war klar – so ist jetzt die Seite.

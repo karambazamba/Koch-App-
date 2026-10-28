@@ -1,6 +1,6 @@
 # Einkauf
 
-Kurz: Die Seite „Einkauf“ ist so klar wie die Startseiten-Kachel (vX, Tafel
+Kurz: Die Seite „Einkauf“ ist so klar wie die Startseiten-Kachel (v0.142, Tafel
 110/111): oben **Einsprechen** (Mia hört zu und macht die Liste daraus) und
 **Aussuchen** (erst Laden, dann Sachen antippen), darunter „Meine Läden“ als
 große farbige Karten und – nur wenn nötig – „Noch ohne Laden“ zum Antippen
@@ -89,7 +89,7 @@ lernt und merkt sich eure Produkte. Immer sichtbar (kein Baustein).
 - Artikel aus Rezepten werden nie gespeichert, nur ihr Häkchen (Schlüssel
   „zutat|einheitenfamilie“) – so übersteht es Änderungen am Plan.
 - `wasgibts.einkaufsansicht` v2 (pro Gerät, nicht in der Sicherung):
-  `{ version: 2, chip: "laden:<Name>" | … }` – seit vX der zuletzt aktive
+  `{ version: 2, chip: "laden:<Name>" | … }` – seit v0.142 der zuletzt aktive
   Laden in „Aussuchen“ (gleiches Format wie früher der Chip der Liste, kein
   Formatwechsel; „alle“/„ohne“/„meist“ aus alten Ständen = erster eigener
   Laden). Migration `migrateShopView` (v1 → v2) bleibt.
@@ -98,7 +98,7 @@ lernt und merkt sich eure Produkte. Immer sichtbar (kein Baustein).
 
 ## So verhält es sich
 
-- **Seite „Einkauf“ (vX, Tafel 110, Bild 1)**: Kopf „‹ Heute“, „···“, Titel
+- **Seite „Einkauf“ (v0.142, Tafel 110, Bild 1)**: Kopf „‹ Heute“, „···“, Titel
   „Einkauf“ (kein ＋; bei nächster Woche leise „Nächste Woche · …“).
   - Oben zwei große Knöpfe nebeneinander: „Einsprechen · Einfach aufzählen“
     (Orange, Mikro) und „Aussuchen · Suchen & antippen“ (weiß, Lupe).
@@ -222,7 +222,7 @@ lernt und merkt sich eure Produkte. Immer sichtbar (kein Baustein).
   Chips „Noch ohne Laden“ (`DEMO_OHNE`: Spinat, Haferflocken), leise
   „Beispiel“; nur zum Anschauen (kein Link, kein Ziehen), nichts in echten
   Speichern.
-- **Früher (bis vX)**: Wochen-Pfeile, Laden-Chip-Reihe, Einkaufsmodus „Bei
+- **Früher (bis v0.141)**: Wochen-Pfeile, Laden-Chip-Reihe, Einkaufsmodus „Bei
   REWE“, Abteilungs-Überschriften, Hinweiszeilen, Katalog „Mehr hinzufügen“,
   „Bald wieder fällig“, „Hast du bestimmt im Haus“ – siehe `docs/verlauf.md`.
 - **Welche Woche**: Die Planungswoche beginnt am Einkaufstag (Profil

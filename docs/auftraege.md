@@ -12,7 +12,7 @@ Status: offen · in Arbeit · fertig vX.Y · zurückgestellt (Grund)
   morgens (v0.136), Aufgaben „alles ist heute“ (v0.137), Arbeitsweise,
   Pinnwand als Kühlschranktür (v0.138), Kachel-Farben (v0.139), Adresse
   mia.karamba-eis.de (v0.140), Mia-Zubehör Sonne (v0.140), Erster Start rund +
-  Zugangscode nachsichtig (v0.141).
+  Zugangscode nachsichtig (v0.141), Einkauf neu mit Nachtrag (v0.142).
 - **Merge-Reihenfolge (Sortier-Auftrag 28.10., je bauen → testen → PR → mergen,
   dann der nächste auf dem neuesten `main`):**
   1. A-027 Erster Start rund (mit A-031 Zugangscode nachsichtig, 10 Versuche)
@@ -36,7 +36,9 @@ Status: offen · in Arbeit · fertig vX.Y · zurückgestellt (Grund)
   Mia-Knopf an einem sonnigen, kühlen Tag mittags (kleine Sonne, dreht sich
   einmal), ab 18 °C Sonnenbrille, abends nichts. Erster Start auf einem
   frischen Handy: Hallo mit Häkchen, „Für wen“, Zugangscode („Fast geschafft.“,
-  Groß/klein egal), danach die Karte „Mia auf den Home-Bildschirm“.
+  Groß/klein egal), danach die Karte „Mia auf den Home-Bildschirm“. Einkauf: leerer Laden
+  („Oft bei Edeka“), Abhaken im Laden → „Schon im Wagen“ → „Einkauf fertig“,
+  Lasagne einplanen (Packungen statt 250 ml), „Zucchini“ zweimal = eine Zeile.
 
 ## Liste
 
@@ -59,7 +61,7 @@ Status: offen · in Arbeit · fertig vX.Y · zurückgestellt (Grund)
 | A-015 | Arbeitsweise: Warteschlange, Tafeln, Pakete, gestaffelte Tests, CLAUDE.md schlank | – | fertig |
 | A-016 | Pinnwand als Kühlschranktür – Zettel, die bleiben, Kachel als Fächer (ersetzt „Pinnwand – nichts verschwindet ungefragt“; nebenbei Einkauf-Kachel-Kopf) | `tafel-106.png`, `tafel-107.png` | fertig v0.138 |
 | A-017 | Kachel-Farben neu + einfach wählbar | `tafel-108.png` | fertig v0.139 |
-| A-018 | Einkauf neu – einsprechen oder aussuchen, Läden wie die Kachel, Ohne-Laden reinziehen (+ Nachtrag Aussuchen in Abschnitten; + Nachtrag Laden leer, „Schon im Wagen“, Doppelte zusammenfassen, Rezeptmengen; ersetzt „Einkauf so einfach wie die Kachel“ und „Einkaufs-Diktat“) | `tafel-111.png`, Tafel 110 (kein Bild) | gebaut, wartet (Einkauf-Durchklick grün) |
+| A-018 | Einkauf neu – einsprechen oder aussuchen, Läden wie die Kachel, Ohne-Laden reinziehen (+ Nachtrag Aussuchen in Abschnitten; + Nachtrag Laden leer, „Schon im Wagen“, Doppelte zusammenfassen, Rezeptmengen; ersetzt „Einkauf so einfach wie die Kachel“ und „Einkaufs-Diktat“) | `tafel-111.png`, Tafel 110 (kein Bild) | fertig v0.142 |
 | A-019 | Mia im Gespräch deutlich schneller und flüssiger (Messen, Stille 1,2 s, Sofort-Weg, eine Runde, sofort sprechen, „Mhm“, schlanker Kontext, ElevenLabs schnell; Nachtrag: Sofort-Regeln für Kurzsätze ≥ 40 Prüfstand-Sätze/98 %, Mikro-Wachhund höchstens ein Neustart + „Mikro ist gerade belegt“) | – | gebaut, wartet (Durchklick Stimme/Ohr wird repariert) |
 | A-020 | Neue Aufgabe & Termin – ein Feld, ein Fenster je Art (Raum „Ich“ durch A-021 ersetzt; ersetzt „Neue Aufgabe / neuer Termin – ein Feld, fertig“ und beide Nachträge) | `tafel-114.png` | gebaut, wartet |
 | A-021 | Termine – Raumauswahl Familie / Geschäftlich wie bei Aufgaben (ersetzt Raum „Ich“ aus A-020; selbst wieder ersetzt durch A-034: „Ich“ kommt zurück, „Arbeit“ statt „Geschäftlich“) | – | gebaut, wird mit A-034 umgebaut |
