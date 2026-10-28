@@ -181,4 +181,4 @@ Einmal pro Woche statt Pflegen: Sonntag ab 17 Uhr steht in der Jetzt-Karte
   Testmodus, Prüfstand (≥ 8 Sätze, `nieName`), Schnelleingabe (Fehler 28.10.),
   Seite (über der Leiste), Vergessen in den neuen Gruppen.
 - Gekocht: `tests/essen/nachDemEssen.test.ts`.
-- Durchklick: Abläufe `imHaus`, `kuehlcheck` und `imHausEssen` in `e2e/ablaeufe/essen.mjs`.
+- Durchklick: Abläufe `imHaus`, `imHausReinsprechen`, `kuehlcheck` und `imHausEssen` in `e2e/ablaeufe/essen.mjs`.
