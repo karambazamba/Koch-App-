@@ -312,8 +312,9 @@ function KleinKopf({ icon: Icon, label, href, more = 0, knopf }: { icon: typeof 
 /**
  * NOTIZEN je Größe (Raster): XS = EINE Zeile (neueste bzw. angeheftete Notiz,
  * sonst „Schnell notieren …“ wie überall), S und M = bis 3 Zeilen „Titel · Anfang“
- * (angeheftete zuerst), der Rest als „+N“. Kopf = Notizen-Seite, Zeile =
- * genau diese Notiz, Stift = Schnellnotiz. Beispiel-Tag: „WLAN: Tohuus2026“.
+ * (angeheftete zuerst), der Rest als „+N“. Ganze Kachel (auch Zeilen und
+ * Leertext) = Notizen-Seite, nur der Stift = neue Notiz (A-059, Tafel 144).
+ * Beispiel-Tag: „WLAN: Tohuus2026“.
  */
 export function NotesTile({ size = "XS", demo = false }: { size?: TileSize; demo?: boolean }) {
   const notes = useNotes();
@@ -326,7 +327,8 @@ export function NotesTile({ size = "XS", demo = false }: { size?: TileSize; demo
   const showDemo = demo && !hasOwn;
   const rows = showDemo ? [{ id: "", title: DEMO_NOTIZ.title, line: DEMO_NOTIZ.line, pinned: false }] : notizZeilen(own, size);
   const more = showDemo ? 0 : Math.max(0, own.length - rows.length);
-  const href = (id: string) => (id ? `/notizen/bearbeiten?id=${id}` : "/notizen");
+  // Egal ob leer oder voll: Antippen öffnet immer die Notizen-Seite (A-059)
+  const href = "/notizen";
   const pen = <QuickButton icon={PenLine} label="Schnellnotiz schreiben" onClick={() => openQuick({ kind: "notiz" })} />;
   if (size === "XS") {
     const top = rows[0];
@@ -336,15 +338,15 @@ export function NotesTile({ size = "XS", demo = false }: { size?: TileSize; demo
         <KleinKopf icon={StickyNote} label="Notizen" href="/notizen" knopf={pen} />
         {top ? (
           // Rechts Platz für das kleine Wasserzeichen (A-048): der Titel kürzt sich davor
-          <Link href={href(top.id)} className={`${XS_LINE} gap-1 pr-7 @max-[320px]:pr-0`} data-zeile data-notiz-zeile>
+          <Link href={href} className={`${XS_LINE} gap-1 pr-7 @max-[320px]:pr-0`} data-zeile data-notiz-zeile>
             {top.pinned && <Pin className="h-3 w-3 shrink-0 text-tile-accent" strokeWidth={2.25} aria-hidden />}
             <span className="kachel-frei truncate" data-freitext>{top.title}</span>
           </Link>
         ) : (
           // Derselbe Leertext wie in S/M und auf der Notizen-Seite (Tafel 140), ohne Stift im Text – der Stift ist der Knopf oben rechts
-          <button type="button" onClick={() => openQuick({ kind: "notiz" })} className="flex min-h-[30px] min-w-0 items-center pr-8 text-left text-[13px] font-semibold leading-[1.2] text-muted @max-[320px]:pr-0" data-zeile>
+          <Link href={href} className="flex min-h-[30px] min-w-0 items-center pr-8 text-left text-[13px] font-semibold leading-[1.2] text-muted @max-[320px]:pr-0" data-zeile data-notiz-leer>
             <span className="kachel-frei" data-platzhalter-text>{NOTIZ_LEERTEXT}</span>
-          </button>
+          </Link>
         )}
       </section>
     );
@@ -357,7 +359,7 @@ export function NotesTile({ size = "XS", demo = false }: { size?: TileSize; demo
         <ul className="flex flex-col" aria-label="Notizen">
           {rows.map((r) => (
             <li key={r.id || "beispiel"}>
-              <Link href={href(r.id)} className="flex min-h-[30px] items-center gap-1.5 text-[13.5px]" data-zeile data-notiz-zeile>
+              <Link href={href} className="flex min-h-[30px] items-center gap-1.5 text-[13.5px]" data-zeile data-notiz-zeile>
                 {r.pinned ? <Pin className="h-3.5 w-3.5 shrink-0 text-tile-accent" strokeWidth={2.25} aria-hidden /> : <StickyNote className="h-3.5 w-3.5 shrink-0 text-tile-accent" strokeWidth={2} aria-hidden />}
                 <span className="min-w-0 flex-1 truncate" data-freitext>
                   <span className="font-semibold">{r.title}</span>
@@ -368,9 +370,9 @@ export function NotesTile({ size = "XS", demo = false }: { size?: TileSize; demo
           ))}
         </ul>
       ) : (
-        <button type="button" onClick={() => openQuick({ kind: "notiz" })} className="flex min-h-[30px] items-center whitespace-nowrap text-left text-[13.5px] text-muted" data-zeile>
+        <Link href={href} className="flex min-h-[30px] items-center whitespace-nowrap text-left text-[13.5px] text-muted" data-zeile data-notiz-leer>
           <span className="kachel-frei" data-platzhalter-text>{NOTIZ_LEERTEXT}</span>
-        </button>
+        </Link>
       )}
     </section>
   );

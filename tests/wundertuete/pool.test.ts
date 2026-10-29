@@ -111,7 +111,7 @@ describe("Sorten, Kachel-Texte, Teilen", () => {
       expect(`${s.titel}|${s.kurz}`).not.toMatch(/…|\.\.\./);
       expect(s.kurz.length).toBeLessThanOrEqual(s.titel.length);
     }
-    expect(FILTER.map((f) => f.label)).toEqual(["Alles", "Witze", "Plattdeutsch", "Angeberwissen"]);
+    expect(FILTER.map((f) => f.label)).toEqual(["Alles", "Witze", "Platt", "Wissen"]);
     expect(ANTIPPEN).toBe("Antippen für die Lösung");
     expect(Object.values(KOMMT_BALD).every((t) => / kommt bald\.$| kommen bald\.$/.test(t))).toBe(true);
   });

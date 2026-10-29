@@ -112,13 +112,26 @@ describe("Kachel: Oberfläche (A-052, Tafel 137/140)", () => {
     expect(code).toContain('data-name="kurz"');
   });
 
-  it("keine Punkte, keine Drehung mehr; Antippen öffnet die Seite, Platt/Wissen mit „Antippen für die Lösung“, Witz mit Pointe", () => {
-    expect(code).not.toMatch(/function Punkte|data-punkte|Nochmal tippen|wt-dreh|tippAktion/);
-    expect(code).toContain('href="/wundertuete"');
-    expect(code).toMatch(/meta\.frage && \(/);
+  // A-059 (Tafel 145): die Lösung erst nach Antippen – die Karte dreht sich in der Kachel um; zur Seite nur über „Mehr ›“
+  it("keine Punkte; Antippen dreht die Karte (0,6 s, reduziert Überblenden), hinten Lösung im weißen Feld, Seite nur über „Mehr ›“", () => {
+    expect(code).not.toMatch(/function Punkte|data-punkte|tippAktion/);
+    expect(code).toContain('role="button"');
+    expect(code).toContain("onClick={drehen}");
+    expect(code).toContain("aria-pressed={gedreht}");
+    // Link zur Seite nur auf der Rückseite, als eigene Tippfläche ≥ 44 px
+    expect(code).toMatch(/\{gedreht && \(\s*<Link href="\/wundertuete" className="[^"]*min-h-11 min-w-11/);
+    expect(code.match(/href="\/wundertuete"/g)).toHaveLength(2); // Karte (Mehr ›) und „kommt bald“
     expect(code).toContain("data-pointe");
-    expect(css).not.toContain(".wt-dreh");
+    expect(code).toContain("bg-tile-inner");
+    expect(css).toContain(".wt-dreh { transform-style: preserve-3d; transition: transform 0.6s cubic-bezier(.16,1,.3,1); }");
+    expect(css).toContain(".wt-karte[data-gedreht] .wt-dreh { transform: rotateY(180deg); }");
+    expect(css).toMatch(/@media \(prefers-reduced-motion: reduce\) \{\n  \.wt-dreh, [^}]*transform: none; transition: none; \}/);
     expect(css).toContain('.wt-karte section:not([data-eng]) [data-hinweis="kurz"], .wt-karte section[data-eng] [data-hinweis="voll"] { display: none; }');
+  });
+
+  it("Kachel-Schrift: nie getrennt, immer volle Farbe (kein Grau)", () => {
+    expect(code).toContain("break-normal hyphens-none");
+    expect(code).not.toMatch(/hyphens-auto|text-muted|text-faint|text-tile-label|opacity-/);
   });
 
   it("Wasserzeichen je Sorte: Anker bei Platt, sonst Geschenk; Farben nur über Tokens, kein Emoji", () => {
@@ -134,6 +147,7 @@ describe("Kachel: Oberfläche (A-052, Tafel 137/140)", () => {
     expect(seite).toContain("Noch eine");
     expect(seite).toContain("Nie doppelt. {name} legt immer neue nach.");
     expect(seite).toContain("data-loesung");
+    expect(seite).toContain("data-verdeckt");
     expect(seite).toContain("KOMMT_BALD[filter]");
   });
 

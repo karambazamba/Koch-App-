@@ -10,8 +10,14 @@
 // Breite oder bei schnellem Wisch (> 0,35 px/ms), sonst federt die Seite
 // zurück; am Rand gedämpft (Gummiband). Bewegt wird nur per transform direkt
 // am Element (kein React-Rendern während des Wischens).
+// A-059: Gewechselt wird nur bei einem klaren Seitenwisch (`heute/seitenWisch`:
+// nicht vom unteren Rand, nicht vom linken Rand, |dx| ≥ 2·|dy|, ≥ 60 px);
+// ein abgebrochener Wisch (touchcancel, z. B. App schließen) federt immer
+// zurück. Geht die App binnen 500 ms nach einem Wisch-Wechsel in den
+// Hintergrund, wird der Wechsel zurückgenommen.
 
 import { useEffect, useRef } from "react";
+import { seitenWisch, wischStartErlaubt, wischZuruecknehmen } from "@/lib/heute/seitenWisch";
 
 const PAGER_MS = 280;
 const EASE = "cubic-bezier(0.22, 0.61, 0.36, 1)";
@@ -55,6 +61,18 @@ function lockScroll(): () => void {
     html.style.overflow = before;
     hold();
   };
+}
+
+/** Safe-Area unten in px (Home-Indikator), einmal gemessen */
+let safeUntenPx: number | null = null;
+function safeUnten(): number {
+  if (safeUntenPx !== null) return safeUntenPx;
+  const probe = document.createElement("div");
+  probe.style.cssText = "position:fixed;visibility:hidden;pointer-events:none;padding-bottom:env(safe-area-inset-bottom)";
+  document.body.appendChild(probe);
+  safeUntenPx = parseFloat(getComputedStyle(probe).paddingBottom) || 0;
+  probe.remove();
+  return safeUntenPx;
 }
 
 /** Gummiband am Rand: Bewegung gedämpft */
@@ -121,6 +139,10 @@ export function usePagerSwipe(root: React.RefObject<HTMLElement | null>, handles
     let start: { x: number; y: number } | null = null;
     let mode: "none" | "x" | "y" = "none";
     let dx = 0;
+    /** Fingerweg ohne Gummiband (für die Entscheidung „klarer Seitenwisch“) */
+    let roh = { dx: 0, dy: 0 };
+    /** Letzter Wechsel per Wischen: wann (Zeitstempel des Loslassens), welche Richtung, Animation noch unterwegs */
+    let wisch: { am: number; step: -1 | 1; timer: number | null } | null = null;
     let samples: { x: number; t: number }[] = [];
     let busy = false;
     let unlock: (() => void) | null = null;
@@ -131,14 +153,17 @@ export function usePagerSwipe(root: React.RefObject<HTMLElement | null>, handles
     const width = () => window.innerWidth;
 
     const onStart = (e: TouchEvent) => {
-      if (busy || e.touches.length > 1 || ignoreSwipe(e.target)) {
+      const t = e.touches[0];
+      // Nicht vom unteren Rand (App schließen) und nicht vom linken Rand (Zurück)
+      if (busy || e.touches.length > 1 || ignoreSwipe(e.target) || !wischStartErlaubt(t.clientX, t.clientY, window.innerHeight, safeUnten())) {
         start = null;
         return;
       }
       h.current.warm();
-      start = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      start = { x: t.clientX, y: t.clientY };
       mode = "none";
       dx = 0;
+      roh = { dx: 0, dy: 0 };
       samples = [{ x: start.x, t: e.timeStamp }];
     };
     const onMove = (e: TouchEvent) => {
@@ -146,6 +171,7 @@ export function usePagerSwipe(root: React.RefObject<HTMLElement | null>, handles
       const t = e.touches[0];
       const mx = t.clientX - start.x;
       const my = t.clientY - start.y;
+      roh = { dx: mx, dy: my };
       if (mode === "none") {
         mode = swipeAxis(mx, my);
         if (mode !== "x") return;
@@ -163,46 +189,76 @@ export function usePagerSwipe(root: React.RefObject<HTMLElement | null>, handles
       placePanels(p, dx, width(), false);
       h.current.progress(edge ? 0 : -dx / width(), false);
     };
+    /** Zurückfedern ohne Wechsel */
+    const springBack = (p: ReturnType<Handles["panels"]>) => {
+      if (reduced()) return;
+      busy = true;
+      placePanels(p, 0, width(), true);
+      h.current.progress(0, true);
+      window.setTimeout(() => {
+        placePanels(p, 0, width(), false);
+        busy = false;
+      }, PAGER_MS);
+    };
     const onEnd = (e: TouchEvent) => {
       release();
       if (!start || mode !== "x") {
         start = null;
         return;
       }
+      const von = start;
       start = null;
+      // Abgebrochen (z. B. App schließen) oder kein klarer Seitenwisch: nie wechseln
+      if (e.type === "touchcancel" || !seitenWisch({ x: von.x, y: von.y, dx: roh.dx, dy: roh.dy, hoehe: window.innerHeight, safeUnten: safeUnten() })) {
+        springBack(h.current.panels());
+        return;
+      }
       const recent = samples.filter((s) => e.timeStamp - s.t < 120);
       const first = recent[0] ?? samples[0];
       const last = samples[samples.length - 1];
       const velocity = last && first && last.t > first.t ? (last.x - first.x) / (last.t - first.t) : 0;
       const p = h.current.panels();
       const step = swipeDecision(dx, velocity, width(), Boolean(p.prev), Boolean(p.next));
+      if (step) wisch = { am: e.timeStamp, step, timer: null };
       if (reduced()) {
         if (step) h.current.commit(step);
         return;
       }
+      if (!step) return springBack(p);
       busy = true;
-      if (!step) {
-        placePanels(p, 0, width(), true);
-        h.current.progress(0, true);
-        window.setTimeout(() => {
-          placePanels(p, 0, width(), false);
-          busy = false;
-        }, PAGER_MS);
-        return;
-      }
       placePanels(p, -step * width(), width(), true);
       h.current.progress(step, true);
-      window.setTimeout(() => {
+      const w = wisch;
+      const timer = window.setTimeout(() => {
+        if (w) w.timer = null;
         h.current.commit(step);
         busy = false;
       }, PAGER_MS);
+      if (w) w.timer = timer;
     };
+    // App direkt nach dem Wisch in den Hintergrund = Schließen, kein Seitenwechsel: zurück zur vorherigen Seite
+    const onHidden = (e: Event) => {
+      if (document.visibilityState !== "hidden" || !wisch) return;
+      const w = wisch;
+      wisch = null;
+      if (!wischZuruecknehmen(w.am, e.timeStamp)) return;
+      if (w.timer !== null) {
+        // Animation noch unterwegs: gar nicht erst wechseln
+        window.clearTimeout(w.timer);
+        placePanels(h.current.panels(), 0, width(), false);
+        busy = false;
+        return;
+      }
+      h.current.commit(w.step === 1 ? -1 : 1);
+    };
+    document.addEventListener("visibilitychange", onHidden);
     el.addEventListener("touchstart", onStart, { passive: true });
     el.addEventListener("touchmove", onMove, { passive: false });
     el.addEventListener("touchend", onEnd, { passive: true });
     el.addEventListener("touchcancel", onEnd, { passive: true });
     return () => {
       release();
+      document.removeEventListener("visibilitychange", onHidden);
       el.removeEventListener("touchstart", onStart);
       el.removeEventListener("touchmove", onMove);
       el.removeEventListener("touchend", onEnd);

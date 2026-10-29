@@ -9,7 +9,7 @@
 // Vergangenes fällt raus → „Zuletzt gegessen ›“.
 
 import { useEffect, useRef, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { ChevronRight, CircleDot, GripVertical, List, Plus, Sparkles } from "lucide-react";
 import { MoreMenu } from "@/components/ui/MoreMenu";
 import { Sheet } from "@/components/ui/Sheet";
@@ -37,7 +37,6 @@ const HALTEN_MS = 300;
 
 export function SiebenTage({ data, tage }: { data: HomeData; tage: PlanDay[] }) {
   const ansicht = useEssenAnsicht();
-  const router = useRouter();
   const planOn = useFeature("wochenplan");
   const [offen, setOffen] = useState<PlanDay | null>(null);
   const [zuletzt, setZuletzt] = useState(false);
@@ -86,7 +85,7 @@ export function SiebenTage({ data, tage }: { data: HomeData; tage: PlanDay[] }) 
           <Sparkles className="h-3.5 w-3.5" strokeWidth={2.25} aria-hidden />
           Woche planen
         </button>
-        {planOn && <MoreMenu title="Essen planen" items={[{ label: "Feste Gerichte und Vorlagen", icon: List, onClick: () => router.push("/wochenplan") }]} />}
+        {planOn && <MoreMenu title="Essen planen" items={[{ label: "Feste Gerichte und Vorlagen", icon: List, href: "/wochenplan" }]} />}
       </div>
 
       {ansicht === "reihe" ? <Reihe data={data} tage={tage} onOpen={setOffen} /> : <Liste data={data} tage={tage} onOpen={setOffen} />}

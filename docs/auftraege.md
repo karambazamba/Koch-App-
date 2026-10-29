@@ -187,9 +187,13 @@ Ersetzt und nicht mehr gebaut: Essen-Kachel Tafel 121/122/133 → Tafel 134 (Rez
 | A-055 | „Was los?“ – Veranstaltungen Kreis Ostholstein (Tabelle region_events, Cron 5:00, Fenster Heute · Wochenende · 2 Wochen, Kalender/Pinnwand, Quelle sichtbar; ersetzt „Tipps aus der Region“) | `tafel-142.png` | in Arbeit (Ziel v0.162; Parser wartet auf Freigabe von www.kreis-oh.de) |
 | A-056 | SOFORT (Vorrang): „Mia hört von Anfang an und versteht mehrere Sachen“ – Mikro sofort beim Antippen mit Ringpuffer (≥ 5 s), Schlüssel vorgewärmt, Ring erst bei echtem Ton, Zeiten im Mikro-Protokoll; Sofort-Weg nur bei genau EINER Sache, Füllwörter weg, Aufzählungen getrennt (KI und Regel-Notlösung), ein Rückgängig für alle; „Nur für dich. Tippen zum Ändern.“; ≥ 30 Prüfstand-Sätze (Wortlaut `docs/auftraege/A-056-mia-hoert-sofort.md`) | – | fertig v0.157 |
 | A-057 | Kleinkram von Felix: Die eingebauten Rezepte („k:…“) liefern der Einkaufsliste ihre Zutaten – Wochenplan-Angebot „Für deinen Wochenplan“ und „Nehmen“ (Namen, Mengen nur als Hinweis, Grundsachen blass/ausgenommen, „im Haus“ nicht, gleiche Zutat aus zwei Gerichten = eine Zeile mit „wofür“; `einkauf/angebot/rezeptZutaten.ts`) | – | fertig v0.161 |
+| A-059 | Kaputt (Sammel-Auftrag 29.10. mittags, Block A + D): Notizen-Kachel öffnet immer die Notizen-Seite (Stift = neue Notiz), Wundertüte ohne Silbentrennung und frei vom Mia-Knopf, Lösung erst nach Antippen (Punkt 8, Tafel 145: Kachel dreht sich um, Seite über „Mehr ›“, Seite und Rätsel verdeckt, Filter Alles · Witze · Platt · Wissen), ••• → Einstellungen beim ersten Tippen, Wischen nur klar waagerecht und nicht vom unteren Rand (Wortlaut `docs/auftraege/A-059-sammel-mittags.md`) | `tafel-144.png`, `tafel-145.png` | fertig v0.162 |
+| A-060 | Notizen-Vorschau 2 Zeilen weich + Mia-Zubehör (Sammel-Auftrag 29.10. mittags, Block B; enthält A-058 Mia-Zubehör) | `tafel-144.png` | in Arbeit (anderer Helfer) |
 
 
 ## Offene Punkte (ohne eigenen Auftrag)
+
+- Sammel-Auftrag 29.10. mittags, Block C (Jetzt-Karte ohne Füllsätze, „Wochenende planen?“ nur freitags, nie „…“) ist A-054 und läuft dort.
 
 - Jetzt-Karte nennt tagsüber einen neuen Pinnwand-Zettel, den auch die
   Pinnwand-Kachel zeigt (Regel „nur was die Kacheln nicht zeigen“) – mit A-016

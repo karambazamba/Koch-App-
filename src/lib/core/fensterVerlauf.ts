@@ -11,6 +11,12 @@
 // „Zurück“ und schlösse sich sofort wieder – so verschwand Mias Frage „Soll
 // ich dich erinnern?“, wenn ihr Fenster (per `next/dynamic` geladen) genau
 // nach ~300 ms kam.
+//
+// Geht es nach dem Schließen auf eine andere Seite (Menü „•••“ →
+// „Einstellungen“), läuft das über `danach`: erst den Eintrag entfernen, nach
+// dessen `popstate` navigieren (A-059). Sonst kam beim Kaltstart das
+// verspätete Entfernen nach 300 ms der noch ladenden Navigation zuvor, das
+// `popstate` brach sie ab und man blieb beim ersten Tippen auf der Startseite.
 
 const REMOVE_AFTER_MS = 300;
 /** Kommt nach dem eigenen Zurück kein `popstate` (kein Verlauf), trotzdem öffnen */
@@ -30,7 +36,7 @@ export type FensterWin = {
 export function fensterVerlauf(win: FensterWin) {
   let counter = 0;
   /** Eintrag eines eben anders geschlossenen Fensters, der gleich entfernt wird */
-  let pending: { id: number; timer: unknown } | null = null;
+  let pending: { id: number; timer: unknown; isTop: () => boolean } | null = null;
   /** Wann zuletzt jemand selbst "Zurück" ausgelöst hat (z. B. "Entfernen" → eine Ebene zurück) */
   let lastBackAt = -1;
   /** Wann zuletzt eine Navigation begann (Link angetippt, neue Seite im Verlauf) */
@@ -121,12 +127,30 @@ export function fensterVerlauf(win: FensterWin) {
         if (lastNavAt >= closedAt) return;
         if (isTop()) removeEntry();
       }, REMOVE_AFTER_MS);
-      pending = { id, timer };
+      pending = { id, timer, isTop };
     };
+  }
+
+  /**
+   * Nach dem Schließen weiter (z. B. auf eine andere Seite): Eintrag des eben
+   * geschlossenen Fensters sofort entfernen und erst nach dessen `popstate`
+   * (im nächsten Takt, damit der Router das Zurück schon verarbeitet hat)
+   * `weiter` ausführen. Ohne offenen Eintrag gleich.
+   */
+  function danach(weiter: () => void) {
+    if (pending) {
+      const p = pending;
+      pending = null;
+      win.clearTimeout(p.timer as never);
+      if (p.isTop()) removeEntry();
+    }
+    if (removing) removing.waiting.add(() => void win.setTimeout(weiter, 0));
+    else weiter();
   }
 
   return {
     oeffne,
+    danach,
     /** Jemand hat selbst „Zurück“ ausgelöst */
     zurueck: () => (lastBackAt = win.now()),
     /** Eine Navigation beginnt */

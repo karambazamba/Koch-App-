@@ -57,7 +57,7 @@ describe.each(ANZAHL)("%i Einträge", (n) => {
     const html = renderToStaticMarkup(createElement(NotesTile, { size: "S" }));
     expect(count(html, /data-notiz-zeile="true"/g)).toBe(zeilen(n));
     expect(weitere(html)).toBe(n > 3 ? `+${n - 3}` : null);
-    if (!n) expect(html).toMatch(/min-h-\[30px\] items-center whitespace-nowrap[^"]*" data-zeile="true"><span class="kachel-frei" data-platzhalter-text="true">Schnell notieren/);
+    if (!n) expect(html).toMatch(/min-h-\[30px\] items-center whitespace-nowrap[^"]*" data-zeile="true" data-notiz-leer="true"><span class="kachel-frei" data-platzhalter-text="true">Schnell notieren/);
     expect(html).toContain("pb-3.5");
   });
 

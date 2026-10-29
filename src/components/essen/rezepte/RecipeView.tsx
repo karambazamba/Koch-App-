@@ -123,11 +123,11 @@ function RecipeDetails({ id, persons }: { id: string; persons: number | null }) 
   };
   const menu: MoreItem[] = builtin
     ? [
-        { label: "In unsere Rezepte", icon: Plus, onClick: () => router.push(`/kochbuch/rezept?id=${encodeURIComponent(adoptBuiltin(recipe))}`) },
+        { label: "In unsere Rezepte", icon: Plus, href: () => `/kochbuch/rezept?id=${encodeURIComponent(adoptBuiltin(recipe))}` },
         { label: "Teilen", icon: Share2, onClick: () => void share() },
       ]
     : [
-        { label: "Bearbeiten", icon: PenLine, onClick: () => router.push(`/kochbuch/bearbeiten?id=${encodeURIComponent(recipe.id)}`) },
+        { label: "Bearbeiten", icon: PenLine, href: `/kochbuch/bearbeiten?id=${encodeURIComponent(recipe.id)}` },
         { label: "Teilen", icon: Share2, onClick: () => void share() },
         { label: "Löschen", icon: Trash2, onClick: () => setAsking(true), danger: true },
       ];

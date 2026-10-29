@@ -18,6 +18,10 @@ import { sortNotes, useNotes, type Note } from "@/lib/notizen";
 import { QuickNoteCard } from "@/components/notizen/Schnellnotiz";
 import { useWorkRoom } from "@/lib/einstellungen/welcomeStore";
 import { useRaumName } from "@/lib/einstellungen/useHaushalt";
+import { helperName } from "@/lib/einstellungen/profileHelper";
+
+/** Leere Notizen-Seite (Tafel 144) */
+export const NOTIZEN_LEER = (name: string) => `Noch keine Notizen.\nTipp aufs Plus oder sag ${name}: „Notiz: …“`;
 
 type Filter = "alles" | "familie" | "arbeit";
 
@@ -94,7 +98,10 @@ export function NotesView() {
         {!shown ? (
           <div className={`${CARD} h-40 animate-pulse`} />
         ) : shown.length === 0 ? (
-          <p className="px-4 py-8 text-center text-base text-muted">Hier landet, was du dir merken willst. Sag einfach: ‚Merk dir …‘</p>
+          // Tafel 144: freundlich, nie als Fehler; „…“ steht hier mit Absicht im Beispiel (`data-platzhalter-text`)
+          <p className="whitespace-pre-line px-4 py-8 text-center text-base text-muted" data-notizen-leer data-platzhalter-text>
+            {NOTIZEN_LEER(helperName())}
+          </p>
         ) : (
           <>
             <Section title="Angeheftet" notes={shown.filter((n) => n.data.pinned)} />

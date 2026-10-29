@@ -31,6 +31,8 @@ Jede Vorlage aus einem Auftrag liegt hier als `tafel-<nr>.png`; der Auftrag in
 | 141 | `tafel-141.png` | A-050 Pinnwand mit Korkrahmen (Vorschlag A) |
 | 142 | `tafel-142.png` | A-055 „Was los?“ – Veranstaltungen in der Umgebung |
 | 143 | `tafel-143.png` | A-050 Fünf Mini-Kreise (final) |
+| 144 | `tafel-144.png` | A-059/A-060 Notizen und Wundertüte sauber (ganze Kachel = Notizen-Seite; Teil Wundertüte-Lösung ersetzt durch 145) |
+| 145 | `tafel-145.png` | A-059 Wundertüte und Rätsel: Lösung erst nach Antippen (Karte umdrehen, „Mehr ›“, Seite verdeckt) |
 
 Nicht als Bild angekommen (nur Text im Auftrag): 87, 96, 97, 98, 99, 100, 101,
 102, 103, 104, 110, 121 (ersetzt durch 122), 124 (A-029), 129 und

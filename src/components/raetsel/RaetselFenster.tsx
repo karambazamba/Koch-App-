@@ -2,21 +2,22 @@
 
 // Rätsel-Fenster (A-052, Tafel 137 Bild 4): kommt von unten (ui/Sheet),
 // schließt per ✕, Runterwischen, Danebentippen und Zurück. Kopf mit rundem
-// Symbol, „Rätsel“ und „Kinder raten zuerst“. Die Frage groß (27 px); erst
-// Antippen zeigt die Lösung im gestrichelten Kasten. „Noch eins ›“ bringt
-// beliebig oft das nächste, darunter „Antippen zeigt die Lösung · nie
-// doppelt“. Nichts Ungesehenes mehr: „Neue Rätsel kommen bald.“ – nie eine
+// Symbol, „Rätsel“ und „Kinder raten zuerst“. Die Frage groß (27 px),
+// darunter verdeckt „Antippen für die Lösung“; erst Antippen zeigt die Lösung
+// im gestrichelten Kasten (A-059, Tafel 145). „Noch eins ›“ bringt beliebig
+// oft das nächste (vor dem Aufdecken hell, aber tippbar), darunter „Antippen
+// zeigt die Lösung · nie doppelt“. Nichts Ungesehenes mehr: „Neue Rätsel kommen bald.“ – nie eine
 // Wiederholung. Kein Zähler, keine Punkte. Den Mini-Kreis auf der Startseite
 // baut Paket A und öffnet dieses Fenster; bis dahin öffnet es „Für Entwickler“.
 
 import { useEffect } from "react";
-import { ChevronRight, Puzzle, X } from "lucide-react";
+import { ChevronRight, Puzzle, RotateCw, X } from "lucide-react";
 import { Sheet } from "@/components/ui/Sheet";
 import { ICON_BUTTON, buttonClass } from "@/components/ui/styles";
 import { buzz } from "@/components/heute/actions";
 import { raetselVon } from "@/lib/raetsel/auswahl";
 import { raetselLoesen, raetselNoch, raetselOeffnen, useRaetsel } from "@/lib/raetsel/store";
-import { antwortTeile } from "@/lib/wundertuete/sorten";
+import { ANTIPPEN, antwortTeile } from "@/lib/wundertuete/sorten";
 
 const RAETSEL_KOMMEN_BALD = "Neue Rätsel kommen bald.";
 
@@ -58,9 +59,15 @@ export function RaetselFenster({ onClose }: { onClose: () => void }) {
             data-raetsel={raetsel.id}
             data-geloest={geloest || undefined}
           >
-            <span className="text-[27px] font-extrabold leading-tight tracking-tight" lang="de" data-frage>
+            <span className="text-[27px] font-extrabold leading-tight tracking-tight hyphens-none" lang="de" data-frage>
               {raetsel.vorne}
             </span>
+            {!geloest && raetsel.hinten && (
+              <span className="flex min-h-24 items-center justify-center gap-2 rounded-card border-2 border-dashed border-accent/40 px-4 py-3 text-[17px] font-bold text-accent-strong" data-verdeckt>
+                <RotateCw className="h-[18px] w-[18px] shrink-0" strokeWidth={2.5} aria-hidden />
+                {ANTIPPEN}
+              </span>
+            )}
             {geloest && raetsel.hinten && (
               <span className="wt-neu rounded-card border-2 border-dashed border-accent/40 px-4 py-3" data-loesung>
                 <span className="block text-[11px] font-extrabold uppercase tracking-wider text-accent-strong">Lösung</span>
@@ -75,7 +82,7 @@ export function RaetselFenster({ onClose }: { onClose: () => void }) {
             {RAETSEL_KOMMEN_BALD}
           </p>
         )}
-        <button type="button" className={`${buttonClass("primary", "lg")} w-full`} onClick={() => (buzz(), raetselNoch())} data-noch-eins>
+        <button type="button" className={`${buttonClass("primary", "lg")} w-full transition-opacity ${raetsel && !geloest ? "opacity-45" : ""}`} onClick={() => (buzz(), raetselNoch())} data-noch-eins data-hell={(raetsel && !geloest) || undefined}>
           Noch eins <ChevronRight className="h-5 w-5" strokeWidth={2.5} aria-hidden />
         </button>
         <p className="text-center text-[14px] font-bold text-accent-strong">Antippen zeigt die Lösung · nie doppelt</p>

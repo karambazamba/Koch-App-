@@ -16,7 +16,7 @@ export type SorteMeta = {
   titel: string;
   /** Kleine Sorte über dem Text (bei Platt steckt sie schon im Titel) */
   label: string | null;
-  /** Name im Filter der Seite */
+  /** Name im Filter der Seite (kurz, damit kein Chip abgeschnitten wird: Tafel 145) */
   filter: string;
   /** Kurzform des Titels, wenn er nicht in die Zeile passt (nie „…“) */
   kurz: string;
@@ -34,15 +34,15 @@ export type SorteMeta = {
 
 export const SORTEN: SorteMeta[] = [
   { id: "witz", titel: "Wundertüte", label: "Witz", filter: "Witze", kurz: "Wundertüte", symbol: "gift", tone: "notizen", frage: false, quellePflicht: false, ki: true },
-  { id: "platt", titel: "Platt för Plietsche", label: null, filter: "Plattdeutsch", kurz: "Platt", symbol: "anchor", tone: "aufgaben", frage: true, quellePflicht: true, ki: false },
-  { id: "angeberwissen", titel: "Wundertüte", label: "Angeberwissen", filter: "Angeberwissen", kurz: "Wundertüte", symbol: "gift", tone: "sport", frage: true, quellePflicht: true, ki: false },
+  { id: "platt", titel: "Platt för Plietsche", label: null, filter: "Platt", kurz: "Platt", symbol: "anchor", tone: "aufgaben", frage: true, quellePflicht: true, ki: false },
+  { id: "angeberwissen", titel: "Wundertüte", label: "Angeberwissen", filter: "Wissen", kurz: "Wundertüte", symbol: "gift", tone: "sport", frage: true, quellePflicht: true, ki: false },
 ];
 
 export const SORTE_IDS: Sorte[] = SORTEN.map((s) => s.id);
 
 export const sorteMeta = (id: Sorte): SorteMeta => SORTEN.find((s) => s.id === id)!;
 
-/** Filter der Seite: Alles · Witze · Plattdeutsch · Angeberwissen */
+/** Filter der Seite: Alles · Witze · Platt · Wissen (Tafel 145) */
 export type Filter = "alles" | Sorte;
 export const FILTER: { id: Filter; label: string }[] = [{ id: "alles", label: "Alles" }, ...SORTEN.map((s) => ({ id: s.id as Filter, label: s.filter }))];
 

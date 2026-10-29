@@ -142,4 +142,34 @@ describe("Fenster im Verlauf", () => {
     vi.advanceTimersByTime(1000);
     expect(depth()).toBe(2);
   });
+
+  // Fehler A-059: Kaltstart → „•••“ → „Einstellungen“ blieb beim ersten Tippen
+  // auf der Startseite. Die Seite lud länger als 300 ms, das verspätete
+  // Entfernen des Menü-Eintrags (history.back) brach die Navigation ab.
+  it("danach: erst der Eintrag des Menüs weg, dann die neue Seite – nichts nimmt sie wieder weg", () => {
+    const { win, history, depth, ids, fertig } = fakeWin();
+    const v = fensterVerlauf(win);
+    const zu = v.oeffne(() => {});
+    expect(depth()).toBe(1);
+    zu();
+    const weiter = vi.fn(() => history.pushState({ seite: "/profil" }));
+    v.danach(weiter);
+    expect(weiter).not.toHaveBeenCalled(); // wartet auf das popstate des Entfernens
+    fertig();
+    expect(weiter).toHaveBeenCalledOnce();
+    expect(depth()).toBe(1);
+    expect(history.state).toEqual({ seite: "/profil" });
+    expect(ids()).toHaveLength(0);
+    vi.advanceTimersByTime(5000);
+    fertig();
+    expect(depth()).toBe(1);
+  });
+
+  it("danach ohne offenes Fenster: gleich weiter", () => {
+    const { win } = fakeWin();
+    const v = fensterVerlauf(win);
+    const weiter = vi.fn();
+    v.danach(weiter);
+    expect(weiter).toHaveBeenCalledOnce();
+  });
 });

@@ -24,6 +24,12 @@
   S-Kachel (`ersteStartseite`); bestehende Nutzer bekommen sie nie von selbst,
   in der Kachel-Auswahl steht sie mit „NEU“. Von Felix gewollte Ausnahme vom
   Feature-Stopp für 1.0.
+- **Lösung erst nach Antippen (A-059, Tafel 145):** wie eine Karte zum
+  Umdrehen, für alle Sorten und die Rätsel. Kachel vorn nur Sorte und
+  Frage/Witz-Anfang/Platt-Wort; Antippen dreht sie um, die Seite öffnet
+  nur „Mehr ›“. Auf der Seite und im Rätsel-Fenster ist die Lösung nach
+  jeder neuen Karte erst verdeckt. Kachel-Schrift immer in voller Farbe
+  (≥ 4,5:1 in allen 8 Kachelfarben), keine Silbentrennung.
 - **Nichts abgeschnitten (A-045):** kein sichtbarer Text endet auf „…“ oder
   wird weggeschnitten. Der Text steht in fester Fläche, die Schrift wird
   Stufe für Stufe kleiner, bis alles ganz zu sehen ist (`useEinpassen`); der
@@ -37,7 +43,7 @@ Wort oder Angeberwissen; die Rätsel sind für die Kinder am Tisch.
 
 | Sorte | ID | Kachel-Titel | Kleine Sorte | Farbe (Tokens) | Symbol/Wasserzeichen | Unten | Quelle | KI |
 |---|---|---|---|---|---|---|---|---|
-| Witze | `witz` | Wundertüte | WITZ | Vanille (`notizen`) | Geschenk | Pointe gleich darunter | – | ja |
+| Witze | `witz` | Wundertüte | WITZ | Vanille (`notizen`) | Geschenk | „Antippen für die Lösung“ (Pointe hinten) | – | ja |
 | Plattdeutsch | `platt` | Platt för Plietsche | – | Mint (`aufgaben`) | Anker | „Antippen für die Lösung“ | Pflicht | nein |
 | Angeberwissen | `angeberwissen` | Wundertüte | ANGEBERWISSEN | Flieder (`sport`) | Geschenk | „Antippen für die Lösung“ | Pflicht | nein |
 
@@ -66,7 +72,8 @@ Wort oder Angeberwissen; die Rätsel sind für die Kinder am Tisch.
   `raetselStart`, `migrateRaetsel`), `store.ts` (`useRaetsel`,
   `raetselOeffnen`, `raetselLoesen`, `raetselNoch`).
 - Oberfläche: Kachel `src/components/wundertuete/WundertueteTile.tsx`, Seite
-  `WundertueteSeite.tsx` (`/wundertuete`), Rätsel-Fenster
+  `WundertueteSeite.tsx` (`/wundertuete`, aufgedeckt merken
+  `lib/wundertuete/aufgedeckt.ts`), Rätsel-Fenster
   `src/components/raetsel/RaetselFenster.tsx`, Entwickler-Zeilen
   `WundertueteNachschub.tsx` (in „Für Entwickler“, dort auch der Test-Öffner
   des Rätsel-Fensters). CSS `.wt-karte`, `.wt-neu` in `globals.css`.
@@ -78,16 +85,27 @@ Wort oder Angeberwissen; die Rätsel sind für die Kinder am Tisch.
 
 ## Verhalten Wundertüte
 
-- **Kachel (S/M):** Kopf je Sorte, kleine Sorte, groß Wort/Frage/Witz; beim
-  Witz die Pointe darunter, bei Platt und Wissen unten „Antippen für die
-  Lösung“. An einem neuen Tag kommt von selbst die nächste Karte (gilt ab
-  dann als gesehen). Antippen öffnet die Seite. Alles gesehen: „Neue
-  Wundertüte kommt bald.“
-- **Seite /wundertuete:** dieselbe Karte groß, bei Platt und Wissen die
-  Lösung bzw. Bedeutung im gestrichelten Kasten („Heißt“, „Lösung“) – die
-  Kachel lügt nicht, beim Witz die Pointe. Filter Alles · Witze ·
-  Plattdeutsch · Angeberwissen, großer Knopf „Noch eine ›“ (beliebig oft),
-  „Nie doppelt. <Name> legt immer neue nach.“, Teilen oben rechts.
+- **Kachel (S/M):** Kopf je Sorte, kleine Sorte, vorn groß Wort/Frage/
+  Witz-Anfang (möglichst höchstens 2 Zeilen, sonst kleiner; nie getrennt,
+  `hyphens: none`), unten „↻ Antippen für die Lösung“. Antippen (ganze
+  Kachel, `role="button"`, auch Enter/Leertaste) dreht die Karte um (0,6 s,
+  nur transform; reduced-motion: Überblenden; CSS `.wt-dreh`): hinten die
+  Frage klein, darunter die Lösung bzw. Pointe im weißen Feld
+  (`bg-tile-inner`, Kachel-Akzent), unten rechts „Mehr ›“ (eigene Tippfläche
+  ≥ 44 px) = Seite. Nochmal antippen = zurück. Passt hinten nicht alles,
+  fällt erst die Frage weg (`data-ohne-frage`), dann die kleine Sorte und
+  das Feld wird schmaler (`data-knapp`). Beide Seiten liegen immer in der
+  Kachel (die verdeckte `inert`), so prüft `wundertueteAlle` vorn und
+  hinten. An einem neuen Tag kommt von selbst die nächste Karte (gilt ab
+  dann als gesehen). Alles gesehen: „Neue Wundertüte kommt bald.“
+- **Seite /wundertuete:** dieselbe Karte groß; die Lösung („Heißt“,
+  „Lösung“, beim Witz „Pointe“) erst verdeckt im gestrichelten Kasten
+  („↻ Antippen für die Lösung“), Antippen der Karte deckt auf. Kommt man
+  von der umgedrehten Kachel über „Mehr ›“, ist sie schon offen
+  (`wundertuete/aufgedeckt.ts`, nur im Speicher der Sitzung). „Noch eine ›“
+  vor dem Aufdecken hell (tippbar), danach orange. Filter Alles · Witze ·
+  Platt · Wissen (umbrechen statt abschneiden), „Nie doppelt. <Name> legt
+  immer neue nach.“, Teilen oben rechts.
 - **Auswahl** (fest statt Zufall: gleicher Stand = gleiche Karte auf jedem
   Gerät): 1. eine Karte mit passendem Anlass (Wetter, Jahreszeit,
   Wochentag, Gericht, Feiertag; „Schietwedder“ nur an Regentagen), 2. sonst
@@ -105,7 +123,7 @@ Wort oder Angeberwissen; die Rätsel sind für die Kinder am Tisch.
   zeigt „Für Entwickler“ „Plattdeutsch: Paket nötig (n übrig)“ bzw.
   „Angeberwissen: …“ (Monatsauftrag A-039).
 - Beispiel-Tag: feste Karte „Was heißt ‚Kiek mol an‘?“, nie gespeichert;
-  „Beispiel“ nur für VoiceOver. Antippen leert das Beispiel und öffnet die Seite.
+  „Beispiel“ nur für VoiceOver. Antippen leert das Beispiel und dreht die Karte um.
 
 ## Rätsel (eigener Bereich, A-052)
 
@@ -114,9 +132,10 @@ Wort oder Angeberwissen; die Rätsel sind für die Kinder am Tisch.
   `hatUngesehenes` bleibt nur intern). Bis dahin
   öffnet „Für Entwickler“ → „Rätsel-Fenster öffnen“ das Fenster.
 - **Fenster** (`ui/Sheet`, Tafel 137 Bild 4): rundes Symbol, „Rätsel“,
-  „Kinder raten zuerst“, ✕; Frage groß (27 px); erst Antippen zeigt die
-  Lösung im gestrichelten Kasten („LÖSUNG“); großer Knopf „Noch eins ›“
-  (beliebig oft); „Antippen zeigt die Lösung · nie doppelt“. Ein noch
+  „Kinder raten zuerst“, ✕; Frage groß (27 px), darunter verdeckt
+  „↻ Antippen für die Lösung“; erst Antippen zeigt die Lösung im
+  gestrichelten Kasten („LÖSUNG“); großer Knopf „Noch eins ›“ (beliebig oft,
+  vor dem Aufdecken hell, A-059); „Antippen zeigt die Lösung · nie doppelt“. Ein noch
   ungelöstes Rätsel bleibt beim nächsten Öffnen stehen, ein gelöstes macht
   Platz für das nächste. Kein Zähler, keine Punkte.
 - Paket 001: die 55 Rätsel der alten Wundertüte (IDs `ra-001` bis `ra-055`)
@@ -194,6 +213,7 @@ Wundertüte: 302 Karten in Paket 001, Rätsel: 91 in Paket 001.
 - `tests/wundertuete/haushalt.test.ts`: zwei Handys im Haushalt teilen
   „gesehen“ (Wundertüte und Rätsel), Mias Karten kommen an, alte Sicherung.
 - `tests/wundertuete/baustein.test.ts`: Baustein, Anordnung, Oberfläche, Mia.
+- `tests/wundertuete/umdrehen.test.ts` (A-059): Kachel zeigt die Lösung nicht vor dem Tippen, aufgedeckt merken, Seite und Rätsel nach „Noch eine“ verdeckt, Kontrast in allen 8 Kachelfarben (hell und dunkel, auf der Fläche und im weißen Feld).
 - `tests/konten/abgleich.test.ts` (Übersetzer verlustfrei),
   `tests/datenbank/sicherheit.test.sql` Abschnitt 8.
 - Durchklick `e2e/ablaeufe/wundertuete.mjs`: `wundertuete` (Beispiel,

@@ -1,8 +1,9 @@
 // Mias Wundertüte und Rätsel (A-022, Tafel 116; A-052, Tafel 137/140): neue
 // Nutzer haben die Wundertüte als S (mit Beispiel-Karte „Kiek mol an“),
-// bestehende nicht (aber „NEU“ in der Auswahl). Keine Punkte; Platt und
-// Angeberwissen mit „Antippen für die Lösung“, Antippen öffnet die Seite mit
-// der Lösung groß, Filtern und „Noch eine ›“ (nie doppelt). Mias Witze per
+// bestehende nicht (aber „NEU“ in der Auswahl). Keine Punkte; vorn nur die
+// Frage mit „Antippen für die Lösung“, Antippen dreht die Karte (hinten die
+// Lösung im weißen Feld), „Mehr ›“ öffnet die Seite mit der Lösung offen
+// (A-059, Tafel 145); dort nach „Noch eine ›“ (nie doppelt) erst verdeckt. Mias Witze per
 // Mock-KI, ohne Vorrat „… kommt bald.“. Rätsel-Fenster (über „Für
 // Entwickler“, bis Paket A den Mini-Kreis anbindet): Lösung erst nach
 // Antippen, „Noch eins ›“. M = gleiche Karte, breiter; Schlicht und Dunkel
@@ -47,10 +48,10 @@ export const wundertuete = async (page, check) => {
   await hello(page);
   const neu = karte(page);
   check(await neu.isVisible().catch(() => false), "neuer Nutzer: Wundertüte steht auf der Startseite");
-  check((await neu.getAttribute("aria-label"))?.includes("Beispiel"), "Beispiel-Tag: feste Karte, „Beispiel“ für VoiceOver");
+  check((await neu.locator("[data-drehen]").getAttribute("aria-label"))?.includes("Beispiel"), "Beispiel-Tag: feste Karte, „Beispiel“ für VoiceOver");
   check(!(await neu.getByText("Beispiel", { exact: true }).count()), "Beispiel-Tag: kein eigenes Schild (das eine steht an der Pinnwand, Tafel 119)");
-  check((await neu.getAttribute("data-karte")) === "pl-090" && (await neu.getByText("Platt för Plietsche").isVisible()) && (await neu.getByText("Antippen für die Lösung").isVisible()), "Beispiel: „Kiek mol an“ unter „Platt för Plietsche“, „Antippen für die Lösung“ (Tafel 140)");
-  check((await neu.locator('[data-symbol="anchor"]').count()) === 1, "Platt: Wasserzeichen Anker");
+  check((await neu.getAttribute("data-karte")) === "pl-090" && (await neu.locator('[data-seite-karte="vorn"]').getByText("Platt för Plietsche").isVisible()) && (await neu.getByText("Antippen für die Lösung").isVisible()), "Beispiel: „Kiek mol an“ unter „Platt för Plietsche“, „Antippen für die Lösung“ (Tafel 140)");
+  check((await neu.locator('[data-seite-karte="vorn"] [data-symbol="anchor"]').count()) === 1, "Platt: Wasserzeichen Anker");
   const order = await page.evaluate(() => [...document.querySelectorAll("[data-raster] > [data-unit]")].map((u) => u.dataset.unit));
   check(order.indexOf("wundertuete") === order.indexOf("essen+einkauf") + 1, "Wundertüte direkt hinter Essen + Einkauf");
 
@@ -77,16 +78,38 @@ export const wundertuete = async (page, check) => {
   await setzeStand(page, { version: 2, aktuell: { id: "aw-001", tag }, gesehen: ["aw-001"], eigene: [] });
   await page.locator(`${KACHEL}[data-karte="aw-001"]`).waitFor({ timeout: 3000 });
   check(await karte(page).getByText("Antippen für die Lösung").isVisible(), "Angeberwissen: „Antippen für die Lösung“");
-  check(await karte(page).locator("[data-sorte-label]").getByText("Angeberwissen").isVisible(), "kleine Sorte über dem Text");
-  await karte(page).click();
+  check(await karte(page).locator('[data-seite-karte="vorn"] [data-sorte-label]').getByText("Angeberwissen").isVisible(), "kleine Sorte über dem Text");
+  // Tafel 145: vorn keine Lösung; Antippen dreht um, nochmal antippen dreht zurück; zur Seite nur über „Mehr ›“
+  const hinten = karte(page).locator('[data-seite-karte="hinten"]');
+  check((await hinten.getAttribute("inert")) !== null && !(await karte(page).locator("[data-mehr]").count()), "vorn: Lösung verdeckt (Rückseite inert), kein „Mehr ›“");
+  await karte(page).locator("[data-drehen]").click();
+  await page.waitForTimeout(700);
+  check((await karte(page).getAttribute("data-gedreht")) !== null && (await hinten.getAttribute("inert")) === null && (await hinten.locator("[data-loesung]").getByText("30").isVisible()), "Antippen: Karte dreht sich, Lösung im weißen Feld");
+  check(new URL(page.url()).pathname === "/", "Antippen öffnet nicht die Seite");
+  const mehr = karte(page).locator("[data-mehr]");
+  const mehrBox = await mehr.boundingBox();
+  check(mehrBox && mehrBox.width >= 44 && mehrBox.height >= 44, `„Mehr ›“ eigene Tippfläche ≥ 44 px (${Math.round(mehrBox?.width ?? 0)}×${Math.round(mehrBox?.height ?? 0)})`);
+  await karte(page).locator("[data-drehen]").click();
+  await page.waitForTimeout(700);
+  check((await karte(page).getAttribute("data-gedreht")) === null, "nochmal antippen: zurückgedreht");
+  await karte(page).locator("[data-drehen]").click();
+  await page.waitForTimeout(700);
+  await karte(page).locator("[data-mehr]").click();
   await page.waitForURL(/\/wundertuete$/, { timeout: 5000 });
   const groß = page.locator('[data-wt-karte="aw-001"]');
   await groß.waitFor({ timeout: 3000 });
-  check(await groß.locator("[data-loesung]").getByText("30").isVisible(), "Seite: dieselbe Karte, die Lösung groß");
+  check(await groß.locator("[data-loesung]").getByText("30").isVisible(), "„Mehr ›“: Seite mit derselben Karte, Lösung schon offen");
+  const chips = await page.locator("[data-filter]").evaluateAll((els) => els.map((e) => ({ t: e.textContent.trim(), ganz: e.scrollWidth <= e.clientWidth + 1 && e.getBoundingClientRect().right <= window.innerWidth })));
+  check(chips.map((c) => c.t).join(" · ") === "Alles · Witze · Platt · Wissen" && chips.every((c) => c.ganz), `Filter ganz lesbar (${chips.map((c) => c.t).join(" · ")})`);
+  await page.locator("[data-noch-eine]").click();
+  await page.waitForTimeout(150);
+  check((await page.locator("[data-verdeckt]").isVisible()) && !(await page.locator("[data-wt-karte] [data-loesung], [data-wt-karte] [data-pointe]").count()) && (await page.locator("[data-noch-eine]").getAttribute("data-hell")) !== null, "nach „Noch eine“: Lösung verdeckt, „Noch eine“ hell");
+  await page.locator("[data-aufdecken]").click();
+  check((await page.locator("[data-wt-karte] [data-loesung], [data-wt-karte] [data-pointe]").first().isVisible()) && (await page.locator("[data-noch-eine]").getAttribute("data-hell")) === null, "Karte antippen deckt auf, „Noch eine“ orange");
   check(await page.getByText("Nie doppelt.", { exact: false }).isVisible(), "„Nie doppelt. Mia legt immer neue nach.“");
 
   // „Noch eine ›“: 12× ohne Wiederholung; Filter
-  const ids = ["aw-001"];
+  const ids = ["aw-001", await page.locator("[data-wt-karte]").getAttribute("data-wt-karte")];
   for (let i = 0; i < 12; i++) {
     await page.locator("[data-noch-eine]").click();
     await page.waitForTimeout(120);
@@ -104,7 +127,9 @@ export const wundertuete = async (page, check) => {
   check(plattSorten.every((s) => s === "platt"), `Filter Plattdeutsch: nur Platt (${plattSorten.join(" ")})`);
   await page.locator('[data-filter="witz"]').click();
   await page.waitForTimeout(150);
-  check((await page.locator("[data-wt-karte]").getAttribute("data-sorte")) === "witz" && (await page.locator("[data-pointe]").isVisible()), "Filter Witze: Witz mit Pointe");
+  const pointeVorher = await page.locator("[data-pointe]").count();
+  await page.locator("[data-aufdecken]").click();
+  check((await page.locator("[data-wt-karte]").getAttribute("data-sorte")) === "witz" && !pointeVorher && (await page.locator("[data-pointe]").isVisible()), "Filter Witze: Pointe erst nach Antippen");
 
   // Witze alle gesehen: Mia legt nach (Mock-KI); ohne Vorrat und ohne KI „Neue Witze kommen bald.“
   const witze = poolKarten().filter((x) => x.sorte === "witz").map((x) => x.id);
@@ -138,11 +163,11 @@ export const wundertuete = async (page, check) => {
   await fenster.waitFor({ timeout: 4000 });
   const r1 = await fenster.locator("[data-raetsel]").getAttribute("data-raetsel");
   check(await page.getByText("Kinder raten zuerst").isVisible(), "Rätsel: „Kinder raten zuerst“");
-  check(!(await fenster.locator("[data-loesung]").count()), "Lösung erst nach Antippen");
+  check(!(await fenster.locator("[data-loesung]").count()) && (await fenster.locator("[data-verdeckt]").isVisible()) && (await page.locator("[data-noch-eins]").getAttribute("data-hell")) !== null, "Lösung erst nach Antippen (verdeckt, „Noch eins“ hell)");
   const groesse = await fenster.locator("[data-frage]").evaluate((el) => getComputedStyle(el).fontSize);
   check(groesse === "27px", `Frage 27 px (${groesse})`);
   await fenster.locator("[data-raetsel]").click();
-  check(await fenster.locator("[data-loesung]").isVisible(), "Antippen: Lösung im gestrichelten Kasten");
+  check((await fenster.locator("[data-loesung]").isVisible()) && (await page.locator("[data-noch-eins]").getAttribute("data-hell")) === null, "Antippen: Lösung im gestrichelten Kasten, „Noch eins“ orange");
   const rs = [r1];
   for (let i = 0; i < 8; i++) {
     await page.locator("[data-noch-eins]").click();
@@ -200,7 +225,7 @@ function mockWitze() {
   return [...teil.slice(0, teil.indexOf("],")).matchAll(/\{ vorne: "([^"]+)", hinten: "([^"]+)" \}/g)].map((m, i) => ({ id: `ki-mock-${i}`, sorte: "witz", vorne: m[1], hinten: m[2] }));
 }
 
-/** Jede Karte der Wundertüte auf der Kachel, in S und M: nichts abgeschnitten, nie „…“ (A-045) */
+/** Jede Karte der Wundertüte auf der Kachel, in S und M, Vorder- und Rückseite (beide liegen in der Kachel, A-059): nichts abgeschnitten, nie „…“ (A-045), vorn die Frage möglichst in ≤ 2 Zeilen */
 async function alleKarten(page, check, wo) {
   const karten = poolKarten();
   const eigene = mockWitze();
