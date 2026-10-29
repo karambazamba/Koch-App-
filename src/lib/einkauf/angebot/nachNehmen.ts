@@ -2,8 +2,9 @@
 // Wochenplan-Angebot (A-040, Tafel 127): Das Gericht steht im Plan, seine
 // Zutaten liegen oben auf der Laden-Seite bereit. Gleich danach fragt eine
 // kleine Meldung „Auf die Liste: Eier, Limette +2?“ mit „Alle dazu“
-// (Grundsachen nie). Kennt die Liste das Rezept nicht (eingebautes Rezept,
-// „Ich koche spontan“), gilt, was die Vorschau „auf die Liste“ nannte.
+// (Grundsachen nie). Eingebaute Rezepte liefern ihre Zutaten selbst (A-057,
+// `zutatenFuerGericht`); `needs` = was davon nicht im Haus ist. Ohne Plan
+// („Ich koche spontan“) gilt `needs` direkt, die Rezeptmenge als Hinweis.
 // Nichts anzubieten (alles im Haus, steht schon drauf) = still.
 
 import { showToast } from "@/lib/core/toast";
@@ -18,6 +19,7 @@ import { sectionFor } from "@/lib/einkauf/sections";
 import { istGrundsache } from "@/lib/einkauf/kacheln/gruppen";
 import { gleicheSache } from "@/lib/einkauf/zusammen/zusammen";
 import { alsEintrag, angebotFrage, angebotFuerGericht } from "@/lib/einkauf/angebot/angebot";
+import { mengeHinweis, zutatenFuerGericht } from "@/lib/einkauf/angebot/rezeptZutaten";
 import type { ManualItem } from "@/lib/einkauf/listModel";
 
 type Daten = { profile: HouseholdProfile; weekPlans: Record<string, WeekPlan>; recipes: Record<string, Recipe> };
@@ -37,10 +39,18 @@ function zutatenNachNehmen(data: Daten, titel: string, date: string, needs: read
   });
   const ausPlan = angebotFuerGericht(list.angebot, titel, settings.alwaysList, needs);
   if (ausPlan.length) return { weekStart, eintraege: ausPlan.map(alsEintrag) };
-  // Rezept nicht in der Liste (eingebaut, spontan): was die Vorschau nannte – ohne Grundsachen und ohne, was schon draufsteht oder angeboten wird
+  // Nicht im Plan (spontan): was die Vorschau nannte – ohne Grundsachen und ohne, was schon draufsteht oder angeboten wird; Rezeptmenge nur als Hinweis
   const steht = [...list.items.filter((i) => !i.hidden), ...list.angebot];
   const namen = [...new Set((needs ?? []).map((n) => n.trim()).filter(Boolean))].filter((n) => !istGrundsache(n) && !steht.some((i) => gleicheSache(i.name, n) || gleicheSache(i.originalName, n)));
-  return { weekStart, eintraege: namen.map((name) => ({ name, amount: "", section: sectionFor(name), day: weekdayName(tag), dish: titel })) };
+  const { zutaten } = zutatenFuerGericht({ title: titel }, data.recipes);
+  return {
+    weekStart,
+    eintraege: namen.map((name) => {
+      const z = zutaten.find((i) => gleicheSache(i.name, name));
+      const rezeptMenge = z ? mengeHinweis(z) : "";
+      return { name, amount: "", section: sectionFor(name), day: weekdayName(tag), dish: titel, ...(rezeptMenge ? { rezeptMenge } : {}) };
+    }),
+  };
 }
 
 /** Nach „Nehmen“: Zutaten anbieten – „Alle dazu“ setzt sie wie auf der Laden-Seite drauf */

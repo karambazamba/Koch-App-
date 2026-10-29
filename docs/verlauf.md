@@ -6,6 +6,29 @@ ist inzwischen anders. Den aktuellen Stand je Bereich beschreibt
 `docs/bereiche/<bereich>.md`, die festen Regeln stehen in `CLAUDE.md`.
 Ältere Pfadangaben meinen die Orte vor dem Umzug (siehe CLAUDE.md, „Ordner“).
 
+## Eingebaute Rezepte liefern ihre Zutaten (A-057, v0.161.0)
+
+- Auftrag A-057 (Kleinkram von Felix), betrifft A-040/A-046: Die
+  Einkaufsliste kannte nur Rezepte aus dem Kochbuch. Gerichte mit
+  eingebautem Rezept („Wok-Nudeln mit Hähnchen“, ID „k:…“ oder nur der Titel
+  aus der Wochenkarte) lieferten keine Plan-Zutaten, und „Nehmen“ in der
+  Rezept-Vorschau nahm ersatzweise, was die Vorschau „auf die Liste“ nannte
+  (nur die Hauptzutaten).
+- EINE Stelle: `zutatenFuerGericht` (`einkauf/angebot/rezeptZutaten.ts`):
+  eigenes Rezept über die ID, sonst eingebaut über die ID bzw. den Titel
+  (`cookRecipe`, `rezeptIdFuer`); Klammer-Erklärungen fallen weg („Reis (am
+  besten vom Vortag)“ → „Reis“). `buildShoppingList` nimmt die Zutaten von
+  dort – damit gilt das Angebot „Für deinen Wochenplan“ samt Zusammenführen
+  (eine Zeile, „für Wok-Nudeln mit Hähnchen, Nasi Goreng · Mo“, Mengen
+  addiert als Hinweis), Grundsachen blass und „Haben wir schon“ wie bisher.
+  Auch ein Kinder-Wunsch mit dem Namen eines eingebauten Rezepts bringt
+  dessen Zutaten mit.
+- „Nehmen“: Die Essen-Kachel rechnet `needs` jetzt über `bedarfFuerGericht`
+  aus allen Zutaten des Rezepts minus „im Haus“ (und ohne Grundsachen); ohne
+  bekannten Vorrat kein Abgleich, ohne Rezept wie bisher die Vorschau. Nicht
+  im Plan (spontan): die Namen mit der Rezeptmenge als Hinweis.
+- Speicherformat unverändert. Tests: `tests/einkauf/rezeptZutaten.test.ts`.
+
 ## Rätsel und Wundertüte: Noch eine, nie doppelt (A-052, v0.160.0)
 
 - Paket C des Gesamtauftrags vom 29.10. (Wortlaut

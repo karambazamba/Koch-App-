@@ -69,11 +69,16 @@ describe("Liste aus dem Wochenplan", () => {
   });
 
   it("Ausflug, leerer Tag, Gericht ohne Zutaten, Wunsch", () => {
-    const wish = entry("Pfannkuchen", undefined, { stored: { kind: "wish", kidId: "k", text: "Pfannkuchen" }, kidName: "Mathis", origin: "wunsch" });
+    const wish = entry("Was mit Soße", undefined, { stored: { kind: "wish", kidId: "k", text: "Was mit Soße" }, kidName: "Mathis", origin: "wunsch" });
     const plan = week([day("Montag", entry("Pasta", "pasta"), { away: true }), day("Dienstag", null), day("Mittwoch", entry("Reste", undefined)), day("Donnerstag", wish), day("Freitag", entry("Leer", "leer"))]);
     const list = buildShoppingList(plan, RECIPES);
     expect(list.items).toEqual([]);
-    expect(list.missing).toEqual(["Reste (Mi)", "Mathiss Wunsch „Pfannkuchen“ (Do)", "Leer (Fr)"]);
+    expect(list.missing).toEqual(["Reste (Mi)", "Mathiss Wunsch „Was mit Soße“ (Do)", "Leer (Fr)"]);
+    // A-057: Wunsch mit dem Namen eines eingebauten Rezepts bringt dessen Zutaten mit
+    const pfannkuchen = entry("Pfannkuchen", undefined, { stored: { kind: "wish", kidId: "k", text: "Pfannkuchen" }, kidName: "Mathis", origin: "wunsch" });
+    const mitRezept = buildShoppingList(week([day("Donnerstag", pfannkuchen)]), RECIPES);
+    expect(mitRezept.missing).toEqual([]);
+    expect(mitRezept.items.length).toBeGreaterThan(0);
   });
 
   it("kleiner Haushalt: auf die Personen umgerechnet und aufgerundet, Backen bleibt ganz", () => {

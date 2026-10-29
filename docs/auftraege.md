@@ -57,7 +57,7 @@ Ersetzt und nicht mehr gebaut: Essen-Kachel Tafel 121/122/133 → Tafel 134 (Rez
   - Text/Tafel nie angekommen: Auftragstext A-040 (nach Tafel 127 gebaut), Bilder 1/2 zu A-042, Tafeln 129/130 (durch 132 ersetzt)
 - **Offen, klein (notiert, nicht gebaut):**
   - Die Jetzt-Karte kürzt noch mit „…“ („Neu auf der Pinnwand · …“).
-  - Eingebaute Rezepte (Wok-Nudeln usw.) liefern der Einkaufsliste keine Plan-Zutaten; „Nehmen“ nimmt ersatzweise die Vorschau.
+  - ~~Eingebaute Rezepte (Wok-Nudeln usw.) liefern der Einkaufsliste keine Plan-Zutaten; „Nehmen“ nimmt ersatzweise die Vorschau.~~ Erledigt mit A-057 (v0.161).
   - `tests/core/abfragen.test.ts` war einmal um 00:41 UTC rot, später wieder grün (hängt wohl an der Uhrzeit).
   - Alte App-Stände kennen den Raum „Ich“ nicht. Prüfen, dass sie nichts falsch hochladen.
 - **5 Dinge zuerst am Handy ausprobieren:**
@@ -186,6 +186,7 @@ Ersetzt und nicht mehr gebaut: Essen-Kachel Tafel 121/122/133 → Tafel 134 (Rez
 | A-054 | SOFORT: Jetzt-Karte nur mit Nutzen für heute (Rangliste, keine Füllsätze, sonst ausblenden), Wochenende planen nur freitags 12–20 Uhr | – | in Arbeit (Ziel v0.158) |
 | A-055 | „Was los?“ – Veranstaltungen Kreis Ostholstein (Tabelle region_events, Cron 5:00, Fenster Heute · Wochenende · 2 Wochen, Kalender/Pinnwand, Quelle sichtbar; ersetzt „Tipps aus der Region“) | `tafel-142.png` | in Arbeit (Ziel v0.162; Parser wartet auf Freigabe von www.kreis-oh.de) |
 | A-056 | SOFORT (Vorrang): „Mia hört von Anfang an und versteht mehrere Sachen“ – Mikro sofort beim Antippen mit Ringpuffer (≥ 5 s), Schlüssel vorgewärmt, Ring erst bei echtem Ton, Zeiten im Mikro-Protokoll; Sofort-Weg nur bei genau EINER Sache, Füllwörter weg, Aufzählungen getrennt (KI und Regel-Notlösung), ein Rückgängig für alle; „Nur für dich. Tippen zum Ändern.“; ≥ 30 Prüfstand-Sätze (Wortlaut `docs/auftraege/A-056-mia-hoert-sofort.md`) | – | fertig v0.157 |
+| A-057 | Kleinkram von Felix: Die eingebauten Rezepte („k:…“) liefern der Einkaufsliste ihre Zutaten – Wochenplan-Angebot „Für deinen Wochenplan“ und „Nehmen“ (Namen, Mengen nur als Hinweis, Grundsachen blass/ausgenommen, „im Haus“ nicht, gleiche Zutat aus zwei Gerichten = eine Zeile mit „wofür“; `einkauf/angebot/rezeptZutaten.ts`) | – | fertig v0.161 |
 
 
 ## Offene Punkte (ohne eigenen Auftrag)
