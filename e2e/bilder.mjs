@@ -4,7 +4,7 @@
 // npm run bilder:vergleich – vergleicht aktuell mit basis (Abweichung > 0,1 %
 // wird gemeldet, Unterschiedsbild in .bilder/unterschied).
 import { mkdirSync } from "node:fs";
-import { BASE, DEVICES, FAKE_MIC, FAKE_VOICES, TAFEL_123, halten, hello, launch, mehrDetails, miaTippen, newPage, seedFamily, setDark, startServer, tippenFeld } from "./lib.mjs";
+import { BASE, DEVICES, FAKE_MIC, FAKE_VOICES, TAFEL_123, halten, hello, launch, miaTippen, newPage, seedFamily, setDark, startServer, tippenFeld } from "./lib.mjs";
 import { RECIPE_DATA } from "./ablaeufe/essen.mjs";
 
 /** Warten, bis Netz ruhig und alle Bilder (auch live gezeichnete Gerichte) fertig sind */
