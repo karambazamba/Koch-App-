@@ -2,7 +2,8 @@
 // Essen aus planTools.ts, cookbookTools.ts und pantryTools.ts, Einkauf aus
 // shoppingTools.ts, Termine und Aufgaben aus calendarTools.ts (Bereich
 // "alltag"), Mails aus mailTools.ts (Bereich "post"). Die Reihenfolge ist
-// fest (Prompt-Caching) – neue Werkzeuge nur hinten anhängen.
+// fest (Prompt-Caching) – neue Werkzeuge nur hinten anhängen (zuletzt:
+// Mias Wundertüte, wundertueteTools.ts).
 
 import { registerTool, type BegleitungTool } from "@/lib/begleitung/registry";
 import { PLAN_TOOLS } from "@/lib/begleitung/planTools";
@@ -17,6 +18,7 @@ import { DAY_TOOLS } from "@/lib/begleitung/dayTools";
 import { HOUSEHOLD_TOOLS } from "@/lib/begleitung/householdTools";
 import { TIP_TOOLS } from "@/lib/begleitung/tipTools";
 import { WISH_TOOL } from "@/lib/begleitung/wishTools";
+import { WUNDERTUETE_TOOLS } from "@/lib/begleitung/wundertueteTools";
 
 const FOOD_TOOLS: BegleitungTool[] = [
   PLAN_TOOLS.woche_lesen,
@@ -33,6 +35,6 @@ const FOOD_TOOLS: BegleitungTool[] = [
   PLAN_TOOLS.wunsch_merken,
 ];
 
-for (const tool of [...FOOD_TOOLS, ...CALENDAR_TOOLS, ...NOTE_TOOLS, ...HOME_TOOLS, ...MAIL_TOOLS, ...DAY_TOOLS, ...HOUSEHOLD_TOOLS, ...TIP_TOOLS, WISH_TOOL, SHOPPING_TOOLS.laden_regel, SHOPPING_TOOLS.laeden_anzeigen]) registerTool(tool);
+for (const tool of [...FOOD_TOOLS, ...CALENDAR_TOOLS, ...NOTE_TOOLS, ...HOME_TOOLS, ...MAIL_TOOLS, ...DAY_TOOLS, ...HOUSEHOLD_TOOLS, ...TIP_TOOLS, WISH_TOOL, SHOPPING_TOOLS.laden_regel, SHOPPING_TOOLS.laeden_anzeigen, ...WUNDERTUETE_TOOLS]) registerTool(tool);
 
 export { toolDefinitions, runRegisteredTool } from "@/lib/begleitung/registry";

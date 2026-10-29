@@ -5,7 +5,7 @@
 // Design ein (Essen-Seite, Kachel auf Heute, Satz oben auf Heute); aus heißt
 // nur ausgeblendet – Daten bleiben.
 
-import { BookOpen, Cake, CalendarDays, CalendarPlus, Carrot, ChefHat, Dumbbell, HandCoins, Lightbulb, Mail, MapPin, MessageCircle, Pin, Refrigerator, StickyNote, Sun, type LucideIcon } from "lucide-react";
+import { BookOpen, Cake, CalendarDays, CalendarPlus, Carrot, ChefHat, Dumbbell, Gift, HandCoins, Lightbulb, Mail, MapPin, MessageCircle, Pin, Refrigerator, StickyNote, Sun, type LucideIcon } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { CARD, PAGE_MAIN } from "@/components/ui/styles";
 import { BAUSTEINE, TIPS_BAUSTEIN, launchSichtbar, setFeature, useBausteine, type Baustein } from "@/lib/core/features";
@@ -15,6 +15,7 @@ import { showToast } from "@/lib/core/toast";
 import { pushUndo } from "@/lib/core/undo";
 import { helperName } from "@/lib/einstellungen/profile";
 import { useProfile } from "@/lib/einstellungen/useProfile";
+import { wundertueteName } from "@/lib/wundertuete/sorten";
 
 const BAUSTEIN_ICONS: Record<string, LucideIcon> = {
   calendar: CalendarDays,
@@ -33,13 +34,15 @@ const BAUSTEIN_ICONS: Record<string, LucideIcon> = {
   message: MessageCircle,
   map: MapPin,
   mail: Mail,
+  gift: Gift,
 };
 
 /** Baustein schalten – mit Hinweis, wo er steht, und Rückgängig */
 function toggleBaustein(b: Baustein, on: boolean) {
   if (!setFeature(b.feature, on)) return;
-  // Tipps aus der Region: eingeschaltet kommt die Kachel auf die Startseite
+  // Tipps aus der Region, Wundertüte: eingeschaltet kommt die Kachel auf die Startseite
   if (on && b.feature === "regiontipps") unlockHomeTile("tipps");
+  if (on && b.feature === "wundertuete") unlockHomeTile("wundertuete");
   showToast({
     text: on ? b.where : `${b.name} ist aus – die Daten bleiben.`,
     undo: pushUndo(`${b.name} ${on ? "an" : "aus"}`, () => setFeature(b.feature, !on)),
@@ -63,6 +66,7 @@ export function BausteineView() {
           {list.map((b) => {
             const Icon = BAUSTEIN_ICONS[b.icon] ?? Lightbulb;
             const active = Boolean(on?.includes(b.feature));
+            const titel = b.feature === "wundertuete" ? wundertueteName(name) : b.name;
             return (
               <li key={b.feature}>
                 <label className="flex cursor-pointer items-center gap-3 px-4 py-3.5">
@@ -70,13 +74,13 @@ export function BausteineView() {
                     <Icon className="h-5 w-5" strokeWidth={2} />
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="block text-base font-bold">{b.name}</span>
+                    <span className="block text-base font-bold">{titel}</span>
                     <span className="block text-sm text-muted">{b.text}</span>
                   </span>
                   <input
                     type="checkbox"
                     role="switch"
-                    aria-label={b.name}
+                    aria-label={titel}
                     checked={active}
                     disabled={on === undefined}
                     onChange={(e) => toggleBaustein(b, e.target.checked)}

@@ -32,6 +32,7 @@ import { useJetztTopics } from "@/components/heute/useJetztTopics";
 import { mitLaufendemTimer } from "@/lib/heute/raster";
 import { takeHelloFlight } from "@/lib/core/hello";
 import { SportTile } from "@/components/sport/SportTile";
+import { WundertueteTile } from "@/components/wundertuete/WundertueteTile";
 import { useHomePhase } from "@/components/heute/useHomePhase";
 import { arbeitsEnde, type PhaseContext } from "@/lib/heute/phases";
 import { DEFAULT_ROUTINE, usePreview, useRoutine } from "@/lib/heute/tagesablauf";
@@ -148,6 +149,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
   const notesOn = useFeature("notizen");
   const pinboardOn = useFeature("pinnwand");
   const potOn = useFeature("spendentopf");
+  const wtOn = useFeature("wundertuete");
   const regionOn = useTipsOn();
   const tipSettings = useTipSettings();
   const paused = pausedOn(data.profile, data.todayIso);
@@ -252,7 +254,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
   const workless = (list: typeof overview.heute) => (view.hideWork ? list.filter((i) => i.room !== "arbeit") : list);
 
   // Kacheln: genau die gespeicherte Reihenfolge und Größe – im Bearbeiten-Modus dieselbe
-  const saved = all.filter((t) => t.visible && !tileMeta(t.id).soon && (t.id !== "vorrat" || pantryOn) && (t.id !== "tipps" || regionOn) && (t.id !== "sport" || sportOn) && (t.id !== "notizen" || notesOn) && (t.id !== "pinnwand" || pinboardOn) && (t.id !== "spendentopf" || potOn));
+  const saved = all.filter((t) => t.visible && !tileMeta(t.id).soon && (t.id !== "vorrat" || pantryOn) && (t.id !== "tipps" || regionOn) && (t.id !== "sport" || sportOn) && (t.id !== "notizen" || notesOn) && (t.id !== "pinnwand" || pinboardOn) && (t.id !== "spendentopf" || potOn) && (t.id !== "wundertuete" || wtOn));
   // Timer ohne festen Platz: solange einer läuft, als XS ganz oben im Raster (danach wieder weg)
   const visible = mitLaufendemTimer(saved, timerLaeuft);
   const laufend = visible.length > saved.length ? "timer" : null;
@@ -455,6 +457,8 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
         return <SpendentopfTile />;
       case "tipps":
         return <TipsTile size={tile.size} today={data.todayIso} />;
+      case "wundertuete":
+        return <WundertueteTile size={tile.size} today={data.todayIso} minutes={minutes} haushalt={haushalt} gericht={dish} demo={demoDay.tiles.includes("wundertuete")} name={helperName(data.profile)} />;
       default:
         return null;
     }

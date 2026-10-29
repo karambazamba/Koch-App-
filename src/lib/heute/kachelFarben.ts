@@ -23,8 +23,8 @@ export const KACHEL_FARBEN: { id: KachelFarbe; label: string; kachel: string }[]
 
 const IDS = KACHEL_FARBEN.map((f) => f.id);
 
-/** Wetter und Essen behalten Himmel bzw. Bild */
-const OHNE_FARBWAHL: readonly string[] = ["wetter", "essen"];
+/** Wetter und Essen behalten Himmel bzw. Bild, die Wundertüte wechselt die Farbe mit der Sorte */
+const OHNE_FARBWAHL: readonly string[] = ["wetter", "essen", "wundertuete"];
 
 /** Darf diese Kachel eine eigene Farbe haben? */
 export const farbWaehlbar = (kachel: string) => !OHNE_FARBWAHL.includes(kachel);

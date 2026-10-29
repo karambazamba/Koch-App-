@@ -30,6 +30,7 @@ const FEATURES = {
   notizen: "Notizen (/notizen, Kachel, Schnellnotiz)",
   pinnwand: "Pinnwand (/pinnwand, Kachel): Zettel und Sprachnachrichten für alle im Haushalt",
   spendentopf: "Spendentopf (/spendentopf, Kachel, Beitrags-Frage)",
+  wundertuete: "Mias Wundertüte (Kachel): Angeberwissen, Platt, Rätsel und Spiele für den Tisch",
 } as const;
 
 export type Feature = keyof typeof FEATURES;
@@ -52,6 +53,7 @@ export const BAUSTEINE: Baustein[] = [
   { feature: "notizen", name: "Notizen", text: "Notizen und Listen festhalten.", where: "Notizen stehen jetzt als Kachel auf der Startseite.", icon: "note" },
   { feature: "pinnwand", name: "Pinnwand", text: "Zettel und Sprachnachrichten für alle, wie am Kühlschrank.", where: "Die Pinnwand steht jetzt als Kachel auf der Startseite.", icon: "pin" },
   { feature: "spendentopf", name: "Spendentopf", text: "Jeder Euro geht in eure Region.", where: "Der Spendentopf steht jetzt auf der Startseite.", icon: "coins" },
+  { feature: "wundertuete", name: "Wundertüte", text: "Jeden Tag was Neues: Angeberwissen, Platt, Rätsel und Spiele für den Tisch.", where: "Die Wundertüte steht jetzt auf der Startseite.", icon: "gift" },
 ];
 
 /**
@@ -93,8 +95,16 @@ const ENABLED: Partial<Record<Feature, true>> = {};
  */
 type FeatureStore = { version: 6; on: Feature[]; launch: boolean; imHaus: boolean };
 
-/** Standard für neue Nutzer: Notizen, Pinnwand und Im Haus (Bereich unter Essen; die Kachel nur über die Auswahl). Allein: Pinnwand aus (`startFresh`) */
-const DEFAULT_ON: Feature[] = ["notizen", "vorrat", "pinnwand"];
+/**
+ * Standard für neue Nutzer: Notizen, Pinnwand, Im Haus (Bereich unter Essen;
+ * die Kachel nur über die Auswahl) und Mias Wundertüte (A-022, als S-Kachel –
+ * von Felix gewollte Ausnahme vom Feature-Stopp). Allein: Pinnwand aus
+ * (`startFresh`). Bestehende Nutzer bekommen die Wundertüte nicht von
+ * selbst (`launchSchnitt`): ihre Anordnung ändert sich nie von selbst.
+ */
+const DEFAULT_ON: Feature[] = ["notizen", "vorrat", "pinnwand", "wundertuete"];
+/** Nur für ganz neue Nutzer an (wer schon eine Startseite hat, schaltet selbst zu) */
+const NUR_NEU: Feature[] = ["wundertuete"];
 /** Beim Update auf v6 einmal dazu: wer die Pinnwand hatte, behält sie */
 const PINNWAND_ON: Feature[] = ["pinnwand"];
 /** Beim Update auf v4 einmal dazu (Im Haus kommt über `launchUebernahme`, damit die Kachel aus bleibt) */
@@ -234,6 +244,7 @@ function launchSchnitt(read: (key: StorageKey) => string | null) {
   const sport = json("wasgibts.sport") as { trainings?: unknown[] } | null;
   if (shown("sport") || (sport?.trainings?.length ?? 0) > 0) used.push("sport");
   if (shown("spendentopf")) used.push("spendentopf");
-  const on = s?.on ?? DEFAULT_ON;
+  // Ohne gespeicherte Bausteine, aber mit eigener Startseite: bestehender Nutzer – die Wundertüte bleibt aus
+  const on = s?.on ?? (home ? DEFAULT_ON.filter((f) => !NUR_NEU.includes(f)) : DEFAULT_ON);
   store.save({ version: 6, on: [...new Set([...on, ...used])], launch: true, imHaus: s?.imHaus ?? false });
 }

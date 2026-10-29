@@ -19,13 +19,13 @@ describe("Beispiel-Tag: Speicher", () => {
     const demo = await load();
     demo.startDemo();
     expect(state()).toEqual({ version: 1, since: "2026-10-20", cleared: [], done: [], gone: [], asked: false });
-    expect(demo.demoTiles(state(), "2026-10-20")).toEqual(["termine", "aufgaben", "pinnwand", "einkauf", "essen", "notizen", "sport", "vorrat"]);
+    expect(demo.demoTiles(state(), "2026-10-20")).toEqual(["termine", "aufgaben", "pinnwand", "einkauf", "essen", "notizen", "sport", "vorrat", "wundertuete"]);
   });
 
   it("verschwindet nach 3 Tagen", async () => {
     const demo = await load();
     demo.startDemo();
-    expect(demo.demoTiles(state(), "2026-10-22")).toHaveLength(8);
+    expect(demo.demoTiles(state(), "2026-10-22")).toHaveLength(9);
     expect(demo.demoTiles(state(), "2026-10-23")).toEqual([]);
     expect(demo.demoTiles(null, "2026-10-20")).toEqual([]);
   });

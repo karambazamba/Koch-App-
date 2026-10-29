@@ -76,6 +76,11 @@
 
 - **Beispiel-Tag:** Beispiele liegen nie in den echten Speichern, nicht in
   Sicherung, Push oder KI. → `docs/bereiche/heute.md`
+- **Mias Wundertüte (A-022, Tafel 116):** neue Funktion trotz Feature-Stopp
+  für 1.0 – von Felix ausdrücklich gewollte Ausnahme. Baustein
+  `wundertuete`, für neue Nutzer an als S-Kachel hinter Essen + Einkauf
+  (`ersteStartseite`), bestehende behalten ihre Anordnung (Kachel aus, in
+  der Auswahl mit „NEU“). Regeln und Pool → `docs/bereiche/wundertuete.md`.
 
 
 Kurz: Die Startseite der App. Oben Begrüßung und die Jetzt-Karte (EIN Thema
@@ -185,9 +190,9 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
   Kachel-Akzent (`ui/KachelWasserzeichen`, `.kachel-wasserzeichen`, Tokens
   `--app-wasserzeichen*`): Termine Calendar, Aufgaben CircleCheck, Einkauf
   ShoppingCart, Im Haus Refrigerator, Notizen StickyNote, Timer Timer, Tipps
-  MapPin, Post (bald) Mail. Keins bei Wetter (Himmel), Essen (Foto), Pinnwand
-  (Zettel), Spendentopf (Topf), Sport (die Stempel sind das Bild, A-044), der
-  Jetzt-Karte, in XS und im Look „Schlicht“. Tabelle `WASSERZEICHEN_SYMBOL`
+  MapPin, Post (bald) Mail, Wundertüte Gift (nur Vorderseite, leise). Keins
+  bei Wetter (Himmel), Essen (Foto), Pinnwand (Zettel), Spendentopf (Topf),
+  Sport (die Stempel sind das Bild, A-044), der Jetzt-Karte, in XS und im Look „Schlicht“. Tabelle `WASSERZEICHEN_SYMBOL`
   (`Record` über alle Kachel-IDs, neue Kachel = Eintrag oder Grund in
   `OHNE_WASSERZEICHEN`, Test `tests/app/wasserzeichen.test.ts`). Freier Text
   ohne weißes Kärtchen → `frei` (9 %, dunkel 8 %), leiser Text dort mit
@@ -442,7 +447,8 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
   einmal, Sprechblase „Kein Stress. Ich sortier deinen Alltag, Stück für
   Stück.“, drei Knöpfe, Texte `ERSTER_START` in `mia/persona.ts`, seit
   v0.120) → `startFresh("farbig", haushalt)`: Standardwerte,
-  `DEFAULT_HOME`, `startDemo()`; Mia fliegt von „Zeig mal“ zum Mia-Knopf, der
+  `ersteStartseite(haushalt)` (Standard + Wundertüte), `startDemo()`; Mia
+  fliegt von „Zeig mal“ zum Mia-Knopf, der
   beim ersten Erscheinen einmal zwinkert; „Schreiben & sprechen“ erst nach 4 s.
   Jeder Schritt ist ein Verlaufseintrag (Zurück = ein Schritt), nach „Zeig
   mal“ werden die Schritte aus dem Verlauf genommen.
@@ -609,7 +615,10 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
   Timer-Kachel nicht selbst auf der Startseite, erscheint sie als XS ganz
   oben (im Bearbeiten nicht verschieb-/änderbar), danach wieder weg.
 - Standard je Haushalt (`defaultHome`, für neue Nutzer und den Beispiel-Tag;
-  `startFresh` schaltet bei „allein“ Sport ein, Pinnwand aus). Haushalt
+  `startFresh` schaltet bei „allein“ Sport ein, Pinnwand aus). Beim
+  allerersten Start kommt dazu die Wundertüte S direkt hinter Essen +
+  Einkauf (`ersteStartseite`, A-022); sie zählt beim Haushaltswechsel nicht
+  zum Standard und kommt dort nie von selbst dazu (`NUR_NEU`). Haushalt
   wechseln (`homeForHaushalt`, aus `saveProfile`): steht noch genau der
   Standard des alten Haushalts da, kommt der neue; sonst bleibt die eigene
   Anordnung, nur fehlende Standard-Kacheln kommen dazu, bei „allein“ wird die
@@ -619,3 +628,25 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
   Lücken, Bearbeiten = Fertig, Timer, Standard je Haushalt, Haushaltswechsel,
   Migration v9), `tests/wetter/kachel.test.ts` (Szenen, Satz, XS/S/M ×
   Tag/Nacht × Farbig/Schlicht), Durchklick `e2e/ablaeufe/raster.mjs`.
+
+### Mias Wundertüte (A-022, Tafel 116)
+
+- Kachel `wundertuete` (S/M, Baustein `wundertuete`, keine Farbwahl): jeden
+  Tag was Neues, sieben Sorten mit eigenem Kopf und Farbe, Antippen dreht um
+  (Antwort hinten, Teilen), nochmal = Neues; nach 3 Anzeigen von selbst die
+  nächste. Tagsüber Wissen, Platt, Rätsel; ab 17 Uhr zu zweit/Familie
+  Tischrunde, Schätz mal, Wer zuerst. Inhalte geprüft mit Quelle.
+- Neu an für neue Nutzer (S hinter Essen + Einkauf), bestehende: aus, in der
+  Auswahl „NEU“; Einschalten in „Mehr Funktionen“ stellt die Kachel auf die
+  Startseite. Ausnahme vom Feature-Stopp für 1.0, von Felix gewollt.
+- Beispiel-Tag: feste Karte Angeberwissen, „Beispiel“ nur für VoiceOver
+  (kein zweites Schild neben dem an der Pinnwand, Tafel 119).
+- Raster (A-023): nur S und M, keine Standard-Position im Tafel-119-Standard
+  (`defaultHome`), nur beim allerersten Start dazu (`ersteStartseite`).
+  Nichts abgeschnitten: Schrift passt sich der Fläche an, Kopf mit
+  Kurzform (`useEinpassen`); geprüft in `nichtsAbgeschnitten` und
+  `wundertueteAlle`.
+- Alles Weitere (Sorten, Wechsel, Pool, Nachfüllen, Speicher, Tests):
+  `docs/bereiche/wundertuete.md`; Oberfläche
+  `src/components/wundertuete/WundertueteTile.tsx`, im Board über
+  `TodayPage.renderTile`.

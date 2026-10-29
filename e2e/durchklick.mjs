@@ -55,8 +55,9 @@ import * as einkaufnamen from "./ablaeufe/einkaufnamen.mjs";
 import * as raumwahl from "./ablaeufe/raumwahl.mjs";
 import * as raster from "./ablaeufe/raster.mjs";
 import * as sport from "./ablaeufe/sport.mjs";
+import * as wundertuete from "./ablaeufe/wundertuete.mjs";
 
-const ALL = { ...start, ...alltag, ...essen, ...mehr, ...konten, ...vorfuehren, ...mikrofon, ...termin, ...stimme, ...wochencheck, ...kochtipp, ...mehrideen, ...miazuerst, ...pinnwandgesten, ...pinnwandordnen, ...sprachnachricht, ...mianame, ...startseite, ...schnelleingabe, ...kalendertag, ...mails, ...datenschutz, ...mikrocheck, ...zuhoeren, ...serverstimme, ...ohrlive, ...miasprechen, ...wischen, ...abhaken, ...uebersicht, ...ergebniskarten, ...testcode, ...notizen, ...sprechenhaengt, ...heim, ...essenkachel, ...wochenkarte, ...laeden, ...familieTeilen, ...einsortieren, ...einkaufneu, ...kochmodus, ...vorschau, ...erledigt, ...abgeschnitten, ...einkaufnamen, ...raumwahl, ...raster, ...sport };
+const ALL = { ...start, ...alltag, ...essen, ...mehr, ...konten, ...vorfuehren, ...mikrofon, ...termin, ...stimme, ...wochencheck, ...kochtipp, ...mehrideen, ...miazuerst, ...pinnwandgesten, ...pinnwandordnen, ...sprachnachricht, ...mianame, ...startseite, ...schnelleingabe, ...kalendertag, ...mails, ...datenschutz, ...mikrocheck, ...zuhoeren, ...serverstimme, ...ohrlive, ...miasprechen, ...wischen, ...abhaken, ...uebersicht, ...ergebniskarten, ...testcode, ...notizen, ...sprechenhaengt, ...heim, ...essenkachel, ...wochenkarte, ...laeden, ...familieTeilen, ...einsortieren, ...einkaufneu, ...kochmodus, ...vorschau, ...erledigt, ...abgeschnitten, ...einkaufnamen, ...raumwahl, ...raster, ...sport, ...wundertuete };
 const pick = process.argv.slice(2);
 const flows = Object.entries(ALL).filter(([name, run]) => typeof run === "function" && (!pick.length || pick.includes(name)));
 const stop = await startServer();

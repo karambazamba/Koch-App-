@@ -277,6 +277,14 @@ export const PRUEFSAETZE: PruefSatz[] = [
   S("Ich bin müde", ANTWORT),
   S("äh ja also nee doch nicht", ANTWORT),
 
+  // Mias Wundertüte (A-022): Karte aus dem geprüften Pool vorlesen, nichts anlegen
+  R("Erzähl mir was Unnützes"),
+  R("Angeberwissen"),
+  R("Gib uns eine Tischfrage", { max: 2 }),
+  R("Rätsel!", { max: 2 }),
+  R("Was heißt Schietwedder auf Hochdeutsch?"),
+  R("Hast du ein Spiel für den Tisch?", { max: 2 }),
+
   // Mehreres auf einmal: alle Aktionen, Text nur „Steht drin.“ (3)
   S("Pack Milch, Brot und Eier auf die Liste und Kita-Formular und Geschenk für Oma in die Aufgaben", ["add_shopping", "upsert_entry"], { alle: true, woerter: 2 }),
   S("Zahnarzt Montag 10 Uhr, Turnen Freitag 16 Uhr und Butter auf die Liste", ["upsert_entry", "add_shopping"], { alle: true, woerter: 2, lage: ["ohne-zahnarzt"] }),

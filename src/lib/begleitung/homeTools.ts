@@ -170,7 +170,7 @@ export const HOME_TOOLS: BegleitungTool[] = [
       input_schema: {
         type: "object",
         properties: {
-          kachel: { type: "string", enum: HOME_TILES.map((t) => t.id), description: "pinnwand, termine, aufgaben, wetter, essen, einkauf, notizen (neueste und angeheftete Notizen), vorrat" },
+          kachel: { type: "string", enum: HOME_TILES.map((t) => t.id), description: "pinnwand, termine, aufgaben, wetter, essen, einkauf, notizen (neueste und angeheftete Notizen), vorrat, wundertuete (Mias Wundertüte: Wissen, Platt, Rätsel, Tischspiele)" },
           aktion: { type: "string", enum: ACTIONS },
           farbe: { type: "string", description: `Nur bei aktion farbe: ${KACHEL_FARBEN.map((f) => f.id).join(", ")} oder automatisch` },
         },

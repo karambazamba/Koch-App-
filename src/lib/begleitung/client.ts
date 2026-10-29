@@ -541,6 +541,9 @@ export function commitOps(current: AssistantData, ops: ChangeOp[], selected: Set
       switched.push({ feature: op.feature as Feature, on: op.on });
       const b = bausteinOf(op.feature as Feature)!;
       notes.push(op.on ? b.where : `${b.name} ist aus. Die Daten bleiben.`);
+      // Wundertüte eingeschaltet: ihre Kachel kommt auf die Startseite (sie sagt ja, dass sie dort steht)
+      const tiles = data.home ?? loadHomeTiles();
+      if (op.on && op.feature === "wundertuete" && !tiles.find((t) => t.id === "wundertuete")?.visible) data = { ...data, home: applyHomeChange(tiles, { tile: "wundertuete", action: "zeigen" }) };
     }
   }
   if (chosen.some((op) => op.type === "upsert_note")) notes.push("Notizen findest du in der Woche ganz unten unter „Notizen“.");

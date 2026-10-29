@@ -4,7 +4,8 @@
 // iPhone SE (320 px), 15 Pro und Pixel 7, jede Kachel einmal in XS, S und M
 // (wo es die Größe gibt, sonst die nächste erlaubte; Raster A-023). Kein sichtbarer Text in einer Kachel endet auf „…“
 // oder wird weggeschnitten (`abgeschnitteneTexte`); frei Eingegebenes
-// (`data-freitext`) zählt nicht. Dazu Tafel 134: Essen-Kachel ohne große
+// (`data-freitext`) zählt nicht. Die Wundertüte (A-022) ist mit dabei, jede
+// Karte ihres Pools prüft `wundertueteAlle`. Dazu Tafel 134: Essen-Kachel ohne große
 // Knöpfe, „Was anderes?“ oben links, „Wochenplan ›“ unten rechts, kein
 // oranger Kreis.
 import { hello, newPage, seedFamily } from "../lib.mjs";
@@ -23,6 +24,7 @@ const KACHELN = [
   ["sport", ["XS", "S"]],
   ["vorrat", ["XS", "S"]],
   ["notizen", ["XS", "S", "M"]],
+  ["wundertuete", ["S", "M"]],
 ];
 /** Nächste erlaubte Größe (wie die Migration der Startseite v9) */
 const naechste = (sizes, size) => (sizes.includes(size) ? size : size === "XS" ? sizes[0] : sizes[sizes.length - 1]);
@@ -43,7 +45,7 @@ const FAMILIE = {
       { id: "p5", name: "Reis", amount: 500, unit: "g", addedAt: "2026-10-10", place: "schrank" },
     ],
   },
-  "wasgibts.funktionen": { version: 2, on: ["vorrat", "rezepte", "wochenplan", "sport", "notizen", "pinnwand"] },
+  "wasgibts.funktionen": { version: 2, on: ["vorrat", "rezepte", "wochenplan", "sport", "notizen", "pinnwand", "wundertuete"] },
   // Kochidee-Pille sichtbar (ab dem 3. Nutzungstag)
   "wasgibts.kochtipp": { version: 1, days: ["2026-10-19", "2026-10-20", "2026-10-21"], unlocked: true, popped: true, last: null, shown: [] },
 };

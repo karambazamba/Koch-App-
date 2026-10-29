@@ -1,6 +1,6 @@
 // Beispiel-Tag beim ersten Start: Beispiele je Haushalt auf der Startseite
 // (Tafel 119: Termine, Aufgaben, Pinnwand, Einkauf, Essen mit Beispielgericht,
-// Notizen, Sport, Im Haus), damit nichts leer aussieht. Die
+// Notizen, Sport, Im Haus; Wundertüte mit fester Karte), damit nichts leer aussieht. Die
 // Beispiele liegen NICHT in den echten Speichern – nur die Startseite zeigt
 // sie, nie Sicherung, Kalender, Push oder KI. Uhrzeiten werden beim Öffnen
 // aus einem festen Tagesplan passend zum Wochentag (`demoDay`: Werktag,
@@ -17,8 +17,8 @@ import { istFeiertag } from "@/lib/core/feiertage";
 import type { Haushalt } from "@/lib/core/haushalt";
 import type { Room } from "@/lib/core/entries";
 
-export type DemoTile = "termine" | "aufgaben" | "pinnwand" | "einkauf" | "essen" | "notizen" | "sport" | "vorrat";
-const TILES: DemoTile[] = ["termine", "aufgaben", "pinnwand", "einkauf", "essen", "notizen", "sport", "vorrat"];
+export type DemoTile = "termine" | "aufgaben" | "pinnwand" | "einkauf" | "essen" | "notizen" | "sport" | "vorrat" | "wundertuete";
+const TILES: DemoTile[] = ["termine", "aufgaben", "pinnwand", "einkauf", "essen", "notizen", "sport", "vorrat", "wundertuete"];
 const DAYS = 3;
 
 export type DemoState = {
@@ -52,10 +52,14 @@ export function startDemo() {
   store.save({ version: 1, since: todayIso(), cleared: [], done: [], gone: [], asked: false });
 }
 
+/** Nur Begleitung des Beispiel-Tags: bleibt sie allein übrig, ist der Beispiel-Tag vorbei (A-022) */
+const NUR_MIT: DemoTile[] = ["wundertuete"];
+
 /** Welche Kacheln gerade Beispiele zeigen (leer = keine) */
 export function demoTiles(state: DemoState | null, today: string): DemoTile[] {
   if (!state || today >= addDays(state.since, DAYS)) return [];
-  return TILES.filter((t) => !state.cleared.includes(t));
+  const tiles = TILES.filter((t) => !state.cleared.includes(t));
+  return tiles.every((t) => NUR_MIT.includes(t)) ? [] : tiles;
 }
 
 /** Eine Kachel hat jetzt Eigenes → ihre Beispiele verschwinden für immer */

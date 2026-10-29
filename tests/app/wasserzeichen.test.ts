@@ -42,6 +42,7 @@ describe("Zuordnung: jede Kachel ohne eigenes Bild hat ein Wasserzeichen", () =>
       timer: "timer",
       tipps: "map-pin",
       post: "mail",
+      wundertuete: "gift",
     });
   });
 });
@@ -151,5 +152,15 @@ describe("freier Text ohne Kärtchen → 9 % (data-art=frei), weiße Liste → v
     const abends = renderToStaticMarkup(createElement(AufgabenSection, { items, today: TODAY, size: "S", arbeitMorgen: 3 }));
     expect(zeichen(abends)).toContain('data-art="frei"');
     expect(abends).toMatch(/data-arbeit-morgen="true"><span class="kachel-frei">/);
+  });
+});
+
+describe("Wundertüte (nach Rebase auf A-036)", () => {
+  it("Vorderseite mit Geschenk, leise (die Frage steht frei), Rückseite ohne", () => {
+    const s = readFileSync("src/components/wundertuete/WundertueteTile.tsx", "utf8");
+    const vorne = s.slice(s.indexOf("wt-vorne"), s.indexOf("wt-hinten"));
+    expect(vorne).toContain('<KachelWasserzeichen kachel="wundertuete" size={size} frei />');
+    expect(vorne).toContain('className="kachel-frei"');
+    expect(s.slice(s.indexOf("wt-hinten"))).not.toContain("KachelWasserzeichen");
   });
 });

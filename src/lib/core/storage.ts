@@ -31,6 +31,7 @@ export const STORAGE = [
   { key: "wasgibts.funktionen", what: "Eingeschaltete Bausteine (+ Übernahme Launch 1.0, Im Haus, Pinnwand)", version: 6, migration: "core/features.ts migrate", area: "local", backup: true },
   { key: "wasgibts.tagesablauf", what: "Tagesablauf: Morgens, Feierabend, Ruhe, Arbeitstage, Kochen", version: 1, migration: "heute/tagesablauf.ts", area: "local", backup: true },
   { key: "wasgibts.sport", what: "Sport: Trainings, Wochenziel (oder ohne), Packlisten, Erinnerung am Vorabend", version: 2, migration: "sport/store.ts migrateSport", area: "local", backup: true },
+  { key: "wasgibts.wundertuete", what: "Mias Wundertüte: aktuelle Karte, wie oft sie schon da war, gezeigte Karten je Sorte (nur IDs, pro Gerät)", version: 1, migration: "wundertuete/auswahl.ts migrateWt", area: "local", backup: true },
   { key: "wasgibts.timer", what: "Laufende Timer", version: 1, migration: "timer/store.ts", area: "local", backup: false },
   { key: "wasgibts.kochen", what: "Gerade wird gekocht: Schritte, Kochmodus-Stand, abgehakte Zutaten (nur heute)", version: 2, migration: "essen/kochSession.ts", area: "local", backup: false },
   { key: "wasgibts.wochenplan", what: "Wochenplan (Gerichte je Tag)", version: 3, migration: "essen/mealPlan.ts", area: "local", backup: true },

@@ -6,6 +6,40 @@ ist inzwischen anders. Den aktuellen Stand je Bereich beschreibt
 `docs/bereiche/<bereich>.md`, die festen Regeln stehen in `CLAUDE.md`.
 Ältere Pfadangaben meinen die Orte vor dem Umzug (siehe CLAUDE.md, „Ordner“).
 
+## Mias Wundertüte (A-022, v0.156.0)
+
+- Auftrag A-022 (Tafel 116, Wortlaut `docs/auftraege/A-022-wundertuete.md`),
+  ersetzt „Kachel Angeberwissen“. Erst zurückgestellt bis nach dem
+  Feature-Stopp, mit der Änderung vom 28.10. direkt nach der Sport-Kachel
+  (A-029) gebaut: von Felix gewollte Ausnahme von „keine neuen Funktionen“.
+- Neue Kachel `wundertuete` (S/M) mit Baustein `wundertuete`: für neue
+  Nutzer an (`DEFAULT_ON`, `ersteStartseite`: S direkt hinter Essen +
+  Einkauf), bestehende behalten Bausteine und Anordnung (`NUR_NEU` in
+  `launchSchnitt` und `homeForHaushalt`); keine Format-Migration nötig, die
+  Kachel kommt in alten Anordnungen still unsichtbar dazu (`sanitizeHome`).
+- Sieben Sorten (Angeberwissen, Platt för Plietsche, Rätselstunde, Heute vor
+  100 Jahren, Tischrunde, Schätz mal!, Wer zuerst) mit Farbe aus der
+  Palette über `data-tone`, Hinweis unten links, drei Punkte = Anzeigen.
+  Antippen dreht um (0,8 s, reduced-motion = Überblenden), nochmal = Neues,
+  nach 3 Anzeigen von selbst. Passendes zuerst (Regen, Jahreszeit,
+  Wochentag, Gericht, Feiertag, heute vor 100 Jahren), nie dieselbe Sorte
+  zweimal, keine Wiederholung bis die Sorte durch ist.
+- Pool von 459 geprüften Einträgen in `src/lib/wundertuete/data/` mit Quelle
+  je Fakt; Speicher `wasgibts.wundertuete` v1 (nur IDs, in der Sicherung).
+- Mia: Werkzeug `wundertuete_karte` (liest nur aus dem Pool, Rätsel mit
+  Knopf „Lösung“), 6 neue Prüfstand-Sätze. Beispiel-Tag: feste Karte
+  Angeberwissen. Doku `docs/bereiche/wundertuete.md` (Regeln, Zählung,
+  Nachfüllen als Monats-Auftrag „Wundertüte nachfüllen“).
+- Neu aufgesetzt auf v0.155 (Raster XS · S · M, Wasserzeichen, drei Räume,
+  Ergebnis-Karten): Kachel S/M ohne Platz im Tafel-119-Standard,
+  Wasserzeichen Geschenk nur vorne. Nichts abgeschnitten (A-045): Frage und
+  Antwort mit Schrift in Stufen statt `line-clamp`, Kopf mit Kurzform bzw.
+  nur Symbol (`useEinpassen`), Sorte „Wer zuerst“ ohne „…“. Durchklick
+  `wundertueteAlle` (alle Karten vorne/hinten, S/M, iPhone SE),
+  Wundertüte in `nichtsAbgeschnitten`. Beispiel-Tag ohne eigenes Schild
+  „Beispiel“ (nur VoiceOver, Tafel 119). Fakten nachgeprüft: Hamburgs Brücken
+  und 500 g Spaghetti vorsichtiger formuliert.
+
 ## Aufgeräumt (v0.25)
 
 - Kein Alt-Modus mehr. Daten nur über das zentrale Speicher-Verzeichnis (mit
