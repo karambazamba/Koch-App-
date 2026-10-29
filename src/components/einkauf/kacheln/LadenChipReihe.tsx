@@ -1,9 +1,10 @@
 "use client";
 
-// Einkauf-Kachel M (A-050, Tafel 140 unten): EINE Reihe Laden-Chips
-// nebeneinander, gleich breit – links Strich in Ladenfarbe, Name (14 px, notfalls
-// 13 px) fett, rechts die Anzahl in Ladenfarbe. Mehr Läden: „+n weitere“
-// (grau, gleiche Breite) öffnet die Einkaufsliste; ein Laden-Chip die
+// Einkauf-Kachel M (A-050, Tafel 140 unten; A-065, Tafel 148 B): 1–3 Läden
+// in EINER Reihe nebeneinander, ab 4 Läden 2 × 2 (gleich große, etwas höhere
+// Felder, volle Namen); links Strich in Ladenfarbe, Name (14 px, notfalls
+// 13 px) fett, rechts die Anzahl in Ladenfarbe. Ab 5 Läden: das vierte Feld
+// „+n weitere“ (grau) öffnet die Einkaufsliste; ein Laden-Feld die
 // Laden-Seite. Gemessen wird die echte Breite der Reihe (`ladenChips`).
 
 import Link from "next/link";
@@ -41,22 +42,25 @@ const messen: Messen = (text, px) => {
 
 export function LadenChipReihe({ rows, demo }: { rows: { shop: string | null; count: number; names: string[] }[]; demo: boolean }) {
   const [ref, breite] = useBreite<HTMLUListElement>();
-  const { chips, px } = ladenChips(rows, breite, messen);
+  const { chips, px, spalten } = ladenChips(rows, breite, messen);
+  const raster = chips.length > spalten;
   return (
-    <ul ref={ref} className="mt-1 grid gap-1.5" style={{ gridTemplateColumns: `repeat(${Math.max(1, chips.length)}, minmax(0, 1fr))` }} aria-label="Nach Laden" data-laden-chips={chips.length}>
+    <ul ref={ref} className="mt-1 grid gap-1.5" style={{ gridTemplateColumns: `repeat(${spalten}, minmax(0, 1fr))` }} aria-label="Nach Laden" data-laden-chips={chips.length} data-laden-raster={raster || undefined}>
       {chips.map((c) => (
         <li key={c.art === "laden" ? (c.shop ?? "egal") : "weitere"} className="min-w-0">
-          <Chip chip={c} px={px} demo={demo} />
+          <Chip chip={c} px={px} demo={demo} hoch={raster} />
         </li>
       ))}
     </ul>
   );
 }
 
-function Chip({ chip, px, demo }: { chip: LadenChip; px: number; demo: boolean }) {
+function Chip({ chip, px, demo, hoch }: { chip: LadenChip; px: number; demo: boolean; hoch: boolean }) {
+  // 2 × 2: Felder 44 px hoch (große Tippflächen), Namen dürfen notfalls umbrechen statt abgeschnitten zu werden
+  const h = hoch ? "min-h-11" : "h-10";
   if (chip.art === "weitere")
     return (
-      <Link href="/einkaufsliste" onClick={(e) => e.stopPropagation()} className="flex h-10 items-center justify-center rounded-field bg-fill px-2 text-[13px] font-bold whitespace-nowrap text-muted" data-zeile data-laden-chip="weitere">
+      <Link href="/einkaufsliste" onClick={(e) => e.stopPropagation()} className={`flex ${h} items-center justify-center rounded-field bg-fill px-2 text-[13px] font-bold whitespace-nowrap text-muted`} data-zeile data-laden-chip="weitere">
         +{chip.anzahl} weitere
       </Link>
     );
@@ -65,7 +69,7 @@ function Chip({ chip, px, demo }: { chip: LadenChip; px: number; demo: boolean }
     <Link
       href={demo || !chip.shop ? "/einkaufsliste" : ladenHref(chip.shop)}
       onClick={(e) => e.stopPropagation()}
-      className="relative flex h-10 min-w-0 items-center gap-1 overflow-hidden rounded-field pl-2.5 pr-2"
+      className={`relative flex ${h} min-w-0 items-center gap-1 overflow-hidden rounded-field pl-2.5 pr-2`}
       style={{ background: chip.shop ? `var(--app-shop-${shopTone(chip.shop)}-soft)` : "var(--app-fill)" }}
       aria-label={`${chip.label}: ${chip.count} ${chip.count === 1 ? "Sache" : "Sachen"}${demo ? " · Beispiel" : ""}`}
       data-zeile
@@ -74,7 +78,7 @@ function Chip({ chip, px, demo }: { chip: LadenChip; px: number; demo: boolean }
       data-leuchte={chip.names.map((n) => leuchtSchluessel("einkauf", n)).join(" ")}
     >
       <span className="absolute inset-y-0 left-0 w-1" style={{ background: tone }} aria-hidden />
-      <span className="min-w-0 flex-1 whitespace-nowrap font-bold leading-tight" style={{ fontSize: px }}>
+      <span className={`min-w-0 flex-1 font-bold leading-tight ${hoch ? "break-words py-1" : "whitespace-nowrap"}`} style={{ fontSize: px }}>
         {chip.label}
       </span>
       <span className="shrink-0 font-extrabold tabular-nums" style={{ fontSize: px, color: chip.shop ? tone : undefined }}>
