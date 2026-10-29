@@ -4,12 +4,9 @@
 // Haushalt. Plattdeutsch und Angeberwissen kommen nur aus geprüften Paketen:
 // unter 50 ungesehenen steht „… Paket nötig (n übrig)“ – dann ist der
 // Monatsauftrag A-039 dran. Witze und Rätsel legt Mia per KI nach (20 im
-// Voraus). Dazu der Knopf, der das Rätsel-Fenster öffnet (bis Paket A den
-// Mini-Kreis auf der Startseite anbindet).
+// Voraus). Rätsel sind seit A-064 eine Sorte der Wundertüte.
 
-import { useState } from "react";
-import { CARD, SECTION_TITLE, buttonClass } from "@/components/ui/styles";
-import { RaetselFenster } from "@/components/raetsel/RaetselFenster";
+import { CARD, SECTION_TITLE } from "@/components/ui/styles";
 import { PAKET_NOETIG_AB, uebrigAusPaketen } from "@/lib/wundertuete/auswahl";
 import { WT_POOL } from "@/lib/wundertuete/pool";
 import { useWundertuete } from "@/lib/wundertuete/store";
@@ -20,7 +17,6 @@ import { ungesehen } from "@/lib/wundertuete/vorrat";
 export function WundertueteNachschub() {
   const wt = useWundertuete();
   const rt = useRaetsel();
-  const [fenster, setFenster] = useState(false);
   if (!wt || !rt) return null;
   const zeilen: [string, number, boolean][] = [
     ["Plattdeutsch", uebrigAusPaketen(wt, "platt"), true],
@@ -44,11 +40,7 @@ export function WundertueteNachschub() {
             </span>
           ),
         )}
-        <button type="button" className={`${buttonClass("secondary", "sm")} col-span-2`} onClick={() => setFenster(true)}>
-          Rätsel-Fenster öffnen
-        </button>
       </div>
-      {fenster && <RaetselFenster onClose={() => setFenster(false)} />}
     </section>
   );
 }

@@ -25,7 +25,8 @@ import { clearDemoTile } from "@/lib/core/demo";
 import { SATZ_KURZ, useNameEinpassen, useSchriftEinpassen, type Versuch } from "@/components/wundertuete/useEinpassen";
 import { merkeAufgedeckt } from "@/lib/wundertuete/aufgedeckt";
 import { useWundertuete, wtZeigen } from "@/lib/wundertuete/store";
-import { karteVon } from "@/lib/wundertuete/auswahl";
+import { karteMix } from "@/lib/wundertuete/mischung";
+import { useRaetsel } from "@/lib/raetsel/store";
 import { lageAus } from "@/lib/wundertuete/lage";
 import type { Haushalt } from "@/lib/core/haushalt";
 import { useForecast } from "@/lib/wetter/client";
@@ -119,6 +120,7 @@ function KommtBald({ size }: { size: TileSize }) {
 
 export function WundertueteTile({ size = "S", today, minutes, haushalt, gericht, demo = false }: { size?: TileSize; today: string; minutes: number; haushalt: Haushalt; gericht: string | null; demo?: boolean; name: string }) {
   const stand = useWundertuete();
+  const rt = useRaetsel();
   const { forecast } = useForecast();
   const lage = lageAus({ heute: today, minuten: minutes, haushalt, forecast, gericht });
   // Karte des Tages (an einem neuen Tag die nächste, gilt ab dann als gesehen)
@@ -128,7 +130,7 @@ export function WundertueteTile({ size = "S", today, minutes, haushalt, gericht,
     // eslint-disable-next-line react-hooks/exhaustive-deps -- nur, wenn sich die Lage ändert
   }, [demo, key]);
   const vonHeute = stand?.aktuell?.tag === lage.heute ? stand.aktuell : null;
-  const karte: Eintrag | undefined = demo ? BEISPIEL_KARTE : stand && vonHeute ? karteVon(stand, vonHeute.id) : undefined;
+  const karte: Eintrag | undefined = demo ? BEISPIEL_KARTE : stand && rt && vonHeute ? karteMix({ wt: stand, rt }) : undefined;
   if (!karte && stand && !stand.aktuell && stand.gesehen.length) return <KommtBald size={size} />;
   if (!karte) return <section className={`${TILE} h-full animate-pulse`} data-tone="notizen" aria-label="Wundertüte" data-groesse={size} />;
   return <Karte key={karte.id} karte={karte} size={size} demo={demo} />;

@@ -3,7 +3,9 @@
 import { DurchatmenHost } from "@/components/durchatmen/DurchatmenHost";
 import { onDurchatmenStart } from "@/lib/durchatmen/oeffnen";
 import { useNotes } from "@/lib/notizen";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { onWundertueteOeffnen, wundertueteHref } from "@/lib/wundertuete/oeffnen";
+import { nachDemFenster } from "@/lib/core/useBackCloses";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { Check } from "lucide-react";
 import { onCloseHelper, onOpenHelper, openHelper } from "@/lib/begleitung/open";
@@ -205,6 +207,18 @@ export function KitchenHelper() {
 
   // Durchatmen startet (Mia: „Handy-Pause“ …): die Bühne tritt zur Seite, die Übung übernimmt
   useEffect(() => onDurchatmenStart(() => setOpen(false)), []);
+
+  // „Gib mir ein Rätsel“ (A-064): Bühne zu, dann die Wundertüte mit der Sorte Rätsel
+  const router = useRouter();
+  useEffect(
+    () =>
+      onWundertueteOeffnen((sorte) => {
+        setOpen(false);
+        // Erst wenn die Bühne weg ist (ihr Verlaufseintrag geht mit), dann die Seite
+        setTimeout(() => nachDemFenster(() => router.push(wundertueteHref(sorte))), 50);
+      }),
+    [router],
+  );
 
   // "Rückgängig" verschwindet nach UNDO_SECONDS
   useEffect(() => {

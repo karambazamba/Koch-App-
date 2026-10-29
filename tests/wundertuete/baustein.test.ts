@@ -56,7 +56,7 @@ describe("Baustein: neu an, bestehend unverändert", () => {
 
   it("kein Launch-Aus-Baustein, Mia kennt ihn (Mehr Funktionen)", () => {
     expect(LAUNCH_AUS).not.toContain("wundertuete");
-    expect(BAUSTEINE.find((b) => b.feature === "wundertuete")?.text).toBe("Jeden Tag was Neues: Witze, Plattdeutsch und Angeberwissen.");
+    expect(BAUSTEINE.find((b) => b.feature === "wundertuete")?.text).toBe("Jeden Tag was Neues: Witze, Plattdeutsch, Angeberwissen und Rätsel.");
   });
 });
 
@@ -168,13 +168,16 @@ describe("Mia per Gespräch", () => {
     expect(ctx.ops).toEqual([]);
   });
 
-  it("Rätsel: erst die Frage, Lösung auf „Lösung“ (über die vorgelesene Frage)", () => {
-    const ctx = kontext();
-    const r = rufe(ctx, "wundertuete_karte", { sorte: "raetsel" });
-    expect(r.content).toMatch(/antwort_knoepfe \['Lösung'\]/);
-    const frage = r.content.split("\n")[0].replace(/^Rätsel: /, "");
-    expect(rufe(ctx, "wundertuete_karte", { sorte: "raetsel", frage }).content).toMatch(/^Lösung \(nur das sagen, kurz\): /);
-    expect(rufe(ctx, "wundertuete_karte", { sorte: "raetsel", frage: "Was ist ein Quatschrätsel ohne Lösung?" }).content).toMatch(/keine Lösung/);
+  it("Rätsel (A-064): nicht vorlesen – app_befehl „Rätsel“ öffnet die Wundertüte mit der Sorte Rätsel", async () => {
+    const { raetselWunsch, wundertueteHref } = await import("@/lib/wundertuete/oeffnen");
+    for (const satz of ["Rätsel!", "Gib mir ein Rätsel", "Hast du noch ein Rätsel für die Kinder?", "Erzähl mir ein Rätsel", "noch ein rätsel", "Ich will raten"]) expect(raetselWunsch(satz), satz).toBe(true);
+    for (const satz of ["Was ist die Lösung?", "Nimm das Rätsel weg", "Erzähl mir was Unnützes", "Rätselhaft, das Wetter"]) expect(raetselWunsch(satz), satz).toBe(false);
+    expect(wundertueteHref("raetsel")).toBe("/wundertuete?sorte=raetsel");
+    expect(wundertueteHref("alles")).toBe("/wundertuete");
+    // Das Werkzeug liest keine Rätsel mehr vor (unbekannte Sorte = Angeberwissen)
+    expect(rufe(kontext(), "wundertuete_karte", { sorte: "raetsel" }).content).not.toMatch(/^Rätsel/);
+    const tools = readFileSync("src/lib/begleitung/homeTools.ts", "utf8");
+    expect(tools).toContain("→ text 'Rätsel' (öffnet die Wundertüte mit der Sorte Rätsel");
   });
 
   it("Witz: Anfang und Pointe; Platt mit Antwort", () => {

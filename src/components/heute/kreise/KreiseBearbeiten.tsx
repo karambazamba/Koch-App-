@@ -9,7 +9,7 @@
 // den Baustein „Was los?“ mit ein.
 
 import { useState, type PointerEvent as ReactPointerEvent } from "react";
-import { ChevronDown, ChevronUp, Flag, GripVertical, Puzzle, SportShoe, Timer as TimerIcon, Wind, type LucideIcon } from "lucide-react";
+import { ChevronDown, ChevronUp, Flag, GripVertical, SportShoe, Timer as TimerIcon, Wind, type LucideIcon } from "lucide-react";
 import { setFeature, useBausteine } from "@/lib/core/features";
 import { saveKreise, useKreise } from "@/lib/core/homeLayout";
 import { MAX_KREISE, STANDARD_KREISE, aendereKreise, kreisMeta, ordneKreise, type Kreis, type KreisId } from "@/lib/heute/kreise";
@@ -17,7 +17,7 @@ import { setWasLos, useWasLosAn, useWasLosDaten } from "@/lib/region/client";
 import { buzz } from "@/components/heute/actions";
 import { SECTION_TITLE } from "@/components/ui/styles";
 
-const SYMBOL: Record<KreisId, LucideIcon> = { sport: SportShoe, pause: Wind, waslos: Flag, raetsel: Puzzle, timer: TimerIcon };
+const SYMBOL: Record<KreisId, LucideIcon> = { sport: SportShoe, pause: Wind, waslos: Flag, timer: TimerIcon };
 /** Baustein, der zum Kreis gehört (an = Baustein mit an) */
 const BAUSTEIN: Partial<Record<KreisId, "sport" | "durchatmen">> = { sport: "sport", pause: "durchatmen" };
 const ZEILE = 48;

@@ -4,12 +4,12 @@
 // Frage mit „Antippen für die Lösung“, Antippen dreht die Karte (hinten die
 // Lösung im weißen Feld), „Mehr ›“ öffnet die Seite mit der Lösung offen
 // (A-059, Tafel 145); dort nach „Noch eine ›“ (nie doppelt) erst verdeckt. Mias Witze per
-// Mock-KI, ohne Vorrat „… kommt bald.“. Rätsel-Fenster (über „Für
-// Entwickler“, bis Paket A den Mini-Kreis anbindet): Lösung erst nach
-// Antippen, „Noch eins ›“. M = gleiche Karte, breiter; Schlicht und Dunkel
-// ohne Überlauf.
+// Mock-KI, ohne Vorrat „… kommt bald.“. Rätsel als vierte Sorte (A-064):
+// Filter „Rätsel“ (auch per `?sorte=raetsel`), Lösung erst nach Antippen,
+// nie doppelt, „Alles“ wechselt die Sorten. M = gleiche Karte, breiter;
+// Schlicht und Dunkel ohne Überlauf.
 import { readFileSync, readdirSync } from "node:fs";
-import { BASE, hello, newPage, seedFamily, setDark, store } from "../lib.mjs";
+import { BASE, hello, miaTippen, newPage, seedFamily, setDark, store } from "../lib.mjs";
 import { abgeschnitteneTexte } from "../regeln.mjs";
 
 const KACHEL = "[data-raster] [data-wundertuete]";
@@ -100,7 +100,7 @@ export const wundertuete = async (page, check) => {
   await groß.waitFor({ timeout: 3000 });
   check(await groß.locator("[data-loesung]").getByText("30").isVisible(), "„Mehr ›“: Seite mit derselben Karte, Lösung schon offen");
   const chips = await page.locator("[data-filter]").evaluateAll((els) => els.map((e) => ({ t: e.textContent.trim(), ganz: e.scrollWidth <= e.clientWidth + 1 && e.getBoundingClientRect().right <= window.innerWidth })));
-  check(chips.map((c) => c.t).join(" · ") === "Alles · Witze · Platt · Wissen" && chips.every((c) => c.ganz), `Filter ganz lesbar (${chips.map((c) => c.t).join(" · ")})`);
+  check(chips.map((c) => c.t).join(" · ") === "Alles · Witze · Platt · Wissen · Rätsel" && chips.every((c) => c.ganz), `Filter ganz lesbar (${chips.map((c) => c.t).join(" · ")})`);
   await page.locator("[data-noch-eine]").click();
   await page.waitForTimeout(150);
   check((await page.locator("[data-verdeckt]").isVisible()) && !(await page.locator("[data-wt-karte] [data-loesung], [data-wt-karte] [data-pointe]").count()) && (await page.locator("[data-noch-eine]").getAttribute("data-hell")) !== null, "nach „Noch eine“: Lösung verdeckt, „Noch eine“ hell");
@@ -148,40 +148,59 @@ export const wundertuete = async (page, check) => {
   await page.waitForTimeout(200);
   check(await page.locator("[data-kommt-bald]").getByText("Neue Witze kommen bald.").isVisible().catch(() => false), "ohne Vorrat und ohne KI: „Neue Witze kommen bald.“ statt Wiederholung");
 
-  // Alles gesehen: Kachel „Neue Wundertüte kommt bald.“
+  // Alles gesehen (auch alle Rätsel, A-064): Kachel „Neue Wundertüte kommt bald.“
   await page.goto(BASE);
+  await setzeStand(page, { version: 1, aktuell: null, gesehen: raetselIds(), eigene: [], ki: { tag, n: 6 } }, "wasgibts.raetsel");
   await setzeStand(page, { version: 2, aktuell: null, gesehen: poolKarten().map((x) => x.id), eigene: [], ki: { tag, n: 6 } });
   const bald = page.locator("[data-raster] [data-kommt-bald]");
   await bald.waitFor({ timeout: 4000 }).catch(() => {});
   check(await bald.getByText("Neue Wundertüte kommt bald.").isVisible().catch(() => false), "alles gesehen: Kachel „Neue Wundertüte kommt bald.“");
   await setzeStand(page, { version: 2, aktuell: { id, tag }, gesehen: [id], eigene: [] });
+  await setzeStand(page, { version: 1, aktuell: null, gesehen: [], eigene: [] }, "wasgibts.raetsel");
 
-  // Rätsel-Fenster (Test-Öffner unter „Für Entwickler“)
-  await page.goto(BASE + "/profil/admin");
-  await page.getByRole("button", { name: "Rätsel-Fenster öffnen" }).click();
-  const fenster = page.locator("[data-raetsel-fenster]");
-  await fenster.waitFor({ timeout: 4000 });
-  const r1 = await fenster.locator("[data-raetsel]").getAttribute("data-raetsel");
-  check(await page.getByText("Kinder raten zuerst").isVisible(), "Rätsel: „Kinder raten zuerst“");
-  check(!(await fenster.locator("[data-loesung]").count()) && (await fenster.locator("[data-verdeckt]").isVisible()) && (await page.locator("[data-noch-eins]").getAttribute("data-hell")) !== null, "Lösung erst nach Antippen (verdeckt, „Noch eins“ hell)");
-  const groesse = await fenster.locator("[data-frage]").evaluate((el) => getComputedStyle(el).fontSize);
-  check(groesse === "27px", `Frage 27 px (${groesse})`);
-  await fenster.locator("[data-raetsel]").click();
-  check((await fenster.locator("[data-loesung]").isVisible()) && (await page.locator("[data-noch-eins]").getAttribute("data-hell")) === null, "Antippen: Lösung im gestrichelten Kasten, „Noch eins“ orange");
-  const rs = [r1];
-  for (let i = 0; i < 8; i++) {
-    await page.locator("[data-noch-eins]").click();
-    await page.waitForTimeout(100);
-    rs.push(await fenster.locator("[data-raetsel]").getAttribute("data-raetsel"));
+  // Rätsel als vierte Sorte (A-064): Filter „Rätsel“ auf der Seite, auch per Adresse (Mia: „Gib mir ein Rätsel“)
+  await page.goto(BASE + "/wundertuete?sorte=raetsel");
+  const rkarte = page.locator("[data-wt-karte][data-sorte=raetsel]");
+  await rkarte.waitFor({ timeout: 5000 });
+  check((await page.locator('[data-filter="raetsel"]').getAttribute("aria-pressed")) === "true", "Seite mit ?sorte=raetsel: Filter „Rätsel“ gewählt");
+  const filter = await page.locator("[data-filter]").allInnerTexts();
+  check(filter.join(" · ") === "Alles · Witze · Platt · Wissen · Rätsel", `Filter Alles · Witze · Platt · Wissen · Rätsel (${filter.join(" · ")})`);
+  check(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), "Filter-Chips: nichts ragt seitlich heraus");
+  check(!(await rkarte.locator("[data-loesung]").count()) && (await rkarte.locator("[data-verdeckt]").isVisible()), "Rätsel: Lösung erst nach Antippen");
+  await rkarte.locator("[data-aufdecken]").click();
+  check(await rkarte.locator("[data-loesung]").isVisible(), "Antippen: Lösung im gestrichelten Kasten");
+  const rs = [await rkarte.getAttribute("data-wt-karte")];
+  for (let i = 0; i < 6; i++) {
+    await page.locator("[data-noch-eine]").click();
+    await page.waitForTimeout(120);
+    rs.push(await page.locator("[data-wt-karte]").getAttribute("data-wt-karte"));
   }
-  check(new Set(rs).size === rs.length && !(await fenster.locator("[data-loesung]").count()), `„Noch eins“ 8×: nie doppelt, Lösung wieder zu (${rs.join(" ")})`);
+  const sorten = await page.locator("[data-wt-karte]").getAttribute("data-sorte");
+  check(new Set(rs).size === rs.length && sorten === "raetsel", `„Noch eine“ 6× im Filter Rätsel: nur Rätsel, nie doppelt (${rs.join(" ")})`);
   const rt = await store(page, "wasgibts.raetsel");
-  check(rs.every((r) => rt?.gesehen?.includes(r)), "Rätsel als gesehen gemerkt");
-  await page.keyboard.press("Escape");
+  check(rs.every((r) => rt?.gesehen?.includes(r)), "Rätsel als gesehen gemerkt (im Rätsel-Vorrat)");
   await setzeStand(page, { version: 1, aktuell: null, gesehen: raetselIds(), eigene: [], ki: { tag, n: 6 } }, "wasgibts.raetsel");
-  await page.getByRole("button", { name: "Rätsel-Fenster öffnen" }).click();
-  check(await page.locator("[data-raetsel-fenster] [data-kommt-bald]").getByText("Neue Rätsel kommen bald.").isVisible().catch(() => false), "ohne Vorrat und ohne KI: „Neue Rätsel kommen bald.“");
-  await page.keyboard.press("Escape");
+  await page.locator("[data-noch-eine]").click();
+  check(await page.locator("[data-kommt-bald]").getByText("Neue Rätsel kommen bald.").isVisible().catch(() => false), "ohne Vorrat und ohne KI: „Neue Rätsel kommen bald.“");
+  // Mia: „Gib mir ein Rätsel“ → Bühne zu, Wundertüte mit der Sorte Rätsel
+  await page.goto(BASE);
+  const feld = await miaTippen(page);
+  await feld.fill("Gib mir ein Rätsel");
+  await feld.press("Enter");
+  await page.waitForURL(/\/wundertuete\?sorte=raetsel/, { timeout: 8000 }).catch(() => {});
+  await page.locator("[data-wt-karte], [data-kommt-bald]").first().waitFor({ timeout: 5000 }).catch(() => {});
+  check(/\/wundertuete\?sorte=raetsel/.test(page.url()) && (await page.locator('[data-filter="raetsel"]').getAttribute("aria-pressed")) === "true", `Mia: „Gib mir ein Rätsel“ öffnet die Wundertüte mit der Sorte Rätsel (${page.url()})`);
+  check(!(await page.locator("[data-begleitung-buehne]").count()), "die Bühne ist zu");
+  // Im Filter „Alles“ wechseln die Sorten (nie zweimal dieselbe hintereinander)
+  await setzeStand(page, { version: 1, aktuell: null, gesehen: [], eigene: [] }, "wasgibts.raetsel");
+  await page.locator('[data-filter="alles"]').click();
+  const folge = [];
+  for (let i = 0; i < 8; i++) {
+    await page.locator("[data-noch-eine]").click();
+    await page.waitForTimeout(120);
+    folge.push(await page.locator("[data-wt-karte]").getAttribute("data-sorte"));
+  }
+  check(folge.every((x, i) => i === 0 || x !== folge[i - 1]) && folge.includes("raetsel"), `„Alles“: Sorten wechseln, Rätsel dabei (${folge.join(" ")})`);
 
   // M = gleiche Karte, breiter
   await page.goto(BASE);

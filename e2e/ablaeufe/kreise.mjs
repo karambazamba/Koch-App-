@@ -1,13 +1,14 @@
 // Mini-Kreise oben (A-050, Tafel 143 + Nachtrag „kein Schild“) und ihre
 // Fenster (Tafel 137/2–4), mit echten Touch-Gesten:
-// `kreiseOben`: Familie-Beispiel auf iPhone SE, 15 Pro, Pixel 7 – 5 Kreise à
-// 56 px (mit „Was los?“, A-055: Eutin + Testdaten) gleich verteilt, Wörter ganz, keine Schilder/Zahlen; Wischen über die
+// `kreiseOben`: Familie-Beispiel auf iPhone SE, 15 Pro, Pixel 7 – 4 Kreise à
+// 64 px (A-064: Rätsel ist eine Sorte der Wundertüte) (mit „Was los?“, A-055: Eutin + Testdaten) gleich verteilt, Wörter ganz, keine Schilder/Zahlen; Wischen über die
 // Reihe wechselt die Seite. `kreisFenster`: Sport plant „Sa 10:00 Volleyball“
 // (Termin im Raum „Ich“), Timer startet mit einem Tipp und steht dann mit
-// Restzeit vorn, Pause öffnet Durchatmen, Rätsel das Rätsel-Fenster, Was los? „Was ist los
+// Restzeit vorn, Pause öffnet Durchatmen, Was los? „Was ist los
 // in Eutin?“ – man bleibt
 // auf der Startseite. `kreiseBearbeiten`: an/aus und Reihenfolge in „Kreise
-// oben“, gespeichert, nichts gelöscht. `kreiseMigration`:
+// oben“, gespeichert, nichts gelöscht; ein gespeicherter Rätsel-Kreis fällt
+// still weg (A-064). `kreiseMigration`:
 // Startseite v9 mit Sport/Timer XS und Im Haus → Kreise, Im Haus weg und unter
 // Essen erreichbar.
 import { BASE, hello, losGehts, newPage, store, swipe } from "../lib.mjs";
@@ -49,10 +50,10 @@ export const kreiseOben = async (page, check, device) => {
       const m = await p.evaluate(messen);
       const wo = `${geraet}`;
       // „Was los?“ (A-055) steht da: Wohnort Eutin, Testdaten im Testserver
-      check(m && m.map((k) => k.id).join() === "sport,pause,waslos,raetsel,timer", `${wo}: Kreise Sport · Pause · Was los? · Rätsel · Timer (${m?.map((k) => k.id).join(", ")})`);
-      check(m?.every((k) => k.groesse === 56 && k.hoch === 56), `${wo}: 5 Kreise à 56 px (${m?.map((k) => k.groesse).join("/")})`);
+      check(m && m.map((k) => k.id).join() === "sport,pause,waslos,timer", `${wo}: Kreise Sport · Pause · Was los? · Timer (${m?.map((k) => k.id).join(", ")})`);
+      check(m?.every((k) => k.groesse === 64 && k.hoch === 64), `${wo}: 4 Kreise à 64 px (${m?.map((k) => k.groesse).join("/")})`);
       check(m?.every((k) => k.wortGanz), `${wo}: jedes Wort ganz`);
-      check(m?.every((k) => ["Sport", "Pause", "Was los?", "Rätsel", "Timer"].includes(k.text)), `${wo}: unter jedem Kreis genau EIN Wort, kein Schild, keine Zahl (${m?.map((k) => `„${k.text}“`).join(" ")})`);
+      check(m?.every((k) => ["Sport", "Pause", "Was los?", "Timer"].includes(k.text)), `${wo}: unter jedem Kreis genau EIN Wort, kein Schild, keine Zahl (${m?.map((k) => `„${k.text}“`).join(" ")})`);
       check(m && Math.abs(m[0].links - m.at(-1).rechts) <= 3 && m[0].links >= 12 && m[0].links <= 18, `${wo}: gleich verteilt über die ganze Breite (Rand ${m?.[0].links}/${m?.at(-1).rechts} px)`);
       check((await p.locator("[data-sport-ring]").count()) === 1, `${wo}: nur Sport hat einen Ring`);
       // Nicht wischbar: Wischen über die Reihe wechselt die Seite
@@ -107,19 +108,14 @@ export const kreisFenster = async (page, check) => {
   const m = await page.evaluate(messen);
   check(m?.[0].id === "timer" && /^\d+:\d\d Timer$/.test(m[0].text), `Timer: läuft → Restzeit im Kreis, Position 1 (${m?.map((k) => `${k.id} „${k.text}“`).join(", ")})`);
 
-  // Pause: Durchatmen-Fenster, Rätsel: Rätsel-Fenster
+  // Pause: Durchatmen-Fenster
   await reihe(page).locator('[data-kreis="pause"]').click();
   const atem = page.getByRole("dialog", { name: "Durchatmen" });
   await atem.waitFor();
   check(await atem.isVisible(), "Pause: öffnet Durchatmen");
   await page.keyboard.press("Escape");
   await atem.waitFor({ state: "hidden" });
-  await reihe(page).locator('[data-kreis="raetsel"]').click();
-  const raetsel = page.getByRole("dialog", { name: "Rätsel" });
-  await raetsel.waitFor();
-  check(await raetsel.getByText("Kinder raten zuerst").isVisible(), "Rätsel: öffnet das Rätsel-Fenster");
-  await page.keyboard.press("Escape");
-  await raetsel.waitFor({ state: "hidden" });
+  check(!(await reihe(page).locator('[data-kreis="raetsel"]').count()), "kein Rätsel-Kreis mehr (A-064)");
   // Was los? (A-055): öffnet „Was ist los in Eutin?“
   await reihe(page).locator('[data-kreis="waslos"]').click();
   const waslos = page.locator("[role=dialog]:has([data-was-los-fenster])");
@@ -139,27 +135,28 @@ export const kreiseBearbeiten = async (page, check) => {
   // Einmal-Tipp „Neue Kacheln holen“ weg
   const verstanden = page.getByRole("button", { name: "Verstanden" });
   if (await verstanden.isVisible().catch(() => false)) await verstanden.click();
-  check(await abschnitt.getByText("Höchstens 5 Kreise").isVisible(), "Bearbeiten: „Kreise oben“ mit Hinweis „Höchstens 5 Kreise“");
-  await abschnitt.locator('[data-kreis-schalter="raetsel"]').click();
+  check(await abschnitt.getByText("Höchstens 4 Kreise").isVisible(), "Bearbeiten: „Kreise oben“ mit Hinweis „Höchstens 4 Kreise“");
+  check(!(await abschnitt.locator('[data-kreis-schalter="raetsel"]').count()), "Bearbeiten: kein Rätsel-Kreis mehr (A-064)");
+  await abschnitt.locator('[data-kreis-schalter="timer"]').click();
   // Nach unten schieben (Knopf für Screenreader/Tastatur)
   await abschnitt.getByRole("button", { name: "Sport nach unten" }).dispatchEvent("click");
   await page.getByRole("button", { name: "Fertig" }).click();
   await reihe(page).waitFor();
   await page.waitForTimeout(400);
   let ids = (await page.evaluate(messen)).map((k) => k.id);
-  check(ids.join() === "pause,sport,waslos,timer", `Bearbeiten: Rätsel aus, Sport eins weiter (${ids.join(", ")})`);
+  check(ids.join() === "pause,sport,waslos", `Bearbeiten: Timer aus, Sport eins weiter (${ids.join(", ")})`);
   const kreise = (await store(page, "wasgibts.startseite"))?.kreise ?? [];
-  check(kreise.find((k) => k.id === "raetsel")?.an === false, "Bearbeiten: gespeichert (Rätsel aus, nicht gelöscht)");
-  // Wieder an (wie „Hol das Rätsel wieder nach oben“)
+  check(kreise.find((k) => k.id === "timer")?.an === false, "Bearbeiten: gespeichert (Timer aus, nicht gelöscht)");
+  // Wieder an (wie „Hol den Timer wieder nach oben“) – dazu ein alter Rätsel-Kreis aus v0.171 (A-064: fällt still weg)
   await page.evaluate(() => {
     const s = JSON.parse(localStorage.getItem("wasgibts.startseite"));
-    s.kreise = s.kreise.map((k) => ({ ...k, an: true }));
+    s.kreise = [...s.kreise.map((k) => ({ ...k, an: true })), { id: "raetsel", an: true }];
     localStorage.setItem("wasgibts.startseite", JSON.stringify(s));
   });
   await page.reload();
   await reihe(page).waitFor();
   ids = (await page.evaluate(messen)).map((k) => k.id);
-  check(ids.includes("raetsel"), `wieder an: Rätsel steht oben (${ids.join(", ")})`);
+  check(ids.join() === "pause,sport,waslos,timer", `wieder an: Timer oben, alter Rätsel-Kreis still weg, Reihenfolge bleibt (${ids.join(", ")})`);
 };
 
 export const kreiseMigration = async (page, check) => {

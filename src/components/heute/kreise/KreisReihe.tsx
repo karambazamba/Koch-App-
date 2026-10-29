@@ -12,7 +12,7 @@
 
 import dynamic from "next/dynamic";
 import { useState } from "react";
-import { Flag, Puzzle, Timer as TimerIcon, Wind } from "lucide-react";
+import { Flag, Timer as TimerIcon, Wind } from "lucide-react";
 import { useFeature } from "@/lib/core/features";
 import { useKreise } from "@/lib/core/homeLayout";
 import { useNowMs } from "@/lib/core/useNowMs";
@@ -34,7 +34,6 @@ import { oeffneDurchatmen, useDurchatmenZustand } from "@/lib/durchatmen/oeffnen
 // Fenster erst beim Öffnen laden (hält die Startseite klein)
 const SportFenster = dynamic(() => import("@/components/sport/SportFenster").then((m) => m.SportFenster));
 const TimerFenster = dynamic(() => import("@/components/timer/TimerFenster").then((m) => m.TimerFenster));
-const RaetselFenster = dynamic(() => import("@/components/raetsel/RaetselFenster").then((m) => m.RaetselFenster));
 const WasLosFenster = dynamic(() => import("@/components/region/WasLosFenster").then((m) => m.WasLosFenster));
 
 /** Beispiel-Tag: der Sport-Ring zeigt „2 von 3“ wie die Beispiel-Kachel – nie in echten Speichern */
@@ -85,8 +84,6 @@ export function KreisReihe({ entries, today, minutes, me, sportFarbe, beispiel =
         return <KreisKnopf key={id} {...gemeinsam} icon={TimerIcon} label={timer ? `Timer: ${timer.name}, noch ${leftWords(timer.leftMs)}` : "Timer"} timer={timer} />;
       case "pause":
         return <KreisKnopf key={id} {...gemeinsam} icon={Wind} label="Pause: kurz durchatmen" />;
-      case "raetsel":
-        return <KreisKnopf key={id} {...gemeinsam} icon={Puzzle} label="Rätsel" />;
       case "waslos":
         return <KreisKnopf key={id} {...gemeinsam} icon={Flag} label="Was los?" />;
     }
@@ -100,7 +97,6 @@ export function KreisReihe({ entries, today, minutes, me, sportFarbe, beispiel =
       </nav>
       {offen === "sport" && <SportFenster entries={entries} today={today} minutes={minutes} me={me} farbe={sportFarbe} onClose={zu} />}
       {offen === "timer" && <TimerFenster onClose={zu} />}
-      {offen === "raetsel" && <RaetselFenster onClose={zu} />}
       {offen === "waslos" && <WasLosFenster onClose={zu} />}
     </>
   );

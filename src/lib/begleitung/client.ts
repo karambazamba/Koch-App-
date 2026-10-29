@@ -37,6 +37,7 @@ import { isWeekCheckRequest } from "@/lib/kalender/wochencheck";
 import { isKochtippRequest } from "@/lib/essen/kochtipp/start";
 import { openHelper } from "@/lib/begleitung/open";
 import { durchatmenAusSatz } from "@/lib/durchatmen/erkennen";
+import { oeffneWundertuete, raetselWunsch } from "@/lib/wundertuete/oeffnen";
 import { starteDurchatmen } from "@/lib/durchatmen/oeffnen";
 import { applyOps, INSTANT_OP_TYPES, selectedOps, weekOf, type AssistantData, type ChangeOp } from "@/lib/begleitung/ops";
 import { isExpired, isPaused, leftMs, stopwatchMs } from "@/lib/timer/model";
@@ -250,6 +251,11 @@ export function runInstantOps(ops: ChangeOp[]): { rest: ChangeOp[]; notes: strin
     // Versteckt? Mia schaltet frei und sagt, wo es steht
     if (unlockFeature("durchatmen")) notes.push(bausteinOf("durchatmen")!.where);
     starteDurchatmen(durchatmenAusSatz(atemOp.text)!);
+  }
+  // Rätsel (A-064): „Gib mir ein Rätsel“ → Wundertüte mit der Sorte Rätsel (die Bühne geht zu)
+  if (ops.some((op) => op.type === "app_command" && raetselWunsch(op.text))) {
+    if (unlockFeature("wundertuete")) notes.push(bausteinOf("wundertuete")!.where);
+    oeffneWundertuete("raetsel");
   }
   if (ops.some(weekCheck)) openHelper("wochencheck");
   else if (ops.some(cookTip)) openHelper("kochtipp");

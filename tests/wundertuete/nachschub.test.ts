@@ -73,7 +73,7 @@ describe("Mia legt nach", () => {
       throw new Error("offline");
     };
     expect(await nachlegen(RT_POOL, RT_LEER, "raetsel", fehler, id)).toEqual([]);
-    expect(readFileSync("src/components/raetsel/RaetselFenster.tsx", "utf8")).toContain("Neue Rätsel kommen bald.");
+    expect(readFileSync("src/lib/wundertuete/sorten.ts", "utf8")).toContain('raetsel: "Neue Rätsel kommen bald."');
     expect(readFileSync("src/lib/wundertuete/sorten.ts", "utf8")).toContain('witz: "Neue Witze kommen bald."');
   });
 

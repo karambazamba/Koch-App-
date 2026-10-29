@@ -35,33 +35,33 @@ const ALLES: KreisLage = { sport: true, pause: true, waslos: true, timerLaeuft: 
 const OHNE_WASLOS: KreisLage = { ...ALLES, waslos: false };
 
 describe("Reihe (Tafel 143)", () => {
-  it("Standard: Sport · Pause · Was los? · Rätsel · Timer – je EIN Wort", () => {
-    expect(KREISE.map((k) => k.wort)).toEqual(["Sport", "Pause", "Was los?", "Rätsel", "Timer"]);
+  it("Standard (A-064): Sport · Pause · Was los? · Timer – je EIN Wort, Rätsel ist kein Kreis mehr", () => {
+    expect(KREISE.map((k) => k.wort)).toEqual(["Sport", "Pause", "Was los?", "Timer"]);
     expect(KREISE.every((k) => !/\s/.test(k.wort) || k.wort === "Was los?")).toBe(true);
     expect(STANDARD_KREISE.every((k) => k.an)).toBe(true);
-    expect(MAX_KREISE).toBe(5);
+    expect(MAX_KREISE).toBe(4);
   });
 
   it("5 Kreise = 56 px (Symbol 23, Wort 12,5 px), 4 oder weniger = 64 px (26, 13 px)", () => {
     expect(kreisMasse(5)).toEqual({ kreis: 56, symbol: 23, wort: 12.5 });
     expect(kreisMasse(4)).toEqual({ kreis: 64, symbol: 26, wort: 13 });
     expect(kreisMasse(2).kreis).toBe(64);
-    expect(sichtbareKreise(STANDARD_KREISE, ALLES)).toHaveLength(5);
+    expect(sichtbareKreise(STANDARD_KREISE, ALLES)).toHaveLength(4);
   });
 
   it("nur Kreise für eingeschaltete Bausteine; „Was los?“ ohne Quelle/Einträge ausgeblendet", () => {
-    expect(sichtbareKreise(STANDARD_KREISE, OHNE_WASLOS)).toEqual(["sport", "pause", "raetsel", "timer"]);
-    expect(sichtbareKreise(STANDARD_KREISE, { ...OHNE_WASLOS, sport: false, pause: false })).toEqual(["raetsel", "timer"]);
+    expect(sichtbareKreise(STANDARD_KREISE, OHNE_WASLOS)).toEqual(["sport", "pause", "timer"]);
+    expect(sichtbareKreise(STANDARD_KREISE, { ...OHNE_WASLOS, sport: false, pause: false })).toEqual(["timer"]);
   });
 
   it("Timer läuft: rückt an Position 1, danach zurück an seinen Platz; aus = nur solange er läuft", () => {
-    expect(sichtbareKreise(STANDARD_KREISE, { ...OHNE_WASLOS, timerLaeuft: true })).toEqual(["timer", "sport", "pause", "raetsel"]);
+    expect(sichtbareKreise(STANDARD_KREISE, { ...OHNE_WASLOS, timerLaeuft: true })).toEqual(["timer", "sport", "pause"]);
     expect(sichtbareKreise(STANDARD_KREISE, OHNE_WASLOS).at(-1)).toBe("timer");
     const ohneTimer = aendereKreise(STANDARD_KREISE, { kreis: "timer", aktion: "aus" });
     expect(sichtbareKreise(ohneTimer, OHNE_WASLOS)).not.toContain("timer");
     expect(sichtbareKreise(ohneTimer, { ...OHNE_WASLOS, timerLaeuft: true })[0]).toBe("timer");
-    // alle 5 und Timer läuft: der laufende Timer bleibt, höchstens 5
-    expect(sichtbareKreise(STANDARD_KREISE, { ...ALLES, timerLaeuft: true })).toEqual(["timer", "sport", "pause", "waslos", "raetsel"]);
+    // alle 4 und Timer läuft: der laufende Timer steht vorn, höchstens 4
+    expect(sichtbareKreise(STANDARD_KREISE, { ...ALLES, timerLaeuft: true })).toEqual(["timer", "sport", "pause", "waslos"]);
   });
 
   it("Timer im Kreis: Restzeit des kürzesten laufenden, Ring nimmt ab", () => {
@@ -111,26 +111,32 @@ describe("Reihe (Tafel 143)", () => {
 
 describe("Bearbeiten: an/aus, Reihenfolge", () => {
   it("an/aus, nach vorn/hinten, hoch/runter; nichts geht verloren", () => {
-    const aus = aendereKreise(STANDARD_KREISE, { kreis: "raetsel", aktion: "aus" });
-    expect(aus.find((k) => k.id === "raetsel")?.an).toBe(false);
-    expect(aus).toHaveLength(5);
-    expect(aendereKreise(aus, { kreis: "raetsel", aktion: "an" })).toEqual(STANDARD_KREISE);
-    expect(aendereKreise(STANDARD_KREISE, { kreis: "timer", aktion: "nach_vorn" }).map((k) => k.id)).toEqual(["timer", "sport", "pause", "waslos", "raetsel"]);
+    const aus = aendereKreise(STANDARD_KREISE, { kreis: "waslos", aktion: "aus" });
+    expect(aus.find((k) => k.id === "waslos")?.an).toBe(false);
+    expect(aus).toHaveLength(4);
+    expect(aendereKreise(aus, { kreis: "waslos", aktion: "an" })).toEqual(STANDARD_KREISE);
+    expect(aendereKreise(STANDARD_KREISE, { kreis: "timer", aktion: "nach_vorn" }).map((k) => k.id)).toEqual(["timer", "sport", "pause", "waslos"]);
     expect(aendereKreise(STANDARD_KREISE, { kreis: "sport", aktion: "nach_hinten" }).map((k) => k.id).at(-1)).toBe("sport");
     expect(aendereKreise(STANDARD_KREISE, { kreis: "pause", aktion: "hoch" }).map((k) => k.id).slice(0, 2)).toEqual(["pause", "sport"]);
     expect(aendereKreise(STANDARD_KREISE, { kreis: "timer", aktion: "runter" })).toEqual(STANDARD_KREISE);
-    expect(ordneKreise(STANDARD_KREISE, ["raetsel", "sport"]).map((k) => k.id)).toEqual(["raetsel", "sport", "pause", "waslos", "timer"]);
+    expect(ordneKreise(STANDARD_KREISE, ["waslos", "sport"]).map((k) => k.id)).toEqual(["waslos", "sport", "pause", "timer"]);
   });
 
   it("gespeicherte Kreise prüfen: Unbekanntes/Doppeltes weg, Fehlendes an seinen Platz", () => {
     expect(sanitizeKreise(null)).toEqual(STANDARD_KREISE);
-    expect(sanitizeKreise([{ id: "timer", an: false }, { id: "x" }, { id: "timer" }]).map((k) => `${k.id}:${k.an}`)).toEqual(["sport:true", "pause:true", "waslos:true", "raetsel:true", "timer:false"]);
-    // Fehlende hinter den, der laut Standard davor steht (Timer hinter Rätsel)
-    expect(sanitizeKreise([{ id: "raetsel", an: true }, { id: "sport" }]).map((k) => k.id)).toEqual(["raetsel", "timer", "sport", "pause", "waslos"]);
+    expect(sanitizeKreise([{ id: "timer", an: false }, { id: "x" }, { id: "timer" }]).map((k) => `${k.id}:${k.an}`)).toEqual(["sport:true", "pause:true", "waslos:true", "timer:false"]);
+    // Fehlende hinter den, der laut Standard davor steht (Timer hinter Was los?)
+    expect(sanitizeKreise([{ id: "waslos", an: true }, { id: "sport" }]).map((k) => k.id)).toEqual(["waslos", "timer", "sport", "pause"]);
+  });
+
+  it("A-064: gespeicherter Rätsel-Kreis fällt still weg, die übrige Reihenfolge und an/aus bleiben", () => {
+    const alt = [{ id: "timer", an: true }, { id: "raetsel", an: true }, { id: "pause", an: false }, { id: "sport", an: true }, { id: "waslos", an: true }];
+    expect(sanitizeKreise(alt).map((k) => `${k.id}:${k.an}`)).toEqual(["timer:true", "pause:false", "sport:true", "waslos:true"]);
+    expect(STANDARD_KREISE.map((k) => k.id)).toEqual(["sport", "pause", "waslos", "timer"]);
   });
 
   it("Ansage kurz, ohne Druck", () => {
-    expect(beschreibeKreis({ kreis: "raetsel", aktion: "aus" })).toBe("Rätsel ist oben raus. In „Startseite bearbeiten“ holst du es zurück.");
+    expect(beschreibeKreis({ kreis: "timer", aktion: "aus" })).toBe("Timer ist oben raus. In „Startseite bearbeiten“ holst du es zurück.");
     expect(beschreibeKreis({ kreis: "timer", aktion: "nach_vorn" })).toBe("Timer steht jetzt vorn.");
     expect(beschreibeKreis({ kreis: "waslos", aktion: "an" })).toBe("Was los steht wieder oben.");
   });
@@ -170,8 +176,9 @@ describe("Migration v9 → v10", () => {
   });
 
   it("v10 bleibt; Sicherung: Kreise kommen mit zurück (auch alte Sicherungen laden)", async () => {
-    const m = migrateHome({ version: 10, tiles: DEFAULT_HOME, tipSeen: false, kreise: [{ id: "raetsel", an: false }] })!;
-    expect(m.kreise.find((k) => k.id === "raetsel")?.an).toBe(false);
+    const m = migrateHome({ version: 10, tiles: DEFAULT_HOME, tipSeen: false, kreise: [{ id: "waslos", an: false }, { id: "raetsel", an: false }] })!;
+    expect(m.kreise.find((k) => k.id === "waslos")?.an).toBe(false);
+    expect(m.kreise.some((k) => (k.id as string) === "raetsel")).toBe(false);
     const win = fakeWindow();
     vi.resetModules();
     const home = await import("@/lib/core/homeLayout");
@@ -221,13 +228,13 @@ describe("Neue Standard-Ordnung (Tafel 140)", () => {
   });
 });
 
-describe("Mia: „Nimm Rätsel oben raus“, „Timer nach vorn“", () => {
+describe("Mia: „Nimm Was los oben raus“, „Timer nach vorn“", () => {
   const SAETZE: [string, string, string][] = [
-    ["Nimm Rätsel oben raus", "raetsel", "aus"],
+    ["Nimm Was los oben raus", "waslos", "aus"],
     ["Timer nach vorn", "timer", "nach_vorn"],
     ["Hol die Pause wieder nach oben", "pause", "an"],
     ["Den Sport-Kreis bitte ganz nach hinten", "sport", "nach_hinten"],
-    ["Blende das Rätsel oben aus", "raetsel", "aus"],
+    ["Blende den Timer oben aus", "timer", "aus"],
     ["Timer nach vorne", "timer", "nach_vorn"],
   ];
 
@@ -252,9 +259,11 @@ describe("Mia: „Nimm Rätsel oben raus“, „Timer nach vorn“", () => {
 
   it("Werkzeug: Vorschau „kreise“ mit Übernehmen, Unsinn wird abgelehnt", () => {
     const ctx = kontext();
-    expect(rufe(ctx, "kreise_anpassen", { kreis: "raetsel", aktion: "aus" }).isError).toBeFalsy();
-    expect(ctx.ops.at(-1)).toMatchObject({ type: "kreise", change: { kreis: "raetsel", aktion: "aus" } });
+    expect(rufe(ctx, "kreise_anpassen", { kreis: "waslos", aktion: "aus" }).isError).toBeFalsy();
+    expect(ctx.ops.at(-1)).toMatchObject({ type: "kreise", change: { kreis: "waslos", aktion: "aus" } });
     expect(rufe(ctx, "kreise_anpassen", { kreis: "wetter", aktion: "aus" }).isError).toBe(true);
+    // Rätsel ist seit A-064 kein Kreis mehr
+    expect(rufe(ctx, "kreise_anpassen", { kreis: "raetsel", aktion: "aus" }).isError).toBe(true);
   });
 
   it("Prüfstand-Sätze stehen drin (Ziel ≥ 95 %)", () => {

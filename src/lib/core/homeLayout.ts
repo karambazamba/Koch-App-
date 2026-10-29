@@ -56,7 +56,7 @@ export const tileLabel = (id: HomeTileId) => HOME_TILES.find((t) => t.id === id)
 /**
  * Standard je Haushalt (Tafel 140, A-050) – für neue Nutzer, den
  * Beispiel-Tag und „Neue Standard-Ordnung übernehmen“. Oben die Mini-Kreise
- * (Sport · Pause · Timer · Rätsel, `heute/kreise.ts`), dann Familie / zu
+ * (Sport · Pause · Was los? · Timer, `heute/kreise.ts`), dann Familie / zu
  * zweit: Wetter XS über Notizen XS | Pinnwand S · Termine M · Aufgaben M ·
  * Essen S | Wundertüte S · Einkauf M (Läden nebeneinander). Allein (Pinnwand
  * aus): Wetter XS über Notizen XS | Wundertüte S · Termine M · Aufgaben M ·

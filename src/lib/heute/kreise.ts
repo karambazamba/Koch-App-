@@ -1,5 +1,6 @@
 // Mini-Kreise oben auf der Startseite (A-050, Tafel 143 – ersetzt Tafel 136/137/1):
-// eine Reihe mit bis zu 5 runden Kreisen direkt unter der Kopfzeile (die
+// eine Reihe mit bis zu 4 runden Kreisen (A-064: Sport · Pause · Was los? ·
+// Timer, gleichmäßig verteilt) direkt unter der Kopfzeile (die
 // Jetzt-Karte steht darüber), nicht wischbar. Je Kreis EIN Wort darunter, nie
 // eine zweite Zeile, nie „…“. 5 Kreise = 56 px, 4 oder weniger = 64 px.
 // Keine Schilder, Zahlen oder Plaketten – einziges Zeichen ist der
@@ -10,7 +11,8 @@
 
 import { formatLeft, isRunning, leftMs, type Timer } from "@/lib/timer/model";
 
-export type KreisId = "sport" | "pause" | "waslos" | "raetsel" | "timer";
+/** „raetsel“ gab es bis A-064 – gespeicherte Anordnungen verlieren ihn still (`sanitizeKreise`), nichts sonst ändert sich */
+export type KreisId = "sport" | "pause" | "waslos" | "timer";
 
 /** Ein Kreis in der gespeicherten Reihenfolge: an oder aus (aus = ausgeblendet, nie gelöscht) */
 export type Kreis = { id: KreisId; an: boolean };
@@ -18,18 +20,18 @@ export type Kreis = { id: KreisId; an: boolean };
 /**
  * Alle Kreise in Standard-Reihenfolge (Tafel 143): Wort unter dem Kreis und
  * Kachelfarbe des Bereichs (`data-tone`). Pause = Mint (Durchatmen), Was los?
- * = Blau (Lavendel der Termine), Rätsel = Pfirsich, Timer = Sand.
+ * = Blau (Lavendel der Termine), Timer = Sand. Rätsel sind seit A-064 eine
+ * Sorte der Wundertüte (kein eigener Kreis mehr).
  */
 export const KREISE: { id: KreisId; wort: string; name: string; tone: string }[] = [
   { id: "sport", wort: "Sport", name: "Sport", tone: "sport" },
   { id: "pause", wort: "Pause", name: "Pause (Durchatmen)", tone: "aufgaben" },
   { id: "waslos", wort: "Was los?", name: "Was los?", tone: "termine" },
-  { id: "raetsel", wort: "Rätsel", name: "Rätsel", tone: "essen" },
   { id: "timer", wort: "Timer", name: "Timer", tone: "timer" },
 ];
 
 /** Höchstens so viele Kreise stehen in der Reihe */
-export const MAX_KREISE = 5;
+export const MAX_KREISE = 4;
 
 export const KREIS_IDS = KREISE.map((k) => k.id);
 
@@ -95,7 +97,7 @@ export function ordneKreise(kreise: Kreis[], order: KreisId[]): Kreis[] {
   return sanitizeKreise([...order.map((id) => list.find((k) => k.id === id)), ...list.filter((k) => !order.includes(k.id))].filter(Boolean));
 }
 
-/** Kurze Bestätigung („Rätsel ist oben raus.“) */
+/** Kurze Bestätigung („Timer ist oben raus.“) */
 export function beschreibeKreis(change: KreisAenderung): string {
   const wort = kreisMeta(change.kreis).wort.replace(/\?$/, "");
   switch (change.aktion) {
@@ -126,7 +128,6 @@ export function sichtbareKreise(kreise: Kreis[], lage: KreisLage): KreisId[] {
   const da = (k: Kreis) => {
     if (k.id === "timer") return k.an || lage.timerLaeuft;
     if (!k.an) return false;
-    if (k.id === "raetsel") return true;
     return lage[k.id];
   };
   let ids = sanitizeKreise(kreise).filter(da).map((k) => k.id);

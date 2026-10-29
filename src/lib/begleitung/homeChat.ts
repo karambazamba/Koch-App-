@@ -54,9 +54,8 @@ function actionIn(t: string): HomeAction | null {
   return null;
 }
 
-/** Welcher Mini-Kreis oben (A-050): „Rätsel“, „Timer“, „Sport“, „Pause“/„Durchatmen“, „Was los?“ */
+/** Welcher Mini-Kreis oben (A-050, A-064 ohne Rätsel): „Timer“, „Sport“, „Pause“/„Durchatmen“, „Was los?“ */
 function kreisIn(t: string): KreisId | null {
-  if (/r(ä|ae)tsel/.test(t)) return "raetsel";
   if (/\btimer\b/.test(t)) return "timer";
   if (/\bsport\b/.test(t)) return "sport";
   if (/\b(pause|durchatmen)\b/.test(t)) return "pause";
@@ -74,7 +73,7 @@ function kreisAktionIn(t: string): KreisAktion | null {
   return null;
 }
 
-/** „Nimm Rätsel oben raus“, „Timer nach vorn“, „Hol die Pause wieder nach oben“ (A-050) */
+/** „Nimm Was los oben raus“, „Timer nach vorn“, „Hol die Pause wieder nach oben“ (A-050) */
 export function parseKreisCommand(text: string): KreisAenderung | null {
   const t = text.trim().toLowerCase().replace(/[.!?]+$/, "");
   if (t.split(/\s+/).length > 9 || /\d/.test(t)) return null;

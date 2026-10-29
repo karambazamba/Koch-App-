@@ -37,7 +37,7 @@ function finishWelcome(state: WelcomeState, look: AppLook = "farbig") {
 /**
  * Erster Start ("Los geht's" auf dem Hallo-Bildschirm, „Für wen soll ich
  * sortieren?“): sonst Standardwerte, die Standard-Startseite des Haushalts
- * (Tafel 140, A-050: oben die Mini-Kreise Sport · Pause · Rätsel · Timer,
+ * (Tafel 140, A-050: oben die Mini-Kreise Sport · Pause · Was los? · Timer (A-064),
  * dann Familie / zu zweit Wetter XS über Notizen XS | Pinnwand S, allein
  * Wetter XS über Notizen XS | Wundertüte S; dann Termine, Aufgaben, Essen,
  * Einkauf breit) und die Beispiele darin.

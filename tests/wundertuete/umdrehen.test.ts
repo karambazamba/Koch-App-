@@ -43,9 +43,8 @@ describe("Kachel: Lösung erst nach Antippen", () => {
   });
 });
 
-describe("Seite und Rätsel: nach „Noch eine“ verdeckt", () => {
+describe("Seite (auch Rätsel, A-064): nach „Noch eine“ verdeckt", () => {
   const seite = readFileSync("src/components/wundertuete/WundertueteSeite.tsx", "utf8");
-  const raetsel = readFileSync("src/components/raetsel/RaetselFenster.tsx", "utf8");
   it("Seite: Lösung nur offen, wenn diese Karte aufgedeckt ist; „Noch eine“ vorher hell, aber tippbar", () => {
     expect(seite).toContain("gezeigtId === sichtbar.id || istAufgedeckt(sichtbar.id)");
     expect(seite).toContain("data-verdeckt");
@@ -54,11 +53,7 @@ describe("Seite und Rätsel: nach „Noch eine“ verdeckt", () => {
     expect(seite).not.toMatch(/disabled=\{[^}]*gezeigt/);
     expect(seite).toContain('<div className="flex flex-wrap gap-2 pb-1" role="group" aria-label="Sorte">');
   });
-  it("Rätsel: verdeckt mit „Antippen für die Lösung“, „Noch eins“ vorher hell", () => {
-    expect(raetsel).toContain("{!geloest && raetsel.hinten && (");
-    expect(raetsel).toContain("data-verdeckt");
-    expect(raetsel).toContain('${raetsel && !geloest ? "opacity-45" : ""}');
-  });
+
 });
 
 // Kontrast: Tinte und Kachel-Akzent auf der Fläche und im weißen Feld (hell) bzw. der leicht helleren Karte (dunkel)

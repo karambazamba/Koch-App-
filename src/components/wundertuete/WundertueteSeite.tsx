@@ -9,6 +9,7 @@
 // darunter „Nie doppelt. <Name> legt immer neue nach.“ Nichts Ungesehenes
 // mehr: „… kommt bald.“ statt einer Wiederholung. Kein Zähler, keine Punkte.
 
+import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Anchor, ChevronRight, Gift, RotateCw, Share } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -20,9 +21,10 @@ import { showToast } from "@/lib/core/toast";
 import { useProfile } from "@/lib/einstellungen/useProfile";
 import { helperName } from "@/lib/einstellungen/profileHelper";
 import { useForecast } from "@/lib/wetter/client";
-import { karteVon } from "@/lib/wundertuete/auswahl";
+import { karteMix } from "@/lib/wundertuete/mischung";
+import { rtLaden, useRaetsel } from "@/lib/raetsel/store";
 import { lageAus } from "@/lib/wundertuete/lage";
-import { useWundertuete, wtNoch, wtZeigen } from "@/lib/wundertuete/store";
+import { loadWt, useWundertuete, wtNoch, wtZeigen } from "@/lib/wundertuete/store";
 import { istAufgedeckt, merkeAufgedeckt } from "@/lib/wundertuete/aufgedeckt";
 import { ANTIPPEN, FILTER, KOMMT_BALD, antwortTeile, sorteMeta, teilText, type Eintrag, type Filter } from "@/lib/wundertuete/sorten";
 
@@ -77,20 +79,26 @@ function KarteGross({ karte, name, gezeigt, onAufdecken }: { karte: Eintrag; nam
 }
 
 export function WundertueteSeite() {
+  const sorte = useSearchParams().get("sorte");
   const stand = useWundertuete();
   const profile = useProfile();
   const day = useToday();
   const minutes = useMinutes();
   const { forecast } = useForecast();
-  const [filter, setFilter] = useState<Filter>("alles");
+  const [filter, setFilter] = useState<Filter>(() => FILTER.find((x) => x.id === sorte)?.id ?? "alles");
   const bereit = Boolean(day && minutes !== undefined && profile !== undefined);
   const lage = bereit ? lageAus({ heute: toIsoDate(day!), minuten: minutes!, haushalt: haushaltOf(profile?.householdType), forecast }) : null;
-  // Ohne Karte von heute (direkt aufgerufen): wie die Kachel die Karte des Tages
+  const rt = useRaetsel();
+  // Ohne Karte von heute (direkt aufgerufen): wie die Kachel die Karte des Tages;
+  // mit `?sorte=raetsel` (Mia: „Gib mir ein Rätsel“, A-064) gleich eine Karte dieser Sorte
   useEffect(() => {
-    if (lage) wtZeigen(lage);
+    if (!lage) return;
+    wtZeigen(lage);
+    const aktuell = karteMix({ wt: loadWt(), rt: rtLaden() });
+    if (filter !== "alles" && aktuell?.sorte !== filter) wtNoch(lage, filter);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- einmal, sobald Tag und Profil da sind
   }, [bereit]);
-  const karte = stand ? karteVon(stand, stand.aktuell?.id) : undefined;
+  const karte = stand && rt ? karteMix({ wt: stand, rt }) : undefined;
   const sichtbar = karte && (filter === "alles" || karte.sorte === filter) ? karte : undefined;
   const waehlen = (f: Filter) => {
     setFilter(f);
@@ -116,7 +124,7 @@ export function WundertueteSeite() {
             </button>
           ))}
         </div>
-        {!stand || !bereit ? (
+        {!stand || !rt || !bereit ? (
           <div className={`${CARD} h-64 animate-pulse`} />
         ) : sichtbar ? (
           <KarteGross key={sichtbar.id} karte={sichtbar} name={name} gezeigt={gezeigt} onAufdecken={aufdecken} />
