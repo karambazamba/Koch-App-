@@ -167,6 +167,9 @@ const shopSettings = (value: Value | null) => ({
   learnAsked: value?.learnAsked ?? [],
   alwaysList: value?.alwaysList ?? [],
   angebotAb: typeof value?.angebotAb === "string" ? value.angebotAb : "",
+  // A-067: „Was holst du wo?“ und die KI-Sorten gelten für den ganzen Haushalt
+  ...(isObj(value?.ladenPlan) ? { ladenPlan: value.ladenPlan } : {}),
+  ...(isObj(value?.sortenKi) ? { sortenKi: value.sortenKi } : {}),
 });
 
 const einkauf: Adapter = {

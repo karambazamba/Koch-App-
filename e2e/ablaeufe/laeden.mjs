@@ -1,6 +1,7 @@
-// Läden bewusst wählen (Tafel 88, seit „Einkauf neu“ mit Laden-Karten): Frage
-// beim ersten Besuch, Karten auch mit 0 Sachen, Aussuchen mit dem gewählten
-// Laden, Laden-Seite, „Meine Läden bearbeiten“ im „···“, „Später“ fragt nie wieder.
+// Läden bewusst wählen (Tafel 88, seit A-067 die Einrichtung in 3 Schritten,
+// Tafel 151): erster Besuch = „Wo kaufst du ein?“, Karten auch mit 0 Sachen,
+// Aussuchen mit dem gewählten Laden, Laden-Seite, „Meine Läden bearbeiten“
+// im „···“, „Später“ fragt nie wieder.
 import { BASE, aussuchen, hello, seedFamily, store } from "../lib.mjs";
 
 const open = async (page) => {
@@ -12,16 +13,21 @@ const open = async (page) => {
 
 export const laedenWaehlen = async (page, check) => {
   await open(page);
-  const card = page.locator("[data-laden-frage]");
-  check(await card.isVisible(), "erster Besuch: „In welchen Läden kaufst du ein?“");
-  await card.getByRole("button", { name: "Lidl" }).tap();
-  await card.getByRole("button", { name: "Rossmann" }).tap();
-  check((await card.getByRole("button", { name: "Lidl" }).getAttribute("aria-pressed")) === "true", "Lidl angekreuzt");
-  await card.getByRole("button", { name: "Fertig" }).tap();
+  const schritt = page.locator("[data-einrichten]");
+  check((await schritt.getAttribute("data-einrichten")) === "1" && (await page.getByRole("heading", { name: "Wo kaufst du ein?" }).isVisible()), "erster Besuch: „Wo kaufst du ein?“");
+  await schritt.getByRole("button", { name: "Lidl", exact: true }).tap();
+  await schritt.getByRole("button", { name: "Rossmann", exact: true }).tap();
+  check((await schritt.getByRole("button", { name: "Lidl", exact: true }).getAttribute("aria-pressed")) === "true", "Lidl angekreuzt");
+  check((await page.locator("[data-einrichten-weiter]").innerText()).includes("Weiter · 2 Läden"), "„Weiter · 2 Läden“");
+  await page.locator("[data-einrichten-weiter]").tap();
+  check(/Rossmann/.test(await page.locator('[data-sorte-laden="drogerie"]').innerText()), "Schritt 2: Drogerie → Rossmann vorgeschlagen");
+  await page.locator("[data-einrichten-speichern]").tap();
+  await page.locator("[data-einrichten-fertig]").tap();
   await page.waitForTimeout(400);
-  check(!(await card.count()), "Karte weg");
+  check(!(await page.locator("[data-einrichten]").count()), "Einrichtung fertig");
   const list = await store(page, "wasgibts.einkaufsliste");
   check(JSON.stringify(list.myShops) === JSON.stringify(["Lidl", "Rossmann"]), "Meine Läden: Lidl, Rossmann");
+  check(list.ladenPlan?.haupt === "Lidl", "Hauptladen Lidl");
   check(await page.locator('[data-laden-karte="Rossmann"]').isVisible(), "Rossmann als Karte, auch mit 0");
   check(!(await page.locator("[data-einkaufsmodus]").count()), "kein Einkaufsmodus-Knopf");
   // Aussuchen: Lidl wählen, Joghurt antippen → bei Lidl gemerkt
@@ -57,11 +63,11 @@ export const laedenWaehlen = async (page, check) => {
 
 export const laedenSpaeter = async (page, check) => {
   await open(page);
-  await page.locator("[data-laden-frage]").getByRole("button", { name: /^Später/ }).tap();
+  await page.locator("[data-einrichten-spaeter]").tap();
   await page.waitForTimeout(300);
   await page.reload();
   await page.waitForTimeout(1100);
-  check(!(await page.locator("[data-laden-frage]").count()), "Später: nie wieder gefragt");
+  check(!(await page.locator("[data-einrichten]").count()), "Später: nie wieder von selbst");
   check(await page.locator("[data-einsprechen]").isVisible(), "Einsprechen und Aussuchen wie immer");
   check(await page.getByRole("button", { name: "Läden wählen" }).isVisible(), "ohne Läden: „Läden wählen“");
 };

@@ -2,11 +2,12 @@
 
 // „···“ auf der Seite „Einkauf“ (Auftrag Punkt 7): alles Seltene an einer
 // Stelle – Woche wechseln, Zuletzt gekauft, Gerichte ohne Zutaten,
-// Stammliste, Liste teilen, Meine Läden bearbeiten. Die Seite selbst bleibt
+// Stammliste, Liste teilen, Meine Läden bearbeiten, „Meine Läden & was wo“ (A-067). Die Seite selbst bleibt
 // so klar wie die Kachel.
 
 import { useState } from "react";
-import { CalendarRange, ChefHat, History, Repeat, Share2, Store } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { CalendarRange, ChefHat, History, ListTree, Repeat, Share2, Store } from "lucide-react";
 import { MoreMenu, type MoreItem } from "@/components/ui/MoreMenu";
 import { Sheet } from "@/components/ui/Sheet";
 import { CARD_LIST, buttonClass } from "@/components/ui/styles";
@@ -46,6 +47,7 @@ export function EinkaufMenue({
   onShare: () => void;
 }) {
   const [offen, setOffen] = useState<Offen>(null);
+  const router = useRouter();
   const items: MoreItem[] = [
     ...(planning ? [{ label: isNext ? "Diese Woche zeigen" : "Nächste Woche zeigen", icon: CalendarRange, onClick: onWoche }] : []),
     { label: "Zuletzt gekauft", icon: History, onClick: () => setOffen("zuletzt") },
@@ -53,6 +55,8 @@ export function EinkaufMenue({
     { label: "Stammliste", icon: Repeat, onClick: () => setOffen("stamm") },
     { label: "Liste teilen", icon: Share2, onClick: onShare },
     { label: "Meine Läden bearbeiten", icon: Store, onClick: () => setOffen("laeden") },
+    // A-067: gleicher Bildschirm wie Schritt 2 der Einrichtung (ohne Läden: die ganze Einrichtung)
+    { label: "Meine Läden & was wo", icon: ListTree, onClick: () => router.push(myShops.length ? "/einkaufsliste/einrichten?nur=was-wo" : "/einkaufsliste/einrichten") },
   ];
   const zeile = (i: ListItem, knopf: { label: string; onClick: () => void }) => (
     <li key={i.key} className="flex min-h-12 items-center gap-3 px-4 py-1.5">

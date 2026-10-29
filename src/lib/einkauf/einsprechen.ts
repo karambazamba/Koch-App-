@@ -244,7 +244,7 @@ export function einkaufVorschlag(text: string, prev: ChangeOp[], weekStart: stri
 }
 
 /** Kommt das gleich in einen Laden (genannt oder gemerkt)? Sonst „Noch ohne Laden“ */
-export function ladenFuer(op: ChangeOp, s: Pick<ShoppingSettings, "itemShops" | "shopRules" | "products">): string {
+export function ladenFuer(op: ChangeOp, s: Pick<ShoppingSettings, "itemShops" | "shopRules" | "products" | "ladenPlan" | "sortenKi">): string {
   if (op.type !== "add_shopping") return "";
   return op.shop?.trim() || shopChoice(op.name, s) || "";
 }

@@ -18,8 +18,8 @@ import type { PlanWeek } from "@/lib/essen/mealPlan";
 import { formatTotal, roundSmall, unitFamily } from "@/lib/einkauf/amounts";
 import { SECTIONS, sectionFor } from "@/lib/einkauf/sections";
 import { SHOPPING, sortBy } from "@/lib/core/sort";
-import { EMPTY_LIST, lower, type ListItem, type ShoppingList, type ShoppingSettings, type WeekList } from "@/lib/einkauf/listModel";
-import { shopChoice } from "@/lib/einkauf/shopRules";
+import { EMPTY_LIST, inLaden, lower, type ListItem, type ShoppingList, type ShoppingSettings, type WeekList } from "@/lib/einkauf/listModel";
+import { ladenHerkunft } from "@/lib/einkauf/shopRules";
 import { gleicheSache, mengenAddieren, normalform } from "@/lib/einkauf/zusammen/zusammen";
 import { einkaufsMenge, packungAus, rezeptHinweis } from "@/lib/einkauf/zusammen/packung";
 import { zutatenFuerGericht } from "@/lib/einkauf/angebot/rezeptZutaten";
@@ -31,7 +31,7 @@ export function buildShoppingList(
   week: PlanWeek,
   recipes: Record<string, Recipe>,
   list: WeekList = EMPTY_LIST,
-  settings: Pick<ShoppingSettings, "products" | "itemShops" | "shopRules" | "learned"> = { products: {}, itemShops: {} },
+  settings: Pick<ShoppingSettings, "products" | "itemShops" | "shopRules" | "learned" | "ladenPlan" | "sortenKi"> = { products: {}, itemShops: {} },
   /** Kleiner Haushalt (1–2 Personen): Rezeptmengen auf die Personen des Tages umrechnen; `angebot` = Plan-Zutaten nur anbieten (A-040) */
   options: { small?: boolean; manualOnly?: boolean; angebot?: boolean } = {},
 ): ShoppingList {
@@ -80,11 +80,15 @@ export function buildShoppingList(
 
   const display = (key: string, name: string) => list.renamed?.[key] ?? settings.products[lower(name)] ?? name;
   // Feste Laden-Regeln gelten überall (Rezept, Plan, Stammartikel, eigene Artikel); dann der gemerkte Laden.
-  // Bewusst „Egal wo“ (leerer Laden) ≠ noch ohne Laden (nichts bekannt)
-  const shopOf = (name: string, original: string): Pick<ListItem, "shop" | "anywhere"> => {
-    const own = shopChoice(name, settings);
-    const choice = own || lower(original) === lower(name) ? own : (shopChoice(original, settings) ?? own);
-    return choice === "" ? { shop: "", anywhere: true } : { shop: choice ?? "" };
+  // Bewusst „Egal wo“ (leerer Laden) ≠ noch ohne Laden (nichts bekannt).
+  // A-067: mit Laden-Plan nach Sorte bzw. Hauptladen, eine Sorte mit mehreren Läden → `auch`
+  const shopOf = (name: string, original: string): Pick<ListItem, "shop" | "anywhere" | "auch"> => {
+    const fest = (h: ReturnType<typeof ladenHerkunft>) => Boolean(h && h.von !== "sorte" && h.von !== "haupt");
+    const own = ladenHerkunft(name, settings);
+    const orig = (own?.shop && fest(own)) || lower(original) === lower(name) ? null : ladenHerkunft(original, settings);
+    const choice = orig && (fest(orig) || !own) ? orig : own;
+    if (!choice) return { shop: "" };
+    return choice.shop === "" ? { shop: "", anywhere: true } : { shop: choice.shop, ...(choice.auch?.length ? { auch: choice.auch } : {}) };
   };
 
   // Gleiche Sache aus mehreren Rezepten (Einzahl/Mehrzahl, andere Einheit) = eine Zeile.
@@ -195,7 +199,7 @@ function zusammenlegen(items: ListItem[]): ListItem[] {
 /** Offene Artikel als Text zum Teilen (WhatsApp, Nachricht …) – optional nur ein Laden */
 export function shoppingListText(list: ShoppingList, title: string, shop?: string): string {
   const lines = [title];
-  const open = list.items.filter((i) => !i.checked && !i.hidden && (shop === undefined || i.shop === shop));
+  const open = list.items.filter((i) => !i.checked && !i.hidden && (shop === undefined || i.shop === shop || inLaden(i, shop)));
   for (const section of SECTIONS) {
     const items = open.filter((i) => i.section === section.value);
     if (items.length === 0) continue;

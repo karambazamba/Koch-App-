@@ -190,10 +190,10 @@ describe("Laden-Seite", () => {
 });
 
 describe("Startseiten-Kachel (C2) bleibt", () => {
-  it("Laden-Zeile = Laden-Seite, „n ohne Laden“ = Einkauf am Bereich „Noch ohne Laden“", () => {
+  it("Laden-Zeile = Laden-Seite, „n ohne Laden · Sortieren ›“ = Läden einrichten (A-067)", () => {
     const tiles = read("src/components/heute/HomeTiles.tsx");
     expect(tiles).toMatch(/href=\{demo \? "\/einkaufsliste" : ladenHref\(r\.shop \?\? ""\)\}/);
-    expect(tiles).toContain('href="/einkaufsliste#ohne-laden"');
+    expect(tiles).toContain('href="/einkaufsliste/einrichten"');
     expect(tiles).not.toMatch(/setShopChip/);
     expect(seite).toMatch(/window\.location\.hash === "#ohne-laden"/);
   });

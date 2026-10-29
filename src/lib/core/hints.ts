@@ -6,7 +6,7 @@ import { useExternalStore } from "@/lib/core/useExternalStore";
 
 // „kachel-hinzufuegen“ = alte Sprechblase (bis v0.48.0), „pinnwand-24h“ = alter
 // Einmal-Hinweis der Pinnwand (jetzt immer im Kopf); beide bleiben nur als gespeicherte Werte
-export type HintId = "kachel-hinzufuegen" | "kachel-tipp" | "mikro-gefragt" | "stimme-angeboten" | "kochtipp-muetze" | "mia-knopf" | "aufgaben-persoenlich" | "mia-name-neu" | "memo-nur-sitzung" | "mikro-homescreen" | "pinnwand-kachel" | "pinnwand-gesten" | "pinnwand-24h" | "pinnwand-kachel-1" | "zu-zweit" | "leiste-neu" | "essen-ziehen" | "einkauf-wagen" | "koch-ohr" | "vorschau-antippen" | "einkauf-merken" | "einkauf-laden-gewaehlt";
+export type HintId = "kachel-hinzufuegen" | "kachel-tipp" | "mikro-gefragt" | "stimme-angeboten" | "kochtipp-muetze" | "mia-knopf" | "aufgaben-persoenlich" | "mia-name-neu" | "memo-nur-sitzung" | "mikro-homescreen" | "pinnwand-kachel" | "pinnwand-gesten" | "pinnwand-24h" | "pinnwand-kachel-1" | "zu-zweit" | "leiste-neu" | "essen-ziehen" | "einkauf-wagen" | "koch-ohr" | "vorschau-antippen" | "einkauf-merken" | "einkauf-laden-gewaehlt" | "einkauf-umlegen";
 
 type HintState = { version: 1; seen: HintId[] };
 
@@ -36,7 +36,7 @@ export function markHintSeen(id: HintId) {
 }
 
 /** Tipps, die „Tipps nochmal zeigen“ (Einstellungen → Mia) zurückholt – nie Fragen wie „mikro-gefragt“ */
-export const TIPP_HINWEISE: readonly HintId[] = ["einkauf-wagen", "einkauf-merken", "einkauf-laden-gewaehlt"];
+export const TIPP_HINWEISE: readonly HintId[] = ["einkauf-wagen", "einkauf-merken", "einkauf-laden-gewaehlt", "einkauf-umlegen"];
 
 /** Einzelne Einmal-Hinweise wieder zeigen */
 export function hintsZuruecksetzen(ids: readonly HintId[]) {

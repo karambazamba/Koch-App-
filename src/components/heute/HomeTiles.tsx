@@ -206,10 +206,10 @@ function ShopRows({ rows, ohne, mine, products, demo = false }: TileRows & { min
   );
 }
 
-/** „6 ohne Laden · Sortieren ›“ unter den Läden (öffnet „Einkauf“ bei „Noch ohne Laden“) */
+/** „6 ohne Laden · Sortieren ›“ unter den Läden (A-067: öffnet „Läden einrichten“, danach gibt es kein „ohne Laden“ mehr) */
 function OhneLadenZeile({ ohne }: { ohne: string[] }) {
   return (
-    <Link href="/einkaufsliste#ohne-laden" className="flex min-h-[30px] flex-wrap items-center gap-x-1 py-0.5 text-[12.5px] font-semibold leading-tight text-muted" data-zeile data-ohne-laden-zeile data-leuchte={ohne.map((n) => leuchtSchluessel("einkauf", n)).join(" ")}>
+    <Link href="/einkaufsliste/einrichten" className="flex min-h-[30px] flex-wrap items-center gap-x-1 py-0.5 text-[12.5px] font-semibold leading-tight text-muted" data-zeile data-ohne-laden-zeile data-leuchte={ohne.map((n) => leuchtSchluessel("einkauf", n)).join(" ")}>
       <span className="kachel-frei whitespace-nowrap">{ohneLadenZeile(ohne.length)} ·</span> <span className="kachel-frei whitespace-nowrap font-bold text-accent-strong">Sortieren ›</span>
     </Link>
   );

@@ -245,7 +245,7 @@ export function contextText(
     "",
     hat("kalender") && calendarContext(data.entries ?? [], todayIso, extra.abends, extra.feierabend, extra.clock ? berlinInstant(todayIso, extra.clock) : undefined, data.raumWorte ?? []),
     hat("notizen") && notesContext(data.notes ?? []),
-    hat("einkauf") && `Läden: ${data.laeden?.meine.length ? data.laeden.meine.join(", ") : "keine gewählt"}; feste Regeln: ${data.laeden && Object.keys(data.laeden.regeln).length ? Object.entries(data.laeden.regeln).map(([item, shop]) => `${item} → ${shop}`).join(", ") : "keine"} (ändern mit laden_regel)`,
+    hat("einkauf") && `Läden: ${data.laeden?.meine.length ? data.laeden.meine.join(", ") : "keine gewählt"}; feste Regeln: ${data.laeden && Object.keys(data.laeden.regeln).length ? Object.entries(data.laeden.regeln).map(([item, shop]) => `${item} → ${shop}`).join(", ") : "keine"} (ändern mit laden_regel)${data.laeden?.wasWo ? `; was wo: ${data.laeden.wasWo} (ganze Sorte ändern: laden_regel mit artikel = Sorte, z. B. „Getränke“)` : ""}`,
     hat("pinnwand") && `Pinnwand: ${data.pinnwand?.length ? data.pinnwand.map((p) => `${p.author}: ${JSON.stringify(p.text)}`).join(" · ") : "leer"}`,
     hat("wetter") && `Wetter-Ort: ${data.wetterOrt ?? "Eutin"}`,
     ...(hat("tag", "essen", "app") || laufend ? dayContextLines({ data, today: todayIso }) : []),

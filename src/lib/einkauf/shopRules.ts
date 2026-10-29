@@ -14,6 +14,11 @@ import { compareText } from "@/lib/core/sort";
 import { todayIso } from "@/lib/core/now";
 import type { Gelernt } from "@/lib/einkauf/listModel";
 import { abgehakt, gelernterLadenFuer, gelerntSchluessel, korrigiert } from "@/lib/einkauf/merken/gelernt";
+import { laedenFuerSorte, type LadenPlan } from "@/lib/einkauf/sorten/plan";
+import { sorteAusWort, sorteFuer, type SorteId } from "@/lib/einkauf/sorten/sorten";
+import { alsSorteRegel, sorteRegelAntwort, sorteRegelAnwenden } from "@/lib/einkauf/sorten/einrichten";
+import { laedenAusSatz, planZeile } from "@/lib/einkauf/sorten/plan";
+import { parseSorteRegel } from "@/lib/einkauf/sorten/saetze";
 
 const cap = (s: string) => (s ? s[0].toLocaleUpperCase("de-DE") + s.slice(1) : s);
 const cleanShop = (shop: string) => shop.trim().slice(0, 30);
@@ -55,8 +60,14 @@ export function removeShopRule(item: string) {
   });
 }
 
-/** Regel setzen und Rücknahme liefern (stellt Regel und gemerkten Laden wie vorher her) */
+/**
+ * Regel setzen und Rücknahme liefern (stellt Regel und gemerkten Laden wie
+ * vorher her). Ist der „Artikel“ eine ganze Sorte („Getränke“, A-067), gilt
+ * die Regel für die Sorte (mehrere Läden mit „und“).
+ */
 export function applyShopRule(item: string, shop: string): () => void {
+  const sorte = alsSorteRegel(item, shop);
+  if (sorte) return sorteRegelAnwenden(sorte.sorte, sorte.laeden);
   const key = lower(item);
   const before = store.load();
   const rule = before?.shopRules?.[key] ?? "";
@@ -90,15 +101,17 @@ function similar(name: string, rule: string): boolean {
   return false;
 }
 
-type LadenWissen = { itemShops: Record<string, string>; shopRules?: Record<string, string>; products?: Record<string, string>; learned?: Record<string, Gelernt> };
+type LadenWissen = { itemShops: Record<string, string>; shopRules?: Record<string, string>; products?: Record<string, string>; learned?: Record<string, Gelernt>; ladenPlan?: LadenPlan; sortenKi?: Record<string, SorteId> };
 
-/** Woher der Laden einer Sache kommt: Regel, selbst gewählt, gelernt (Abhaken), ähnlicher Name */
-export type LadenHerkunft = { shop: string; von: "regel" | "gewaehlt" | "gelernt" | "aehnlich" };
+/** Woher der Laden einer Sache kommt: Regel, selbst gewählt, gelernt (Abhaken), ähnlicher Name, Sorte bzw. Hauptladen (A-067) */
+export type LadenHerkunft = { shop: string; von: "regel" | "gewaehlt" | "gelernt" | "aehnlich" | "sorte" | "haupt"; /** Weitere Läden derselben Sorte (A-067 Nachtrag) */ auch?: string[] };
 
 /**
  * Laden für einen Artikel samt Herkunft: feste Regel → gewählter Laden (leer =
  * bewusst „Egal wo“) → gelernt beim Abhaken (A-041, 90-Tage-Regel) → Regel für
  * einen ähnlichen Namen (nur, wenn genau ein Laden passt). `null` = noch ohne Laden.
+ * Mit Laden-Plan (A-067): Ausnahme (Regel, gewählt, ähnlicher Name) → Regel
+ * der Sorte (alle ihre Läden, der erste vorn) → Hauptladen; nie „ohne Laden“.
  */
 export function ladenHerkunft(name: string, s: LadenWissen, heute: string = todayIso()): LadenHerkunft | null {
   const key = lower(name);
@@ -109,6 +122,14 @@ export function ladenHerkunft(name: string, s: LadenWissen, heute: string = toda
   for (const k of keys) {
     if (rules[k]) return { shop: rules[k], von: "regel" };
     if (typeof s.itemShops[k] === "string") return { shop: s.itemShops[k], von: "gewaehlt" };
+  }
+  const plan = s.ladenPlan;
+  if (plan) {
+    const aehnlich = similarShop(name, rules, product);
+    if (aehnlich !== null) return { shop: aehnlich, von: "aehnlich" };
+    const sorte = sorteFuer(product || name, s.sortenKi) ?? (product ? sorteFuer(name, s.sortenKi) : null);
+    const [shop, ...auch] = laedenFuerSorte(plan, sorte);
+    return sorte && plan.regeln[sorte]?.length ? { shop, von: "sorte", ...(auch.length ? { auch } : {}) } : { shop, von: "haupt" };
   }
   for (const k of keys) {
     const g = gelernterLadenFuer(s.learned, k, heute);
@@ -212,6 +233,9 @@ export function gelerntVergessen(item: string) {
 /** Ohne KI: „Tomaten kaufe ich immer bei Rewe“, „Butter nur bei Lidl“ → Regel; „… nicht mehr bei Rewe“, „Milch egal wo“ → weg */
 export function parseShopRule(text: string): { item: string; shop: string } | null {
   const t = text.trim().replace(/[.!]+$/, "");
+  // A-067: ganze Sorte („Obst kaufe ich auf dem Markt und bei Rewe“)
+  const sorte = parseSorteRegel(t);
+  if (sorte) return { item: cap(t.match(/^(?:(?:ich|wir)\s+\S+\s+)?(\S+)/i)?.[1] ?? ""), shop: sorte.laeden.join(" und ") };
   const set =
     t.match(/^(?:ich|wir)\s+kauf\w*\s+(.+?)\s+(?:immer|nur|ab jetzt)\s+(?:bei|beim|im|in der)\s+(.+)$/i) ??
     t.match(/^(.+?)\s+(?:kauf\w*\s+(?:ich|wir)\s+|gibt'?s\s+|gibt es\s+|hol\w*\s+(?:ich|wir)\s+)?(?:immer|nur|ab jetzt)\s+(?:bei|beim|im|in der)\s+(.+)$/i);
@@ -237,10 +261,16 @@ export function shopOverview(rules: Record<string, string>, mine: string[]): str
 }
 
 /** Kurze Antwort: „Merk ich mir. Tomaten → Rewe.“ bzw. „Gut, Tomaten egal wo.“ */
-export const shopRuleReply = (item: string, shop: string) => (shop.trim() ? `Merk ich mir. ${cap(item.trim())} → ${shop.trim()}.` : `Gut, ${cap(item.trim())} egal wo.`);
+export const shopRuleReply = (item: string, shop: string) => {
+  const sorte = shop.trim() ? sorteAusWort(item) : null;
+  const laeden = sorte ? laedenAusSatz(shop) : [];
+  if (sorte && laeden.length) return sorteRegelAntwort(sorte, laeden);
+  return shop.trim() ? `Merk ich mir. ${cap(item.trim())} → ${shop.trim()}.` : `Gut, ${cap(item.trim())} egal wo.`;
+};
 
-/** Für Mia (nur zum Lesen): feste Regeln und „Meine Läden“ */
-export function shopRulesForMia(): { regeln: Record<string, string>; meine: string[] } {
+/** Für Mia (nur zum Lesen): feste Regeln, „Meine Läden“ und „Was holst du wo?“ (A-067) */
+export function shopRulesForMia(): { regeln: Record<string, string>; meine: string[]; wasWo?: string } {
   const s = store.load();
-  return { regeln: { ...(s?.shopRules ?? {}) }, meine: [...(s?.myShops ?? [])] };
+  const wasWo = s?.ladenPlan ? planZeile(s.ladenPlan) : "";
+  return { regeln: { ...(s?.shopRules ?? {}) }, meine: [...(s?.myShops ?? [])], ...(wasWo ? { wasWo } : {}) };
 }

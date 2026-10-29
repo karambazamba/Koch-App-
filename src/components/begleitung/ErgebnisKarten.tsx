@@ -23,6 +23,9 @@ import { leuchtenVergessen } from "@/lib/heute/aufleuchten";
 import { CARD, chipClass } from "@/components/ui/styles";
 import { RaumZeile } from "@/components/kalender/raum/RaumBestaetigung";
 import { ErgebnisLaden } from "@/components/einkauf/merken/ErgebnisLaden";
+import { useHintSeen } from "@/lib/core/hints";
+import { useShoppingSettings } from "@/lib/einkauf/listStore";
+import { UMLEGEN_HINWEIS } from "@/lib/einkauf/merken/karte";
 
 const SYMBOL: Record<ErgebnisArt, LucideIcon> = {
   termin: CalendarDays,
@@ -62,6 +65,10 @@ export function ErgebnisKarten({ karten, undo, onClose, vorschau }: Props) {
     return () => window.clearTimeout(t);
   }, [undo]);
   const { zeigen, weitere } = sichtbareErgebnisse(karten, offen);
+  // A-067: mit Laden-Plan einmal klein, wie man umlegt (bis man es einmal getan hat)
+  const umlegenGesehen = useHintSeen("einkauf-umlegen");
+  const plan = Boolean(useShoppingSettings()?.ladenPlan);
+  const umlegen = plan && umlegenGesehen === false && !vorschau && !undone && karten.some((k) => k.laden);
   return (
     <section className={`flex w-full flex-col gap-2 pl-11 ${undone ? "opacity-50" : ""}`} aria-label={vorschau ? "Vorschlag" : "Eingetragen"} data-ergebnis-karten>
       <ul className="flex flex-col gap-2">
@@ -69,6 +76,11 @@ export function ErgebnisKarten({ karten, undo, onClose, vorschau }: Props) {
           <ErgebnisKarte key={k.id} karte={k} index={i} undone={undone} onClose={onClose} vorschau={vorschau} />
         ))}
       </ul>
+      {umlegen && (
+        <p className="px-1 text-[13px] text-muted" data-umlegen-hinweis>
+          {UMLEGEN_HINWEIS}
+        </p>
+      )}
       {weitere > 0 && (
         <button type="button" onClick={() => setOffen(true)} className="hit inline-flex min-h-8 items-center gap-1 self-start px-1 text-[14px] font-bold text-muted" data-weitere>
           {weitereText(weitere)}

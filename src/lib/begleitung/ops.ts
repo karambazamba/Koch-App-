@@ -70,7 +70,7 @@ export type AssistantData = {
   /** Tagesablauf: Jetzt-Karte an/aus, Zeiten der Phasen */
   tagesablauf?: { jetzt: boolean; feierabendAb: string; morgenBis: string };
   /** Läden: feste Regeln (Artikel klein → Laden) und „Meine Läden“ (nur zum Lesen; ändern über `set_shop_rule`) */
-  laeden?: { regeln: Record<string, string>; meine: string[] };
+  laeden?: { regeln: Record<string, string>; meine: string[]; /** A-067: „Das meiste bei Rewe; Getränke → Getränkemarkt …“ */ wasWo?: string };
   /** Personen-ID von mir (für Sport-Termine) */
   me?: string | null;
   /** Gelernte Räume (A-034, nur zum Lesen): Stichwort → Raum, neueste zuerst */

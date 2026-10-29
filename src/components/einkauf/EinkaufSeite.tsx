@@ -11,6 +11,9 @@
 // Wochenplan-Zutaten sind ein Angebot oben auf der Laden-Seite (A-040); ohne
 // eigene Läden steht „Für deinen Wochenplan“ hier. Beim ersten Mal stellt
 // sich die Liste mit Mias Tipp vor (drei Zeilen, `EINKAUF_LISTE_SEITE`).
+// A-067 (Tafel 151): beim allerersten Öffnen stattdessen „Läden einrichten“
+// (drei Schritte, ✕/„Später“); danach legt Mia jede Sache selbst in den
+// richtigen Laden, „Noch ohne Laden“ gibt es dann nicht mehr.
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
@@ -24,7 +27,7 @@ import { formatWeekRange } from "@/lib/essen/weekPlan";
 import { recentBought } from "@/lib/einkauf/kacheln/view";
 import { grundsachen } from "@/lib/einkauf/kacheln/gruppen";
 import { gelernterLaden } from "@/lib/einkauf/shopRules";
-import { useMeineLaeden, vorauswahl } from "@/lib/einkauf/meineLaeden";
+import { laterShops, useMeineLaeden, vorauswahl } from "@/lib/einkauf/meineLaeden";
 import { einsortieren, einsortiertText, miaSortiert, sortiertText, sortierVorschlaege } from "@/lib/einkauf/einsortieren";
 import { ladenKarten, ohneLadenListe, setEinkaufWoche, useEinkaufWoche } from "@/lib/einkauf/seite/karten";
 import { plusFromLink } from "@/lib/einkauf/unterwegs/unterwegs";
@@ -32,7 +35,9 @@ import { openHelper } from "@/lib/begleitung/open";
 import { showDeleted, showToast } from "@/lib/core/toast";
 import { helperName } from "@/lib/einstellungen/profile";
 import { useProfile } from "@/lib/einstellungen/useProfile";
-import { LadenFrage, MeineLaedenSheet } from "@/components/einkauf/MeineLaeden";
+import { MeineLaedenSheet } from "@/components/einkauf/MeineLaeden";
+import { Einrichten } from "@/components/einkauf/einrichten/Einrichten";
+import { useSortenEinordnen } from "@/lib/einkauf/sorten/einordnen";
 import { WoKaufstDuSheet } from "@/components/einkauf/Einsortieren";
 import { AntwortZeile, useDavorLink } from "@/components/einkauf/unterwegs/Antwort";
 import { useEinkaufBeispiel } from "@/components/einkauf/EinkaufBeispiel";
@@ -56,6 +61,8 @@ export function EinkaufSeite() {
   const [sorting, setSorting] = useState<ListItem | null>(null);
   const [ziel, setZiel] = useState<string | null>(null);
   const [shopsOpen, setShopsOpen] = useState(false);
+  // A-067: Einrichtung bleibt offen bis „Zur Einkaufsliste“ bzw. ✕ (Speichern setzt schon `shopsAsked`)
+  const [einrichten, setEinrichten] = useState(false);
   const myShops = meine?.myShops ?? [];
   // Spontan: offene Artikel früherer Wochen in die laufende Woche holen
   const carryWeek = data && !data.planning ? data.weekStart : null;
@@ -83,6 +90,10 @@ export function EinkaufSeite() {
     if (loaded && window.location.hash === "#ohne-laden") document.getElementById("ohne-laden")?.scrollIntoView({ block: "start" });
   }, [loaded]);
 
+  // A-067: Sachen, die die Wortliste nicht kennt, ordnet die KI einmal ein (nur mit Laden-Plan)
+  const offeneNamen = (data?.list.items ?? []).filter((i) => !i.hidden && !i.checked).map((i) => i.name);
+  useSortenEinordnen(offeneNamen, Boolean(data?.settings.ladenPlan));
+
   if (!data) return SKELETON;
   const { weekStart, isNext, list, settings } = data;
   const visible = list.items.filter((i) => !i.hidden);
@@ -94,6 +105,27 @@ export function EinkaufSeite() {
   const karten = zeigBeispiel ? beispiel.karten : ladenKarten(liste, myShops);
   const ohne = zeigBeispiel ? beispiel.ohne : ohneLadenListe(liste);
   const kennt = sortierVorschlaege(ohne, { itemShops: settings.itemShops, learned: settings.learned }).length > 0;
+
+  // A-067: beim ersten Öffnen „Läden einrichten“ (✕ / „Später“ = wie bisher, nie wieder von selbst)
+  if (meine && !meine.shopsAsked && !settings.ladenPlan && !zeigBeispiel && !einrichten) setEinrichten(true);
+  if (einrichten) {
+    return (
+      <Einrichten
+        vorauswahl={[...myShops, ...vorauswahl(settings.itemShops)]}
+        eigene={settings.shops}
+        ohne={ohne.map((i) => i.name)}
+        settings={settings}
+        onSpaeter={() => {
+          laterShops();
+          setEinrichten(false);
+        }}
+        onFertig={() => {
+          setEinrichten(false);
+          window.scrollTo(0, 0);
+        }}
+      />
+    );
+  }
 
   /** Losgelassen auf einer Laden-Karte: sofort dort und gemerkt (Rückgängig = Regel wieder weg) */
   const drop = (item: ListItem, shop: string) => {
@@ -178,8 +210,6 @@ export function EinkaufSeite() {
           />
         )}
 
-        {meine && !meine.shopsAsked && !zeigBeispiel && <LadenFrage shops={settings.shops} preselected={vorauswahl(settings.itemShops)} />}
-
         {(karten.length > 0 || meine?.shopsAsked) && (
           <section aria-label="Meine Läden" className="flex flex-col gap-2" data-meine-laeden-karten>
             <h2 className={`${SECTION_TITLE} flex items-baseline gap-2 px-1`}>
@@ -200,6 +230,7 @@ export function EinkaufSeite() {
 
         <OhneLadenZone
           items={ohne}
+          einrichten={!settings.ladenPlan && !zeigBeispiel}
           products={settings.products}
           sortierer={kennt && !zeigBeispiel ? helperName(profile) : null}
           onSort={() => {

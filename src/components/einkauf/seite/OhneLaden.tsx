@@ -9,6 +9,7 @@
 // gewinnt die Bewegung (data-no-swipe, kein touch-none).
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { ItemSymbol } from "@/components/einkauf/kacheln/ItemSymbol";
 import { SECTION_TITLE, buttonClass } from "@/components/ui/styles";
 import { buzz } from "@/components/heute/actions";
@@ -25,6 +26,7 @@ const zielAn = (x: number, y: number): string | null => (document.elementFromPoi
 
 export function OhneLadenZone({
   items,
+  einrichten = false,
   products,
   sortierer,
   onSort,
@@ -33,6 +35,8 @@ export function OhneLadenZone({
   onDrop,
 }: {
   items: ListItem[];
+  /** Noch keine Laden-Einrichtung (A-067): Link „Einmal sagen, was du wo holst ›“ */
+  einrichten?: boolean;
   products: Record<string, string>;
   /** „Mia sortiert“ – nur, wenn sie etwas davon kennt (sonst null) */
   sortierer: string | null;
@@ -92,6 +96,11 @@ export function OhneLadenZone({
         ))}
       </div>
       <p className="px-1 text-[13px] text-muted">oder auf einen Laden ziehen</p>
+      {einrichten && (
+        <Link href="/einkaufsliste/einrichten" className="hit flex min-h-11 items-center px-1 text-[15px] font-bold text-accent-strong" data-einrichten-link>
+          Einmal sagen, was du wo holst ›
+        </Link>
+      )}
       {zug && (
         <span
           className="pointer-events-none fixed left-0 top-0 z-50 flex min-h-11 items-center gap-1.5 rounded-full bg-surface px-3 text-[15px] font-bold shadow-sheet"

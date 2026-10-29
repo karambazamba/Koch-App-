@@ -32,7 +32,8 @@ describe("Zwei klare Momente (seit „Einkauf neu“: Laden-Seite statt Einkaufs
 
   it("Laden-Seite: der Kreis = gekauft, zu Hause wie im Laden", () => {
     const src = readFileSync("src/components/einkauf/LadenSeite.tsx", "utf8");
-    expect(src).toMatch(/onTick=\{\(\) => tick\(item\)\}/);
+    expect(src).toMatch(/onTick=\{\(\) => abhaken\(item\)\}/);
+    expect(src).toMatch(/const abhaken = \(item: ListItem\) => \{\n    const war = item.checked;\n    tick\(item\);/);
     // Im Laden: erst „Einkauf fertig“ legt es nach „Im Haus“
     expect(readFileSync("src/lib/einkauf/wagen/useAbhaken.ts", "utf8")).toMatch(/toggleChecked\(weekStart, item, today, \{ imHaus: false \}\)/);
     expect(readFileSync("src/components/einkauf/seite/LadenZeile.tsx", "utf8")).toMatch(/role="checkbox"/);
@@ -160,9 +161,9 @@ describe("Oberfläche", () => {
     expect(view).toMatch(/sortierer=\{kennt && !zeigBeispiel \? helperName\(profile\) : null\}/);
   });
 
-  it("Startseiten-Kachel: „n ohne Laden“ öffnet „Einkauf“ bei „Noch ohne Laden“", () => {
+  it("Startseiten-Kachel: „n ohne Laden · Sortieren ›“ öffnet „Läden einrichten“ (A-067)", () => {
     const src = readFileSync("src/components/heute/HomeTiles.tsx", "utf8");
-    expect(src).toContain('href="/einkaufsliste#ohne-laden"');
+    expect(src).toContain('href="/einkaufsliste/einrichten"');
     expect(src).toContain("Sortieren ›");
   });
 });

@@ -64,7 +64,7 @@ const OP_TYPES = new Set(["add_timer", "stop_timer", "stopwatch", "cook_step", "
 /** Läden aus der App: feste Regeln (höchstens 200) und „Meine Läden“ (höchstens 20), nur Texte */
 function sanitizeLaeden(raw: unknown): AssistantData["laeden"] {
   if (!raw || typeof raw !== "object") return undefined;
-  const r = raw as { regeln?: unknown; meine?: unknown };
+  const r = raw as { regeln?: unknown; meine?: unknown; wasWo?: unknown };
   const regeln = Object.fromEntries(
     Object.entries(r.regeln && typeof r.regeln === "object" ? (r.regeln as Record<string, unknown>) : {})
       .filter((e): e is [string, string] => typeof e[1] === "string" && Boolean(e[0].trim()) && Boolean(e[1].trim()))
@@ -72,7 +72,8 @@ function sanitizeLaeden(raw: unknown): AssistantData["laeden"] {
       .map(([k, v]) => [k.slice(0, 60), v.slice(0, 30)]),
   );
   const meine = (Array.isArray(r.meine) ? r.meine : []).filter((x): x is string => typeof x === "string").slice(0, 20).map((x) => x.slice(0, 30));
-  return { regeln, meine };
+  // A-067: „Was holst du wo?“ als eine Zeile
+  return { regeln, meine, ...(typeof r.wasWo === "string" && r.wasWo.trim() ? { wasWo: r.wasWo.slice(0, 600) } : {}) };
 }
 
 /** Anfrage prüfen und auf das Nötige kürzen */

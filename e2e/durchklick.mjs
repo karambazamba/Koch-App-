@@ -49,6 +49,7 @@ import * as laeden from "./ablaeufe/laeden.mjs";
 import * as familieTeilen from "./ablaeufe/familieTeilen.mjs";
 import * as einsortieren from "./ablaeufe/einsortieren.mjs";
 import * as einkaufneu from "./ablaeufe/einkaufneu.mjs";
+import * as laedeneinrichten from "./ablaeufe/laedeneinrichten.mjs";
 import * as kochmodus from "./ablaeufe/kochmodus.mjs";
 import * as vorschau from "./ablaeufe/vorschau.mjs";
 import * as erledigt from "./ablaeufe/erledigt.mjs";
@@ -65,7 +66,7 @@ import * as kreise from "./ablaeufe/kreise.mjs";
 import * as waslos from "./ablaeufe/waslos.mjs";
 import * as demotag from "./ablaeufe/demotag.mjs";
 
-const ALL = { ...start, ...alltag, ...essen, ...mehr, ...konten, ...vorfuehren, ...mikrofon, ...termin, ...stimme, ...wochencheck, ...kochtipp, ...mehrideen, ...miazuerst, ...pinnwandgesten, ...pinnwandordnen, ...sprachnachricht, ...mianame, ...startseite, ...schnelleingabe, ...kalendertag, ...mails, ...datenschutz, ...mikrocheck, ...zuhoeren, ...serverstimme, ...ohrlive, ...miasprechen, ...wischen, ...abhaken, ...uebersicht, ...ergebniskarten, ...testcode, ...notizen, ...notizvorschau, ...zubehoer, ...sprechenhaengt, ...heim, ...essenkachel, ...wochenkarte, ...laeden, ...familieTeilen, ...einsortieren, ...einkaufneu, ...kochmodus, ...vorschau, ...erledigt, ...abgeschnitten, ...einkaufnamen, ...raumwahl, ...raster, ...sport, ...wundertuete, ...kompakter, ...durchatmen, ...kaputt, ...kreise, ...waslos, ...demotag };
+const ALL = { ...start, ...alltag, ...essen, ...mehr, ...konten, ...vorfuehren, ...mikrofon, ...termin, ...stimme, ...wochencheck, ...kochtipp, ...mehrideen, ...miazuerst, ...pinnwandgesten, ...pinnwandordnen, ...sprachnachricht, ...mianame, ...startseite, ...schnelleingabe, ...kalendertag, ...mails, ...datenschutz, ...mikrocheck, ...zuhoeren, ...serverstimme, ...ohrlive, ...miasprechen, ...wischen, ...abhaken, ...uebersicht, ...ergebniskarten, ...testcode, ...notizen, ...notizvorschau, ...zubehoer, ...sprechenhaengt, ...heim, ...essenkachel, ...wochenkarte, ...laeden, ...familieTeilen, ...einsortieren, ...einkaufneu, ...kochmodus, ...vorschau, ...erledigt, ...abgeschnitten, ...einkaufnamen, ...raumwahl, ...raster, ...sport, ...wundertuete, ...kompakter, ...durchatmen, ...kaputt, ...kreise, ...waslos, ...demotag, ...laedeneinrichten };
 const pick = process.argv.slice(2);
 const flows = Object.entries(ALL).filter(([name, run]) => typeof run === "function" && (!pick.length || pick.includes(name)));
 const stop = await startServer();
