@@ -201,12 +201,12 @@ export const KREIS_SEITE = "https://www.kreis-oh.de/Bildung-Kultur-Sport/Kultur-
  * vor dem Rest, früher vor später. Nur Einträge mit Uhrzeit oder an einem
  * Wochenend-Tag; Beispieldaten nur, wenn sie übergeben werden (Testbetrieb).
  */
-export function wochenendTipps(events: RegionEvent[], haushalt: Haushalt, heute: string, jetzt = 0): RegionEvent[] {
+export function wochenendTipps(events: RegionEvent[], haushalt: Haushalt, heute: string, jetzt = 0): WasLosKarte[] {
   const liste = nachTagen(events, "wochenende", heute, jetzt).flatMap((g) => g.events.map((e) => ({ e, tag: g.tag })));
   const punkte = (e: RegionEvent) => (haushalt === "familie" && e.kategorien.includes("kinder") ? 4 : 0) + (e.kategorien.includes("draussen") || e.kategorien.includes("markt") ? 2 : 0) + (e.ganztags ? -1 : 0);
   return sortBy(liste.map((x) => ({ ...x, punkte: punkte(x.e) })), ...WAS_LOS_TIPPS)
     .slice(0, 2)
-    .map((x) => x.e);
+    .map((x) => ({ event: x.e, tag: x.tag }));
 }
 
 /**

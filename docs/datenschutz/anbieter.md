@@ -1,4 +1,4 @@
-# Anbieter (Stand v0.163)
+# Anbieter (Stand v0.167)
 
 Was gelistet ist, wird wirklich genutzt (geprüft im Code). „bitte prüfen“ =
 Felix klärt; nichts davon ist hier erfunden.

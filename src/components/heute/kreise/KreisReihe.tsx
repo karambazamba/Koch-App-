@@ -17,7 +17,8 @@ import { useFeature } from "@/lib/core/features";
 import { useKreise } from "@/lib/core/homeLayout";
 import { useNowMs } from "@/lib/core/useNowMs";
 import { now } from "@/lib/core/now";
-import { STANDARD_KREISE, kreisMasse, kreisMeta, sichtbareKreise, sportRing, timerImKreis, wasLosVerfuegbar, type KreisId } from "@/lib/heute/kreise";
+import { STANDARD_KREISE, kreisMasse, kreisMeta, sichtbareKreise, sportRing, timerImKreis, type KreisId } from "@/lib/heute/kreise";
+import { useWasLosSichtbar } from "@/lib/region/client";
 import type { KachelFarbe } from "@/lib/heute/kachelFarben";
 import type { CalendarEntry } from "@/lib/kalender/model";
 import { nextTraining, useSport } from "@/lib/sport";
@@ -34,6 +35,7 @@ import { oeffneDurchatmen, useDurchatmenZustand } from "@/lib/durchatmen/oeffnen
 const SportFenster = dynamic(() => import("@/components/sport/SportFenster").then((m) => m.SportFenster));
 const TimerFenster = dynamic(() => import("@/components/timer/TimerFenster").then((m) => m.TimerFenster));
 const RaetselFenster = dynamic(() => import("@/components/raetsel/RaetselFenster").then((m) => m.RaetselFenster));
+const WasLosFenster = dynamic(() => import("@/components/region/WasLosFenster").then((m) => m.WasLosFenster));
 
 /** Beispiel-Tag: der Sport-Ring zeigt „2 von 3“ wie die Beispiel-Kachel – nie in echten Speichern */
 const BEISPIEL_RING = { trainings: 2, ziel: 3 };
@@ -46,13 +48,15 @@ export function KreisReihe({ entries, today, minutes, me, sportFarbe, beispiel =
   const pauseOn = useFeature("durchatmen");
   // Pause öffnet das Durchatmen-Fenster über seinen Gastgeber (im Layout) – der Kreis leuchtet, solange es offen ist
   const atem = useDurchatmenZustand();
+  // „Was los?“ (A-055): Quelle an, Baustein an und etwas in den nächsten 14 Tagen im Umkreis
+  const wasLos = useWasLosSichtbar();
   const sport = useSport();
   const timers = useTimers();
   const [offen, setOffen] = useState<KreisId | null>(null);
   const timerAktiv = Boolean(timers?.timers.some((t) => isRunning(t, now().getTime())));
   const nowMs = useNowMs(timerAktiv, 1000);
   const timer = timers && nowMs ? timerImKreis(timers.timers, nowMs) : null;
-  const ids = sichtbareKreise(kreise, { sport: Boolean(sportOn), pause: Boolean(pauseOn), waslos: wasLosVerfuegbar(), timerLaeuft: Boolean(timer) });
+  const ids = sichtbareKreise(kreise, { sport: Boolean(sportOn), pause: Boolean(pauseOn), waslos: wasLos, timerLaeuft: Boolean(timer) });
   if (!ids.length) return null;
   const masse = kreisMasse(ids.length);
 
@@ -97,7 +101,7 @@ export function KreisReihe({ entries, today, minutes, me, sportFarbe, beispiel =
       {offen === "sport" && <SportFenster entries={entries} today={today} minutes={minutes} me={me} farbe={sportFarbe} onClose={zu} />}
       {offen === "timer" && <TimerFenster onClose={zu} />}
       {offen === "raetsel" && <RaetselFenster onClose={zu} />}
-      {/* „Was los?“: das Fenster (Tafel 142) bindet A-055 an – bis dahin steht der Kreis nie da */}
+      {offen === "waslos" && <WasLosFenster onClose={zu} />}
     </>
   );
 }

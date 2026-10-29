@@ -91,8 +91,8 @@ describe("Umkreis, Sichtbarkeit, Wochenend-Tipps", () => {
   });
 
   it("wochenendTipps: höchstens 2, Familie „für Kinder“ zuerst, sonst draußen/Markt", () => {
-    expect(wochenendTipps(liste, "familie", "2026-10-23", 12 * 60).map((e) => e.id)).toEqual(["demo-herbstmarkt", "demo-kino"]);
-    expect(wochenendTipps(liste, "paar", "2026-10-23", 12 * 60).map((e) => e.id)).toEqual(["demo-herbstmarkt", "demo-nachtwaechter"]);
+    expect(wochenendTipps(liste, "familie", "2026-10-23", 12 * 60).map((k) => [k.event.id, k.tag])).toEqual([["demo-herbstmarkt", "2026-10-24"], ["demo-kino", "2026-10-23"]]);
+    expect(wochenendTipps(liste, "paar", "2026-10-23", 12 * 60).map((k) => k.event.id)).toEqual(["demo-herbstmarkt", "demo-nachtwaechter"]);
     expect(wochenendTipps([], "familie", "2026-10-23")).toEqual([]);
   });
 });
@@ -119,5 +119,22 @@ describe("Hinweis für Entwickler", () => {
     expect(quellenHinweis("kreisoh", null)).toBe("Was los?: Quelle liefert nichts (noch kein Lauf)");
     expect(quellenHinweis("aus", null)).toBeNull();
     expect(quellenHinweis("demo", null)).toBeNull();
+  });
+});
+
+describe("Freitags-Karte „Wochenende planen?“ mit „Was los?“", () => {
+  it("höchstens 2 Veranstaltungs-Chips nach dem Wetter, antippen fragt Mia; zusammen höchstens 3", async () => {
+    const { wochenendChips } = await import("@/lib/heute/wochenende");
+    const tage = [
+      { date: "2026-10-24", kurz: "Sa" as const, wetter: "sonnig" as const, essen: false },
+      { date: "2026-10-25", kurz: "So" as const, wetter: null, essen: false },
+    ];
+    const basis = { tage, termine: [], einkauf: 0, einkaufGeplant: false };
+    const tipps = [{ titel: "Herbstmarkt am Schloss", kurz: "Sa" as const }, { titel: "Kinderkino im Rathaus", kurz: "Fr" as const }, { titel: "Drittes", kurz: "So" as const }];
+    const chips = wochenendChips({ ...basis, tipps });
+    expect(chips.map((c) => c.label)).toEqual(["Sa sonnig: raus?", "Sa Herbstmarkt am Schloss", "Fr Kinderkino im Rathaus"]);
+    expect(chips[1].ziel).toEqual({ art: "fragen", text: "Was ist am Samstag los? Erzähl mir von „Herbstmarkt am Schloss“." });
+    expect(wochenendChips(basis).map((c) => c.id)).toEqual(["wetter", "essen"]);
+    expect(wochenendChips({ ...basis, tage: tage.map((t) => ({ ...t, wetter: null })), tipps: tipps.slice(0, 1) }).map((c) => c.id)).toEqual(["waslos-0", "essen"]);
   });
 });

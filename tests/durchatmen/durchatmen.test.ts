@@ -278,7 +278,7 @@ describe("Baustein „durchatmen“", () => {
     vi.resetModules();
     const h = await import("@/lib/core/features");
     expect(h.featureOn("durchatmen")).toBe(false);
-    expect(JSON.parse(w.localStorage.getItem("wasgibts.funktionen")!).version).toBe(7);
+    expect(JSON.parse(w.localStorage.getItem("wasgibts.funktionen")!).version).toBe(8);
   });
 
   it("steht in „Mehr Funktionen“, nicht im Launch-Aus", async () => {

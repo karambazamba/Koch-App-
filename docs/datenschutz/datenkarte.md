@@ -1,4 +1,4 @@
-# Datenkarte (Stand v0.163)
+# Datenkarte (Stand v0.167)
 
 Jede Datenart: wo sie liegt, wozu, wie lange, wer sie sieht, Rechtsgrundlage
 (ENTWURF – vor Veröffentlichung juristisch prüfen lassen).

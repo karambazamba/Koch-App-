@@ -21,8 +21,9 @@
 Kurz: Ein Fenster „Was ist los in <Wohnort>?“ mit Heute · Wochenende ·
 2 Wochen (Tafel 142), Kalender-Knopf trägt sofort ein, Detail mit „In den
 Kalender“, „An die Pinnwand“ und Originallink. Mia antwortet auf „Was ist
-los?“ aus denselben Daten. Den Mini-Kreis „Was los?“ auf der Startseite
-(Tafel 143) baut Paket A (A-050) und bindet das Fenster an.
+los?“ aus denselben Daten. Der Mini-Kreis „Was los?“ oben auf der Startseite
+(A-050, Tafel 143, `components/heute/kreise/KreisReihe.tsx`) steht nur da,
+wenn `useWasLosSichtbar()` true ist, und öffnet `WasLosFenster`.
 
 ## Stand des Parsers (WICHTIG)
 
@@ -87,7 +88,7 @@ los?“ aus denselben Daten. Den Mini-Kreis „Was los?“ auf der Startseite
 | Server | `region_events` | id (`kreisoh-<FID>`), titel, datum, bis_datum, letzter_tag, beginn, ende, ganztags, ort, gemeinde, link, kategorien, aktualisiert |
 | Server | `region_status` | eine Zeile: lauf, treffer, grund (ok/leer/fehler/robots/wartet) |
 | Gerät | `wasgibts.regiontipps` v2 | neu: `umkreis` (5/15/30, Standard 15; aus v1: ≤5 → 5, ≤20 → 15, sonst 30), `kategorienAus`; `ort` = Wohnort; `uebernommen` = Veranstaltung → Termin; alte Felder bleiben |
-| Gerät | `wasgibts.funktionen` v7 | neu: `aus` = selbst ausgeschaltete Bausteine (damit „Was los?“ in Ostholstein aus bleibt) |
+| Gerät | `wasgibts.funktionen` v8 | neu: `aus` = selbst ausgeschaltete Bausteine (damit „Was los?“ in Ostholstein aus bleibt) |
 
 RLS: anon und authenticated nur SELECT, schreiben nur service role (geheimer
 Schlüssel nur in der Cron-Route). Die Tabelle hat keinen Personenbezug.
@@ -130,26 +131,25 @@ Schlüssel nur in der Cron-Route). Die Tabelle hat keinen Personenbezug.
 - Einstellungen → „Was los?“ (`/profil/regiontipps`, Zeile nur wenn an):
   an/aus, Wohnort, Umkreis 5/15/30, Kategorien, „Anzeigen“ (Test-Einstieg bis
   zum Mini-Kreis).
-- Jetzt-Karte freitags: `wochenendTipps(events, haushalt, heute, jetzt)` →
-  höchstens 2 (Familie: für Kinder zuerst, dann draußen/Markt, früher vor
-  später). A-054 hängt das in `jetztThemen` ein; die Jetzt-Karte selbst ist
-  unverändert.
+- Jetzt-Karte freitags (A-054 „Wochenende planen?“, 12–20 Uhr):
+  `wochenendTipps(events, haushalt, heute, jetzt)` → höchstens 2 Treffer
+  `{ event, tag }` (Familie: für Kinder zuerst, dann draußen/Markt, früher vor
+  später). `useJetztTopics` gibt sie als `wochenende.tipps` in
+  `wochenendChips` (`heute/wochenende.ts`): nach dem Wetter-Chip „Sa
+  Herbstmarkt am Schloss“, zusammen höchstens 3 Chips; antippen fragt Mia
+  („Was ist am Samstag los? …“), sie antwortet mit der Karte und „In den
+  Kalender“. Nur mit Baustein und Quelle.
 
-## Paket A: Mini-Kreis anbinden
+## Mini-Kreis (A-050)
 
-```tsx
-import { useWasLosSichtbar } from "@/lib/region/client";
-import { WasLosFenster } from "@/components/region/WasLosFenster";
-import { WasLosFahne } from "@/components/region/WasLosTeile";
-
-const sichtbar = useWasLosSichtbar(); // Quelle an + Baustein an + etwas in 14 Tagen im Umkreis
-{sichtbar && <Kreis icon={<WasLosFahne />} label="Was los?" onClick={() => setOffen(true)} />}
-{offen && <WasLosFenster onClose={() => setOffen(false)} />}
-```
-
-Rein (ohne Hook): `wasLosSichtbar({ quelle, baustein, events, heute })`,
-`hatEintraege14Tage(events, heute)` aus `region/model.ts`. Unter dem Kreis
-nur „Was los?“ – keine Zahl, kein Tipp, keine Uhrzeit (Tafel 143).
+- `KreisReihe` nutzt `useWasLosSichtbar()` (Quelle an + Baustein an + etwas
+  in 14 Tagen im Umkreis) und öffnet `WasLosFenster` (nachgeladen).
+- `KreiseBearbeiten` zeigt „Was los?“, sobald die Quelle an ist; einschalten
+  schaltet den Baustein mit ein (`setWasLos`).
+- Unter dem Kreis nur „Was los?“ – keine Zahl, kein Tipp, keine Uhrzeit.
+- Rein (ohne Hook): `wasLosSichtbar({ quelle, baustein, events, heute })`,
+  `hatEintraege14Tage(events, heute)`. Das frühere `wasLosVerfuegbar()`
+  (immer false) ist weg.
 
 ## Begleitung (Mia)
 
