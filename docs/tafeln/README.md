@@ -23,8 +23,16 @@ Jede Vorlage aus einem Auftrag liegt hier als `tafel-<nr>.png`; der Auftrag in
 | 132 | `tafel-132.png` | A-044 Sport als Stempelkarte, final (ersetzt 129/130 und den Wochen-Kreis-Teil von 124) |
 | 133 | `tafel-133.png` | A-045 Essen-Kachel S: nichts abgeschnitten |
 | 134 | `tafel-134.png` | A-046 Essen-Kachel final: Bild antippen = Rezept |
+| 135 | `tafel-135.png` | A-048 Startseite kompakter (Höhe = Inhalt, Einkauf 3 Läden) |
+| 137 | `tafel-137.png` | A-050 Fenster Sport/Timer/Rätsel (Kreise selbst: Tafel 143), A-052 Rätsel |
+| 138 | `tafel-138.png` | A-051 Durchatmen |
+| 139 | `tafel-139.png` | A-051 Mia leitet an, Handy kann weg |
+| 140 | `tafel-140.png` | A-050 Beispiel-Startseite neu geordnet, Einkauf M |
+| 141 | `tafel-141.png` | A-050 Pinnwand mit Korkrahmen (Vorschlag A) |
+| 142 | `tafel-142.png` | A-055 „Was los?“ – Veranstaltungen in der Umgebung |
+| 143 | `tafel-143.png` | A-050 Fünf Mini-Kreise (final) |
 
 Nicht als Bild angekommen (nur Text im Auftrag): 87, 96, 97, 98, 99, 100, 101,
 102, 103, 104, 110, 121 (ersetzt durch 122), 124 (A-029), 129 und
-130 (Sport, ersetzt durch 132). Kommt ein Bild nach,
+130 (Sport, ersetzt durch 132), 131 (Sport, ersetzt durch 132), 136 (Startseite, ersetzt durch 143). Kommt ein Bild nach,
 hier ablegen und den Auftrag ergänzen.

@@ -6,6 +6,31 @@ liegen in `docs/tafeln/` (siehe dort, welche fehlen).
 
 Status: offen · in Arbeit · fertig vX.Y · zurückgestellt (Grund)
 
+## Fragen an Felix
+
+- Darf `www.kreis-oh.de` in die erlaubten Domains der Cloud-Umgebung (Umgebung → Bearbeiten → Network access), damit der „Was los?“-Parser an echten Seiten gebaut und getestet werden kann?
+- Reicht für die Durchatmen-Ansagen erst einmal die Handy-Stimme, bis die Lola-Dateien einmalig mit dem ElevenLabs-Schlüssel erzeugt sind (der liegt nur in Vercel)?
+- A-032: Bleibt Im Haus nur unter Essen, oder soll es später wieder eine eigene Kachel bekommen?
+
+## Sortier-Auftrag 29.10.: Pakete und Reihenfolge
+
+Bei Widersprüchen gilt der neuere Auftrag. Gemergt wird in dieser Reihenfolge, gebaut parallel.
+
+| Paket | Inhalt | Aufträge | Stand |
+|---|---|---|---|
+| P1 | Sofort-Fixes | A-045/A-046 Essen-Kachel final (Tafel 134), A-048 Startseite kompakter + Höhe nach Anzahl (Tafel 135), A-043 Erledigte 12 h, A-042 Familie verbinden, A-038 Vorschau vor „Nehmen“, A-054 Jetzt-Karte nur Nützliches | fertig bis auf A-048 (v0.157) und A-054 (v0.158), beide in Arbeit |
+| P2 | Gebaut, wartet | A-020/A-034 Räume, A-024 Pinnwand abhaken, A-028 Pinnwand Teil 1 + 2, A-029/A-036 Wasserzeichen | fertig (v0.145–v0.153) |
+| P3 | Einkauf | A-040/A-041 (Tafel 127/128), Einkauf M Läden nebeneinander (Tafel 140, mit P4) | A-040/A-041 fertig v0.154, Einkauf M kommt mit P4 |
+| P4 | Startseite neu | A-050: Mini-Kreise final (Tafel 143, keine Schilder), Fenster Sport/Timer/Rätsel (Tafel 137), Beispiel-Startseite (Tafel 140), Korkrahmen (Tafel 141), Einkauf M, Im Haus von der Startseite | startet nach A-048, Ziel v0.159 |
+| P5 | Essen/Kochen | A-025 Rezeptseite, Kochmodus, Schnellanleitung (Tafel 122) | fertig v0.146 |
+| P6 | Ergebnis-Karten | A-037 (Tafel 126) | fertig v0.151 |
+| P7 | Sport-Seite | A-044 Stempelkarte (Tafel 132) | fertig v0.153 |
+| P8 | Durchatmen, Rätsel, Wundertüte | A-051 Durchatmen + Stimme/Klang (Tafel 138/139), A-052 Rätsel + Wundertüte | in Arbeit, Ziel v0.160 / v0.161 |
+| P9 | Was los? | A-055 (Tafel 142) | in Arbeit, Ziel v0.162; Parser wartet auf Freigabe von www.kreis-oh.de |
+| P10 | Volle Prüfung | A-053 | am Ende |
+
+Ersetzt und nicht mehr gebaut: Essen-Kachel Tafel 121/122/133 → Tafel 134 (Rezeptseite/Kochmodus aus 122 bleiben); Sport Tafel 129/130/131 → Tafel 132 + Mini-Kreis Sport; Startseite Tafel 136 und Teil 1–2 von Tafel 137 → Tafel 143 (Fenster aus 137 bleiben); A-049 → A-052; „Tipps aus der Region“ → „Was los?“ (A-055); Füllsätze der Jetzt-Karte → A-054.
+
 ## Morgen früh (Nachtschicht 28./29.10.)
 
 - **Fertig und auf `main` (in Merge-Reihenfolge):**
@@ -152,6 +177,14 @@ Status: offen · in Arbeit · fertig vX.Y · zurückgestellt (Grund)
 | A-045 | SOFORT: Essen-Kachel S – nichts abgeschnitten (Knöpfe ohne „…“, Stufen Symbol → 13 px → Kurzform, „Idee“ als Pille, Im-Haus-Namen ganz, Zutaten 2 + „+N“, Prüf-Ablauf `nichtsAbgeschnitten`; Wortlaut `docs/auftraege/A-045-kachel-ganz.md`) | `tafel-133.png` | fertig v0.150 (Essen-Teil durch A-046 ersetzt, Grundregel bleibt) |
 | A-046 | Essen-Kachel final – Bild antippen = Rezept (keine großen Knöpfe, „Was anderes?“ oben, „Wochenplan ›“ unten, Statuszeile, Antippen je Zustand; Wortlaut `docs/auftraege/A-046-essen-kachel-final.md`) | `tafel-134.png` | fertig v0.150 (mit A-045; „Nehmen“ bietet seit v0.154 die Zutaten an, Wochenplan-Angebot aus Tafel 127 mit A-040) |
 | A-047 | `pruefen` grün im Raster: Wasserzeichen nicht mitmessen, Mindest-Zeile auf dem SE 1, Essen-Bildfläche ohne Überquellen, XS-Zeile 30 px, Einkauf „+N“ nicht unter dem Plus, Wetter-XS „Morgen“ | – | fertig v0.155 |
+| A-048 | SOFORT: Startseite kompakter – Termine/Aufgaben/Einkauf S/Notizen Höhe = Inhalt (0/1/2/3, ab 4 „+n weitere“, 14 px Rand, Paare gleich hoch), Einkauf 3 Läden, Wasserzeichen in allen Größen, Notizen-Leertext „Schnell notieren …“ (Wortlaut `docs/auftraege/A-048-startseite-kompakter.md`) | `tafel-135.png` | in Arbeit (Ziel v0.157) |
+| A-049 | SOFORT: Wundertüte – keine Punkte, nie wiederholen | – | ersetzt durch A-052 |
+| A-050 | Startseite neu (P4): Mini-Kreise final (Sport · Pause · Was los? · Rätsel · Timer, 56/64 px, ein Wort, keine Schilder), Fenster Sport/Timer/Rätsel, Beispiel-Startseite neu geordnet, Wasserzeichen in allen XS, Pinnwand-Korkrahmen, Einkauf M Läden nebeneinander, Im Haus von der Startseite (Wortlaut `docs/auftraege/A-050-minikreise-durchatmen.md`) | `tafel-137.png`, `tafel-140.png`, `tafel-141.png`, `tafel-143.png` | wartet auf A-048 (Ziel v0.159) |
+| A-051 | Durchatmen (12 Übungen, Vorschlag nach Tageszeit, Lieblinge, kein Zähler) + Mia leitet an (Stimme + Klang / Nur Klang / Still, Bildschirm dunkel, Wake Lock) | `tafel-138.png`, `tafel-139.png` | in Arbeit (Ziel v0.160; Lola-Ansagen: siehe Fragen an Felix) |
+| A-052 | Rätsel als eigener Bereich + Wundertüte (Witze, „Platt för Plietsche“, Angeberwissen), „Noch eine ›“, nie doppelt im Haushalt, KI-Nachschub nur Witze/Rätsel | `tafel-137.png` (Bild 4), `tafel-140.png` | in Arbeit (Ziel v0.161) |
+| A-053 | Gesamtauftrag Teil 7: Tests gesamt + volle Prüfung | – | am Ende |
+| A-054 | SOFORT: Jetzt-Karte nur mit Nutzen für heute (Rangliste, keine Füllsätze, sonst ausblenden), Wochenende planen nur freitags 12–20 Uhr | – | in Arbeit (Ziel v0.158) |
+| A-055 | „Was los?“ – Veranstaltungen Kreis Ostholstein (Tabelle region_events, Cron 5:00, Fenster Heute · Wochenende · 2 Wochen, Kalender/Pinnwand, Quelle sichtbar; ersetzt „Tipps aus der Region“) | `tafel-142.png` | in Arbeit (Ziel v0.162; Parser wartet auf Freigabe von www.kreis-oh.de) |
 
 ## Offene Punkte (ohne eigenen Auftrag)
 
