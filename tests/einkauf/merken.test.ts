@@ -436,7 +436,7 @@ describe("„Nehmen“ bietet die Zutaten an (Wochenplan-Angebot, A-040/A-046)",
   });
 
   it("die Essen-Kachel ruft „Nehmen“ mit Angebot auf (Vorschau), der Beispiel-Tag nicht", () => {
-    expect(read("src/components/heute/HomeTiles.tsx")).toMatch(/\{ anbieten: true, needs: it\.needs \}/);
+    expect(read("src/components/heute/HomeTiles.tsx")).toMatch(/\{ anbieten: true, needs: bedarfFuerGericht\(/);
     expect(read("src/components/heute/takeDish.ts")).toMatch(/if \(options\.anbieten\) zutatenAnbieten\(/);
     expect(read("src/components/ui/ToastHost.tsx")).toMatch(/data-toast-action/);
   });

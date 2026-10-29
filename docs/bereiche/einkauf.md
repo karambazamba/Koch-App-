@@ -213,9 +213,17 @@ nur einmal da. Kennt Läden, feste Regeln und eure Produkte. Immer sichtbar
     das, was die Vorschau „auf die Liste“ nannte (`angebotFuerGericht`,
     `angebotFrage`, `zutatenAnbieten` in `einkauf/angebot/nachNehmen.ts`).
     „Alle dazu“ setzt sie wie auf der Laden-Seite drauf („Steht drauf.“);
-    sonst bleiben sie hier im Angebot. Kennt die Liste das Rezept nicht
-    (eingebautes Rezept) oder kocht man spontan, gilt, was die Vorschau „auf
-    die Liste“ nannte. Nichts anzubieten = still.
+    sonst bleiben sie hier im Angebot. Mit Rezept (eigenes oder eingebautes)
+    grenzt `bedarfFuerGericht` auf alle Rezept-Zutaten ohne „im Haus“ und
+    ohne Grundsachen ein; ohne Rezept gilt, was die Vorschau „auf die Liste“
+    nannte. Kocht man spontan (nicht im Plan), kommen diese Namen mit der
+    Rezeptmenge als Hinweis. Nichts anzubieten = still.
+  - **Eingebaute Rezepte** (A-057): Die Zutaten eines Gerichts kommen an EINER
+    Stelle aus `zutatenFuerGericht` (`einkauf/angebot/rezeptZutaten.ts`):
+    eigenes Rezept über die ID, sonst das eingebaute („k:…“) über die ID oder
+    den Titel (auch Wochenkarten-Gerichte und Wünsche); Klammer-Erklärungen
+    weg („Reis (am besten vom Vortag)“ → „Reis“). Gleiche Zutat aus zwei
+    Gerichten = eine Zeile mit „wofür“, Mengen nur als Hinweis.
   - Liste: großer Kreis, Symbol, Name, sonst nichts; Menge nur, wenn selbst
     gesagt („2 Liter“). Zeile antippen = Fenster (`SacheFenster`, `ui/Sheet`):
     Name, darunter erst hier „für Gemüselasagne · Fr“ und „200 g im Rezept“,
@@ -429,6 +437,10 @@ nur einmal da. Kennt Läden, feste Regeln und eure Produkte. Immer sichtbar
   bei Rewe“, Löschen in den Einstellungen, Angebot („Alle dazu“, Salz blass,
   wofür im Fenster), nur Namen, Migration v7 → v8, Tipps je Stelle einmal +
   „Tipps nochmal zeigen“.
+- `tests/einkauf/rezeptZutaten.test.ts` – A-057: eingebaute Rezepte (Titel
+  oder ID) liefern Zutaten ins Angebot, gleiche Zutat aus zwei Gerichten =
+  eine Zeile mit „wofür“, Grundsachen blass, „Haben wir schon“ nicht,
+  „Nehmen“ mit allen Rezept-Zutaten ohne „im Haus“ (auch spontan).
 - `tests/einkauf/wagen.test.ts` – Laden leer (Satz, „Oft bei Edeka“, sonst
   Zuletzt gekauft/Beliebt, Tippen landet bei Edeka), Abhaken (1 s, 0,8 s,
   „Im Wagen“, nochmal tippen, noch nicht Im Haus), „Einkauf fertig“

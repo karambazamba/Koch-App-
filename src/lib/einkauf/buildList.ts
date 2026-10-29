@@ -10,6 +10,8 @@
 // eine Menge (Hinweis und Packungs-Vorschlag nur fürs Zeilen-Fenster). Mit
 // `angebot` sind die Zutaten aus dem Plan ein Angebot (`angebot`), keine
 // Zeilen; was davon schon auf der Liste steht, wird nicht mehr angeboten.
+// A-057: Die Zutaten eines Gerichts kommen aus `zutatenFuerGericht` – auch
+// die eingebauten Rezepte („Wok-Nudeln mit Hähnchen“) liefern ihre Zutaten.
 
 import type { Recipe } from "@/lib/essen/cookbook";
 import type { PlanWeek } from "@/lib/essen/mealPlan";
@@ -20,6 +22,7 @@ import { EMPTY_LIST, lower, type ListItem, type ShoppingList, type ShoppingSetti
 import { shopChoice } from "@/lib/einkauf/shopRules";
 import { gleicheSache, mengenAddieren, normalform } from "@/lib/einkauf/zusammen/zusammen";
 import { einkaufsMenge, packungAus, rezeptHinweis } from "@/lib/einkauf/zusammen/packung";
+import { zutatenFuerGericht } from "@/lib/einkauf/angebot/rezeptZutaten";
 
 /** Sind die Plan-Zutaten dieser Woche ein Angebot (A-040)? Wochen vor `angebotAb` (Stand vor v8) rechnen wie früher */
 export const planAlsAngebot = (weekStart: string, angebotAb?: string) => !angebotAb || weekStart >= angebotAb;
@@ -42,8 +45,8 @@ export function buildShoppingList(
     const short = day.weekday.slice(0, 2);
     const entry = day.slot.entry;
     if (!entry) continue;
-    const recipe = entry.recipeId ? recipes[entry.recipeId] : undefined;
-    const ingredients = recipe?.ingredients.filter((i) => i.name.trim()) ?? [];
+    // Eigenes Rezept, sonst das eingebaute (A-057: auch „k:…“ und Gerichte nur mit Titel)
+    const { rezept: recipe, zutaten: ingredients } = zutatenFuerGericht(entry, recipes);
     const label = entry.stored.kind === "wish" ? `${entry.kidName}s Wunsch „${entry.title}“` : entry.title;
     if (ingredients.length === 0) {
       missing.push(`${label} (${short})`);

@@ -33,6 +33,7 @@ import { useTodayIdeas } from "@/lib/essen/useIdeas";
 import { useStock } from "@/lib/essen/useStock";
 import { findRecipe, recipeHref } from "@/lib/essen/baking";
 import { rezeptIdFuer } from "@/lib/essen/kochen";
+import { bedarfFuerGericht } from "@/lib/einkauf/angebot/rezeptZutaten";
 import { useCooking } from "@/lib/essen/kochSession";
 import { TagFenster } from "@/components/essen/sieben/TagFenster";
 import { OhneRezeptSheet } from "@/components/essen/OhneRezeptSheet";
@@ -110,9 +111,9 @@ export function FoodTile({ data, dish, over, dishClock, onOpen, size = "S", hat 
   const zustand = kachelZustand(view, kocht);
   const morgen = weekdayShort(addDays(todayIso(), 1));
   const kopf = essenKopf(zustand, { over, clock: dish && dishClock ? clockLabel(dishClock) : null, morgen });
-  /** Vorschlag nehmen – tagsüber für heute, nach dem Essen für morgen; danach die Zutaten anbieten (Wochenplan-Angebot, A-040) */
+  /** Vorschlag nehmen – tagsüber für heute, nach dem Essen für morgen; danach die Zutaten anbieten (Wochenplan-Angebot, A-040; mit Rezept alle seine Zutaten ohne „im Haus“, A-057) */
   const take = (it: Idea, rezeptId?: string) => {
-    if (takeDish(data, rezeptId ? { ...it, recipeId: rezeptId } : it, over ? addDays(todayIso(), 1) : todayIso(), { anbieten: true, needs: it.needs })) setAlt(null);
+    if (takeDish(data, rezeptId ? { ...it, recipeId: rezeptId } : it, over ? addDays(todayIso(), 1) : todayIso(), { anbieten: true, needs: bedarfFuerGericht({ title: it.title, recipeId: rezeptId ?? it.recipeId }, data.recipes, stock, it.needs ?? null) })) setAlt(null);
   };
   // Für „Was anderes?“ bei Mias Kochidee zählt nur ein heute geplantes Gericht (nach dem Abendessen: frei für morgen)
   const corner = hat ? (
