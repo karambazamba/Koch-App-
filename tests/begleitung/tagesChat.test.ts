@@ -49,10 +49,10 @@ describe("Jetzt-Karte und Timer", () => {
     expect(say("Zeig die Jetzt-Karte wieder")!.text).toMatch(/steht wieder oben/);
   });
 
-  it("stellt Timer, blendet die Kachel einmal ein, zeigt den Stand", () => {
+  it("stellt Timer (der Kreis oben zeigt ihn, keine Kachel – A-050), zeigt den Stand", () => {
     expect(say("Wie lange noch?")!.text).toBe("Gerade läuft kein Timer.");
-    expect(say("Timer 10 Minuten für die Nudeln")!.text).toBe("Läuft ⏱ Nudeln – 10 Min. Der Timer steht jetzt auf der Startseite.");
-    expect(loadHomeTiles().find((t) => t.id === "timer")?.visible).toBe(true);
+    expect(say("Timer 10 Minuten für die Nudeln")!.text).toBe("Läuft ⏱ Nudeln – 10 Min.");
+    expect(loadHomeTiles().find((t) => t.id === "timer")?.visible).toBe(false);
     expect(say("Timer 5 Minuten Eier")!.text).toBe("Läuft ⏱ Eier – 5 Min.");
     expect(say("Wie lange noch?")!.text).toBe("Eier: noch 5 Minuten. Nudeln: noch 10 Minuten.");
     at("2026-10-22T10:07");
@@ -100,7 +100,7 @@ describe("Kochen Schritt für Schritt", () => {
 describe("Sport", () => {
   it("Ziel, Eintragen (gestempelt), Woche als Lage und Monat – ohne Druck", () => {
     expect(say("Wie oft war ich diese Woche beim Sport?")!.text).toBe("Diese Woche ist noch frei.");
-    expect(say("Ich will 2× pro Woche Sport machen")!.text).toBe("Wochenziel: 2× pro Woche ✓ Die Sport-Kachel steht jetzt auf der Startseite.");
+    expect(say("Ich will 2× pro Woche Sport machen")!.text).toBe("Wochenziel: 2× pro Woche ✓ Sport steht jetzt oben als Kreis.");
     expect(say("Ich will 3× pro Woche Sport machen")!.text).toBe("Wochenziel: 3× pro Woche ✓");
     expect(say("War heute 5 km laufen")!.text).toBe("Laufen · heute · gestempelt");
     expect(say("War gestern 45 Minuten schwimmen")!.text).toBe("Schwimmen · gestern · gestempelt");
@@ -114,7 +114,7 @@ describe("Sport", () => {
 
   it("„War heute Volleyball“ → Stempel, Bestätigung „Volleyball · heute · gestempelt“, Rückgängig", () => {
     const r = say("War heute Volleyball")!;
-    expect(r.text).toBe("Volleyball · heute · gestempelt. Die Sport-Kachel steht jetzt auf der Startseite.");
+    expect(r.text).toBe("Volleyball · heute · gestempelt. Sport steht jetzt oben als Kreis.");
     expect(loadSport().trainings.map((t) => t.data.sport)).toEqual(["volleyball"]);
     r.undo!();
     expect(loadSport().trainings).toEqual([]);
@@ -123,7 +123,7 @@ describe("Sport", () => {
 
   it("plant Trainings in freie Lücken, mit Erinnerung", () => {
     const r = say("Plan mir 3 Trainings nächste Woche, am liebsten morgens")!;
-    expect(r.text).toBe("Eingeplant ✓ Mo 07:00 Laufen, Mi 07:00 Laufen, Fr 07:00 Laufen – mit Erinnerung 30 Min vorher. Die Sport-Kachel steht jetzt auf der Startseite.");
+    expect(r.text).toBe("Eingeplant ✓ Mo 07:00 Laufen, Mi 07:00 Laufen, Fr 07:00 Laufen – mit Erinnerung 30 Min vorher. Sport steht jetzt oben als Kreis.");
     const saved = loadEntries().filter((e) => e.typ === "termin");
     expect(saved).toHaveLength(3);
     expect(saved[0].data).toMatchObject({ label: "Sport", reminder: "30", start: "07:00" });

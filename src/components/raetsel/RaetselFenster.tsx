@@ -7,8 +7,8 @@
 // im gestrichelten Kasten (A-059, Tafel 145). „Noch eins ›“ bringt beliebig
 // oft das nächste (vor dem Aufdecken hell, aber tippbar), darunter „Antippen
 // zeigt die Lösung · nie doppelt“. Nichts Ungesehenes mehr: „Neue Rätsel kommen bald.“ – nie eine
-// Wiederholung. Kein Zähler, keine Punkte. Den Mini-Kreis auf der Startseite
-// baut Paket A und öffnet dieses Fenster; bis dahin öffnet es „Für Entwickler“.
+// Wiederholung. Kein Zähler, keine Punkte. Öffnet vom Rätsel-Kreis oben auf
+// der Startseite (A-050, `heute/kreise/KreisReihe`) und unter „Für Entwickler“.
 
 import { useEffect } from "react";
 import { ChevronRight, Puzzle, RotateCw, X } from "lucide-react";

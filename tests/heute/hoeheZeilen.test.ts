@@ -76,7 +76,8 @@ describe("Einkauf leer, Höhe der Kachel", () => {
   it("leer: EIN freundlicher Satz in einer Zeile, unten 14 px", async () => {
     const { readFileSync } = await import("node:fs");
     const src = readFileSync("src/components/heute/HomeTiles.tsx", "utf8");
-    expect(src).toContain('<span className="kachel-frei">Was braucht ihr?</span>');
+    expect(src).toContain('<span className="kachel-frei">{size === "M" ? einkaufLeerM() : "Was braucht ihr?"}</span>');
+    expect(src).toContain("Liste ist leer. Plus tippen oder ${helperName()} sagen.");
     // Fehler aus `pruefen` (kleine Tippfläche 116×39): die leere Zeile ist eine ganz tippbare Listenzeile (data-zeile, ≥ 30 px)
     expect(src).toMatch(/min-h-\[30px\][^"]*" data-zeile data-einkauf-leer>/);
     expect(src).not.toContain("Liste ist leer. Sag mir einfach");

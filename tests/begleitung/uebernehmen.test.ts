@@ -154,7 +154,8 @@ describe("commitOps", () => {
       { id: "3", type: "set_jetzt", on: false },
     ];
     const r = m.client.commitOps(daten(), ops, alle(ops), "");
-    expect(r.notes[0]).toBe("Die Sport-Kachel steht jetzt auf der Startseite.");
+    // Sport ist an und der Sport-Kreis steht schon oben (A-050) – kein Hinweis nötig
+    expect(r.notes).not.toContain("Sport steht jetzt oben als Kreis.");
     expect(m.sport.loadSport()).toMatchObject({ goal: 4, trainings: [{ data: { sport: "laufen" } }] });
     expect(m.jetzt.loadJetzt().on).toBe(false);
     // Mia heißt fest Mia: die gewählte Stimme bleibt
@@ -175,11 +176,11 @@ describe("commitOps", () => {
     expect(m.client.commitOps(daten(), undo, alle(undo), "").notes).toEqual(["Da gibt’s gerade nichts zurückzunehmen."]);
   });
 
-  it("Termine werden gespeichert, Sport-Termine bringen die Sport-Kachel", () => {
+  it("Termine werden gespeichert, Sport-Termine: Sport-Kreis steht schon oben", () => {
     const entry = { id: "e1", typ: "termin", raum: "familie", besitzer: "lokal", erstellt: "x", geaendert: "x", data: { title: "Laufen", date: "2026-10-22", start: "07:00", reminder: "30", label: "Sport" } } as never;
     const ops: ChangeOp[] = [{ id: "1", type: "upsert_entry", entry, isNew: true }];
     const r = m.client.commitOps(daten({ entries: [] }), ops, alle(ops), "");
-    expect(r.notes).toContain("Die Sport-Kachel steht jetzt auf der Startseite.");
+    expect(r.notes).not.toContain("Sport steht jetzt oben als Kreis.");
     expect(m.entries.loadEntries().map((e) => e.id)).toEqual(["e1"]);
     expect(m.undo.undoLast()).toBe("die letzte Änderung");
     expect(m.entries.loadEntries()).toEqual([]);

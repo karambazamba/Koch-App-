@@ -53,7 +53,7 @@ export const wundertuete = async (page, check) => {
   check((await neu.getAttribute("data-karte")) === "pl-090" && (await neu.locator('[data-seite-karte="vorn"]').getByText("Platt för Plietsche").isVisible()) && (await neu.getByText("Antippen für die Lösung").isVisible()), "Beispiel: „Kiek mol an“ unter „Platt för Plietsche“, „Antippen für die Lösung“ (Tafel 140)");
   check((await neu.locator('[data-seite-karte="vorn"] [data-symbol="anchor"]').count()) === 1, "Platt: Wasserzeichen Anker");
   const order = await page.evaluate(() => [...document.querySelectorAll("[data-raster] > [data-unit]")].map((u) => u.dataset.unit));
-  check(order.indexOf("wundertuete") === order.indexOf("essen+einkauf") + 1, "Wundertüte direkt hinter Essen + Einkauf");
+  check(order.indexOf("wundertuete") === order.indexOf("essen") + 1 && order.indexOf("einkauf") === order.indexOf("wundertuete") + 1, `Wundertüte neben Essen, darunter Einkauf breit (Tafel 140: ${order.join(", ")})`);
 
   // Bestehender Nutzer: nicht von selbst da, aber in der Auswahl mit „NEU“
   await seedFamily(page);

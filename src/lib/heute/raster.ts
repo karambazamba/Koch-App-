@@ -171,12 +171,6 @@ export function pfeilZu(units: Unit[], r: Raster, id: HomeTileId): "links" | "mi
   return p.col === 0 ? "links" : "rechts";
 }
 
-/** Läuft ein Timer und steht die Timer-Kachel nicht auf der Startseite: als XS ganz oben, danach wieder weg */
-export function mitLaufendemTimer(shown: HomeTile[], laeuft: boolean): HomeTile[] {
-  if (!laeuft || shown.some((t) => t.id === "timer")) return shown;
-  return [{ id: "timer", visible: true, size: "XS" }, ...shown];
-}
-
 /** Größe, mit der eine Kachel eine Lücke füllt (zwei Zeilen: S, wenn erlaubt; eine Zeile: XS) */
 export function groesseFuer(id: HomeTileId, luecke: Luecke): TileSize | null {
   const sizes = tileMeta(id).sizes;

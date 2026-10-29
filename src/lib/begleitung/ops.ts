@@ -3,6 +3,7 @@
 // wendet sie erst nach "Übernehmen" an. Alles hier ist rein (ohne Speicher),
 // damit Server (Arbeitskopie) und App (Vorschau, Übernehmen) gleich rechnen.
 
+import type { KreisAenderung } from "@/lib/heute/kreise";
 import { removeNote, upsertNote, type Note } from "@/lib/notizen/model";
 import type { MailStyle } from "@/lib/begleitung/mail";
 import { createAiRecipe, type Recipe, type RecipeCategory } from "@/lib/essen/cookbook";
@@ -115,6 +116,8 @@ export type ChangeOp =
   | { id: string; type: "clear_shopping"; weekStart: string }
   | { id: string; type: "clear_week"; weekStart: string }
   | { id: string; type: "home"; change: HomeChange }
+  // Mini-Kreise oben (A-050): an/aus, nach vorn … – passiert beim Übernehmen in der App (`commitOps`)
+  | { id: string; type: "kreise"; change: KreisAenderung }
   // Letzte Änderung zurücknehmen – passiert beim Übernehmen in der App (`commitOps`)
   | { id: string; type: "undo_last" }
   // Nur für diesen Tag auf X Personen umrechnen (Familie und Rezept bleiben)
@@ -301,6 +304,9 @@ export function applyOps(
       }
       case "home":
         next = { ...next, home: applyHomeChange(next.home ?? DEFAULT_HOME, op.change) };
+        break;
+      case "kreise":
+        // eigener Speicher (Startseiten-Anordnung, Feld `kreise`) – beim Übernehmen
         break;
       case "set_persons": {
         const slot = findSlot(weekOf(next, op.slot.weekStart), op.slot.weekday);

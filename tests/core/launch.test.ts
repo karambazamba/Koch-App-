@@ -22,7 +22,7 @@ describe("Launch-Schnitt", () => {
   });
 
   it("neue Startseite ohne Spendentopf und Im Haus (nur über die Auswahl), mit Notizen", () => {
-    expect(DEFAULT_HOME.filter((t) => t.visible).map((t) => t.id)).toEqual(["pinnwand", "wetter", "notizen", "termine", "aufgaben", "essen", "einkauf"]);
+    expect(DEFAULT_HOME.filter((t) => t.visible).map((t) => t.id)).toEqual(["wetter", "notizen", "pinnwand", "termine", "aufgaben", "essen", "wundertuete", "einkauf"]);
   });
 
   it("Mia schaltet Ausgeblendetes nicht frei, anderes schon", async () => {

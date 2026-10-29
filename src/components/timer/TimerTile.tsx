@@ -1,45 +1,30 @@
 "use client";
 
-// TIMER – M: Kopf "TIMER", der wichtigste Timer mit
-// Fortschrittsring, Restzeit groß, Name "Nudeln · 10 Min", Knöpfe
-// +1 · Pause/Weiter · ✕; weitere Timer als schmale Zeilen, die Stoppuhr; unten
-// Schnellknöpfe 5 · 10 · 15 Min · Stoppuhr (lange drücken = eigene Dauer +
-// Name) – so steht es im Timer-Fenster. Auf der Startseite (Raster, Tafel
-// 118): S = nächster Timer, sonst "Timer starten"; XS = EINE Zeile „Nudeln ·
-// 7:42“ (erscheint von selbst, solange ein Timer läuft). Alles rechnet mit
-// der Endzeit (stimmt nach Hintergrund, Sperre, Neustart sofort).
+// TIMER-Kachel (nur wählbar, XS/S im festen Raster, Tafel 118): S = nächster
+// Timer, sonst "Timer starten"; XS = EINE Zeile „Nudeln · 7:42“. Antippen
+// öffnet das Timer-Fenster (A-050, Tafel 137/3, `TimerFenster`), Plus = eigene
+// Dauer + Name. Auf der Startseite zeigt sonst der Timer-Kreis oben den
+// laufenden Timer. Alles rechnet mit der Endzeit (stimmt nach Hintergrund,
+// Sperre, Neustart sofort).
 
-import { useRef, useState } from "react";
-import { Pause, Play, Plus, RotateCcw, Timer as TimerIcon, X } from "lucide-react";
+import dynamic from "next/dynamic";
+import { useState } from "react";
+import { Plus, Timer as TimerIcon } from "lucide-react";
 import { Sheet } from "@/components/ui/Sheet";
 import { QuickButton } from "@/components/ui/QuickButton";
 import { INPUT, TILE, TILE_LABEL, buttonClass, chipClass } from "@/components/ui/styles";
 import type { TileSize } from "@/lib/core/homeLayout";
 import { useNowMs } from "@/lib/core/useNowMs";
-import {
-  durationLabel,
-  formatLeft,
-  isExpired,
-  isPaused,
-  leftMs,
-  pauseTimer,
-  plusMinute,
-  removeTimer,
-  resetStopwatch,
-  resumeTimer,
-  shownOnTile,
-  sortTimers,
-  stopwatchMs,
-  type Timer,
-} from "@/lib/timer/model";
-import { changeTimers, useTimers } from "@/lib/timer/store";
-import { startTimer, stopwatch } from "@/lib/timer/actions";
+import { formatLeft, isExpired, leftMs, shownOnTile, sortTimers, stopwatchMs } from "@/lib/timer/model";
+import { useTimers } from "@/lib/timer/store";
+import { startTimer } from "@/lib/timer/actions";
 import { buzz } from "@/components/heute/actions";
 import { KachelWasserzeichen } from "@/components/ui/KachelWasserzeichen";
 
-const QUICK = [5, 10, 15];
+// Das Timer-Fenster (A-050, Tafel 137/3) erst beim Öffnen laden
+const TimerFenster = dynamic(() => import("@/components/timer/TimerFenster").then((m) => m.TimerFenster));
 
-export function TimerTile({ size = "M" }: { size?: TileSize }) {
+export function TimerTile({ size = "XS" }: { size?: TileSize }) {
   const state = useTimers();
   const [custom, setCustom] = useState<number | null>(null);
   const [open, setOpen] = useState(false);
@@ -73,11 +58,7 @@ export function TimerTile({ size = "M" }: { size?: TileSize }) {
         </section>
         {sheet}
         {open && (
-          <Sheet title="Timer" onClose={() => setOpen(false)}>
-            <div className="pb-3">
-              <TimerTile size="M" />
-            </div>
-          </Sheet>
+          <TimerFenster onClose={() => setOpen(false)} />
         )}
       </>
     );
@@ -112,186 +93,17 @@ export function TimerTile({ size = "M" }: { size?: TileSize }) {
         </section>
         {sheet}
         {open && (
-          <Sheet title="Timer" onClose={() => setOpen(false)}>
-            <div className="pb-3">
-              <TimerTile size="M" />
-            </div>
-          </Sheet>
+          <TimerFenster onClose={() => setOpen(false)} />
         )}
       </>
     );
   }
 
-  return (
-    <>
-      <section className={`${TILE} flex flex-col gap-2 p-3.5`} aria-label="Timer">
-        <div className={`flex items-center gap-1.5 pr-8 ${TILE_LABEL}`}>
-          <TimerIcon className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
-          <span>Timer</span>
-        </div>
-        <span className="absolute right-3.5 top-3">
-          <QuickButton icon={Plus} label="Neuer Timer" onClick={() => setCustom(10)} />
-        </span>
-        {main && <MainTimer timer={main} nowMs={nowMs} />}
-        {timers.slice(1).map((t) => (
-          <TimerRow key={t.id} timer={t} nowMs={nowMs} />
-        ))}
-        {sw && <StopwatchRow ms={stopwatchMs(sw, nowMs)} running={Boolean(sw.startedAt)} />}
-        {!main && !sw && <p className="text-[14px] text-muted">Bereit, wenn du ihn brauchst.</p>}
-        <div className="flex flex-wrap gap-1.5 pt-0.5" aria-label="Schnell starten">
-          {QUICK.map((m) => (
-            <HoldButton key={m} label={`${m} Min`} aria={`Timer ${m} Minuten`} onTap={() => start(m)} onHold={() => setCustom(m)} />
-          ))}
-          <HoldButton label="Stoppuhr" aria="Stoppuhr starten" onTap={() => (stopwatch("start"), buzz())} onHold={() => setCustom(10)} />
-        </div>
-      </section>
-      {sheet}
-    </>
-  );
-}
-
-/** Fortschrittsring (SVG) */
-function Ring({ part, children }: { part: number; children: React.ReactNode }) {
-  const r = 26;
-  const c = 2 * Math.PI * r;
-  return (
-    <span className="relative flex h-16 w-16 shrink-0 items-center justify-center">
-      <svg viewBox="0 0 64 64" className="absolute inset-0 -rotate-90" aria-hidden>
-        <circle cx="32" cy="32" r={r} fill="none" strokeWidth="6" className="stroke-line" />
-        <circle cx="32" cy="32" r={r} fill="none" strokeWidth="6" strokeLinecap="round" className="stroke-accent" strokeDasharray={c} strokeDashoffset={c * (1 - Math.max(0, Math.min(1, part)))} />
-      </svg>
-      <span className="text-2xl" aria-hidden>
-        {children}
-      </span>
-    </span>
-  );
-}
-
-const act = (change: Parameters<typeof changeTimers>[0]) => {
-  buzz();
-  changeTimers(change);
-};
-
-function MainTimer({ timer, nowMs }: { timer: Timer; nowMs: number }) {
-  const done = isExpired(timer, nowMs);
-  const left = leftMs(timer, nowMs);
-  return (
-    <div className="flex items-center gap-3">
-      <Ring part={done ? 1 : 1 - left / timer.durationMs}>
-        <TimerIcon className="h-5 w-5 text-tile-accent" strokeWidth={2} aria-hidden />
-      </Ring>
-      <div className="flex min-w-0 flex-1 flex-col">
-        <span className="text-[30px] font-extrabold tabular-nums leading-none" role="timer" aria-label={`${timer.name}: ${done ? "fertig" : formatLeft(left)}`}>
-          {done ? "fertig ✓" : formatLeft(left)}
-        </span>
-        <span className="break-words text-[13.5px] leading-snug text-muted">
-          {timer.name}
-          {timer.name.startsWith("Timer ") ? "" : ` · ${durationLabel(timer.durationMs)}`}
-          {isPaused(timer) ? " · pausiert" : ""}
-        </span>
-      </div>
-      <div className="flex shrink-0 items-center gap-1">
-        <button type="button" onClick={() => act((s, n) => plusMinute(s, timer.id, n))} aria-label={`${timer.name}: eine Minute mehr`} className="h-11 min-w-11 rounded-full bg-tile-inner px-2 text-sm font-bold text-tile-accent active:scale-95">
-          +1
-        </button>
-        {!done && (
-          <button
-            type="button"
-            onClick={() => act((s, n) => (isPaused(timer) ? resumeTimer(s, timer.id, n) : pauseTimer(s, timer.id, n)))}
-            aria-label={isPaused(timer) ? `${timer.name} weiter` : `${timer.name} pausieren`}
-            className="flex h-11 w-11 items-center justify-center rounded-full bg-segment active:scale-95"
-          >
-            {isPaused(timer) ? <Play className="h-4 w-4" strokeWidth={2.5} aria-hidden /> : <Pause className="h-4 w-4" strokeWidth={2.5} aria-hidden />}
-          </button>
-        )}
-        <button type="button" onClick={() => act((s, n) => removeTimer(s, timer.id, n))} aria-label={`${timer.name} beenden`} className="flex h-11 w-11 items-center justify-center rounded-full text-muted active:bg-fill">
-          <X className="h-4 w-4" strokeWidth={2.5} aria-hidden />
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function TimerRow({ timer, nowMs }: { timer: Timer; nowMs: number }) {
-  const done = isExpired(timer, nowMs);
-  return (
-    <div className="flex min-h-11 items-center gap-2 border-t border-line pt-1.5">
-      <span className="min-w-0 flex-1 truncate text-[14px] font-semibold" data-freitext>{timer.name}</span>
-      <span className="text-[15px] font-bold tabular-nums" role="timer" aria-label={`${timer.name}: ${done ? "fertig" : formatLeft(leftMs(timer, nowMs))}`}>
-        {done ? "fertig ✓" : formatLeft(leftMs(timer, nowMs))}
-      </span>
-      {!done && (
-        <button type="button" onClick={() => act((s, n) => (isPaused(timer) ? resumeTimer(s, timer.id, n) : pauseTimer(s, timer.id, n)))} aria-label={isPaused(timer) ? `${timer.name} weiter` : `${timer.name} pausieren`} className="flex h-10 w-10 items-center justify-center rounded-full active:bg-fill">
-          {isPaused(timer) ? <Play className="h-4 w-4" strokeWidth={2.5} aria-hidden /> : <Pause className="h-4 w-4" strokeWidth={2.5} aria-hidden />}
-        </button>
-      )}
-      <button type="button" onClick={() => act((s, n) => removeTimer(s, timer.id, n))} aria-label={`${timer.name} beenden`} className="flex h-10 w-10 items-center justify-center rounded-full text-muted active:bg-fill">
-        <X className="h-4 w-4" strokeWidth={2.5} aria-hidden />
-      </button>
-    </div>
-  );
-}
-
-function StopwatchRow({ ms, running }: { ms: number; running: boolean }) {
-  return (
-    <div className="flex min-h-11 items-center gap-2 border-t border-line pt-1.5">
-      <TimerIcon className="h-4 w-4 shrink-0 text-tile-accent" strokeWidth={2} aria-hidden />
-      <span className="flex-1 text-[14px] font-semibold">Stoppuhr</span>
-      <span className="text-[15px] font-bold tabular-nums" role="timer" aria-label={`Stoppuhr: ${formatLeft(ms)}`}>
-        {formatLeft(ms)}
-      </span>
-      <button type="button" onClick={() => (stopwatch(running ? "stop" : "start"), buzz())} aria-label={running ? "Stoppuhr anhalten" : "Stoppuhr weiter"} className="flex h-10 w-10 items-center justify-center rounded-full active:bg-fill">
-        {running ? <Pause className="h-4 w-4" strokeWidth={2.5} aria-hidden /> : <Play className="h-4 w-4" strokeWidth={2.5} aria-hidden />}
-      </button>
-      <button type="button" onClick={() => act((s) => resetStopwatch(s))} aria-label="Stoppuhr zurücksetzen" className="flex h-10 w-10 items-center justify-center rounded-full text-muted active:bg-fill">
-        <RotateCcw className="h-4 w-4" strokeWidth={2.5} aria-hidden />
-      </button>
-    </div>
-  );
-}
-
-/** Schnellknopf: Tippen = starten, lange drücken (0,5 s) = eigene Dauer + Name */
-function HoldButton({ label, aria, onTap, onHold }: { label: string; aria: string; onTap: () => void; onHold: () => void }) {
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const held = useRef(false);
-  const clear = () => {
-    if (timer.current) clearTimeout(timer.current);
-    timer.current = null;
-  };
-  return (
-    <button
-      type="button"
-      aria-label={aria}
-      onPointerDown={(e) => {
-        e.stopPropagation();
-        held.current = false;
-        clear();
-        timer.current = setTimeout(() => {
-          held.current = true;
-          buzz();
-          onHold();
-        }, 500);
-      }}
-      onPointerUp={clear}
-      onPointerLeave={clear}
-      onPointerCancel={clear}
-      onContextMenu={(e) => e.preventDefault()}
-      onClick={() => {
-        if (held.current) {
-          held.current = false;
-          return;
-        }
-        onTap();
-      }}
-      className={`${chipClass(false)} select-none [-webkit-touch-callout:none]`}
-    >
-      {label}
-    </button>
-  );
+  return null;
 }
 
 /** Eigener Timer: Dauer + Name */
-function CustomTimerSheet({ minutes, onClose, onStart }: { minutes: number; onClose: () => void; onStart: (minutes: number, name: string) => void }) {
+export function CustomTimerSheet({ minutes, onClose, onStart }: { minutes: number; onClose: () => void; onStart: (minutes: number, name: string) => void }) {
   const [min, setMin] = useState(String(minutes));
   const [name, setName] = useState("");
   const value = Number(min.replace(",", "."));

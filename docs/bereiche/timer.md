@@ -51,25 +51,30 @@ Regeln:
   Pausiertes zuletzt (`sortTimers`).
 - Auf der Kachel steht ein abgelaufener Timer noch 1 Minute (`shownOnTile`).
 
-Kachel `timer` (Größen XS/S im festen Raster, Tafel 118; kein fester Platz:
-solange ein Timer läuft und die Kachel nicht selbst auf der Startseite steht,
-erscheint sie als XS ganz oben, danach wieder weg – `mitLaufendemTimer`):
+Timer-Kreis oben (A-050, Tafel 143): Auf der Startseite steht der Timer als
+Kreis (Stoppuhr-Symbol, „Timer“). Läuft einer, zeigt der Kreis die Restzeit des
+kürzesten groß in Orange mit orangem Fortschritts-Ring und rückt an Position 1
+(`timerImKreis`); danach zurück an seinen Platz. Ist der Kreis aus, steht er nur,
+solange einer läuft. `startTimer` blendet keine Kachel mehr ein (früher
+`tileShown`/„Der Timer steht jetzt auf der Startseite.“).
+
+Fenster `TimerFenster` (`components/timer/TimerFenster.tsx`, Tafel 137/3) – vom
+Kreis, aus der Jetzt-Karte und von der Timer-Kachel: Kopf mit rundem Symbol,
+„Timer“, „Läuft weiter, auch wenn du die App schließt“, ✕. Oben die laufenden
+Timer (Ring mit Restzeit, Name, „von 10:00“, Pause/Weiter, ✕ = stoppen), die
+Stoppuhr nur, wenn sie läuft bzw. angehalten ist (sonst leise „Stoppuhr
+starten“). „Neuer Timer“: 6 Felder 3 · 5 · 10 · 15 · 20 Min · Eigene – ein
+Tipp startet sofort, „Eigene“ = Dauer + Name. Darunter „Oder sag Mia: ‚Timer
+12 Minuten für die Eier‘“ (Name über `helperName`).
+
+Kachel `timer` (nur wählbar, Größen XS/S im festen Raster, Tafel 118):
 - XS: EINE Zeile „Nudeln · 7:42“ (sonst „Timer starten“).
-- Fenster (früher „M“, `TimerTile size="M"` im Sheet): Kopf „Timer“ (ohne Zähler), der wichtigste Timer mit
-  Ring (Timer-Symbol), Restzeit groß, Name, Knöpfe +1 · Pause/Weiter · ✕; weitere als
-  Zeilen; die Stoppuhr (anhalten/weiter, zurücksetzen); „Bereit, wenn du ihn
-  brauchst.“; Schnellknöpfe 5 · 10 · 15 Min · Stoppuhr. Lange drücken
-  (0,5 s) = eigene Dauer + Name („Neuer Timer“).
 - S: nächster Timer bzw. Stoppuhr klein, sonst „Timer starten“. Antippen
-  öffnet ein Fenster mit der M-Kachel (oder den eigenen Timer). Eine eigene
-  Seite gibt es nicht.
+  öffnet das Timer-Fenster (oder den eigenen Timer). Eine eigene Seite gibt es
+  nicht.
 - Kachel-Plus = „Neuer Timer“ (Standard 10 Min).
 - Emojis der Timer (`emoji`) bleiben in den Daten (für Mitteilungen später),
   die Kachel zeigt sie nicht (keine Emojis in Kacheln).
-- Ist die Timer-Kachel ausgeblendet, blendet `startTimer` sie an ihrem
-  Standard-Platz ein – egal ob aus der Oberfläche (z. B. Schritt-Timer der
-  Koch-Kachel) oder von der Begleitung (`tileShown`; sie sagt dann, wo er
-  steht). Seit dem Aufräumen (Etappe 8), vorher nur über die Begleitung.
 
 Erster Start eines Timers:
 - `unlockTimerSound` schaltet den Ton frei (iPhone braucht ein Antippen).
@@ -86,7 +91,8 @@ Fertig-Karte (`TimerAlarm`, über allen Seiten):
   fertig“ ohne Ton.
 
 Jetzt-Karte: ein laufender Timer ist ein Thema („Nudeln: noch 4 Minuten“,
-auch nachts); Antippen scrollt zur Timer-Kachel.
+auch nachts) – nur, solange ihn kein Kreis bzw. keine Kachel zeigt; Antippen
+öffnet das Timer-Fenster bzw. scrollt zur Timer-Kachel.
 
 Push (später): `timerPushPlan` bereitet die Mitteilung zum Timer-Ende vor
 („<Name der Begleitung>: 🍝 Nudeln“). Timer-Push ist auch in der Ruhezeit
@@ -103,13 +109,14 @@ erlaubt (`src/lib/heute/push.ts`).
   Nudeln“, „Weck mich in einer halben Stunde“, „Wie lange noch?“, „Stopp den
   Nudel-Timer“, „Stoppuhr starten“. Bei 5 laufenden: „Fünf Timer laufen schon
   – sobald einer fertig ist, geht der nächste.“
-- Startet die Begleitung einen Timer und die Kachel ist aus, wird sie an
-  ihrem Standard-Platz eingeblendet: „Der Timer steht jetzt auf der
-  Startseite.“
+- Ein Timer der Begleitung steht im Timer-Kreis oben (keine Kachel, kein
+  Zusatzsatz). „Timer nach vorn“ (`kreise_anpassen`) stellt den Kreis vorn.
 
 ## Tests
 
 - `tests/timer/timer.test.ts` – Endzeit, Anzeige, Stoppuhr, Namen und Sätze,
   Speicher prüfen, Push vorbereiten.
 - `tests/timer/timerSpeicher.test.ts` – Speicher, starten/stoppen, Ton.
-- Kein eigener Ablauf in `e2e/ablaeufe/`.
+- `tests/timer/kachel.test.ts` – ein gestarteter Timer ändert die Startseite nicht.
+- `tests/heute/kreise.test.ts` (`timerImKreis`), `tests/heute/kreisFenster.test.ts` (Fenster).
+- Durchklick `kreisFenster` (ein Tipp startet, Restzeit vorn) und `timerKreis` (`raster.mjs`).

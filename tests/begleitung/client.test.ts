@@ -214,7 +214,7 @@ describe("askAssistant", () => {
 });
 
 describe("Sofort ausgeführt: Timer, Stoppuhr, Kochen", () => {
-  it("startet Timer, blendet die Timer-Kachel ein und gibt den Rest zurück", async () => {
+  it("startet Timer (ohne Kachel, der Kreis oben zeigt ihn – A-050) und gibt den Rest zurück", async () => {
     const ops: ChangeOp[] = [
       { id: "1", type: "add_timer", name: "Nudeln", minutes: 10 },
       { id: "2", type: "stopwatch", action: "start" },
@@ -222,11 +222,10 @@ describe("Sofort ausgeführt: Timer, Stoppuhr, Kochen", () => {
     ];
     const r = client.runInstantOps(ops);
     expect(r.rest.map((o) => o.id)).toEqual(["3"]);
-    expect(r.notes).toEqual(["Der Timer steht jetzt auf der Startseite."]);
+    expect(r.notes).toEqual([]);
     const timers = JSON.parse(local.getItem("wasgibts.timer")!);
     expect(timers.timers.map((t: { name: string }) => t.name)).toEqual(["Nudeln"]);
     expect(timers.stopwatch).toBeTruthy();
-    // Zweiter Timer: Kachel ist schon da
     expect(client.runInstantOps([{ id: "4", type: "add_timer", name: "Ei", minutes: 5 }]).notes).toEqual([]);
     client.runInstantOps([{ id: "5", type: "stop_timer", name: "Nudeln" }, { id: "6", type: "stopwatch", action: "stop" }]);
     expect(JSON.parse(local.getItem("wasgibts.timer")!).timers.map((t: { name: string }) => t.name)).toEqual(["Ei"]);

@@ -21,6 +21,7 @@ import { matchStock, realStock } from "@/lib/essen/dishIdeas";
 import { HOUSE_TILE_MAX, houseTile } from "@/lib/vorrat/imHaus";
 import { openHelper } from "@/lib/begleitung/open";
 import { ItemSymbol } from "@/components/einkauf/kacheln/ItemSymbol";
+import { LadenChipReihe } from "@/components/einkauf/kacheln/LadenChipReihe";
 import { symbolFor } from "@/lib/einkauf/kacheln/symbols";
 import type { PlanDay } from "@/lib/essen/mealPlan";
 import { usePantry } from "@/lib/vorrat/pantry";
@@ -200,14 +201,22 @@ function ShopRows({ rows, ohne, mine, products, demo = false }: TileRows & { min
         ))}
         {!mine && ohne.length > 0 && <ShopRow shop={null} label="Liste" names={ohne} count={ohne.length} href="/einkaufsliste" products={products} demo={demo} />}
       </ul>
-      {mine && ohne.length > 0 && (
-        <Link href="/einkaufsliste#ohne-laden" className="flex min-h-[30px] flex-wrap items-center gap-x-1 py-0.5 text-[12.5px] font-semibold leading-tight text-muted" data-zeile data-ohne-laden-zeile data-leuchte={ohne.map((n) => leuchtSchluessel("einkauf", n)).join(" ")}>
-          <span className="kachel-frei whitespace-nowrap">{ohneLadenZeile(ohne.length)} ·</span> <span className="kachel-frei whitespace-nowrap font-bold text-accent-strong">Sortieren ›</span>
-        </Link>
-      )}
+      {mine && ohne.length > 0 && <OhneLadenZeile ohne={ohne} />}
     </>
   );
 }
+
+/** „6 ohne Laden · Sortieren ›“ unter den Läden (öffnet „Einkauf“ bei „Noch ohne Laden“) */
+function OhneLadenZeile({ ohne }: { ohne: string[] }) {
+  return (
+    <Link href="/einkaufsliste#ohne-laden" className="flex min-h-[30px] flex-wrap items-center gap-x-1 py-0.5 text-[12.5px] font-semibold leading-tight text-muted" data-zeile data-ohne-laden-zeile data-leuchte={ohne.map((n) => leuchtSchluessel("einkauf", n)).join(" ")}>
+      <span className="kachel-frei whitespace-nowrap">{ohneLadenZeile(ohne.length)} ·</span> <span className="kachel-frei whitespace-nowrap font-bold text-accent-strong">Sortieren ›</span>
+    </Link>
+  );
+}
+
+/** Leere Einkauf-Kachel in M (Tafel 140 unten) */
+const einkaufLeerM = () => `Liste ist leer. Plus tippen oder ${helperName()} sagen.`;
 
 /** Kopf der Einkauf-Kachel „EINKAUF“ (26 px) – kurz, damit er auch halb breit nie abgeschnitten wird; „+N“ = weitere Läden, bleibt links vom Plus (`mr-8`); die übrige Fläche öffnet die ganze Liste */
 function ShoppingHead({ more }: { more: number }) {
@@ -266,12 +275,18 @@ export function ShoppingTile({ size = "S", demo = false, inhalt = true }: { half
     <div className="relative h-full min-h-0 min-w-0" data-einkauf-kachel>
       <section className={`${HALF} isolate pb-3.5`} aria-label={showDemo ? "Einkaufsliste · Beispiel" : "Einkaufsliste"} data-groesse={size}>
         <KachelWasserzeichen kachel="einkauf" size={size} frei={frei} />
-        <ShoppingHead more={rows.restZahl} />
+        <ShoppingHead more={size === "M" ? 0 : rows.restZahl} />
         {empty ? (
-          // Leer: Kopf + EIN freundlicher Satz in einer Zeile (A-048), darunter 14 px
-          <Link href="/einkaufsliste" className="mt-1 flex min-h-[30px] items-center whitespace-nowrap text-[14px] font-semibold leading-snug text-muted @max-[320px]:text-[12.5px]" data-zeile data-einkauf-leer>
-            <span className="kachel-frei">Was braucht ihr?</span>
+          // Leer: Kopf + EIN freundlicher Satz in einer Zeile (A-048), darunter 14 px; M (breit): „Liste ist leer. Plus tippen oder Mia sagen.“
+          <Link href="/einkaufsliste" className="mt-1 flex min-h-[30px] items-center text-[14px] font-semibold leading-snug text-muted @max-[320px]:text-[12.5px]" data-zeile data-einkauf-leer>
+            <span className="kachel-frei">{size === "M" ? einkaufLeerM() : "Was braucht ihr?"}</span>
           </Link>
+        ) : size === "M" ? (
+          // M (A-050, Tafel 140 unten): EINE Reihe Laden-Chips nebeneinander, darunter ggf. „6 ohne Laden · Sortieren ›“
+          <>
+            <LadenChipReihe rows={(showDemo ? tileRows(DEMO_ITEMS, DEMO_ORDER, Infinity) : tileRows(open, myShops, Infinity)).rows} demo={showDemo} />
+            {!showDemo && rows.ohne.length > 0 && <OhneLadenZeile ohne={rows.ohne} />}
+          </>
         ) : (
           <ShopRows {...rows} mine={showDemo || myShops.length > 0} products={shopping.settings.products} demo={showDemo} />
         )}

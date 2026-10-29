@@ -163,6 +163,9 @@ const SCENES = [
   ["termin-satz", (page) => openTermin(page, "Mittwoch 12.30 Physio")],
   ["termin-frei", (page) => openTermin(page, "Elternabend")],
   ["termin-vorbei", (page) => openTermin(page, "Bäcker heute 9:00", true)],
+  // Fenster der Mini-Kreise (A-050, Tafel 137/2–3)
+  ["kreis-sport", async (page) => (await page.evaluate(() => { const f = JSON.parse(localStorage.getItem("wasgibts.funktionen")); f.on = [...new Set([...f.on, "sport"])]; localStorage.setItem("wasgibts.funktionen", JSON.stringify(f)); }), await page.goto(BASE), await page.locator('nav[data-kreise] [data-kreis="sport"]').click(), await page.getByRole("dialog", { name: "Sport" }).waitFor(), await page.waitForTimeout(900))],
+  ["kreis-timer", async (page) => (await page.goto(BASE), await page.locator('nav[data-kreise] [data-kreis="timer"]').click(), await page.getByRole("dialog", { name: "Timer" }).waitFor(), await page.waitForTimeout(900))],
   ["mikro-fragen", (page) => micTap(page)],
   ["mikro-hilfe", async (page) => (await micTap(page), await page.getByRole("button", { name: "Okay, frag mich" }).click())],
   [
@@ -272,7 +275,7 @@ for (const device of DEVICES) {
             localStorage.setItem(key, JSON.stringify({ ...JSON.parse(localStorage.getItem(key) || "{}"), look }));
             const fn = JSON.parse(localStorage.getItem("wasgibts.funktionen") || '{"version":2,"on":[]}');
             localStorage.setItem("wasgibts.funktionen", JSON.stringify({ ...fn, on: [...new Set([...(fn.on || []), "vorrat"])] }));
-            localStorage.setItem("wasgibts.startseite", JSON.stringify({ version: 9, tiles: [{ id: "vorrat", visible: true, size, farbe }], tipSeen: true }));
+            localStorage.setItem("wasgibts.startseite", JSON.stringify({ version: 10, tiles: [{ id: "vorrat", visible: true, size, farbe }], tipSeen: true, kreise: [] }));
           }, { farbe, look, size });
           await page.goto(BASE);
           await page.locator('[aria-label^="Im Haus"]').first().waitFor({ timeout: 6000 }).catch(() => {});
@@ -333,6 +336,24 @@ for (const device of DEVICES) {
         await page.locator('[aria-label="Termine"]').first().waitFor({ timeout: 6000 }).catch(() => {});
         await settle(page);
         await page.locator("[data-raster]").screenshot({ path: `${dir}/wasserzeichen-alle-${farbe}-${look}-${tag}.png` });
+        n++;
+      }
+    }
+    // Pinnwand mit Korkrahmen (A-050, Tafel 141 A): S in allen 8 Farben, M in Rosé – Farbig und Schlicht
+    for (const [farbe, size] of [...["lavendel", "mint", "salbei", "rose", "vanille", "aqua", "flieder", "sand"].map((f) => [f, "S"]), ["rose", "M"]]) {
+      for (const look of ["farbig", "schlicht"]) {
+        await page.evaluate(({ farbe, look, size }) => {
+          const key = "familienkueche.haushaltsprofil";
+          localStorage.setItem(key, JSON.stringify({ ...JSON.parse(localStorage.getItem(key) || "{}"), look }));
+          const tiles = [{ id: "pinnwand", visible: true, size, farbe }, { id: "notizen", visible: true, size: "S" }];
+          localStorage.setItem("wasgibts.startseite", JSON.stringify({ version: 10, tiles, tipSeen: true, kreise: [] }));
+          const f = JSON.parse(localStorage.getItem("wasgibts.funktionen") || "{}");
+          localStorage.setItem("wasgibts.funktionen", JSON.stringify({ ...f, on: [...new Set([...(f.on ?? []), "pinnwand"])] }));
+        }, { farbe, look, size });
+        await page.goto(BASE);
+        await page.locator('[aria-label="Pinnwand"]').first().waitFor({ timeout: 6000 }).catch(() => {});
+        await settle(page);
+        await page.locator("[data-raster]").screenshot({ path: `${dir}/pinnwand-rahmen-${farbe}-${size}-${look}-${tag}.png` });
         n++;
       }
     }

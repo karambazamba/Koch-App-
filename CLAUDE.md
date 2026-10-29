@@ -30,8 +30,8 @@ Die frühere Lieblingsfarbe ist „Meine Farbe im Kalender“ (Profil
   Rezept, Kochmodus, Wochenkarte), Pinnwand als Kühlschranktür (allein aus),
   Notizen (Kachel standardmäßig an), Im Haus mit Spontan kochen (Baustein an,
   Bereich unter Essen mit „Was koch ich daraus?“, Kachel S/M nur über die
-  Auswahl), Sport (Baustein, nur Wochen zählen), Wochenplan (Baustein),
-  Wetter, Timer (Baustein), Familie teilen per E-Mail-Code, Datenschutz,
+  Auswahl), Sport (Baustein, nur Wochen zählen, Kreis oben), Wochenplan (Baustein),
+  Wetter, Timer (Kreis oben), Familie teilen per E-Mail-Code, Datenschutz,
   Mias Wundertüte (Baustein, neu an als S; `docs/bereiche/wundertuete.md`),
   Durchatmen (Baustein an, 12 Übungen, nie Pflicht; `docs/bereiche/durchatmen.md`).
 - Ausgeblendet (Baustein aus, nicht gelöscht, Daten bleiben; wer ihn nutzt,
@@ -55,8 +55,10 @@ Die frühere Lieblingsfarbe ist „Meine Farbe im Kalender“ (Profil
 - Termin = feste Uhrzeit, Aufgabe = steht jetzt an (ohne Tag heute, mit
   genanntem Tag ab dem Tag, bis dahin „Geplant“), Notiz = nur festhalten.
   Leerer Kalender = Angebot „Kalender mitbringen“ (Apple/Google/Outlook).
-- Startseite = EINE gespeicherte Anordnung (ändert sich nie von selbst) im festen
-  Raster XS · S · M (Tafel 118), Standard je Haushalt (Tafel 119); `docs/bereiche/heute.md`.
+- Startseite = oben die Mini-Kreise (Sport · Pause · Was los? · Rätsel · Timer,
+  ein Wort, keine Schilder, Tafel 143) und darunter EINE gespeicherte Anordnung
+  (ändert sich nie von selbst) im festen Raster XS · S · M (Tafel 118), Standard
+  je Haushalt (Tafel 140); `docs/bereiche/heute.md`.
 - Auf der Startseite gibt es genau zwei Mias: das eckige Logo (BrandMark,
   nicht antippbar) und den runden Mia-Knopf rechts in der Leiste (= reden).
   Einzige Ausnahme: das kleine Gesicht in Mias Tipp-Karte („Mia stellt vor“,

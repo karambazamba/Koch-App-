@@ -1,10 +1,11 @@
 // Startseite kompakter (A-048, Tafel 135): Familie-Beispiel auf iPhone SE,
 // 15 Pro und Pixel 7 – Termine und Aufgaben so hoch wie ihr Inhalt (unter der
-// letzten Zeile höchstens 20 px), Einkauf mit 3 Läden (+n erst ab dem 4.),
-// zwei Kacheln in einer Reihe gleich hoch, das Wasserzeichen in XS sichtbar
-// und nie über Text. Dazu „Nur für mich“: Sport XS mit zwei kleinen Stempeln
-// und „Heute“/„8:00 · Laufen“ ohne Wasserzeichen, Im Haus XS mit Kühlschrank.
+// letzten Zeile höchstens 20 px), Einkauf M mit Edeka · Rewe · Lidl
+// nebeneinander (Tafel 140), zwei Kacheln in einer Reihe gleich hoch, das
+// Wasserzeichen in XS sichtbar und nie über Text. „Nur für mich“: Sport als
+// Kreis oben (A-050), keine XS-Kachel.
 // `listenHoehen`: Termine, Aufgaben, Notizen und Einkauf S mit 0, 1, 2, 3, 5 Einträgen.
+// `einkaufChips`: Einkauf M mit 3 bzw. 5 Läden und langen Namen.
 import { BASE, losGehts, newPage } from "../lib.mjs";
 
 /** Misst die Startseite (läuft im Browser) */
@@ -19,8 +20,10 @@ function messen() {
     const letzte = zeilen[zeilen.length - 1] ?? sec?.lastElementChild;
     return sec && letzte ? { zeilen: zeilen.length, luft: Math.round(box(sec).bottom - box(letzte).bottom), hoehe: Math.round(box(sec).height) } : null;
   };
-  const einkauf = panel.querySelector('[data-unit="essen+einkauf"] [data-einkauf-kachel]');
-  const essen = panel.querySelector('[data-unit="essen+einkauf"] [data-essen-kachel]');
+  // Tafel 140: Einkauf breit (eigene Einheit), Essen neben der Wundertüte
+  const einkauf = panel.querySelector('[data-unit="einkauf"] [data-einkauf-kachel]');
+  const essen = panel.querySelector('[data-unit="essen"]');
+  const wundertuete = panel.querySelector('[data-unit="wundertuete"]');
   // Reihen: Kacheln mit gleicher Oberkante nebeneinander → gleich hoch (XS-Paar übereinander: unten bündig mit dem Nachbarn)
   const units = [...panel.querySelectorAll("[data-raster] > [data-unit]")].map((el) => ({ key: el.dataset.unit, hoehe: el.dataset.hoehe, r: box(el) }));
   const ungleich = [];
@@ -61,9 +64,11 @@ function messen() {
   return {
     termine: luft("termine", "Termine"),
     aufgaben: luft("aufgaben", "Aufgaben"),
-    laeden: einkauf ? einkauf.querySelectorAll("[data-laden-zeile]").length : -1,
-    weitere: einkauf?.querySelector("[data-weitere]")?.textContent ?? null,
-    paar: einkauf && essen ? [Math.round(box(einkauf).height), Math.round(box(essen).height)] : null,
+    laeden: einkauf ? [...einkauf.querySelectorAll("[data-laden-chip]")].map((c) => c.dataset.ladenChip) : [],
+    chipsReihe: einkauf ? new Set([...einkauf.querySelectorAll("[data-laden-chip]")].map((c) => Math.round(c.getBoundingClientRect().top))).size : 0,
+    chipsGanz: einkauf ? [...einkauf.querySelectorAll("[data-laden-chip] span")].every((s) => s.scrollWidth <= s.clientWidth + 1) : false,
+    paar: wundertuete && essen ? [Math.round(box(wundertuete).height), Math.round(box(essen).height)] : null,
+    kreise: [...panel.querySelectorAll("nav[data-kreise] [data-kreis]")].map((k) => k.dataset.kreis),
     inhalt: units.filter((u) => u.hoehe === "inhalt").map((u) => u.key),
     ungleich,
     xs,
@@ -86,14 +91,14 @@ export const startseiteKompakt = async (page, check, device) => {
         const wo = `${geraet} · ${wahl}`;
         if (wahl === "Für die Familie") {
           for (const [name, t] of [["Termine", m.termine], ["Aufgaben", m.aufgaben]]) check(Boolean(t) && t.zeilen >= 1 && t.zeilen <= 3 && t.luft <= 20, `${wo}: ${name} so hoch wie der Inhalt (${t ? `${t.zeilen} Zeilen, darunter ${t.luft} px, ${t.hoehe} px hoch` : "fehlt"})`);
-          check(m.laeden === 3 && m.weitere === "+2", `${wo}: Einkauf zeigt 3 Läden, „+2“ für den 4. (${m.laeden} Läden, ${m.weitere ?? "kein +n"})`);
-          check(Boolean(m.paar) && Math.abs(m.paar[0] - m.paar[1]) <= 1.5, `${wo}: Essen und Einkauf gleich hoch (${m.paar?.join(" / ") ?? "fehlt"})`);
-          check(["termine", "aufgaben", "essen+einkauf"].every((k) => m.inhalt.includes(k)) && !m.inhalt.includes("pinnwand"), `${wo}: Höhe = Inhalt nur bei den Listen (${m.inhalt.join(", ")})`);
+          check(m.laeden.join() === "Edeka,Rewe,Lidl" && m.chipsReihe === 1 && m.chipsGanz, `${wo}: Einkauf M: Edeka · Rewe · Lidl nebeneinander in EINER Reihe, Namen ganz (${m.laeden.join(", ")})`);
+          check(Boolean(m.paar) && Math.abs(m.paar[0] - m.paar[1]) <= 1.5, `${wo}: Essen und Wundertüte gleich hoch (${m.paar?.join(" / ") ?? "fehlt"})`);
+          check(["termine", "aufgaben", "einkauf"].every((k) => m.inhalt.includes(k)) && !m.inhalt.includes("pinnwand"), `${wo}: Höhe = Inhalt nur bei den Listen (${m.inhalt.join(", ")})`);
         } else {
-          check(Boolean(m.sport) && m.sport.stempel === 2 && !m.sport.zeichen && /2 von 3/.test(m.sport.text), `${wo}: Sport XS mit zwei kleinen Stempeln, ohne Wasserzeichen (${m.sport ? `${m.sport.stempel} Stempel, „${m.sport.text}“` : "fehlt"})`);
+          check(!m.sport && m.kreise.includes("sport"), `${wo}: Sport als Kreis oben, keine XS-Kachel (${m.kreise.join(", ")})`);
         }
         check(!m.ungleich.length, `${wo}: Kacheln in einer Reihe gleich hoch${m.ungleich.length ? ` (${m.ungleich.join(", ")})` : ""}`);
-        const erwartet = wahl === "Für die Familie" ? ["notizen"] : ["notizen", "vorrat"];
+        const erwartet = ["notizen"];
         const da = m.xs.map((x) => x.kachel);
         check(erwartet.every((k) => da.includes(k)) && m.xs.every((x) => x.sichtbar), `${wo}: Wasserzeichen in XS sichtbar (${m.xs.map((x) => `${x.kachel} ${x.breite} px`).join(", ") || "keins"})`);
         const ueber = m.xs.flatMap((x) => x.ueber.map((t) => `${x.kachel}: „${t}“`));
@@ -194,6 +199,58 @@ export const listenHoehen = async (page, check, device) => {
         const [, h1, h2, h3, h5] = hoehen[k];
         // leer (Kopf + ein Satz in einer Zeile) so hoch wie mit einem Eintrag
         check(Math.abs(hoehen[k][0] - h1) <= 2 && h1 < h2 && h2 < h3 && Math.abs(h5 - h3) <= 1, `${geraet}: ${k} wächst und schrumpft mit dem Inhalt (${hoehen[k].join(" / ")} px)`);
+      }
+    } finally {
+      await p.context().close();
+    }
+  }
+};
+
+// --- Nachtrag 2 (A-050, Tafel 140 unten): Einkauf M – Läden nebeneinander --------------------------
+
+/** Einkaufsliste mit diesen Läden (je i+1 Sachen, der erste die meisten) und Einkauf M als einzige Kachel */
+const einkaufM = (laeden) => ({
+  "wasgibts.einkaufsliste": {
+    version: 8, products: {}, shops: [], staples: [], myShops: [], shopsAsked: true, shopRules: {}, learned: {}, learnAsked: [], alwaysList: [], angebotAb: "",
+    itemShops: Object.fromEntries(laeden.flatMap((l, i) => Array.from({ length: laeden.length - i }, (_, k) => [`sache ${l.toLowerCase()} ${k}`, l]))),
+    weeks: { [WOCHE]: { manual: laeden.flatMap((l, i) => Array.from({ length: laeden.length - i }, (_, k) => ({ id: `e${i}-${k}`, name: `Sache ${l} ${k}`, amount: "", section: "sonstiges", done: false }))), checked: [], have: [] } },
+  },
+  "wasgibts.startseite": { version: 10, tipSeen: true, tiles: [["termine", "M"], ["einkauf", "M"]].map(([id, size]) => ({ id, visible: true, size })), kreise: [] },
+  "wasgibts.beispiel": { version: 1, since: TAG, cleared: ["termine", "aufgaben", "pinnwand", "einkauf", "essen", "notizen", "sport", "vorrat"], done: [], gone: [], asked: true },
+});
+
+/** Einkauf M auf SE, 15 Pro/Pixel 7: Edeka/Rewe/Rossmann ganz in EINER Reihe, gleich breit; 5 Läden → 2 + „+3 weitere“; nie abgekürzt */
+export const einkaufChips = async (page, check, device) => {
+  const browser = page.context().browser();
+  for (const geraet of ["iPhone SE", device]) {
+    const p = await newPage(browser, geraet);
+    try {
+      await p.goto(BASE);
+      await losGehts(p, "Für die Familie");
+      await p.locator("[data-raster]").waitFor();
+      for (const laeden of [["Rossmann", "Edeka", "Rewe"], ["Edeka", "Rewe", "Lidl", "Aldi", "Penny"], ["Kaufland", "Rossmann", "Wochenmarkt"]]) {
+        await p.evaluate((d) => {
+          for (const [k, v] of Object.entries(d)) localStorage.setItem(k, JSON.stringify(v));
+        }, einkaufM(laeden));
+        await p.reload();
+        await p.locator("[data-laden-chips]").waitFor();
+        await p.waitForTimeout(500);
+        const m = await p.evaluate(() => {
+          const chips = [...document.querySelectorAll("[role=tabpanel]:not([inert]) [data-laden-chip]")];
+          const b = chips.map((c) => c.getBoundingClientRect());
+          return {
+            labels: chips.map((c) => c.dataset.ladenChip),
+            reihen: new Set(b.map((r) => Math.round(r.top))).size,
+            gleich: b.every((r) => Math.abs(r.width - b[0].width) <= 1),
+            ganz: chips.every((c) => [...c.querySelectorAll("span")].every((s) => s.scrollWidth <= s.clientWidth + 1) && !/…|\.$/.test(c.innerText.trim())),
+          };
+        });
+        const wo = `${geraet} · ${laeden.join("/")}`;
+        check(m.reihen === 1 && m.gleich && m.ganz, `${wo}: eine Reihe, gleich breit, Namen ganz (${m.labels.join(", ")})`);
+        // Ganz schmal (iPhone SE 1, 320 px) passt nicht jeder Name dreimal nebeneinander: dann lieber weniger Chips + „+n weitere“ – nie abgekürzt
+        const schmal = p.viewportSize().width < 360;
+        if (laeden.length === 5) check(m.labels.at(-1) === "weitere" && m.labels.length === (schmal ? m.labels.length : 3), `${wo}: Läden + „+n weitere“ (${m.labels.join(", ")})`);
+        if (laeden[0] === "Rossmann") check(m.labels[0] === "Rossmann" && (m.labels.join() === "Rossmann,Edeka,Rewe" || (schmal && m.labels.at(-1) === "weitere")), `${wo}: meiste zuerst, alle drei${schmal ? " bzw. „+n weitere“" : ""} (${m.labels.join(", ")})`);
       }
     } finally {
       await p.context().close();

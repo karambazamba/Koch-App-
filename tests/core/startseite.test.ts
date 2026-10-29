@@ -25,8 +25,8 @@ describe("Kachel-Größen", () => {
     expect(applyHomeChange(DEFAULT_HOME, { tile: "termine", action: "klein" }).map((t) => t.id)).toEqual(before);
   });
 
-  it("Essen und Einkauf bleiben ein Paar (direkt hintereinander, Essen zuerst)", () => {
-    const moved = applyHomeChange(DEFAULT_HOME, { tile: "einkauf", action: "nach_oben" });
+  it("Essen und Einkauf (beide S) bleiben ein Paar (direkt hintereinander, Essen zuerst)", () => {
+    const moved = applyHomeChange(applyHomeChange(DEFAULT_HOME, { tile: "einkauf", action: "klein" }), { tile: "einkauf", action: "nach_oben" });
     const visible = moved.filter((t) => t.visible).map((t) => t.id);
     expect(visible.indexOf("einkauf")).toBe(visible.indexOf("essen") + 1);
   });
@@ -42,7 +42,7 @@ describe("Kachel-Größen", () => {
 describe("Migration der Startseite", () => {
   it("v2 → v3: Kladde wird zur Notizen-Kachel an derselben Stelle, Größen gesetzt", () => {
     const v3 = migrateHome({ version: 2, tiles: [{ id: "termine", visible: true }, { id: "kladde", visible: true }, { id: "essen", visible: true }], tipSeen: true });
-    expect(v3?.version).toBe(9);
+    expect(v3?.version).toBe(10);
     const ids = v3!.tiles.filter((t) => t.visible).map((t) => t.id);
     expect(ids.indexOf("notizen")).toBe(ids.indexOf("termine") + 1);
     // Essen ohne Einkauf stand allein – war breit, wird beim Update M (v6: jede S halb)

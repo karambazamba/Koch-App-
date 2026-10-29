@@ -21,7 +21,9 @@
 import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode, type TouchEvent as ReactTouchEvent } from "react";
 import { EditLook } from "@/components/heute/EditLook";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
-import { applyHomeChange, reorderVisible, saveHomeTiles, standardLayout, tileMeta, type HomeTile, type HomeTileId, type TileSize } from "@/lib/core/homeLayout";
+import { HOME_TILES, applyHomeChange, hatNeueStandardOrdnung, neueStandardOrdnung, reorderVisible, saveHomeTiles, standardLayout, tileMeta, type HomeTile, type HomeTileId, type TileSize } from "@/lib/core/homeLayout";
+import { useBausteine } from "@/lib/core/features";
+import { buttonClass } from "@/components/ui/styles";
 import type { Haushalt } from "@/lib/core/haushalt";
 import { RASTER_GAP, ZEILE_CSS, anzeigeZeilen, inhaltsHoch, packe, pfeilZu, trennZeile, zeilenPlan, type Luecke, type Platz } from "@/lib/heute/raster";
 import { Plus } from "lucide-react";
@@ -94,6 +96,10 @@ export function HomeBoard({
   const [holding, setHolding] = useState(false);
   const pointer = useRef({ x: 0, y: 0 });
   const [confirmReset, setConfirmReset] = useState(false);
+  const [confirmNeu, setConfirmNeu] = useState(false);
+  // Kacheln, deren Baustein aus ist, kommen mit der neuen Standard-Ordnung nicht dazu
+  const bausteine = useBausteine();
+  const aus = HOME_TILES.filter((t) => t.feature && !bausteine?.includes(t.feature)).map((t) => t.id);
   // Auswahl erst beim Bearbeiten laden, dann ohne Suspense sofort zeigen:
   // öffnet „+ Kachel“ sie gleich nach dem Tipp, übernimmt sie dessen
   // Verlaufseintrag nur innerhalb von 300 ms (`useBackCloses`) – `next/dynamic`
@@ -452,11 +458,31 @@ export function HomeBoard({
       </div>
       {editing && (
         <div className="mt-3 flex flex-col gap-3">
+          {/* Tafel 140: die neue Beispiel-Ordnung – nur, solange sie nicht schon dasteht; eigene Kacheln bleiben dahinter */}
+          {haushalt && !hatNeueStandardOrdnung(all, haushalt, aus) && (
+            <button type="button" onClick={() => setConfirmNeu(true)} className={`${buttonClass("soft", "sm")} self-center`} data-neue-ordnung>
+              Neue Standard-Ordnung übernehmen
+            </button>
+          )}
           <EditLook />
           <button type="button" onClick={() => setConfirmReset(true)} className="hit self-center py-2 text-sm font-semibold text-muted underline">
             Standard-Anordnung wiederherstellen
           </button>
         </div>
+      )}
+      {confirmNeu && haushalt && (
+        <ConfirmDialog
+          title="Neue Standard-Ordnung übernehmen?"
+          text="Kacheln wie auf der Beispiel-Startseite. Deine übrigen Kacheln bleiben, darunter."
+          confirmLabel="Übernehmen"
+          onConfirm={() => {
+            const vorher = all;
+            saveHomeTiles(neueStandardOrdnung(all, haushalt, aus));
+            pushUndo("die neue Standard-Ordnung", () => saveHomeTiles(vorher));
+            setConfirmNeu(false);
+          }}
+          onCancel={() => setConfirmNeu(false)}
+        />
       )}
       {drag && dragged && (
         <div

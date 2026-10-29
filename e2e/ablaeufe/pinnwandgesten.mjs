@@ -99,7 +99,7 @@ export const pinnwandGesten = async (page, check) => {
   check(await page.getByRole("region", { name: "Kühlschranktür" }).isVisible(), "Tür sichtbar");
   // Tafel 123 A: Wand endet unter dem Inhalt, Meta-Zeilen nie abgeschnitten (Zeit immer ganz sichtbar, nie „…“)
   const tuer = await page.getByRole("region", { name: "Kühlschranktür" }).boundingBox();
-  const unten = await page.locator(".kuehlschrank .zettel").evaluateAll((els) => Math.max(...els.map((el) => el.getBoundingClientRect().bottom)));
+  const unten = await page.locator(".korkwand .zettel").evaluateAll((els) => Math.max(...els.map((el) => el.getBoundingClientRect().bottom)));
   check(tuer.y + tuer.height - unten < 48, `Wand so hoch wie der Inhalt (${Math.round(tuer.y + tuer.height - unten)} px Luft)`);
   const metas = await page.locator("[data-meta-zeile]").evaluateAll((els) =>
     els.map((el) => {

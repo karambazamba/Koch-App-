@@ -1,7 +1,7 @@
 "use client";
 
 // Beispiel-Tag auf der Seite „Einkauf“: dieselben Läden wie in der Einkauf-
-// Kachel (Edeka, Rewe, Lidl, Rossmann – DEMO_SHOPS) als Karten und zwei
+// Kachel (Edeka, Rewe, Lidl – DEMO_SHOPS, Tafel 140) als Karten und zwei
 // Chips „Noch ohne Laden“ (DEMO_OHNE), leise „Beispiel“. Nichts davon steht in
 // echten Speichern; die erste echte Eingabe ersetzt es (die Liste ist dann
 // nicht mehr leer).

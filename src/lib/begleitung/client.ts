@@ -15,7 +15,8 @@ import { loadMailStyle } from "@/lib/begleitung/mailSettings";
 import { useEffect, useState } from "react";
 import { replaceEntries } from "@/lib/kalender/store";
 import { istAbgelaufen } from "@/lib/kalender/erledigt";
-import { applyHomeChange, loadHomeTiles, saveHomeTiles } from "@/lib/core/homeLayout";
+import { applyHomeChange, changeKreise, loadHomeTiles, saveHomeTiles } from "@/lib/core/homeLayout";
+import { SPORT_OBEN, zeigeSportKreis } from "@/lib/heute/sportKreis";
 import { BAUSTEINE, LAUNCH_AUS, bausteinOf, featureOn, setFeature, unlockFeature, type Feature } from "@/lib/core/features";
 import { pushUndo, undoLast } from "@/lib/core/undo";
 import { buildShoppingList, planAlsAngebot } from "@/lib/einkauf/shoppingList";
@@ -238,7 +239,6 @@ function dayData(data: AssistantData): Partial<AssistantData> {
 export function runInstantOps(ops: ChangeOp[]): { rest: ChangeOp[]; notes: string[]; undo?: () => void } {
   const notes: string[] = [];
   const undo: (() => void)[] = [];
-  let tileShown = false;
   const weekCheck = (op: ChangeOp) => op.type === "app_command" && isWeekCheckRequest(op.text);
   const cookTip = (op: ChangeOp) => op.type === "app_command" && isKochtippRequest(op.text);
   // Durchatmen (A-051): „Handy-Pause“, „Ich brauch kurz Ruhe“ … startet die Übung sofort (die Bühne geht zu)
@@ -255,10 +255,7 @@ export function runInstantOps(ops: ChangeOp[]): { rest: ChangeOp[]; notes: strin
     if (op.type === "add_timer") {
       const started = startTimer({ name: op.name, minutes: op.minutes }, { quiet: true });
       if (!started) notes.push("Fünf Timer laufen schon. Sobald einer fertig ist, geht der nächste.");
-      else {
-        undo.push(started.undo);
-        tileShown ||= started.tileShown;
-      }
+      else undo.push(started.undo);
     } else if (op.type === "stop_timer") stopTimerByName(op.name);
     else if (op.type === "stopwatch") stopwatch(op.action);
     else if (op.type === "cook_step") {
@@ -268,8 +265,6 @@ export function runInstantOps(ops: ChangeOp[]): { rest: ChangeOp[]; notes: strin
       nudgePhase();
     }
   }
-  // Timer-Kachel war ausgeblendet → startTimer hat sie eingeblendet; sagen, wo er steht
-  if (tileShown) notes.push("Der Timer steht jetzt auf der Startseite.");
   // Rückwärts: jedes Zurücknehmen stellt den Stand vor seinem Schritt wieder her
   const back = undo.length ? pushUndo("den Timer", () => [...undo].reverse().forEach((u) => u())) : undefined;
   return { rest: ops.filter((op) => !INSTANT_OP_TYPES.has(op.type) && !weekCheck(op) && !cookTip(op) && !atem(op)), notes, ...(back ? { undo: back } : {}) };
@@ -558,15 +553,10 @@ export function commitOps(current: AssistantData, ops: ChangeOp[], selected: Set
   }
   if (chosen.some((op) => op.type === "upsert_note")) notes.push("Notizen findest du in der Woche ganz unten unter „Notizen“.");
   if (launch.gesperrt) notes.push("Kann ich noch nicht.");
-  // Sport: Training/Wochenziel in den eigenen Speicher, Sport-Kachel einblenden
+  // Sport: Training/Wochenziel in den eigenen Speicher
   const sportOps = chosen.filter((op) => op.type === "add_training" || op.type === "set_sport_goal" || (op.type === "upsert_entry" && op.isNew && (op.entry.data.label ?? "").toLowerCase() === "sport"));
-  if (sportOps.length) {
-    const tiles = data.home ?? loadHomeTiles();
-    if (!tiles.find((t) => t.id === "sport")?.visible) {
-      data = { ...data, home: applyHomeChange(tiles, { tile: "sport", action: "zeigen" }) };
-      notes.push("Die Sport-Kachel steht jetzt auf der Startseite.");
-    }
-  }
+  // Sport: Baustein an und Sport-Kreis oben (A-050) – keine Kachel mehr
+  if (sportOps.length && zeigeSportKreis()) notes.push(SPORT_OBEN);
   const jetztOps = chosen.filter((op) => op.type === "set_jetzt");
   if (chosen.some((op) => op.type === "set_household")) notes.push(`Steht drin, unter „${householdTitle(data.profile)}“ in den Einstellungen.`);
   if (chosen.some((op) => op.type === "set_meal" || op.type === "add_shopping")) {
@@ -585,6 +575,7 @@ export function commitOps(current: AssistantData, ops: ChangeOp[], selected: Set
     }
     // „Tomaten kaufe ich immer bei Rewe“: feste Regel, Rückgängig stellt die alte wieder her
     if (op.type === "set_shop_rule") undoDay.push(applyShopRule(op.name, op.shop));
+    if (op.type === "kreise") undoDay.push(changeKreise(op.change));
     if (op.type === "add_training") undoDay.push(addTraining(op.training).undo);
     else if (op.type === "set_sport_goal") undoDay.push(setSportGoal(op.goal));
   }

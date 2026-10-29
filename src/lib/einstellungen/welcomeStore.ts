@@ -6,7 +6,8 @@
 import { loadSport, saveSport } from "@/lib/sport/store";
 import { createLocalStore } from "@/lib/core/localStore";
 import { useExternalStore } from "@/lib/core/useExternalStore";
-import { ersteStartseite, saveHomeTiles } from "@/lib/core/homeLayout";
+import { STANDARD_KREISE } from "@/lib/heute/kreise";
+import { ersteStartseite, saveHomeTiles, saveKreise } from "@/lib/core/homeLayout";
 import { setFeature } from "@/lib/core/features";
 import { clearDemoStore, startDemo } from "@/lib/core/demo";
 import { loadProfile, saveProfile } from "@/lib/einstellungen/profileStore";
@@ -36,9 +37,10 @@ function finishWelcome(state: WelcomeState, look: AppLook = "farbig") {
 /**
  * Erster Start ("Los geht's" auf dem Hallo-Bildschirm, „Für wen soll ich
  * sortieren?“): sonst Standardwerte, die Standard-Startseite des Haushalts
- * (Tafel 119: Familie / zu zweit Pinnwand S | Wetter XS über Notizen XS,
- * allein Wetter, Sport, Notizen, Im Haus als XS; dann Termine, Aufgaben,
- * Essen + Einkauf; dazu Mias Wundertüte als S, A-022) und die Beispiele darin.
+ * (Tafel 140, A-050: oben die Mini-Kreise Sport · Pause · Rätsel · Timer,
+ * dann Familie / zu zweit Wetter XS über Notizen XS | Pinnwand S, allein
+ * Wetter XS über Notizen XS | Wundertüte S; dann Termine, Aufgaben, Essen,
+ * Einkauf breit) und die Beispiele darin.
  */
 export function startFresh(look: AppLook = "farbig", haushalt: Haushalt = "familie", name = "") {
   finishWelcome(startState(), look);
@@ -46,10 +48,12 @@ export function startFresh(look: AppLook = "farbig", haushalt: Haushalt = "famil
   // Name aus „Wie sollen dich die anderen sehen?“ (Anmelden ohne Profil, A-042): gleich ins neue Profil, nie zweimal fragen
   const eigener = name.trim().slice(0, 40);
   if (profile) saveProfile({ ...profile, householdType: HOUSEHOLD_FOR[haushalt], persons: eigener ? profile.persons.map((p, i) => (i === 0 ? { ...p, name: eigener } : p)) : profile.persons });
-  // Allein: Pinnwand aus (Baustein und Kachel, zuschaltbar), dafür Sport; zu zweit und Familie mit Pinnwand
+  // Allein: Pinnwand aus (Baustein und Kachel, zuschaltbar); zu zweit und Familie mit Pinnwand.
+  // Sport für alle an: der Sport-Kreis steht oben im Standard (Tafel 140/143), Kreise in Standard-Reihenfolge
   saveHomeTiles(ersteStartseite(haushalt));
+  saveKreise(STANDARD_KREISE);
   setFeature("pinnwand", haushalt !== "allein");
-  if (haushalt === "allein") setFeature("sport", true);
+  setFeature("sport", true);
   // Mias Wundertüte: für neue Nutzer an (auch nach „Neu anfangen“), als S-Kachel im Standard
   setFeature("wundertuete", true);
   startDemo();

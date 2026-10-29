@@ -73,20 +73,18 @@ describe("Einkauf-Kachel (Variante C2)", () => {
     expect(tileRows([], [], 3)).toEqual({ rows: [], rest: null, restZahl: 0, ohne: [] });
   });
 
-  it("Beispiel-Einkauf: Edeka, Rewe, Lidl, Rossmann – die Kachel zeigt 3 + Rest, ohne Grenze alle", () => {
+  it("Beispiel-Einkauf (Tafel 140): Edeka, Rewe, Lidl – die Kachel zeigt alle drei, kein Rest", () => {
     expect(DEMO_SHOPS).toEqual([
       { shop: "Edeka", names: ["Äpfel", "Eier", "Käse"] },
       { shop: "Rewe", names: ["Milch", "Brot", "Butter"] },
       { shop: "Lidl", names: ["Bananen", "Nudeln"] },
-      { shop: "Rossmann", names: ["Zahnpasta", "Küchenrolle"] },
     ]);
     const demo = DEMO_SHOPS.flatMap((g) => g.names.map((name) => ({ name, shop: g.shop })));
     const order = DEMO_SHOPS.map((g) => g.shop);
     const s = tileRows(demo, order, 3);
     expect(names(s)).toEqual(["Edeka 3", "Rewe 3", "Lidl 2"]);
-    expect(s.rest).toBe("+ Rossmann 2");
+    expect(s.rest).toBeNull();
     expect(s.ohne).toEqual([]);
-    expect(names(tileRows(demo, order, Infinity))).toEqual(["Edeka 3", "Rewe 3", "Lidl 2", "Rossmann 2"]);
   });
 
   it("bekannte Läden haben verschiedene Farben", () => {
@@ -105,7 +103,7 @@ describe("Fehler: Kopf und Sortieren-Zeile der Einkauf-Kachel wurden abgeschnitt
     const head = src.slice(src.indexOf("function ShoppingHead"), src.indexOf("/** Beispiel-Einkauf"));
     expect(head).toContain('<span className="whitespace-nowrap">Einkauf</span>');
     expect(head).not.toMatch(/truncate|pr-6/);
-    const line = src.slice(src.indexOf("{mine && ohne.length > 0 && ("), src.lastIndexOf("Sortieren ›") + 20);
+    const line = src.slice(src.indexOf("function OhneLadenZeile"), src.lastIndexOf("Sortieren ›") + 20);
     expect(line).toMatch(/flex-wrap/);
     expect(line).not.toMatch(/\btruncate\b/);
     expect(ohneLadenZeile(16)).toBe("16 ohne Laden");

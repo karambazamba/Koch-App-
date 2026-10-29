@@ -10,11 +10,12 @@
   so hoch wie ihr Inhalt, siehe „Festes Raster“), der Rest steht als „+n“ im Kopf. Bearbeiten direkt auf der Startseite
   (lange drücken: wackeln, ziehen, „–“, XS · S · M, darunter die Farbe) –
   dasselbe Raster wie fertig. Lücke ohne Partner: ruhig leer, im Bearbeiten
-  „＋ Kachel“; Essen + Einkauf sind ein festes Paar. Standard je Haushalt
-  (Tafel 119): Familie / zu zweit Pinnwand S | Wetter XS über Notizen XS,
-  allein Wetter über Sport | Notizen über Im Haus (alle XS); dann Termine M,
-  Aufgaben M, Essen S | Einkauf S. Timer nur, solange einer läuft (XS ganz
-  oben). Jede Kachel öffnet ihre Seite.
+  „＋ Kachel“; Essen + Einkauf sind ein Paar, solange beide S sind. Standard je
+  Haushalt (Tafel 140, A-050): Familie / zu zweit Wetter XS über Notizen XS |
+  Pinnwand S, Termine M, Aufgaben M, Essen S | Wundertüte S, Einkauf M; allein
+  Wetter XS über Notizen XS | Wundertüte S, Termine M, Aufgaben M, Essen M,
+  Einkauf M. Darüber die Mini-Kreise (siehe „Mini-Kreise oben“); ein laufender
+  Timer steht im Timer-Kreis, nie als Kachel. Jede Kachel öffnet ihre Seite.
 - Die Jetzt-Karte (A-054) zeigt nur, was man HEUTE braucht und die Kacheln
   nicht schon zeigen: EIN Thema, höchstens zwei zum Wischen, aus einer festen
   Rangliste; nichts dran = gar keine Karte (kein Platzhalter, kein „Alles
@@ -128,8 +129,11 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
 
 ## Daten und Speicher
 
-- `wasgibts.startseite` v9 `{version, tiles: {id, visible, size, farbe?}[], tipSeen}`
-  (`migrateHome`). v8 → v9 (Tafel 118): Reihenfolge, Sichtbarkeit, Farben und
+- `wasgibts.startseite` v10 `{version, tiles: {id, visible, size, farbe?}[], tipSeen, kreise: {id, an}[]}`
+  (`migrateHome`). v9 → v10 (A-050, Tafel 143): XS-Kacheln Sport/Timer werden
+  Kreise (nur ausgeblendet), Im Haus kommt aus der Anordnung (ausgeblendet,
+  wählbar S/M), die Kreise stehen in Standard-Reihenfolge; die übrige
+  Anordnung bleibt. v8 → v9 (Tafel 118): Reihenfolge, Sichtbarkeit, Farben und
   Größen bleiben, L → M, nicht mehr erlaubte Größen die nächste erlaubte
   (`fitSize`: Timer/Im Haus M → S; Sport darf seit A-044 M); keine Kachel verschwindet. v1 →
   Aufgaben hinter Termine; v1/v2 → Größen S/M/L,
@@ -215,17 +219,18 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
   ohne weißes Kärtchen → `frei` (9 %, dunkel 8 %), leiser Text dort mit
   `kachel-frei`. Kachel = `isolate`, ihre Fenster stehen neben der
   `<section>`. Kachel-Texte ohne „ – “ (Test `tests/app/kachelTexte.test.ts`).
-- `HOME_TILES` in Standard-Reihenfolge (erlaubte Größen, Standard fett im
-  Code): Pinnwand S/M, Wetter XS/S/M, Notizen XS/S/M, Termine S/M, Aufgaben
-  S/M, Essen S/M, Einkauf S/M, Spendentopf nur M, Tipps nur M (Baustein),
-  Timer XS/S, Sport XS/S/M (Stempelkarte, A-044), Im Haus XS/S (Baustein), Post („bald“, nie
+- `HOME_TILES` in Standard-Reihenfolge (Tafel 140; erlaubte Größen, Standard
+  im Code): Wetter XS/S/M, Notizen XS/S/M, Pinnwand S/M, Termine S/M, Aufgaben
+  S/M, Essen S/M, Wundertüte S/M, Einkauf S/M (Standard M), Spendentopf nur M,
+  Tipps nur M (Baustein), Timer XS/S, Sport XS/S/M (Stempelkarte, A-044,
+  Standard S), Im Haus S/M (Baustein, nur wählbar – A-032), Post („bald“, nie
   sichtbar). Der Größen-Umschalter zeigt nur die erlaubten.
 - Pinnwand ist ein Baustein (Kühlschranktür): Kachel nur mit Baustein
   (Filter in `TodayPage`); „Nur für mich“ startet ohne, sonst an. Kachel
   „Fächer“ siehe `pinnwand.md`.
-- `DEFAULT_HOME` = `defaultHome("familie")` (Tafel 119, s. o.); Im Haus
-  erscheint nur mit Baustein, Tipps nur mit Quelle und Baustein (Filter in
-  `TodayPage`).
+- `DEFAULT_HOME` = `defaultHome("familie")` (Tafel 140, s. o.); Im Haus
+  erscheint nur mit Baustein und eigener Wahl, Tipps nur mit Quelle und
+  Baustein (Filter in `TodayPage`).
 - Raster siehe „Festes Raster“. Startseite v6 (`lonelySToM`): eine einzelne
   S, die bisher breit war, wird einmal M.
 - Notizen-Kachel (`heute/notizenKachel.ts`): XS = neueste bzw. angeheftete
@@ -260,9 +265,10 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
   Durchklick `nichtsAbgeschnitten` (Beispiel-Tag und Familie, iPhone SE/15
   Pro/Pixel 7, jede Kachel in XS/S/M, `abgeschnitteneTexte` in
   `e2e/regeln.mjs`).
-- Essen + Einkauf sind ein Paar: immer direkt hintereinander, Essen zuerst
-  (`keepPair`), und wandern zusammen. Als eine Einheit im Raster zählen sie
-  nur, wenn beide S sind.
+- Essen + Einkauf sind ein Paar, solange beide S sind (`istPaar`): dann immer
+  direkt hintereinander, Essen zuerst (`keepPair`), wandern zusammen und
+  zählen als eine Einheit im Raster. Einkauf M (Standard seit Tafel 140)
+  steht für sich.
 - Die Anordnung ändert sich nie von selbst. „zeigen“ setzt eine Kachel in
   Standard-Größe hinter die nächste sichtbare, die laut Standard davor steht
   (Paar: neben den Partner). `standardLayout`: Reihenfolge und Größen wie am Anfang.
@@ -617,6 +623,53 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
   Buchstabe, Variante A/C2, Kochmodus-Schritt).
 
 
+## Mini-Kreise oben (A-050, Tafel 143 + Nachtrag „kein Schild“)
+
+- Reihe direkt unter dem Kopf (Logo + Datum) bzw. unter der Jetzt-Karte, über
+  allen Kacheln und Hinweisen (`components/heute/kreise/KreisReihe.tsx`, rein
+  `lib/heute/kreise.ts`). Nicht wischbar: kein seitliches Scrollen, Wischen
+  wechselt weiter die Seite (Kalender · Heute · Essen).
+- Bis zu 5 Kreise gleich verteilt über die ganze Breite (14 px Rand): 5 = 56 px
+  (Symbol 23, Wort 12,5 px), 4 oder weniger = 64 px (26, 13 px) –
+  `kreisMasse`. Unter jedem Kreis genau EIN Wort, fett, nie zweite Zeile, nie
+  „…“. Fläche = Kachelfarbe des Bereichs (`data-tone`: Sport Flieder bzw. die
+  Farbe der Sport-Kachel, Pause Mint, Was los? Lavendel-Blau, Rätsel Pfirsich,
+  Timer Sand), Symbol im Akzent; Schlicht: weiß mit feinem Rand.
+- Standard (`STANDARD_KREISE`): Sport (Laufschuh bzw. Symbol der nächsten
+  Sportart; Ring = Wochenziel, Stücke füllen sich, geschafft grün; im
+  Beispiel-Tag 2 von 3) · Pause (Wind, öffnet Durchatmen über
+  `oeffneDurchatmen`) · Was los? (Fahne; ausgeblendet, solange
+  `wasLosVerfuegbar()` nichts hat – A-055 bindet Quelle und Fenster an) ·
+  Rätsel (Puzzle, `RaetselFenster`, KEIN Schild „neu“) · Timer (Stoppuhr,
+  `TimerFenster`).
+- Läuft ein Timer: Restzeit des kürzesten groß im Kreis (orange), oranger
+  Fortschritts-Ring, Position 1 (`timerImKreis`, `sichtbareKreise`); danach
+  zurück an seinen Platz. Ist der Timer-Kreis aus, steht er nur, solange einer
+  läuft. Mehr als 5: hinten fällt weg, der laufende Timer nie.
+- Nur Kreise eingeschalteter Bausteine (Sport, Durchatmen). Kein Schild, keine
+  Zahl, keine Plakette – einziges Zeichen sind Sport-Ring und Timer-Restzeit.
+- Antippen = Fenster von unten (`ui/Sheet`), der Kreis hat solange einen orangen
+  Rand (`kreis-aktiv`); man bleibt auf der Startseite. Lange drücken =
+  Startseite bearbeiten.
+- Bearbeiten: statt der Reihe der Abschnitt „Kreise oben“ (`KreiseBearbeiten`):
+  an/aus je Kreis (einschalten schaltet den Baustein mit ein), Reihenfolge
+  ziehen am Griff (Knöpfe „Nach oben/unten“ für Screenreader, Pfeile mit Maus),
+  Hinweis „Höchstens 5 Kreise“. „Was los?“ erscheint erst mit Quelle.
+- Speicher: Feld `kreise` in `wasgibts.startseite` (v10, in der Sicherung),
+  `loadKreise`/`saveKreise`/`changeKreise`/`useKreise` in `core/homeLayout.ts`.
+- Mia: Werkzeug `kreise_anpassen` (Vorschau „Kreis Rätsel – ist oben raus“ mit
+  Übernehmen, Op `kreise`), ohne KI `parseKreisCommand` in
+  `begleitung/homeChat.ts` („Nimm Rätsel oben raus“, „Timer nach vorn“, „Hol
+  die Pause wieder nach oben“ – nur mit „oben/vorn/hinten/Kreis“ im Satz).
+  Nutzt Mia Sport, kommt der Sport-Kreis (`heute/sportKreis.ts`), keine Kachel.
+- Fenster: Sport und Timer siehe `sport.md`/`timer.md`; Durchatmen
+  `durchatmen.md`; Rätsel `wundertuete.md`.
+- Tests: `tests/heute/kreise.test.ts`, `tests/heute/kreisFenster.test.ts`,
+  Durchklick `e2e/ablaeufe/kreise.mjs` (`kreiseOben` SE/15 Pro/Pixel 7,
+  `kreisFenster`, `kreiseBearbeiten`, `kreiseMigration`), `raster.mjs`
+  (`timerKreis`, `standardJeHaushalt`).
+
+
 ## Festes Raster XS · S · M, Standard je Haushalt, Wetter mit Himmel (Tafel 118–120, A-023)
 
 - Raster (`lib/heute/raster.ts`, rein): 2 Spalten, Grund-Zeile = halbe
@@ -658,9 +711,10 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
   statt der festen Höhe (die feste Höhe ist bei Listen gerade der Fehler aus
   Tafel 135), `rasterBuendig` erwartet Termine/Aufgaben niedriger als die
   Pinnwand; Durchklick `startseiteKompakt` (Familie-Beispiel auf SE, 15 Pro,
-  Pixel 7: unter der letzten Listenzeile ≤ 20 px, Einkauf 3 Läden, Paare
-  gleich hoch, XS-Wasserzeichen sichtbar und nie über Text; „Nur für mich“:
-  Sport XS mit zwei Stempeln, Im Haus XS mit Kühlschrank) und `listenHoehen`
+  Pixel 7: unter der letzten Listenzeile ≤ 20 px, Einkauf M mit Edeka · Rewe ·
+  Lidl in einer Reihe, Essen | Wundertüte gleich hoch, XS-Wasserzeichen
+  sichtbar und nie über Text; „Nur für mich“: Sport als Kreis oben), `einkaufChips`
+  (Einkauf M mit 3 bzw. 5 Läden und langen Namen) und `listenHoehen`
   (Termine, Aufgaben, Notizen, Einkauf S mit 0, 1, 2, 3, 5 Einträgen auf SE,
   15 Pro, Pixel 7), Tests `tests/heute/hoeheInhalt.test.ts` und
   `tests/heute/hoeheZeilen.test.ts`. Bearbeiten nutzt dasselbe Raster (Knöpfe IN der Kachel, kein
@@ -671,19 +725,24 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
   Grenze unter ihr, über die keine Kachel reicht (`trennZeile`), Pfeil
   links/rechts/mittig nach Platz (`pfeilZu`).
 - Inhalt je Größe: XS = Kopf + EINE Zeile (Wetter: Temperatur + kurzer
-  Satz; Sport XS zwei kleine Stempel + „Heute“/„8:00 · Laufen“), S/M = feste
-  Mengen (Termine/Aufgaben höchstens 3, Einkauf 3 Läden – die mit den meisten
+  Satz; Sport XS – nur noch, wer sie selbst wählt – zwei kleine Stempel + „Heute“/„8:00 · Laufen“), S/M = feste
+  Mengen (Termine/Aufgaben höchstens 3, Einkauf S 3 Läden untereinander – die mit den meisten
   Sachen zuerst – und darunter „n ohne Laden · Sortieren ›“, „+n“ erst ab dem
-  4. Laden, A-048; nur in einer festen Reihe mit „ohne Laden“ 2; Notizen 3,
+  4. Laden, A-048; nur in einer festen Reihe mit „ohne Laden“ 2; Einkauf M
+  EINE Reihe Laden-Chips nebeneinander, siehe `einkauf.md`; Notizen 3,
   Im Haus 2 + „Was koch ich daraus?“), Rest als „+n“ im Kopf; nichts gestaucht. Pinnwand S = Fächer, M = drei nebeneinander.
-- Timer ohne festen Platz (`mitLaufendemTimer`): läuft einer und steht die
-  Timer-Kachel nicht selbst auf der Startseite, erscheint sie als XS ganz
-  oben (im Bearbeiten nicht verschieb-/änderbar), danach wieder weg.
-- Standard je Haushalt (`defaultHome`, für neue Nutzer und den Beispiel-Tag;
-  `startFresh` schaltet bei „allein“ Sport ein, Pinnwand aus). Beim
-  allerersten Start kommt dazu die Wundertüte S direkt hinter Essen +
-  Einkauf (`ersteStartseite`, A-022); sie zählt beim Haushaltswechsel nicht
-  zum Standard und kommt dort nie von selbst dazu (`NUR_NEU`). Haushalt
+- Timer ohne festen Platz (A-050): ein laufender Timer steht im Timer-Kreis
+  oben (Restzeit, Position 1), keine Kachel schiebt sich dazu; `startTimer`
+  blendet nichts mehr ein.
+- Standard je Haushalt (`defaultHome` = `ersteStartseite`, Tafel 140, für neue
+  Nutzer und den Beispiel-Tag; `startFresh` schaltet Sport für alle ein, bei
+  „allein“ die Pinnwand aus, und setzt die Kreise zurück). Die Wundertüte
+  gehört zum Standard, kommt beim Haushaltswechsel aber nie von selbst dazu
+  (`NUR_NEU`). „Startseite bearbeiten“ → „Neue Standard-Ordnung übernehmen“
+  (`neueStandardOrdnung`, nur solange sie nicht dasteht, mit Nachfrage und
+  Rückgängig): Standard-Kacheln in Reihenfolge und Größe der Tafel, eigene
+  Kacheln dahinter, Farben bleiben, Kacheln ausgeschalteter Bausteine kommen
+  nicht dazu. Bestehende Nutzer behalten sonst ihre Anordnung. Haushalt
   wechseln (`homeForHaushalt`, aus `saveProfile`): steht noch genau der
   Standard des alten Haushalts da, kommt der neue; sonst bleibt die eigene
   Anordnung, nur fehlende Standard-Kacheln kommen dazu, bei „allein“ wird die
@@ -706,8 +765,8 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
   Startseite. Ausnahme vom Feature-Stopp für 1.0, von Felix gewollt.
 - Beispiel-Tag: feste Karte Angeberwissen, „Beispiel“ nur für VoiceOver
   (kein zweites Schild neben dem an der Pinnwand, Tafel 119).
-- Raster (A-023): nur S und M, keine Standard-Position im Tafel-119-Standard
-  (`defaultHome`), nur beim allerersten Start dazu (`ersteStartseite`).
+- Raster (A-023): nur S und M; seit Tafel 140 im Standard (Familie neben
+  Essen, allein neben Wetter/Notizen), beim Haushaltswechsel nie von selbst.
   Nichts abgeschnitten: Schrift passt sich der Fläche an, Kopf mit
   Kurzform (`useEinpassen`); geprüft in `nichtsAbgeschnitten` und
   `wundertueteAlle`.

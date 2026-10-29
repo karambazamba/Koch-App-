@@ -7,7 +7,7 @@ import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { DEFAULT_HOME, HOME_TILES, TILE_SIZES, applyHomeChange, defaultHome, homeForHaushalt, lonelySToM, migrateHome, sanitizeHome, standardLayout, type HomeTile, type HomeTileId, type TileSize } from "@/lib/core/homeLayout";
 import { unitsOf } from "@/lib/core/homeUnits";
-import { SPAN, fuelleLuecke, grundZeile, groesseFuer, mitLaufendemTimer, packe, passtInLuecke, pfeilZu, rasterOf, trennZeile, type Raster } from "@/lib/heute/raster";
+import { SPAN, fuelleLuecke, grundZeile, groesseFuer, packe, passtInLuecke, pfeilZu, rasterOf, trennZeile, type Raster } from "@/lib/heute/raster";
 import { notizAnfang, notizZeilen } from "@/lib/heute/notizenKachel";
 import type { Note } from "@/lib/notizen/model";
 
@@ -25,7 +25,7 @@ describe("Raster: Größen (Tafel 118)", () => {
 
   it("erlaubte Größen je Kachel wie in der Tafel; Umschalter zeigt nur diese", () => {
     const sizes = Object.fromEntries(HOME_TILES.map((t) => [t.id, t.sizes.join("/")]));
-    expect(sizes).toMatchObject({ wetter: "XS/S/M", timer: "XS/S", notizen: "XS/S/M", vorrat: "XS/S", sport: "XS/S/M", pinnwand: "S/M", essen: "S/M", einkauf: "S/M", termine: "S/M", aufgaben: "S/M", spendentopf: "M", tipps: "M" });
+    expect(sizes).toMatchObject({ wetter: "XS/S/M", timer: "XS/S", notizen: "XS/S/M", vorrat: "S/M", sport: "XS/S/M", pinnwand: "S/M", essen: "S/M", einkauf: "S/M", termine: "S/M", aufgaben: "S/M", spendentopf: "M", tipps: "M" });
     for (const t of HOME_TILES) {
       expect(t.sizes).toContain(t.size);
       expect([...t.sizes].sort((a, b) => TILE_SIZES.indexOf(a) - TILE_SIZES.indexOf(b))).toEqual(t.sizes);
@@ -51,16 +51,16 @@ describe("Raster: Größen (Tafel 118)", () => {
 });
 
 describe("Raster: dicht und stabil füllen", () => {
-  it("Familie: Pinnwand S | Wetter XS über Notizen XS, dann Termine, Aufgaben, Essen | Einkauf", () => {
+  it("Familie (Tafel 140): Wetter XS über Notizen XS | Pinnwand S, Termine, Aufgaben, Essen | Wundertüte, Einkauf breit", () => {
     const r = rasterOf(shown(defaultHome("familie")));
-    expect(at(r)).toEqual(["pinnwand@0,0", "wetter@1,0", "notizen@1,1", "termine@0,2+", "aufgaben@0,4+", "essen+einkauf@0,6+"]);
+    expect(at(r)).toEqual(["wetter@0,0", "notizen@0,1", "pinnwand@1,0", "termine@0,2+", "aufgaben@0,4+", "essen@0,6", "wundertuete@1,6", "einkauf@0,8+"]);
     expect(r.luecken).toEqual([]);
-    expect(r.rows).toBe(8);
+    expect(r.rows).toBe(10);
   });
 
-  it("allein: Wetter über Sport | Notizen über Im Haus, dann Termine, Aufgaben, Essen | Einkauf", () => {
+  it("allein (Tafel 140): Wetter XS über Notizen XS | Wundertüte S, Termine, Aufgaben, Essen breit, Einkauf breit", () => {
     const r = rasterOf(shown(defaultHome("allein")));
-    expect(at(r)).toEqual(["wetter@0,0", "sport@0,1", "notizen@1,0", "vorrat@1,1", "termine@0,2+", "aufgaben@0,4+", "essen+einkauf@0,6+"]);
+    expect(at(r)).toEqual(["wetter@0,0", "notizen@0,1", "wundertuete@1,0", "termine@0,2+", "aufgaben@0,4+", "essen@0,6+", "einkauf@0,8+"]);
     expect(r.luecken).toEqual([]);
   });
 
@@ -108,9 +108,9 @@ describe("Raster: dicht und stabil füllen", () => {
   });
 
   it("Größenwechsel: die Nachbarn rücken sofort nach", () => {
-    const start = shown(DEFAULT_HOME);
-    const big = shown(applyHomeChange(DEFAULT_HOME, { tile: "wetter", action: "mittel" }));
-    expect(at(rasterOf(start))[1]).toBe("wetter@1,0");
+    const alt = tiles([["pinnwand", "S"], ["wetter", "XS"], ["notizen", "XS"], ["termine", "M"], ["aufgaben", "M"], ["essen", "S"], ["einkauf", "S"]]);
+    const big = shown(applyHomeChange(alt, { tile: "wetter", action: "mittel" }));
+    expect(at(rasterOf(alt))[1]).toBe("wetter@1,0");
     expect(at(rasterOf(big))).toEqual(["pinnwand@0,0", "wetter@0,2+", "notizen@1,0", "termine@0,4+", "aufgaben@0,6+", "essen+einkauf@0,8+"]);
   });
 });
@@ -169,37 +169,34 @@ describe("Mias Tipp unter einer Kachel", () => {
     expect(trennZeile(r, "wetter")).toBe(2);
     expect(trennZeile(r, "termine")).toBe(4);
     expect(trennZeile(r, "fehlt")).toBeNull();
-    expect(pfeilZu(u, r, "pinnwand")).toBe("links");
-    expect(pfeilZu(u, r, "notizen")).toBe("rechts");
+    expect(pfeilZu(u, r, "pinnwand")).toBe("rechts");
+    expect(pfeilZu(u, r, "notizen")).toBe("links");
     expect(pfeilZu(u, r, "termine")).toBe("mitte");
-    expect(pfeilZu(u, r, "einkauf")).toBe("rechts");
+    expect(pfeilZu(u, r, "einkauf")).toBe("mitte");
     expect(pfeilZu(u, r, "essen")).toBe("links");
+    expect(pfeilZu(u, r, "wundertuete")).toBe("rechts");
+    // das Paar Essen + Einkauf (beide S): je nach Hälfte
+    const alt = tiles([["termine", "M"], ["essen", "S"], ["einkauf", "S"]]);
+    expect(pfeilZu(unitsOf(alt), rasterOf(alt), "einkauf")).toBe("rechts");
     expect(pfeilZu(u, r, "sport")).toBeNull();
   });
 });
 
 describe("Timer: kein fester Platz", () => {
-  it("nur solange einer läuft – als XS ganz oben, danach wieder weg", () => {
-    const list = shown(DEFAULT_HOME);
-    expect(mitLaufendemTimer(list, false)).toBe(list);
-    const mit = mitLaufendemTimer(list, true);
-    expect(mit[0]).toEqual({ id: "timer", visible: true, size: "XS" });
-    expect(at(rasterOf(mit)).slice(0, 3)).toEqual(["timer@0,0", "pinnwand@1,0", "wetter@0,1"]);
-    // wer den Timer selbst auf die Startseite gestellt hat, behält seinen Platz
-    const own = tiles([["termine", "M"], ["timer", "S"]]);
-    expect(mitLaufendemTimer(own, true)).toBe(own);
+  it("ein laufender Timer steht im Kreis oben, nie als Kachel dazwischen (A-050)", () => {
     expect(DEFAULT_HOME.find((t) => t.id === "timer")?.visible).toBe(false);
     const today = readFileSync("src/components/heute/TodayPage.tsx", "utf8");
-    expect(today).toMatch(/mitLaufendemTimer\(saved, timerLaeuft\)/);
+    expect(today).not.toMatch(/mitLaufendemTimer/);
+    expect(today).toMatch(/<KreisReihe /);
   });
 });
 
-describe("Standard je Haushalt (Tafel 119)", () => {
-  it("Familie und zu zweit gleich, allein ohne Pinnwand mit Sport und Im Haus", () => {
+describe("Standard je Haushalt (Tafel 140, A-050)", () => {
+  it("Familie und zu zweit gleich, allein ohne Pinnwand mit Wundertüte daneben; nie Sport, Timer, Im Haus als Kachel", () => {
     const vis = (h: "familie" | "paar" | "allein") => shown(defaultHome(h)).map((t) => `${t.id}:${t.size}`);
-    expect(vis("familie")).toEqual(["pinnwand:S", "wetter:XS", "notizen:XS", "termine:M", "aufgaben:M", "essen:S", "einkauf:S"]);
+    expect(vis("familie")).toEqual(["wetter:XS", "notizen:XS", "pinnwand:S", "termine:M", "aufgaben:M", "essen:S", "wundertuete:S", "einkauf:M"]);
     expect(vis("paar")).toEqual(vis("familie"));
-    expect(vis("allein")).toEqual(["wetter:XS", "sport:XS", "notizen:XS", "vorrat:XS", "termine:M", "aufgaben:M", "essen:S", "einkauf:S"]);
+    expect(vis("allein")).toEqual(["wetter:XS", "notizen:XS", "wundertuete:S", "termine:M", "aufgaben:M", "essen:M", "einkauf:M"]);
     expect(defaultHome("allein")).toHaveLength(HOME_TILES.length);
   });
 
@@ -213,10 +210,10 @@ describe("Standard je Haushalt (Tafel 119)", () => {
   it("Haushaltswechsel: unveränderte Standard-Anordnung wechselt mit, eigene bleibt", () => {
     expect(homeForHaushalt(defaultHome("familie"), "familie", "allein")).toEqual(defaultHome("allein"));
     expect(homeForHaushalt(defaultHome("allein"), "allein", "paar")).toEqual(defaultHome("paar"));
-    // selbst geändert: nichts überschreiben – nur fehlende Standard-Kacheln dazu (Sport, Im Haus) und Pinnwand bei „allein“ ausgeblendet
+    // selbst geändert: nichts überschreiben – nur Pinnwand bei „allein“ ausgeblendet (alle Standard-Kacheln sind schon da)
     const own = applyHomeChange(DEFAULT_HOME, { tile: "aufgaben", action: "nach_oben" });
     const solo = homeForHaushalt(own, "familie", "allein");
-    expect(shown(solo).map((t) => t.id)).toEqual([...shown(own).map((t) => t.id).filter((id) => id !== "pinnwand"), "sport", "vorrat"]);
+    expect(shown(solo).map((t) => t.id)).toEqual(shown(own).map((t) => t.id).filter((id) => id !== "pinnwand"));
     expect(solo.find((t) => t.id === "pinnwand")).toBeDefined();
     // zurück zu zweit: fehlende Standard-Kacheln (Pinnwand) kommen dazu, der Rest bleibt
     const back = homeForHaushalt(solo, "allein", "paar");
@@ -241,8 +238,9 @@ describe("Migration v8 → v9 (Tafel 118)", () => {
       { id: "tipps", visible: false, size: "L" },
     ];
     const m = migrateHome({ version: 8, tiles: v8, tipSeen: true })!;
-    expect(m.version).toBe(9);
-    expect(m.tiles.slice(0, 8).map((t) => `${t.id}:${t.size}:${t.visible}`)).toEqual(["pinnwand:M:true", "wetter:S:true", "timer:S:true", "sport:M:true", "termine:M:true", "notizen:M:false", "vorrat:S:true", "tipps:M:false"]);
+    expect(m.version).toBe(10);
+    // v10 (A-050): Im Haus aus der Anordnung (wählbar S/M), Timer/Sport in S/M bleiben Kacheln
+    expect(m.tiles.slice(0, 8).map((t) => `${t.id}:${t.size}:${t.visible}`)).toEqual(["pinnwand:M:true", "wetter:S:true", "timer:S:true", "sport:M:true", "termine:M:true", "notizen:M:false", "vorrat:M:false", "tipps:M:false"]);
     expect(m.tiles.find((t) => t.id === "termine")?.farbe).toBe("mint");
     expect(m.tiles).toHaveLength(HOME_TILES.length);
   });
@@ -258,9 +256,11 @@ describe("Migration v8 → v9 (Tafel 118)", () => {
   it("alte Sicherung (v0.47, Startseite v4): alle Kacheln bleiben, Größen erlaubt", () => {
     const backup = JSON.parse(readFileSync("tests/fixtures/sicherung-v0.47.json", "utf8"));
     const m = migrateHome(JSON.parse(backup.data["wasgibts.startseite"]))!;
-    expect(m.version).toBe(9);
+    expect(m.version).toBe(10);
     expect(m.tiles).toHaveLength(HOME_TILES.length);
-    expect(shown(m.tiles).map((t) => t.id)).toEqual(expect.arrayContaining(["pinnwand", "wetter", "termine", "aufgaben", "essen", "einkauf", "spendentopf", "vorrat", "notizen"]));
+    expect(shown(m.tiles).map((t) => t.id)).toEqual(expect.arrayContaining(["pinnwand", "wetter", "termine", "aufgaben", "essen", "einkauf", "spendentopf", "notizen"]));
+    // Im Haus nur ausgeblendet (A-050), nie gelöscht
+    expect(m.tiles.find((t) => t.id === "vorrat")?.visible).toBe(false);
     for (const t of m.tiles) expect(HOME_TILES.find((x) => x.id === t.id)!.sizes).toContain(t.size);
   });
 

@@ -36,6 +36,20 @@ Grundregeln stehen in CLAUDE.md, Abschnitt 7.
   M = ganz breit + so hoch wie S; Höhe nie vom Inhalt – außer Listen-Reihen
   (Termine, Aufgaben, Einkauf, Notizen: Kopf + 1–3 Zeilen bzw. ein Satz + 14 px, A-048); Bearbeiten = gleiche
   Flächen (Knöpfe in der Kachel). Details `docs/bereiche/heute.md`.
+- Mini-Kreise oben (A-050, Tafel 143): bis zu 5 runde Kreise unter Kopf bzw.
+  Jetzt-Karte, gleich verteilt (14 px Rand), 5 = 56 px, sonst 64 px; Fläche =
+  Kachelfarbe (`data-tone`/`data-farbe`, `bg-tile`), Linien-Symbol im Akzent
+  (23/26 px), darunter EIN Wort (12,5/13 px fett). Schlicht: weiß mit feinem
+  Rand. Einzige Zeichen: Sport-Ring (`.kreis-ring-*`, geschafft grün) und
+  die Timer-Restzeit (orange, Ring `.kreis-ring-timer`); angetippt = oranger
+  Rand (`.kreis-aktiv`). Keine Schilder, Zahlen, Plaketten. Die Fenster haben
+  einen gemeinsamen Kopf (`heute/kreise/FensterKopf`: rundes Symbol, Titel
+  fett, Unterzeile grau, ✕).
+- Pinnwand mit Korkrahmen (A-050, Tafel 141 A): `.korkrahmen` 7 px eingerückt,
+  Rand 6 px im Kachel-Akzent (`--app-kork-rand` 16 %, dunkel 20 %), Radius
+  16 px, zwei versetzte Punkt-Raster (`--app-kork-punkt` 9 %, dunkel 6 %),
+  Schlicht nur feiner Rand; die Pinnwand-Seite zeigt dieselbe Wand
+  (`.korkwand`) statt der grauen Tür. Statt Wasserzeichen.
 - Wetter-Kachel mit Himmel (Tafel 120): Hintergrund wie bisher
   `--app-sky-*`, rechts oben eine kleine, leicht angeschnittene, stille
   Szene (`WetterSzene`: Sonne, leicht bewölkt, bewölkt, Regen, Gewitter,

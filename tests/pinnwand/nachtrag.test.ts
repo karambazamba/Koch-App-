@@ -199,18 +199,15 @@ describe("Wörter überall gleich", () => {
 });
 
 describe("Behoben (Bildschirmfoto v0.138, iPhone 15 Pro)", () => {
-  it("die Tür wächst mit dem Inhalt: kleine Mindesthöhe, kein innerer Scrollbereich, der Griff sieht nicht wie ein Scrollbalken aus", () => {
+  it("die Wand wächst mit dem Inhalt: keine Mindesthöhe, kein innerer Scrollbereich, kein Griff wie ein Scrollbalken (seit A-050 im Korkrahmen)", () => {
     const view = read("src/components/pinnwand/PinboardView.tsx");
-    const door = view.match(/<section className="kuehlschrank ([^"]*)"/)![1];
+    const door = view.match(/<div className="korkrahmen ([^"]*)"/)![1];
     expect(door).not.toMatch(/overflow|max-h|h-screen|dvh/);
     // Tafel 123: so hoch wie der Inhalt – gar keine Mindesthöhe mehr
     expect(door).not.toMatch(/min-h/);
     const css = read("src/app/globals.css");
-    const griff = css.slice(css.indexOf(".kuehlschrank::after"), css.indexOf("}", css.indexOf(".kuehlschrank::after")));
-    expect(Number(griff.match(/width: (\d+)px/)![1])).toBeGreaterThanOrEqual(8);
-    expect(Number(griff.match(/height: (\d+)px/)![1])).toBeLessThanOrEqual(80);
-    expect(griff).not.toMatch(/9999px/);
-    expect(css.slice(css.indexOf(".kuehlschrank {"), css.indexOf("}", css.indexOf(".kuehlschrank {")))).not.toMatch(/overflow/);
+    expect(css).not.toMatch(/\.kuehlschrank::after/);
+    expect(css.slice(css.indexOf(".korkwand {"), css.indexOf("}", css.indexOf(".korkwand {")))).not.toMatch(/overflow/);
   });
 
   it("Name · Zeit unter dem Zettel nie abgeschnitten (Tafel 123: eine Zeile, bei Platzmangel nur die Zeit), rechts Platz für den Haken-Kreis", () => {

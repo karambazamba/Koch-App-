@@ -204,11 +204,11 @@ describe("Beispiel-Tag", () => {
     vi.resetModules();
   });
 
-  it("Läden Edeka/Rewe/Lidl/Rossmann + zwei Ohne-Laden-Chips, leise „Beispiel“; nichts in echte Speicher", async () => {
+  it("Läden Edeka/Rewe/Lidl (Tafel 140) + zwei Ohne-Laden-Chips, leise „Beispiel“; nichts in echte Speicher", async () => {
     const w = fakeWindow();
     const { einkaufBeispiel } = await import("@/components/einkauf/EinkaufBeispiel");
     const b = einkaufBeispiel();
-    expect(b.karten.map((k) => k.shop)).toEqual(["Edeka", "Rewe", "Lidl", "Rossmann"]);
+    expect(b.karten.map((k) => k.shop)).toEqual(["Edeka", "Rewe", "Lidl"]);
     expect(b.ohne.map((i) => i.name)).toEqual(["Spinat", "Haferflocken"]);
     expect(w.localStorage.getItem("wasgibts.einkaufsliste")).toBeNull();
     expect(seite).toMatch(/\{zeigBeispiel && <span className="text-xs font-semibold text-muted">Beispiel<\/span>\}/);

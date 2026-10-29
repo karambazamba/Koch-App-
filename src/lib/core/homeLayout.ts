@@ -14,6 +14,7 @@ import { createLocalStore } from "@/lib/core/localStore";
 import { useExternalStore } from "@/lib/core/useExternalStore";
 import { farbLabel, gueltigeFarbe, type KachelFarbe } from "@/lib/heute/kachelFarben";
 import type { Haushalt } from "@/lib/core/haushalt";
+import { STANDARD_KREISE, aendereKreise, sanitizeKreise, type Kreis, type KreisAenderung } from "@/lib/heute/kreise";
 
 export type HomeTileId = "pinnwand" | "termine" | "aufgaben" | "wetter" | "essen" | "einkauf" | "timer" | "sport" | "notizen" | "vorrat" | "post" | "spendentopf" | "tipps" | "wundertuete";
 export type TileSize = "XS" | "S" | "M";
@@ -29,19 +30,19 @@ export const TILE_SIZES: TileSize[] = ["XS", "S", "M"];
  * noch nicht ("bald"); `fresh`: "NEU".
  */
 export const HOME_TILES: { id: HomeTileId; label: string; hint: string; sizes: TileSize[]; size: TileSize; feature?: "vorrat" | "regiontipps" | "sport" | "notizen" | "spendentopf" | "pinnwand" | "wundertuete"; soon?: boolean; fresh?: boolean }[] = [
-  { id: "pinnwand", label: "Pinnwand", hint: "Zettel für alle, wie am Kühlschrank", sizes: ["S", "M"], size: "S", feature: "pinnwand", fresh: true },
   { id: "wetter", label: "Wetter", hint: "Heute und die nächsten Stunden", sizes: ["XS", "S", "M"], size: "XS", fresh: true },
   { id: "notizen", label: "Notizen", hint: "Schnellnotiz + Angeheftetes", sizes: ["XS", "S", "M"], size: "XS", feature: "notizen" },
+  { id: "pinnwand", label: "Pinnwand", hint: "Zettel für alle, wie am Kühlschrank", sizes: ["S", "M"], size: "S", feature: "pinnwand", fresh: true },
   { id: "termine", label: "Termine", hint: "Die nächsten von heute", sizes: ["S", "M"], size: "M" },
   { id: "aufgaben", label: "Aufgaben", hint: "Was heute dran ist", sizes: ["S", "M"], size: "M" },
   { id: "essen", label: "Essen", hint: "Gericht von heute", sizes: ["S", "M"], size: "S" },
-  { id: "einkauf", label: "Einkaufsliste", hint: "Was ihr braucht, nach Laden", sizes: ["S", "M"], size: "S" },
   { id: "wundertuete", label: "Wundertüte", hint: "Jeden Tag was Neues: Witze, Plattdeutsch und Angeberwissen", sizes: ["S", "M"], size: "S", feature: "wundertuete", fresh: true },
+  { id: "einkauf", label: "Einkaufsliste", hint: "Was ihr braucht, nach Laden", sizes: ["S", "M"], size: "M" },
   { id: "spendentopf", label: "Spendentopf", hint: "Jeder Euro geht in eure Region", sizes: ["M"], size: "M", feature: "spendentopf", fresh: true },
   { id: "tipps", label: "Tipps fürs Wochenende", hint: "Was in eurer Nähe los ist", sizes: ["M"], size: "M", feature: "regiontipps", fresh: true },
   { id: "timer", label: "Timer", hint: "Bis zu 5 Timer und eine Stoppuhr", sizes: ["XS", "S"], size: "XS", fresh: true },
-  { id: "sport", label: "Sport", hint: "Stempelkarte der Woche", sizes: ["XS", "S", "M"], size: "XS", feature: "sport", fresh: true },
-  { id: "vorrat", label: "Im Haus", hint: "Bald aufbrauchen und spontan daraus kochen", sizes: ["XS", "S"], size: "XS", feature: "vorrat" },
+  { id: "sport", label: "Sport", hint: "Stempelkarte der Woche", sizes: ["XS", "S", "M"], size: "S", feature: "sport", fresh: true },
+  { id: "vorrat", label: "Im Haus", hint: "Bald aufbrauchen und spontan daraus kochen", sizes: ["S", "M"], size: "S", feature: "vorrat" },
   { id: "post", label: "Post", hint: "Briefe und Rechnungen", sizes: ["S", "M"], size: "M", soon: true },
 ];
 
@@ -53,37 +54,56 @@ export const tileMeta = (id: HomeTileId) => HOME_TILES.find((t) => t.id === id)!
 export const tileLabel = (id: HomeTileId) => HOME_TILES.find((t) => t.id === id)?.label ?? id;
 
 /**
- * Standard je Haushalt (Tafel 119) – für neue Nutzer und den Beispiel-Tag.
- * Familie / zu zweit: Pinnwand S | Wetter XS über Notizen XS · Termine M ·
- * Aufgaben M · Essen S | Einkauf S. Allein (Pinnwand aus): Wetter XS + Sport
- * XS | Notizen XS + Im Haus XS · Termine M · Aufgaben M · Essen S | Einkauf S.
- * Timer hat keinen festen Platz (erscheint nur, solange einer läuft).
+ * Standard je Haushalt (Tafel 140, A-050) – für neue Nutzer, den
+ * Beispiel-Tag und „Neue Standard-Ordnung übernehmen“. Oben die Mini-Kreise
+ * (Sport · Pause · Timer · Rätsel, `heute/kreise.ts`), dann Familie / zu
+ * zweit: Wetter XS über Notizen XS | Pinnwand S · Termine M · Aufgaben M ·
+ * Essen S | Wundertüte S · Einkauf M (Läden nebeneinander). Allein (Pinnwand
+ * aus): Wetter XS über Notizen XS | Wundertüte S · Termine M · Aufgaben M ·
+ * Essen M · Einkauf M. Sport, Timer und Im Haus stehen nicht mehr als
+ * Kachel im Standard (Sport/Timer sind Kreise, Im Haus nur wählbar S/M).
  */
-const STANDARD: Record<"gemeinsam" | "allein", HomeTileId[]> = {
-  gemeinsam: ["pinnwand", "wetter", "notizen", "termine", "aufgaben", "essen", "einkauf"],
-  allein: ["wetter", "sport", "notizen", "vorrat", "termine", "aufgaben", "essen", "einkauf"],
+const STANDARD: Record<"gemeinsam" | "allein", { id: HomeTileId; size: TileSize }[]> = {
+  gemeinsam: [
+    { id: "wetter", size: "XS" },
+    { id: "notizen", size: "XS" },
+    { id: "pinnwand", size: "S" },
+    { id: "termine", size: "M" },
+    { id: "aufgaben", size: "M" },
+    { id: "essen", size: "S" },
+    { id: "wundertuete", size: "S" },
+    { id: "einkauf", size: "M" },
+  ],
+  allein: [
+    { id: "wetter", size: "XS" },
+    { id: "notizen", size: "XS" },
+    { id: "wundertuete", size: "S" },
+    { id: "termine", size: "M" },
+    { id: "aufgaben", size: "M" },
+    { id: "essen", size: "M" },
+    { id: "einkauf", size: "M" },
+  ],
 };
 
 /**
- * Kacheln, die nur ganz neue Nutzer beim ersten Start dazubekommen (A-022:
- * Mias Wundertüte als S direkt hinter Essen + Einkauf, `ersteStartseite`).
- * Bestehenden schieben sie sich nie in die Anordnung, auch nicht beim
- * Haushaltswechsel; der Tafel-119-Standard bleibt, wie er ist.
+ * Kacheln, die beim Haushaltswechsel nie von selbst dazukommen (A-022: Mias
+ * Wundertüte gehört zum Standard neuer Nutzer, schiebt sich bestehenden aber
+ * nie in die Anordnung).
  */
 const NUR_NEU: HomeTileId[] = ["wundertuete"];
 
 const standardOf = (h: Haushalt) => STANDARD[h === "allein" ? "allein" : "gemeinsam"];
 
-/** Standard-Anordnung eines Haushalts: sichtbare in ihrer Reihenfolge, dahinter alle übrigen (unsichtbar) */
+/** Standard-Anordnung eines Haushalts: sichtbare in ihrer Reihenfolge und Größe, dahinter alle übrigen (unsichtbar) */
 export function defaultHome(haushalt: Haushalt = "familie"): HomeTile[] {
   const on = standardOf(haushalt);
-  const order = [...on, ...IDS.filter((id) => !on.includes(id))];
-  return order.map((id) => ({ id, visible: on.includes(id), size: tileMeta(id).size }));
+  const ids = on.map((t) => t.id);
+  return [...on.map((t) => ({ id: t.id, visible: true, size: t.size })), ...IDS.filter((id) => !ids.includes(id)).map((id) => ({ id, visible: false, size: tileMeta(id).size }))];
 }
 
-/** Startseite beim allerersten Start: Standard des Haushalts + die Wundertüte (S) hinter Essen + Einkauf */
+/** Startseite beim allerersten Start (seit Tafel 140 = der Standard des Haushalts, mit Wundertüte) */
 export function ersteStartseite(haushalt: Haushalt = "familie"): HomeTile[] {
-  return NUR_NEU.reduce((tiles, id) => applyHomeChange(tiles, { tile: id, action: "zeigen" }), defaultHome(haushalt));
+  return defaultHome(haushalt);
 }
 
 /** Standard für Familie / zu zweit (Launch 1.0: mit Notizen; Im Haus nur über die Auswahl) */
@@ -134,11 +154,18 @@ export const fitSize = (id: HomeTileId, size: unknown): TileSize => {
   return [...meta.sizes].sort((a, b) => Math.abs(RANG[a] - r) - Math.abs(RANG[b] - r) || RANG[b] - RANG[a])[0];
 };
 
-/** Essen und Einkauf direkt hintereinander (Essen zuerst), wenn beide sichtbar sind */
+/** Essen + Einkauf sind nur ein Paar, wenn beide sichtbar und beide S sind (Tafel 140: Einkauf M steht für sich) */
+const istPaar = (list: HomeTile[]) => {
+  const a = list.find((t) => t.id === PAIR[0]);
+  const b = list.find((t) => t.id === PAIR[1]);
+  return Boolean(a?.visible && b?.visible && a.size === "S" && b.size === "S");
+};
+
+/** Essen und Einkauf direkt hintereinander (Essen zuerst), wenn sie ein Paar sind (beide sichtbar, beide S) */
 function keepPair(list: HomeTile[]): HomeTile[] {
   const a = list.findIndex((t) => t.id === PAIR[0]);
   const b = list.findIndex((t) => t.id === PAIR[1]);
-  if (a < 0 || b < 0 || !list[a].visible || !list[b].visible || b === a + 1) return list;
+  if (a < 0 || b < 0 || !istPaar(list) || b === a + 1) return list;
   // Der Partner kommt an die Stelle des ersten der beiden
   const copy = list.filter((t) => t.id !== PAIR[0] && t.id !== PAIR[1]);
   copy.splice(Math.min(a, b), 0, list[a], list[b]);
@@ -165,7 +192,7 @@ export function sanitizeHome(raw: unknown): HomeTile[] {
 function placeByStandard(list: HomeTile[], tile: HomeTile): HomeTile[] {
   const rest = list.filter((t) => t.id !== tile.id);
   const partner = partnerOf(tile.id);
-  const p = partner ? rest.findIndex((t) => t.id === partner && t.visible) : -1;
+  const p = partner && tile.size === "S" ? rest.findIndex((t) => t.id === partner && t.visible && t.size === "S") : -1;
   if (p >= 0) {
     // Paar: Essen links neben, Einkauf rechts neben den anderen
     rest.splice(tile.id === "essen" ? p : p + 1, 0, tile);
@@ -198,10 +225,32 @@ export function standardLayout(tiles: HomeTile[], haushalt?: Haushalt): HomeTile
   return keepPair(defaultHome(h).map((d) => ({ id: d.id, visible: list.find((t) => t.id === d.id)?.visible ?? false, size: d.size })));
 }
 
+/**
+ * „Neue Standard-Ordnung übernehmen“ (A-050, Tafel 140): die Standard-Kacheln
+ * des Haushalts in Reihenfolge und Größe der Tafel, dahinter alle übrigen
+ * Kacheln, die man selbst sichtbar hatte (in ihrer Reihenfolge und Größe).
+ * Farben bleiben, nichts wird ausgeblendet oder gelöscht. `aus` = Kacheln,
+ * deren Baustein aus ist (kommen nicht dazu).
+ */
+export function neueStandardOrdnung(tiles: HomeTile[], haushalt: Haushalt, aus: HomeTileId[] = []): HomeTile[] {
+  const list = sanitizeHome(tiles);
+  const std = standardOf(haushalt).filter((t) => !aus.includes(t.id));
+  const ids = std.map((t) => t.id);
+  const farbe = (id: HomeTileId) => list.find((t) => t.id === id)?.farbe;
+  const vorn = std.map((t) => withFarbe({ id: t.id, visible: true, size: t.size }, farbe(t.id)));
+  return sanitizeHome([...vorn, ...list.filter((t) => !ids.includes(t.id))]);
+}
+
+/** Steht schon genau die neue Standard-Ordnung da? (dann braucht es den Knopf nicht) */
+export function hatNeueStandardOrdnung(tiles: HomeTile[], haushalt: Haushalt, aus: HomeTileId[] = []): boolean {
+  const shape = (l: HomeTile[]) => l.filter((t) => t.visible && !aus.includes(t.id)).map((t) => `${t.id}:${t.size}`).join();
+  return shape(sanitizeHome(tiles)) === shape(neueStandardOrdnung(tiles, haushalt, aus));
+}
+
 /** Kachel (bzw. das Paar Essen + Einkauf) als Block an eine neue Stelle */
 function moveBlock(list: HomeTile[], id: HomeTileId, to: "hoch" | "runter" | "oben" | "unten"): HomeTile[] {
   const partner = partnerOf(id);
-  const together = partner && list.find((t) => t.id === partner)?.visible && list.find((t) => t.id === id)?.visible;
+  const together = partner && istPaar(list);
   const ids = together ? PAIR : [id];
   const block = list.filter((t) => ids.includes(t.id));
   const rest = list.filter((t) => !ids.includes(t.id));
@@ -216,7 +265,7 @@ function moveBlock(list: HomeTile[], id: HomeTileId, to: "hoch" | "runter" | "ob
     const after = visibleRest.filter((i) => i >= start);
     at = to === "hoch" ? (before.length ? before[before.length - 1] : start) : after.length ? after[0] + 1 : start;
     // Nie zwischen Essen und Einkauf: am ganzen Paar vorbei
-    if (rest[at - 1]?.id === PAIR[0] && rest[at]?.id === PAIR[1] && rest[at - 1].visible && rest[at].visible) at += to === "hoch" ? -1 : 1;
+    if (rest[at - 1]?.id === PAIR[0] && rest[at]?.id === PAIR[1] && istPaar(rest)) at += to === "hoch" ? -1 : 1;
   }
   rest.splice(Math.max(0, Math.min(rest.length, at)), 0, ...block);
   return rest;
@@ -292,7 +341,8 @@ export function describeHomeChange(change: HomeChange): string {
   }
 }
 
-type HomeStore = { version: 9; tiles: HomeTile[]; tipSeen: boolean };
+type HomeStore = { version: 10; tiles: HomeTile[]; tipSeen: boolean; kreise: Kreis[] };
+type HomeStoreV9 = { version: 9; tiles: HomeTile[]; tipSeen: boolean };
 
 type RawTile = { id?: string; visible?: boolean; size?: string };
 
@@ -308,6 +358,25 @@ type RawTile = { id?: string; visible?: boolean; size?: string };
  */
 export function migrateHome(raw: unknown): HomeStore | null {
   if (!raw || typeof raw !== "object") return null;
+  const r = raw as { version?: number; tiles?: unknown; tipSeen?: unknown; kreise?: unknown };
+  if (r.version === 10) return { version: 10, tiles: sanitizeHome(r.tiles), tipSeen: r.tipSeen === true, kreise: sanitizeKreise(r.kreise) };
+  const alt = migrateBis9(raw);
+  return alt ? { version: 10, tiles: zuKreisen(alt.tiles), tipSeen: alt.tipSeen, kreise: STANDARD_KREISE } : null;
+}
+
+/**
+ * v9 → v10 (A-050, Tafel 143): die XS-Kacheln Sport und Timer werden Kreise
+ * oben (die Kachel wird nur ausgeblendet, nie gelöscht; Sport/Timer in S
+ * bzw. M bleiben Kacheln). Im Haus kommt aus der Anordnung (Bereich bleibt
+ * unter Essen, als Kachel in „Startseite bearbeiten“ wieder wählbar S/M).
+ * Die übrige Anordnung bleibt genau, wie sie ist; die Kreise stehen in
+ * Standard-Reihenfolge.
+ */
+export function zuKreisen(tiles: HomeTile[]): HomeTile[] {
+  return tiles.map((t) => ((t.id === "sport" || t.id === "timer") && t.size === "XS" && t.visible ? { ...t, visible: false } : t.id === "vorrat" && t.visible ? { ...t, visible: false } : t));
+}
+
+function migrateBis9(raw: object): HomeStoreV9 | null {
   const r = raw as { version?: number; tiles?: unknown; tipSeen?: unknown };
   const tipSeen = r.tipSeen === true;
   if (r.version === 9 || r.version === 8 || r.version === 7) return { version: 9, tiles: sanitizeHome(r.tiles), tipSeen };
@@ -399,7 +468,7 @@ export function homeForHaushalt(tiles: HomeTile[], from: Haushalt, to: Haushalt)
     return sanitizeHome(defaultHome(to).map((t) => (NUR_NEU.includes(t.id) ? { ...t, ...before.get(t.id) } : { ...t, farbe: before.get(t.id)?.farbe })));
   }
   let next = list;
-  for (const id of standardOf(to)) if (!NUR_NEU.includes(id) && !next.find((t) => t.id === id)?.visible) next = applyHomeChange(next, { tile: id, action: "zeigen" });
+  for (const { id } of standardOf(to)) if (!NUR_NEU.includes(id) && !next.find((t) => t.id === id)?.visible) next = applyHomeChange(next, { tile: id, action: "zeigen" });
   return to === "allein" ? applyHomeChange(next, { tile: "pinnwand", action: "ausblenden" }) : next;
 }
 
@@ -410,7 +479,8 @@ export function loadHomeTiles(): HomeTile[] {
 }
 
 export function saveHomeTiles(tiles: HomeTile[]) {
-  store.save({ version: 9, tiles: sanitizeHome(tiles), tipSeen: store.load()?.tipSeen ?? false });
+  const s = store.load();
+  store.save({ version: 10, tiles: sanitizeHome(tiles), tipSeen: s?.tipSeen ?? false, kreise: s?.kreise ?? STANDARD_KREISE });
 }
 
 /** Einmaliger Hinweis "Halte die Startseite gedrückt …" */
@@ -420,7 +490,7 @@ export function useHomeTipSeen(): boolean | undefined {
 }
 
 export function markHomeTipSeen() {
-  store.save({ version: 9, tiles: loadHomeTiles(), tipSeen: true });
+  store.save({ version: 10, tiles: loadHomeTiles(), tipSeen: true, kreise: loadKreise() });
 }
 
 /** Änderung speichern; liefert Rückgängig */
@@ -442,6 +512,31 @@ export function useHomeTiles(): HomeTile[] | undefined {
   const data = useExternalStore(store.subscribe, store.load, () => undefined);
   if (data === undefined) return undefined;
   return data?.tiles ?? DEFAULT_HOME;
+}
+
+// --- Mini-Kreise oben (A-050, `heute/kreise.ts`) ------------------------------------
+
+/** Gespeicherte Kreise (Reihenfolge, an/aus) */
+export function loadKreise(): Kreis[] {
+  return store.load()?.kreise ?? STANDARD_KREISE;
+}
+
+export function saveKreise(kreise: Kreis[]) {
+  const s = store.load();
+  store.save({ version: 10, tiles: s?.tiles ?? DEFAULT_HOME, tipSeen: s?.tipSeen ?? false, kreise: sanitizeKreise(kreise) });
+}
+
+/** Kreise ändern (Bearbeiten, Mia); liefert Rückgängig */
+export function changeKreise(change: KreisAenderung): () => void {
+  const before = loadKreise();
+  saveKreise(aendereKreise(before, change));
+  return () => saveKreise(before);
+}
+
+export function useKreise(): Kreis[] | undefined {
+  const data = useExternalStore(store.subscribe, store.load, () => undefined);
+  if (data === undefined) return undefined;
+  return data?.kreise ?? STANDARD_KREISE;
 }
 
 // --- Bearbeiten-Modus öffnen (von überall: Einstellungen, Lotte, Link) -----------

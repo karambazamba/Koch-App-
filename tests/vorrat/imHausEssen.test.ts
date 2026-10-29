@@ -113,16 +113,17 @@ describe("Bereich „Im Haus“ unter Essen", () => {
 });
 
 describe("Kachel „Im Haus“", () => {
-  it("XS oder S, nur über die Auswahl (nicht im Standard für Familie)", () => {
+  it("S oder M, nur über die Auswahl (A-032/A-050: in keinem Standard)", () => {
     const meta = HOME_TILES.find((t) => t.id === "vorrat")!;
-    expect(meta.sizes).toEqual(["XS", "S"]);
-    expect(meta.size).toBe("XS");
+    expect(meta.sizes).toEqual(["S", "M"]);
+    expect(meta.size).toBe("S");
     expect(DEFAULT_HOME.find((t) => t.id === "vorrat")?.visible).toBe(false);
     const shown = applyHomeChange(DEFAULT_HOME, { tile: "vorrat", action: "zeigen" });
-    expect(shown.find((t) => t.id === "vorrat")).toMatchObject({ visible: true, size: "XS" });
-    // M gibt es nicht → S (die nächste erlaubte), altes L ebenso
-    expect(applyHomeChange(shown, { tile: "vorrat", action: "mittel" }).find((t) => t.id === "vorrat")?.size).toBe("S");
-    expect(sanitizeHome([{ id: "vorrat", visible: true, size: "L" } as never]).find((t) => t.id === "vorrat")?.size).toBe("S");
+    expect(shown.find((t) => t.id === "vorrat")).toMatchObject({ visible: true, size: "S" });
+    expect(applyHomeChange(shown, { tile: "vorrat", action: "mittel" }).find((t) => t.id === "vorrat")?.size).toBe("M");
+    // XS gibt es nicht mehr → S (alte Anordnungen), altes L → M
+    expect(sanitizeHome([{ id: "vorrat", visible: true, size: "XS" } as never]).find((t) => t.id === "vorrat")?.size).toBe("S");
+    expect(sanitizeHome([{ id: "vorrat", visible: true, size: "L" } as never]).find((t) => t.id === "vorrat")?.size).toBe("M");
   });
 
   it("XS = 1 Sache, S = 2 Sachen „bald aufbrauchen“ (darunter „Was koch ich daraus?“)", () => {

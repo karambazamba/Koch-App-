@@ -15,6 +15,7 @@ import { PLAN_TOOLS } from "@/lib/begleitung/planTools";
 import { findDate } from "@/lib/kalender/parse";
 import { BAUSTEINE } from "@/lib/core/features";
 import { KACHEL_FARBEN, farbWaehlbar, farbeAusWort } from "@/lib/heute/kachelFarben";
+import { KREIS_AKTIONEN, KREIS_IDS, type KreisAktion, type KreisId } from "@/lib/heute/kreise";
 
 type Input = Record<string, unknown>;
 const str = (v: unknown) => (typeof v === "string" ? v.trim() : "");
@@ -192,6 +193,31 @@ export const HOME_TOOLS: BegleitungTool[] = [
       }
       propose(ctx, { id: nextId(ctx), type: "home", change: { tile, action } });
       return { content: `Vorgemerkt: Startseite – ${tile} ${action}.` };
+    },
+  },
+  {
+    area: "alltag",
+    definition: {
+      name: "kreise_anpassen",
+      description:
+        "Die Mini-Kreise oben auf der Startseite (unter dem Datum): sport, pause (Durchatmen), waslos (Was los?), raetsel, timer. aktion: an (wieder oben zeigen), aus (oben rausnehmen, nichts wird gelöscht), nach_vorn, nach_hinten, hoch, runter. Z. B. 'Nimm Rätsel oben raus' → raetsel, aus; 'Timer nach vorn' → timer, nach_vorn; 'Hol die Pause wieder nach oben' → pause, an. Höchstens 5 Kreise. Für Kacheln: startseite_anpassen.",
+      input_schema: {
+        type: "object",
+        properties: {
+          kreis: { type: "string", enum: KREIS_IDS },
+          aktion: { type: "string", enum: KREIS_AKTIONEN },
+        },
+        required: ["kreis", "aktion"],
+        additionalProperties: false,
+      },
+    },
+    run: (ctx, raw) => {
+      const input = (raw ?? {}) as Input;
+      const kreis = str(input.kreis) as KreisId;
+      const aktion = str(input.aktion) as KreisAktion;
+      if (!KREIS_IDS.includes(kreis) || !KREIS_AKTIONEN.includes(aktion)) return fail("kreis und aktion angeben.");
+      propose(ctx, { id: nextId(ctx), type: "kreise", change: { kreis, aktion } });
+      return { content: `Vorgemerkt: Kreis ${kreis} ${aktion}.` };
     },
   },
   {
