@@ -256,6 +256,8 @@ select set_config('request.jwt.claim.sub', 'd4444444-0000-0000-0000-000000000003
 select public.create_household('Familie Fremd 2', 'Fremd');
 select pruefe((select count(*) from public.entries where typ like 'wundertuete-%' or typ like 'raetsel-%') = 0, 'fremder Haushalt sieht keine Wundertüte- oder Rätsel-Zeilen');
 
+reset role;
+
 -- 8) „Was los?“ (A-055): Veranstaltungen lesen alle (auch ohne Konto), schreiben
 --    nur der Server (service role); kein Personenbezug in der Tabelle.
 create or replace function erwarte_fehler_region(stmt text, was text) returns void language plpgsql as $$
