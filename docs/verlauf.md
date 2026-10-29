@@ -6,7 +6,7 @@ ist inzwischen anders. Den aktuellen Stand je Bereich beschreibt
 `docs/bereiche/<bereich>.md`, die festen Regeln stehen in `CLAUDE.md`.
 Ältere Pfadangaben meinen die Orte vor dem Umzug (siehe CLAUDE.md, „Ordner“).
 
-## Mias Wundertüte (A-022, v0.155.0)
+## Mias Wundertüte (A-022, v0.156.0)
 
 - Auftrag A-022 (Tafel 116, Wortlaut `docs/auftraege/A-022-wundertuete.md`),
   ersetzt „Kachel Angeberwissen“. Erst zurückgestellt bis nach dem
@@ -30,7 +30,7 @@ ist inzwischen anders. Den aktuellen Stand je Bereich beschreibt
   Knopf „Lösung“), 6 neue Prüfstand-Sätze. Beispiel-Tag: feste Karte
   Angeberwissen. Doku `docs/bereiche/wundertuete.md` (Regeln, Zählung,
   Nachfüllen als Monats-Auftrag „Wundertüte nachfüllen“).
-- Neu aufgesetzt auf v0.153 (Raster XS · S · M, Wasserzeichen, drei Räume,
+- Neu aufgesetzt auf v0.154 (Raster XS · S · M, Wasserzeichen, drei Räume,
   Ergebnis-Karten): Kachel S/M ohne Platz im Tafel-119-Standard,
   Wasserzeichen Geschenk nur vorne. Nichts abgeschnitten (A-045): Frage und
   Antwort mit Schrift in Stufen statt `line-clamp`, Kopf mit Kurzform bzw.
