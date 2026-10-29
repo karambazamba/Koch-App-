@@ -723,7 +723,7 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
   Antworten erkennt `recognizer.ts` – mit KI über `/api/kennenlernen`
   (Modell `MODEL`, änderbar per `KENNENLERNEN_MODEL`), sonst Regeln.
 
-### Durchatmen (A-051, v0.160.0)
+### Durchatmen (A-051, v0.161.0)
 
 - „Ich brauch kurz Ruhe“, „Atemübung“, „Handy-Pause“, „Kopf leeren“, „Was
   ist jetzt wichtig?“ → `app_befehl` mit dem Satz (Beschreibung in
@@ -735,7 +735,11 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
   (Beschreibung bei `notiz_anlegen`).
 - Ansagen laufen über denselben Weg der Stimme (`speak` mit `datei`, `tempo`,
   `laut`; Datei über `ansageAbspielen` im einen freigeschalteten Abspieler),
-  nie über ElevenLabs live. Details `docs/bereiche/durchatmen.md`.
+  nie über ElevenLabs live. Die Dateien (Lolas Stimme) erzeugt EINMAL der
+  Server (`/api/durchatmen/ansagen-erzeugen`, Knopf „Ansagen erzeugen“ auf
+  „Für Entwickler“ mit dem Prüfstand-Geheimnis) in den öffentlichen Bucket
+  `durchatmen-ansagen`; ohne Dateien spricht das Handy. Details
+  `docs/bereiche/durchatmen.md`.
 
 ### Bausteine im Gespräch
 

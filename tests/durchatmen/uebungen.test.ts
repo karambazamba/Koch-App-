@@ -154,10 +154,11 @@ describe("Ansagen und Stimme", () => {
 
   it("ohne Audiodateien wird die Handy-Stimme gewählt – langsamer und leiser", () => {
     expect(stimmeWeg(null, "ein")).toEqual({ art: "handy", text: "Ein" });
-    // Die mitgelieferte Liste ist leer (der Schlüssel liegt nur in Vercel)
-    const liste = liesAudioListe(JSON.parse(readFileSync(`public${AUDIO_LISTE}`, "utf8")));
+    // Leeres Manifest (noch nichts erzeugt) = Handy-Stimme
+    const liste = liesAudioListe({ version: 1, stimme: null, dateien: {} });
     expect(liste).toBeNull();
     expect(stimmeWeg(liste, "start").art).toBe("handy");
+    expect(AUDIO_LISTE).toBe("/audio/durchatmen/manifest.json");
     expect(HANDY_TEMPO).toBeLessThan(1);
     expect(HANDY_LAUT).toBeLessThan(1);
   });

@@ -1,69 +1,40 @@
-// npm run ansagen – Mias feste Ansagen fürs Durchatmen (A-051) EINMAL vorab
-// erzeugen: Texte aus content/durchatmen/ansagen.json, Stimme MIA_VOICE_ID
-// über ElevenLabs (weich: stability hoch, speed ca. 0,85), Dateien nach
-// public/audio/durchatmen/<id>.mp3 plus Liste index.json. Danach spielt die
-// App sie ab (der Service-Worker merkt sie sich, offline, keine Kosten pro
-// Übung). Ohne Dateien spricht die Stimme des Handys.
+// npm run ansagen – Durchatmen-Ansagen (A-051) auf dem Server erzeugen lassen.
+// Das Skript erzeugt selbst NICHTS und kennt keinen ElevenLabs-Schlüssel: es
+// ruft nur die geschützte Route /api/durchatmen/ansagen-erzeugen auf (die legt
+// die Dateien in den öffentlichen Bucket „durchatmen-ansagen“). Einfacher geht
+// es in der App: Einstellungen → Daten & App → Für Entwickler → „Ansagen
+// erzeugen“.
 //
-// Schlüssel nur aus der Umgebung (ELEVENLABS_API_KEY, liegt in Vercel) – nie
-// ins Repo, nie ausgeben. Fehlt er, bricht das Skript freundlich ab.
-// Es gehen nur die festen Sätze an ElevenLabs, nie Daten von Nutzern.
-//
-//   ELEVENLABS_API_KEY=… MIA_VOICE_ID=… npm run ansagen          alle neu
-//   … npm run ansagen -- --fehlende                              nur fehlende
-//   npm run ansagen -- --liste                                   nur zeigen, was erzeugt würde
+//   MIA_URL=https://mia.karamba-eis.de PRUEFSTAND_SECRET=… npm run ansagen
+//   npm run ansagen -- --liste        nur zeigen, welche Sätze es gibt
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
-const ZIEL = join(ROOT, "public/audio/durchatmen");
 const { saetze } = JSON.parse(readFileSync(join(ROOT, "content/durchatmen/ansagen.json"), "utf8"));
-const args = new Set(process.argv.slice(2));
-const ids = Object.keys(saetze);
 
-if (args.has("--liste")) {
-  for (const id of ids) console.log(`${id}.mp3  „${saetze[id]}“`);
-  console.log(`${ids.length} Ansagen.`);
+if (process.argv.includes("--liste")) {
+  for (const [id, text] of Object.entries(saetze)) console.log(`${id}  „${text}“`);
+  console.log(`${Object.keys(saetze).length} Ansagen.`);
   process.exit(0);
 }
 
-const schluessel = process.env.ELEVENLABS_API_KEY?.trim();
-const stimme = process.env.MIA_VOICE_ID?.trim();
-if (!schluessel || !stimme) {
-  console.log("Ohne ELEVENLABS_API_KEY und MIA_VOICE_ID geht das nicht – beide liegen in Vercel.");
-  console.log("Nichts erzeugt. Die App spricht so lange mit der Stimme des Handys, das ist in Ordnung.");
+const url = process.env.MIA_URL?.trim().replace(/\/+$/, "");
+const geheim = (process.env.PRUEFSTAND_SECRET || process.env.CRON_SECRET || "").trim();
+if (!url || !geheim) {
+  console.log("Dafür braucht es MIA_URL und das Prüfstand-Geheimnis (PRUEFSTAND_SECRET).");
+  console.log("Einfacher: in der App unter Für Entwickler → „Ansagen erzeugen“. Bis dahin spricht die Stimme des Handys.");
   process.exit(0);
 }
 
-const MODELL = process.env.ELEVENLABS_TTS_MODEL?.trim() || "eleven_multilingual_v2";
-const EINSTELLUNG = { stability: 0.8, similarity_boost: 0.75, style: 0, use_speaker_boost: true, speed: 0.85 };
-
-mkdirSync(ZIEL, { recursive: true });
-const liste = { version: 1, stimme: `${stimme.slice(0, 6)}:${MODELL}`, dateien: {} };
-let neu = 0;
-for (const id of ids) {
-  const datei = `${id}.mp3`;
-  const pfad = join(ZIEL, datei);
-  if (args.has("--fehlende") && existsSync(pfad)) {
-    liste.dateien[id] = datei;
-    continue;
-  }
-  const r = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(stimme)}?output_format=mp3_44100_64`, {
-    method: "POST",
-    headers: { "xi-api-key": schluessel, "content-type": "application/json", accept: "audio/mpeg" },
-    body: JSON.stringify({ text: saetze[id], model_id: MODELL, language_code: "de", voice_settings: EINSTELLUNG }),
-  }).catch(() => null);
-  if (!r?.ok) {
-    // Nur der Status, nie Schlüssel oder Antwort-Text
-    console.log(`✗ ${id}: Anbieter-Fehler ${r?.status ?? "Netz"} – übersprungen`);
-    continue;
-  }
-  writeFileSync(pfad, Buffer.from(await r.arrayBuffer()));
-  liste.dateien[id] = datei;
-  neu++;
-  console.log(`✓ ${datei}`);
+const r = await fetch(`${url}/api/durchatmen/ansagen-erzeugen`, { method: "POST", headers: { authorization: `Bearer ${geheim}` } }).catch(() => null);
+if (!r) {
+  console.log("Server nicht erreichbar.");
+  process.exit(1);
 }
-writeFileSync(join(ZIEL, "index.json"), `${JSON.stringify(liste, null, 2)}\n`);
-console.log(`${neu} neu, ${Object.keys(liste.dateien).length} von ${ids.length} da. Danach CACHE_VERSION in public/sw.js erhöhen.`);
+if (r.status === 401) console.log("Das Geheimnis passt nicht.");
+else if (r.status === 503) console.log("Auf dem Server fehlt der Stimmen-Schlüssel, die Stimme oder Supabase (in Vercel).");
+else console.log(JSON.stringify(await r.json().catch(() => ({ status: r.status }))));
+process.exit(r.ok ? 0 : 1);

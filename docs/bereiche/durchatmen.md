@@ -1,6 +1,6 @@
 # Durchatmen
 
-## Feste Regeln (A-051, Tafel 138/139, v0.160.0)
+## Feste Regeln (A-051, Tafel 138/139, v0.161.0)
 
 - **Angebot, nie Pflicht.** Kein Zähler, keine Serie, keine Statistik, kein
   Lob-Feuerwerk, keine Gesundheitsversprechen, keine Diagnosen. Ende nur
@@ -18,14 +18,17 @@
 - Nichts wird aufgenommen. Gespeichert (pro Gerät): Art der Anleitung,
   Lieblinge, Schalter „Leises Angebot“, Stumm-Hinweis gezeigt, Anlässe der
   heutigen Angebote.
-- ElevenLabs nur beim einmaligen Erzeugen der festen Ansagen
-  (`npm run ansagen`), ohne Nutzerdaten. Schlüssel nur in Vercel.
+- Lolas Ansagen entstehen EINMAL auf dem Server (`/api/durchatmen/ansagen-erzeugen`,
+  Admin-Geheimnis), ElevenLabs bekommt nur die festen Sätze, keine Nutzerdaten.
+  Ablage im öffentlichen Supabase-Bucket `durchatmen-ansagen` (ohne
+  Personenbezug). Schlüssel nur in Vercel, nie im Client oder Log.
 
 ## Wo im Code
 
 - `src/lib/durchatmen/`
   - `uebungen.ts` – Typen, Sorten, Texte (`dauerText`, `listenZeile`, `endeSatz`, `restText`, `sortiert`).
-  - `ansagen.ts` – Ansagen, Liste der erzeugten Dateien (`liesAudioListe`), `stimmeWeg` (Datei oder Handy-Stimme).
+  - `ansagen.ts` – Ansagen, Manifest der erzeugten Dateien (`liesAudioListe`), `stimmeWeg` (Datei oder Handy-Stimme).
+  - `ansagenServer.ts` – nur Server: `ansagenErzeugen` (ElevenLabs → Bucket, nur Fehlendes), `ansageDatei`.
   - `ablauf.ts` – rein: `standBei`, `ereignisse`, `Lauf` (Uhr eingespeist, Pause/Weiter).
   - `vorschlag.ts` – `vorschlag(now, lieblinge)` (morgens Fokus, nachmittags Augen, abends Atmen; Lieblinge öfter, fest je Tag und 90-Minuten-Abschnitt), `kreisText(u)` → `["1 Min", "Handy-Pause"]`.
   - `angebot.ts` – rein: `durchatmenAngebot(lage)` → Anlass | null, `durchatmenThema(anlass, heute, detail)` → fertiges Thema.
@@ -40,6 +43,7 @@
   - `UebungVollbild.tsx`, `AtemAnimation.tsx`, `useUebungLauf.ts` – Vollbild.
   - `FokusGespraech.tsx`, `kopfLeeren.ts` – „Eine Sache“, „Kopf leeren“.
   - `DurchatmenEinstellungen.tsx` – `/profil/durchatmen`.
+  - `AnsagenErzeugen.tsx` – Knopf auf „Für Entwickler“.
 
 ### Für den Kreis auf der Startseite (A-050)
 
@@ -94,8 +98,22 @@ das Fenster selbst gerendert wurde).
   leeren“, „Was ist jetzt wichtig?“ → `app_befehl` mit dem Satz bzw.
   Sofort-Weg (eindeutige Kurzbefehle, keine Fragen) → `runInstantOps`
   startet die Übung, die Bühne geht zu. Ohne KI: `useChatRules`.
-- **Offline:** `public/sw.js` merkt sich `public/audio/durchatmen/index.json`
-  und die dort gelisteten Dateien; fehlende Dateien liefern still 404.
+- **Ansagen erzeugen (einmal, Felix):** Einstellungen → Daten & App → Für
+  Entwickler → Prüfstand-Geheimnis eintippen (das aus Vercel, nicht der
+  ElevenLabs-Schlüssel) → „Ansagen erzeugen“. Der Server
+  (`/api/durchatmen/ansagen-erzeugen`, `lib/durchatmen/ansagenServer.ts`)
+  holt mit `ELEVENLABS_API_KEY` und `MIA_VOICE_ID` (stability 0,8, speed 0,85)
+  jede Ansage aus `content/durchatmen/ansagen.json`, legt sie als
+  `<id>-<hash>.mp3` (Hash aus Text, Stimme, Modell, Einstellung) in den
+  Bucket `durchatmen-ansagen` und schreibt `manifest.json`. Nochmal tippen
+  erzeugt nur Fehlendes oder Geändertes (keine Kosten). Alternativ
+  `MIA_URL=… PRUEFSTAND_SECRET=… npm run ansagen` (ruft nur die Route).
+- **Bucket:** Migration `20261105120000_durchatmen_ansagen.sql` (öffentlich
+  lesen, schreiben nur der Server), geprüft in `tests/datenbank/sicherheit.test.sql`.
+- **Laden und offline:** Die App holt `/audio/durchatmen/manifest.json` und
+  die Dateien über die eigene Adresse (Weiterleitung auf den Bucket in
+  `next.config.ts`, nur mit Supabase). `public/sw.js` merkt sich Manifest und
+  Dateien; fehlt etwas, still 404 und die Handy-Stimme spricht.
 
 ## Daten
 
@@ -106,6 +124,7 @@ das Fenster selbst gerendert wurde).
 
 - `tests/durchatmen/uebungen.test.ts` – alle 12 laufen in simulierter Zeit
   durch, grobe Uhr, Pause, Ansagen, Handy-Stimme ohne Dateien.
+- `tests/durchatmen/ansagenServer.test.ts` – ElevenLabs nachgestellt: einmal alle, danach nichts, Hash, Fehler, aus ohne Schlüssel, Zugang.
 - `tests/durchatmen/durchatmen.test.ts` – Vorschlag, Lieblinge öfter, Art
   gemerkt, Angebot ≤ 2×/Tag und nie nachts, nie Push, Eine Sache ganz oben,
   Kopf leeren ohne KI, Mia-Sätze, Baustein.

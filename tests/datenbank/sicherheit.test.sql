@@ -205,3 +205,23 @@ select set_config('request.jwt.claim.sub', 'd3333333-0000-0000-0000-000000000002
 select pruefe((select count(*) from public.entries where id = 'pz-privat') = 1, 'für alle sichtbar gemacht: Jan sieht ihn jetzt');
 
 reset role;
+
+-- Durchatmen-Ansagen (A-051): Bucket öffentlich lesbar, schreiben nur der Server (service_role)
+grant execute on function erwarte_fehler(text, text, text) to anon;
+insert into storage.objects (bucket_id, name) values ('durchatmen-ansagen', 'manifest.json'), ('durchatmen-ansagen', 'ein-0-abc12345.mp3');
+select pruefe((select public from storage.buckets where id = 'durchatmen-ansagen') = true, 'Bucket durchatmen-ansagen ist öffentlich');
+set role anon;
+select pruefe((select count(*) from storage.objects where bucket_id = 'durchatmen-ansagen') = 2, 'anon liest die Ansagen');
+select erwarte_fehler($$insert into storage.objects (bucket_id, name) values ('durchatmen-ansagen', 'boese.mp3')$$, 'row-level security', 'anon legt keine Ansage ab');
+delete from storage.objects where bucket_id = 'durchatmen-ansagen';
+reset role;
+set role authenticated;
+select set_config('request.jwt.claim.sub', 'd1111111-0000-0000-0000-000000000001', false);
+select pruefe((select count(*) from storage.objects where bucket_id = 'durchatmen-ansagen') = 2, 'Angemeldete lesen die Ansagen');
+select erwarte_fehler($$insert into storage.objects (bucket_id, name) values ('durchatmen-ansagen', 'boese.mp3')$$, 'row-level security', 'Angemeldete legen keine Ansage ab');
+update storage.objects set name = 'weg.mp3' where bucket_id = 'durchatmen-ansagen';
+delete from storage.objects where bucket_id = 'durchatmen-ansagen';
+reset role;
+select pruefe((select count(*) from storage.objects where bucket_id = 'durchatmen-ansagen' and name in ('manifest.json', 'ein-0-abc12345.mp3')) = 2, 'niemand außer dem Server ändert oder löscht Ansagen');
+-- Andere Buckets bleiben zu: die Lese-Regel gilt nur für diesen Bucket
+select pruefe((select count(*) from pg_policies where schemaname = 'storage' and policyname = 'durchatmen_ansagen_lesen' and qual like '%durchatmen-ansagen%') = 1, 'Lese-Regel nur für durchatmen-ansagen');

@@ -81,15 +81,16 @@ const PRECACHE_URLS = [
   "/demo/gericht.webp",
 ];
 
-// Durchatmen (A-051): einmal vorab erzeugte Ansagen (public/audio/durchatmen/,
-// Liste index.json) – sobald es Dateien gibt, werden sie gemerkt (offline).
+// Durchatmen (A-051): einmal auf dem Server erzeugte Ansagen (Bucket
+// „durchatmen-ansagen“, über /audio/durchatmen/ mit manifest.json) – sobald es
+// Dateien gibt, werden sie gemerkt (offline).
 // Fehlt etwas, passiert nichts: die App spricht dann mit der Stimme des Handys.
 const AUDIO_ORDNER = "/audio/durchatmen/";
 async function ansagenMerken(cache) {
   try {
-    const r = await fetch(`${AUDIO_ORDNER}index.json`, { cache: "no-store" });
+    const r = await fetch(`${AUDIO_ORDNER}manifest.json`, { cache: "no-store" });
     if (!r.ok) return;
-    await cache.put(`${AUDIO_ORDNER}index.json`, r.clone());
+    await cache.put(`${AUDIO_ORDNER}manifest.json`, r.clone());
     const liste = await r.json();
     const dateien = Object.values((liste && liste.dateien) || {}).filter((d) => typeof d === "string" && /^[a-z0-9-]+\.(mp3|m4a|ogg|wav)$/.test(d));
     await Promise.all(dateien.map((d) => cache.add(AUDIO_ORDNER + d).catch(() => {})));

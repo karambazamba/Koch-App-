@@ -76,6 +76,8 @@ ist inzwischen anders. Den aktuellen Stand je Bereich beschreibt
 
 ## Durchatmen + Mia leitet an (A-051, v0.160.0)
 
+## Durchatmen + Mia leitet an (A-051, v0.161.0)
+
 - Paket B des Gesamtauftrags vom 29.10. (A-050 bis A-053, Tafel 138/139):
   Baustein `durchatmen`, Standard an (Bausteine v7: beim Update einmal an),
   von Felix gewollte Ausnahme vom Launch-Stopp.
@@ -86,8 +88,10 @@ ist inzwischen anders. Den aktuellen Stand je Bereich beschreibt
   sortiert (KI zuerst, sonst Regel-Weg).
 - Stimme und Klang: Art „Stimme + Klang“ / „Nur Klang“ / „Still“ pro Gerät
   (`wasgibts.durchatmen` v1), Ansagen über `speak` (Datei oder Handy-Stimme
-  langsamer und leiser), Skript `npm run ansagen` (ElevenLabs nur beim
-  Erzeugen; der Schlüssel liegt nur in Vercel, deshalb noch keine Dateien),
+  langsamer und leiser), Lolas Ansagen einmal auf dem Server erzeugen
+  (`/api/durchatmen/ansagen-erzeugen`, Knopf auf „Für Entwickler“) in den
+  öffentlichen Bucket `durchatmen-ansagen` (Migration, Manifest, Hash im
+  Dateinamen, nur Fehlendes),
   Web-Audio-Klang, Wake Lock, Vibration, Stumm-Schalter-Hinweis einmal.
 - Jetzt-Karte: Thema `durchatmen` (höchstens 2× am Tag, nie nachts, nie
   Push), Mia: `app_befehl` + Sofort-Weg, 5 + 12 Prüfstand-Sätze. Einstieg

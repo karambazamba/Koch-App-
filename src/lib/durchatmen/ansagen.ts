@@ -1,9 +1,11 @@
 // Mias feste Ansagen fürs Durchatmen (A-051, Tafel 139): Texte aus
-// `content/durchatmen/ansagen.json`. Einmal vorab mit Mias Stimme erzeugt
-// (`scripts/ansagen-erzeugen.mjs`), liegen sie als kleine Dateien in
-// `public/audio/durchatmen/` samt Liste `index.json` (der Service-Worker merkt
-// sie sich → offline, keine Kosten pro Übung). Fehlt eine Datei (oder die
-// ganze Liste), spricht die Stimme des Handys – langsamer und leiser.
+// `content/durchatmen/ansagen.json`. Einmal auf dem Server mit Mias Stimme
+// erzeugt (`/api/durchatmen/ansagen-erzeugen`), liegen sie im öffentlichen
+// Supabase-Bucket „durchatmen-ansagen“ samt `manifest.json`. Die App holt sie
+// über die eigene Adresse `/audio/durchatmen/…` (Weiterleitung in
+// next.config.ts), der Service-Worker merkt sie sich → offline, keine Kosten
+// pro Übung. Fehlt eine Datei (oder das Manifest), spricht die Stimme des
+// Handys – langsamer und leiser.
 
 import roh from "@/content/durchatmen/ansagen.json";
 import type { Uebung } from "@/lib/durchatmen/uebungen";
@@ -12,7 +14,7 @@ export const ANSAGEN: Readonly<Record<string, string>> = (roh as { saetze: Recor
 
 /** Ordner der erzeugten Dateien (öffentlich) */
 const AUDIO_ORDNER = "/audio/durchatmen";
-export const AUDIO_LISTE = `${AUDIO_ORDNER}/index.json`;
+export const AUDIO_LISTE = `${AUDIO_ORDNER}/manifest.json`;
 
 /** Liste der erzeugten Dateien: ID → Dateiname */
 export type AudioListe = { version: 1; stimme: string | null; dateien: Record<string, string> };
