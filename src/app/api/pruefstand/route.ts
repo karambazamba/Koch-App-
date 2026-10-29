@@ -8,7 +8,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { connection } from "next/server";
 import { runAssistant, type CreateMessage } from "@/lib/begleitung/engine";
-import type { ModelChoice } from "@/lib/begleitung/modellwahl";
+import { alltagsModell, type ModelChoice } from "@/lib/begleitung/modellwahl";
 import { aiSetup } from "@/lib/begleitung/guard";
 import { createMockModel } from "@/lib/begleitung/mock";
 import { PRUEFSAETZE, type PruefSatz } from "@/lib/begleitung/pruefstand/saetze";
@@ -19,7 +19,7 @@ import { PRUEF_HEUTE, PRUEF_UHR, pruefHaushalt, pruefWetter } from "@/lib/beglei
 export const maxDuration = 300;
 
 const BATCH = 3;
-const CHOICE: ModelChoice = process.env.LOTTE_MODEL || { small: process.env.LOTTE_SMALL_MODEL || "claude-haiku-5-5", large: process.env.LOTTE_LARGE_MODEL || "claude-sonnet-5-5" };
+const CHOICE: ModelChoice = process.env.LOTTE_MODEL || { small: alltagsModell(), large: process.env.LOTTE_LARGE_MODEL || "claude-sonnet-5-5" };
 
 /** Zugang nur mit eigenem Geheimnis (zeitkonstanter Vergleich) */
 function allowed(request: Request): boolean {

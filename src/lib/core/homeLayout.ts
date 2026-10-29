@@ -36,7 +36,7 @@ export const HOME_TILES: { id: HomeTileId; label: string; hint: string; sizes: T
   { id: "aufgaben", label: "Aufgaben", hint: "Was heute dran ist", sizes: ["S", "M"], size: "M" },
   { id: "essen", label: "Essen", hint: "Gericht von heute", sizes: ["S", "M"], size: "S" },
   { id: "einkauf", label: "Einkaufsliste", hint: "Was ihr braucht, nach Laden", sizes: ["S", "M"], size: "S" },
-  { id: "wundertuete", label: "Wundertüte", hint: "Jeden Tag was Neues: Angeberwissen, Platt, Rätsel und Spiele für den Tisch", sizes: ["S", "M"], size: "S", feature: "wundertuete", fresh: true },
+  { id: "wundertuete", label: "Wundertüte", hint: "Jeden Tag was Neues: Witze, Plattdeutsch und Angeberwissen", sizes: ["S", "M"], size: "S", feature: "wundertuete", fresh: true },
   { id: "spendentopf", label: "Spendentopf", hint: "Jeder Euro geht in eure Region", sizes: ["M"], size: "M", feature: "spendentopf", fresh: true },
   { id: "tipps", label: "Tipps fürs Wochenende", hint: "Was in eurer Nähe los ist", sizes: ["M"], size: "M", feature: "regiontipps", fresh: true },
   { id: "timer", label: "Timer", hint: "Bis zu 5 Timer und eine Stoppuhr", sizes: ["XS", "S"], size: "XS", fresh: true },

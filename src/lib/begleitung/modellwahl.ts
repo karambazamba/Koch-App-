@@ -10,6 +10,13 @@ import type { AssistantRequest } from "@/lib/begleitung/protocol";
 import { looksLikeMail } from "@/lib/begleitung/mail";
 import { plauderArt } from "@/lib/mia/plaudern";
 
+/**
+ * Modell für den Alltag (Haiku) – dieselbe ID für das Gespräch (`/api/lotte`,
+ * Prüfstand) und kleine Server-Aufgaben wie den Notfall der Wundertüte;
+ * per `LOTTE_SMALL_MODEL` änderbar. Nur auf dem Server aufrufen.
+ */
+export const alltagsModell = () => process.env.LOTTE_SMALL_MODEL || "claude-haiku-5-5";
+
 /** Klein (Haiku) für den Alltag, groß (Sonnet) für Planen, Rezepte, Mails – oder ein fest eingestelltes Modell */
 export type ModelChoice = string | { small: string; large: string };
 

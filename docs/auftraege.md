@@ -25,7 +25,7 @@ Bei Widersprüchen gilt der neuere Auftrag. Gemergt wird in dieser Reihenfolge, 
 | P5 | Essen/Kochen | A-025 Rezeptseite, Kochmodus, Schnellanleitung (Tafel 122) | fertig v0.146 |
 | P6 | Ergebnis-Karten | A-037 (Tafel 126) | fertig v0.151 |
 | P7 | Sport-Seite | A-044 Stempelkarte (Tafel 132) | fertig v0.153 |
-| P8 | Durchatmen, Rätsel, Wundertüte | A-051 Durchatmen + Stimme/Klang (Tafel 138/139), A-052 Rätsel + Wundertüte | A-051 fertig v0.159; A-052 in Arbeit |
+| P8 | Durchatmen, Rätsel, Wundertüte | A-051 Durchatmen + Stimme/Klang (Tafel 138/139), A-052 Rätsel + Wundertüte | A-051 fertig v0.159; A-052 fertig v0.160 |
 | P9 | Was los? | A-055 (Tafel 142) | in Arbeit, Ziel v0.162; Parser wartet auf Freigabe von www.kreis-oh.de |
 | P10 | Volle Prüfung | A-053 | am Ende |
 
@@ -168,7 +168,7 @@ Ersetzt und nicht mehr gebaut: Essen-Kachel Tafel 121/122/133 → Tafel 134 (Rez
 | A-036 | Wasserzeichen für alle Kacheln ohne eigenes Bild (eine Komponente, Zuordnung je Kachel, nicht bei Wetter/Essen/Pinnwand/Jetzt-Karte, nicht im Look „Schlicht“) | Tafel 124 A (kein Bild), `tafel-125.png` | fertig v0.153 |
 | A-037 | Mias Ergebnis-Karten wie im Clip + Aufleuchten in der Kachel (Wortlaut `docs/auftraege/A-037-ergebniskarten.md`) | `tafel-126.png` | fertig v0.151 |
 | A-038 | SOFORT: Vorschläge erst anschauen, dann nehmen (Rezept-Vorschau als Fenster, überall wo Gerichte zur Auswahl stehen; Wortlaut `docs/auftraege/A-038-vorschau.md`) | `tafel-122-essen-rezept.png` | fertig v0.146 |
-| A-039 | Monatlich: Mias Wundertüte nachfüllen (Pool von 459 Richtung ~845, nur geprüfte Fakten, Quellen gegenprüfen; danach Durchklick `wundertueteAlle`) | – | wartet (nach A-022) |
+| A-039 | Monatlich: Mias Wundertüte nachfüllen (Pool von 459 Richtung ~845, nur geprüfte Fakten, Quellen gegenprüfen; danach Durchklick `wundertueteAlle`). Seit A-052 als neues Paket `content/wundertuete/paket-NNN.json` bzw. `content/raetsel/paket-NNN.json` (je bis zu 500, + eine Zeile in `pakete.ts`). Plattdeutsch und Angeberwissen nur geprüft (Witze/Rätsel legt Mia per KI nach): spätestens fällig, wenn „Für Entwickler“ „Plattdeutsch: Paket nötig (n übrig)“ bzw. „Angeberwissen: Paket nötig (n übrig)“ zeigt (unter 50 ungesehene; Stand Paket 001: 90 Platt, 180 Angeberwissen) | – | wartet (nach A-022) |
 | A-040 | Einkaufsliste nur mit Namen: Wochenplan-Zutaten als Angebot oben auf der Laden-Seite („Für deinen Wochenplan“, Chips, „Alle dazu“, Grundsachen blass), Liste nur Symbol + Name (Menge nur selbst gesagt), Zeile antippen = Fenster mit „wofür“, Menge, Laden, „Von der Liste nehmen“ (Auftragstext nicht angekommen, nur Tafel; `docs/auftraege/A-040-041-einkauf-namen.md`) | `tafel-127.png` | fertig v0.154 |
 | A-041 | Abhaken wie Aufgaben (1 s, zurück, „Im Wagen ⌄“ unter der Liste), Mia merkt sich den Laden (Sache → Laden, Zähler, Datum; „Rewe · wie immer ⌄“, „Oft bei Rewe“, 90-Tage-Regel, „Was ich mir gemerkt hab“) + Ergänzung „Einkaufsliste stellt sich beim ersten Mal vor“ (Wortlaut `docs/auftraege/A-040-041-einkauf-namen.md`) | `tafel-128.png` | fertig v0.154 |
 | A-042 | SOFORT: „Familie verbinden“ klarer + Namen statt Mail-Adresse + Einladungslink verständlich (Bilder 1/2 nicht angekommen) | – | fertig v0.148 |
@@ -181,11 +181,12 @@ Ersetzt und nicht mehr gebaut: Essen-Kachel Tafel 121/122/133 → Tafel 134 (Rez
 | A-049 | SOFORT: Wundertüte – keine Punkte, nie wiederholen | – | ersetzt durch A-052 |
 | A-050 | Startseite neu (P4): Mini-Kreise final (Sport · Pause · Was los? · Rätsel · Timer, 56/64 px, ein Wort, keine Schilder), Fenster Sport/Timer/Rätsel, Beispiel-Startseite neu geordnet, Wasserzeichen in allen XS, Pinnwand-Korkrahmen, Einkauf M Läden nebeneinander, Im Haus von der Startseite (Wortlaut `docs/auftraege/A-050-minikreise-durchatmen.md`) | `tafel-137.png`, `tafel-140.png`, `tafel-141.png`, `tafel-143.png` | wartet auf A-048 (Ziel v0.159) |
 | A-051 | Durchatmen (12 Übungen, Vorschlag nach Tageszeit, Lieblinge, kein Zähler) + Mia leitet an (Stimme + Klang / Nur Klang / Still, Bildschirm dunkel, Wake Lock) | `tafel-138.png`, `tafel-139.png` | fertig v0.159 (Lola-Ansagen: einmal auf dem Server erzeugen – Für Entwickler → „Ansagen erzeugen“ → Bucket `durchatmen-ansagen`; bis dahin Handy-Stimme; `docs/bereiche/durchatmen.md`) |
-| A-052 | Rätsel als eigener Bereich + Wundertüte (Witze, „Platt för Plietsche“, Angeberwissen), „Noch eine ›“, nie doppelt im Haushalt, KI-Nachschub nur Witze/Rätsel | `tafel-137.png` (Bild 4), `tafel-140.png` | in Arbeit (Ziel v0.161) |
+| A-052 | Rätsel als eigener Bereich + Wundertüte (Witze, „Platt för Plietsche“, Angeberwissen), „Noch eine ›“, nie doppelt im Haushalt, KI-Nachschub nur Witze/Rätsel | `tafel-137.png` (Bild 4), `tafel-140.png` | fertig v0.160 (Rätsel-Paket 001: 91 Rätsel; Mini-Kreis bindet das Fenster an) |
 | A-053 | Gesamtauftrag Teil 7: Tests gesamt + volle Prüfung | – | am Ende |
 | A-054 | SOFORT: Jetzt-Karte nur mit Nutzen für heute (Rangliste, keine Füllsätze, sonst ausblenden), Wochenende planen nur freitags 12–20 Uhr | – | in Arbeit (Ziel v0.158) |
 | A-055 | „Was los?“ – Veranstaltungen Kreis Ostholstein (Tabelle region_events, Cron 5:00, Fenster Heute · Wochenende · 2 Wochen, Kalender/Pinnwand, Quelle sichtbar; ersetzt „Tipps aus der Region“) | `tafel-142.png` | in Arbeit (Ziel v0.162; Parser wartet auf Freigabe von www.kreis-oh.de) |
 | A-056 | SOFORT (Vorrang): „Mia hört von Anfang an und versteht mehrere Sachen“ – Mikro sofort beim Antippen mit Ringpuffer (≥ 5 s), Schlüssel vorgewärmt, Ring erst bei echtem Ton, Zeiten im Mikro-Protokoll; Sofort-Weg nur bei genau EINER Sache, Füllwörter weg, Aufzählungen getrennt (KI und Regel-Notlösung), ein Rückgängig für alle; „Nur für dich. Tippen zum Ändern.“; ≥ 30 Prüfstand-Sätze (Wortlaut `docs/auftraege/A-056-mia-hoert-sofort.md`) | – | fertig v0.157 |
+
 
 ## Offene Punkte (ohne eigenen Auftrag)
 

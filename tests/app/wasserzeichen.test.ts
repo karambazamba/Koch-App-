@@ -176,12 +176,11 @@ describe("freier Text ohne Kärtchen → 9 % (data-art=frei), weiße Liste → v
   });
 });
 
-describe("Wundertüte (nach Rebase auf A-036)", () => {
-  it("Vorderseite mit Geschenk, leise (die Frage steht frei), Rückseite ohne", () => {
+describe("Wundertüte (A-036, Tafel 140)", () => {
+  it("Geschenk über KachelWasserzeichen (leise, die Schrift steht frei), bei Platt ein Anker im selben Stil", () => {
     const s = readFileSync("src/components/wundertuete/WundertueteTile.tsx", "utf8");
-    const vorne = s.slice(s.indexOf("wt-vorne"), s.indexOf("wt-hinten"));
-    expect(vorne).toContain('<KachelWasserzeichen kachel="wundertuete" size={size} frei />');
-    expect(vorne).toContain('className="kachel-frei"');
-    expect(s.slice(s.indexOf("wt-hinten"))).not.toContain("KachelWasserzeichen");
+    expect(s).toContain('{meta.symbol === "anchor" ? <Anker /> : <KachelWasserzeichen kachel="wundertuete" size={size} frei />}');
+    expect(s).toMatch(/data-symbol="anchor" data-art="frei"/);
+    expect(s).toContain('className="kachel-frei"');
   });
 });

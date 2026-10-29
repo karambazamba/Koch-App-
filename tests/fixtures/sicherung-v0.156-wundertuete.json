@@ -1,0 +1,8 @@
+{
+ "app": "was-gibts",
+ "version": "0.156.0",
+ "exportedAt": "2026-10-28T20:00:00.000Z",
+ "data": {
+  "wasgibts.wundertuete": "{\"version\":1,\"karte\":\"ra-004\",\"anzeigen\":2,\"zuletzt\":1792000000000,\"gezeigt\":{\"angeberwissen\":[\"aw-001\",\"aw-002\"],\"platt\":[\"pl-001\"],\"raetsel\":[\"ra-001\",\"ra-004\"],\"tischrunde\":[\"ti-001\"]}}"
+ }
+}

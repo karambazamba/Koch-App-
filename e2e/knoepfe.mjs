@@ -31,6 +31,7 @@ const PAGES = (process.argv.slice(2).filter((a) => a.startsWith("/")).length
   "/spendentopf",
   "/tipps",
   "/sport",
+  "/wundertuete",
   "/wochenplan",
   "/profil",
   "/profil/kuechenhelfer",

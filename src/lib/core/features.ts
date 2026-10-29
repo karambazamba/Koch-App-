@@ -30,7 +30,7 @@ const FEATURES = {
   notizen: "Notizen (/notizen, Kachel, Schnellnotiz)",
   pinnwand: "Pinnwand (/pinnwand, Kachel): Zettel und Sprachnachrichten für alle im Haushalt",
   spendentopf: "Spendentopf (/spendentopf, Kachel, Beitrags-Frage)",
-  wundertuete: "Mias Wundertüte (Kachel): Angeberwissen, Platt, Rätsel und Spiele für den Tisch",
+  wundertuete: "Mias Wundertüte (Kachel): Witze, Plattdeutsch und Angeberwissen",
   durchatmen: "Durchatmen: 12 kurze Übungen (Atmen, Augen, Körper, Ankommen, Fokus) mit Anleitung, leises Angebot in der Jetzt-Karte",
 } as const;
 
@@ -55,7 +55,7 @@ export const BAUSTEINE: Baustein[] = [
   { feature: "pinnwand", name: "Pinnwand", text: "Zettel und Sprachnachrichten für alle, wie am Kühlschrank.", where: "Die Pinnwand steht jetzt als Kachel auf der Startseite.", icon: "pin" },
   { feature: "spendentopf", name: "Spendentopf", text: "Jeder Euro geht in eure Region.", where: "Der Spendentopf steht jetzt auf der Startseite.", icon: "coins" },
   { feature: "durchatmen", name: "Durchatmen", text: "Kurz raus, wieder bei dir: Atmen, Augen, Körper, Ankommen, Fokus. Ganz ohne Muss.", where: "Durchatmen findest du unter Einstellungen → Durchatmen.", icon: "wind" },
-  { feature: "wundertuete", name: "Wundertüte", text: "Jeden Tag was Neues: Angeberwissen, Platt, Rätsel und Spiele für den Tisch.", where: "Die Wundertüte steht jetzt auf der Startseite.", icon: "gift" },
+  { feature: "wundertuete", name: "Wundertüte", text: "Jeden Tag was Neues: Witze, Plattdeutsch und Angeberwissen.", where: "Die Wundertüte steht jetzt auf der Startseite.", icon: "gift" },
 ];
 
 /**

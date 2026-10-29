@@ -1,39 +1,34 @@
-// Wechsel der Wundertüte (A-022, Tafel 116) – rein und testbar:
-// - Tageszeit: tagsüber Angeberwissen, Platt, Rätsel; ab 17 Uhr bei „zu
-//   zweit“/„Familie“ Tischrunde, Schätz mal, Wer zuerst (allein abends
-//   weiter Wissen, Platt, Rätsel). Heute vor 100 Jahren nur am belegten Tag.
-// - Nie zweimal dieselbe Sorte hintereinander.
-// - Passendes zuerst: ein Eintrag mit Anlass (Wetter, Jahreszeit, Wochentag,
-//   Gericht, Feiertag) kommt NUR, wenn er passt, und dann vor allem anderen;
-//   ebenso ein Ereignis von heute vor 100 Jahren.
-// - Keine Wiederholung: gezeigte IDs je Sorte; erst wenn alle Einträge der
-//   Sorte durch sind, beginnt sie neu gemischt (die letzte Karte nie sofort).
-// - Nicht angetippt: nach 3 Anzeigen (Öffnungen mit sichtbarer Kachel, höchstens
-//   eine je halbe Stunde) kommt von selbst die nächste. Die Punkte unten zeigen 1–3.
+// Auswahl der Wundertüte (A-022; nie doppelt seit A-049, „Noch eine ›“ seit
+// A-052) – rein und testbar:
+// - Die Kachel zeigt die aktuelle Karte; an einem neuen Tag kommt von selbst
+//   die nächste. Auf der Seite bringt „Noch eine ›“ beliebig oft die nächste,
+//   auf Wunsch nur einer Sorte (Alles · Witze · Plattdeutsch · Angeberwissen).
+// - Nie doppelt: Gezeigtes (im Haushalt geteilt) kommt nie wieder. Immer
+//   zuerst Ungesehenes aus dem ältesten Paket, Mias Witze danach.
+// - Karten mit Anlass (Wetter, Jahreszeit, Wochentag, Gericht, Feiertag;
+//   „Schietwedder“ nur an Regentagen) kommen nur, wenn er passt, dann zuerst.
+// - Nichts Ungesehenes mehr: „… kommt bald.“ (Witze legt Mia nach, Platt und
+//   Angeberwissen nur aus geprüften Paketen), nie eine Wiederholung.
 
 import type { Haushalt } from "@/lib/core/haushalt";
-import { eintraegeDer, eintragVon } from "@/lib/wundertuete/pool";
-import { SORTE_IDS, sorteMeta, type Anlass, type Eintrag, type Sorte } from "@/lib/wundertuete/sorten";
+import { WT_POOL, eintragVon } from "@/lib/wundertuete/pool";
+import { SORTE_IDS, type Eintrag, type Filter, type Sorte } from "@/lib/wundertuete/sorten";
+import { brauchtNachschub, eigeneAus, gesehenAus, karteAus, kiZaehlerAus, merke, ungesehen, ziehe, type Anlass, type KiZaehler } from "@/lib/wundertuete/vorrat";
 
-/** Gespeicherter Stand (pro Gerät, `wasgibts.wundertuete`) */
+/** Gespeicherter Stand (`wasgibts.wundertuete` v2; `gesehen` und `eigene` im Haushalt geteilt) */
 export type WtStand = {
-  version: 1;
-  /** Aktuelle Karte (ID) */
-  karte: string | null;
-  /** Wie oft die aktuelle Karte schon angezeigt wurde (1–3) */
-  anzeigen: number;
-  /** Zuletzt gezählte Anzeige (ms) */
-  zuletzt: number;
-  /** Gezeigte IDs je Sorte (seit dem letzten Neu-Mischen) */
-  gezeigt: Partial<Record<Sorte, string[]>>;
+  version: 2;
+  /** Die Karte auf Kachel und Seite, mit dem Tag, an dem sie kam (nur Gerät) */
+  aktuell: { id: string; tag: string } | null;
+  /** Gesehene IDs, nie wieder zeigen */
+  gesehen: string[];
+  /** Witze, die Mia nachgelegt hat (ID `ki-…`), gesehen oder noch im Vorrat */
+  eigene: Eintrag[];
+  /** Wie oft dieses Gerät heute nachgelegt hat (nur Gerät) */
+  ki?: KiZaehler;
 };
 
-export const LEER: WtStand = { version: 1, karte: null, anzeigen: 0, zuletzt: 0, gezeigt: {} };
-
-/** Nach so vielen Anzeigen kommt von selbst die nächste */
-export const ANZEIGEN_MAX = 3;
-/** Eine neue Anzeige zählt erst nach dieser Pause (eine Öffnung, nicht jedes Zeichnen) */
-export const ANZEIGE_PAUSE_MS = 30 * 60_000;
+export const LEER: WtStand = { version: 2, aktuell: null, gesehen: [], eigene: [] };
 
 /** Wofür gerade ausgesucht wird */
 export type Lage = {
@@ -49,7 +44,8 @@ export type Lage = {
   feiertag?: string | null;
 };
 
-export const istAbends = (minuten: number) => minuten >= 17 * 60;
+/** Unter so vielen ungesehenen Platt- bzw. Angeberwissen-Karten braucht es ein neues Paket */
+export const PAKET_NOETIG_AB = 50;
 
 const saisonVon = (iso: string): NonNullable<Anlass["saison"]> => {
   const m = Number(iso.slice(5, 7));
@@ -58,9 +54,8 @@ const saisonVon = (iso: string): NonNullable<Anlass["saison"]> => {
 
 const wochentagVon = (iso: string) => new Date(`${iso}T12:00:00Z`).getUTCDay();
 
-/** Passt der Eintrag in diese Lage? (Anlass streng, Heute vor 100 Jahren nur am Tag) */
-export function passt(x: Eintrag, lage: Lage): boolean {
-  if (x.sorte === "heute100") return Boolean(x.tag && x.jahr) && lage.heute.slice(5) === x.tag && Number(lage.heute.slice(0, 4)) === x.jahr! + 100;
+/** Passt der Eintrag in diese Lage? (Anlass streng) */
+export function passt(x: Eintrag, lage: Pick<Lage, "heute" | "wetter" | "gericht" | "feiertag">): boolean {
   const a = x.anlass;
   if (!a) return true;
   if (a.wetter && a.wetter !== lage.wetter) return false;
@@ -74,81 +69,51 @@ export function passt(x: Eintrag, lage: Lage): boolean {
   return true;
 }
 
-/** Ein Anlass, der heute passt (oder ein Ereignis von heute) – kommt zuerst */
-const besonders = (x: Eintrag, lage: Lage) => (x.sorte === "heute100" || Boolean(x.anlass)) && passt(x, lage);
+/** Karte zu einer ID: aus den Paketen oder von Mia */
+export const karteVon = (stand: WtStand, id: string | null | undefined) => karteAus(WT_POOL, stand, id);
 
-/** Sorten, die jetzt dran sein dürfen */
-export function erlaubteSorten(lage: Lage): Sorte[] {
-  const abends = istAbends(lage.minuten) && lage.haushalt !== "allein";
-  const base: Sorte[] = abends ? ["tischrunde", "schaetzmal", "werzuerst"] : ["angeberwissen", "platt", "raetsel"];
-  return eintraegeDer("heute100").some((x) => passt(x, lage)) ? [...base, "heute100"] : base;
-}
-
-/** Darf die aktuelle Karte stehen bleiben? (Tageszeit, Haushalt, Anlass) */
-export function karteGilt(id: string | null, lage: Lage): boolean {
-  const x = eintragVon(id);
-  return Boolean(x && erlaubteSorten(lage).includes(x.sorte) && passt(x, lage));
-}
-
-type Zufall = () => number;
-const pick = <T>(list: T[], rng: Zufall): T => list[Math.min(list.length - 1, Math.floor(rng() * list.length))];
+const imFilter = (f: Filter) => (x: Eintrag) => f === "alles" || x.sorte === f;
 
 /**
- * Nächste Karte: andere Sorte als die aktuelle, Passendes zuerst, nichts
- * doppelt, bis die Sorte durch ist. Liefert den neuen Stand (Anzeige 1).
+ * „Noch eine ›“: die nächste ungesehene Karte (im Filter) wird die aktuelle
+ * und gilt ab jetzt als gesehen. Nichts mehr da: `karte` null, die bisherige
+ * Karte bleibt nicht stehen (sie wäre eine Wiederholung).
  */
-export function naechste(stand: WtStand, lage: Lage, jetzt: number, rng: Zufall = Math.random): WtStand {
-  const vorher = eintragVon(stand.karte);
-  const erlaubt = erlaubteSorten(lage);
-  const sorten = erlaubt.filter((s) => s !== vorher?.sorte);
-  const kandidaten = sorten.length ? sorten : erlaubt;
-  const gezeigt = { ...stand.gezeigt };
-  // Je Sorte: noch nicht Gezeigtes, das passt; ist die Sorte durch, neu mischen
-  const frei = (s: Sorte) => {
-    const passend = eintraegeDer(s).filter((x) => passt(x, lage) && x.id !== stand.karte);
-    const neu = passend.filter((x) => !(gezeigt[s] ?? []).includes(x.id));
-    if (neu.length || !passend.length) return neu;
-    gezeigt[s] = [];
-    return passend;
-  };
-  const alle = kandidaten.flatMap(frei);
-  if (!alle.length) return stand;
-  const vorn = alle.filter((x) => besonders(x, lage));
-  // Heute vor 100 Jahren zuerst, dann anderer Anlass, sonst per Zufall – die Sorte nach dem, was in ihr
-  // noch übrig ist (alle Sorten sind etwa gleichzeitig durch: am längsten ohne Wiederholung)
-  const wahl = vorn.find((x) => x.sorte === "heute100") ?? (vorn.length ? pick(vorn, rng) : pick(alle, rng));
-  gezeigt[wahl.sorte] = [...(gezeigt[wahl.sorte] ?? []), wahl.id];
-  return { version: 1, karte: wahl.id, anzeigen: 1, zuletzt: jetzt, gezeigt };
+export function naechste(stand: WtStand, lage: Lage, filter: Filter = "alles"): { stand: WtStand; karte: Eintrag | null } {
+  const karte = ziehe(WT_POOL, stand, { filter: imFilter(filter), passt: (x) => passt(x, lage), vorher: stand.aktuell?.id });
+  if (!karte) return { stand: { ...stand, aktuell: null }, karte: null };
+  return { stand: merke({ ...stand, aktuell: { id: karte.id, tag: lage.heute } }, karte.id), karte };
 }
 
-/**
- * Kachel wird angezeigt (Öffnen der Startseite): höchstens einmal je halbe
- * Stunde gezählt; nach 3 Anzeigen bzw. wenn die Karte jetzt nicht mehr gilt,
- * kommt die nächste.
- */
-export function anzeigen(stand: WtStand, lage: Lage, jetzt: number, rng: Zufall = Math.random): WtStand {
-  if (!karteGilt(stand.karte, lage)) return naechste(stand, lage, jetzt, rng);
-  if (jetzt - stand.zuletzt < ANZEIGE_PAUSE_MS) return stand;
-  if (stand.anzeigen >= ANZEIGEN_MAX) return naechste(stand, lage, jetzt, rng);
-  return { ...stand, anzeigen: stand.anzeigen + 1, zuletzt: jetzt };
+/** Kachel wird gezeigt: am selben Tag bleibt die aktuelle Karte, an einem neuen Tag kommt die nächste */
+export function tageskarte(stand: WtStand, lage: Lage): WtStand {
+  if (stand.aktuell?.tag === lage.heute && karteVon(stand, stand.aktuell.id)) return stand;
+  // Alles gesehen und schon „kommt bald“: so lassen (gleicher Stand, nichts zu speichern)
+  if (!stand.aktuell && stand.gesehen.length && !ungesehen(WT_POOL, stand, (x) => passt(x, lage)).length) return stand;
+  return naechste(stand, lage).stand;
 }
 
-/** Gespeicherten Stand prüfen (unbekannte IDs und Sorten fallen still weg) */
+/** Ungesehene Karten einer Sorte aus den Paketen (für „Paket nötig“) */
+export const uebrigAusPaketen = (stand: Pick<WtStand, "gesehen">, sorte: Sorte) => ungesehen(WT_POOL, { gesehen: stand.gesehen, eigene: [] }, (x) => x.sorte === sorte).length;
+
+/** Braucht es neue Witze von Mia (weniger als 20 im Voraus)? */
+export const brauchtWitze = (stand: WtStand) => brauchtNachschub(WT_POOL, stand, "witz");
+
+/** v1 (bis v0.156): aktuelle Karte, Anzeigen, gezeigte IDs je Sorte → alles Gezeigte gilt als gesehen (auch Rätsel, Tischrunde …) */
+function ausV1(r: Record<string, unknown>): WtStand {
+  const gezeigt = r.gezeigt && typeof r.gezeigt === "object" ? Object.values(r.gezeigt as Record<string, unknown>).flat() : [];
+  return { version: 2, aktuell: null, gesehen: gesehenAus([...gezeigt, r.karte]), eigene: [] };
+}
+
+/** Gespeicherten Stand prüfen und heben (v1 → v2). Unbekannte IDs bleiben (neueres Paket eines anderen Geräts). */
 export function migrateWt(raw: unknown): WtStand | null {
-  if (!raw || typeof raw !== "object" || (raw as WtStand).version !== 1) return null;
-  const r = raw as Partial<WtStand>;
-  const gezeigt: WtStand["gezeigt"] = {};
-  for (const s of SORTE_IDS) {
-    const ids = (r.gezeigt as Record<string, unknown> | undefined)?.[s];
-    if (Array.isArray(ids)) gezeigt[s] = ids.filter((id): id is string => typeof id === "string" && eintragVon(id)?.sorte === s);
-  }
-  const karte = typeof r.karte === "string" && eintragVon(r.karte) ? r.karte : null;
-  const anzeigen = typeof r.anzeigen === "number" ? Math.max(0, Math.min(ANZEIGEN_MAX, Math.round(r.anzeigen))) : 0;
-  return { version: 1, karte, anzeigen: karte ? anzeigen : 0, zuletzt: typeof r.zuletzt === "number" ? r.zuletzt : 0, gezeigt };
+  if (!raw || typeof raw !== "object") return null;
+  const r = raw as Record<string, unknown>;
+  if (r.version === 1) return ausV1(r);
+  if (r.version !== 2) return null;
+  const a = r.aktuell as { id?: unknown; tag?: unknown } | null | undefined;
+  const aktuell = a && typeof a.id === "string" && typeof a.tag === "string" && /^\d{4}-\d{2}-\d{2}$/.test(a.tag) ? { id: a.id, tag: a.tag } : null;
+  const eigene = eigeneAus(r.eigene, SORTE_IDS).filter((x) => x.sorte === "witz" && !eintragVon(x.id));
+  const ki = kiZaehlerAus(r.ki);
+  return { version: 2, aktuell, gesehen: gesehenAus(r.gesehen), eigene, ...(ki ? { ki } : {}) };
 }
-
-/** Hat die Karte eine Rückseite? */
-export const hatRueckseite = (x: Eintrag) => sorteMeta(x.sorte).rueckseite && Boolean(x.hinten);
-
-/** Antippen: vorne mit Rückseite = umdrehen, sonst (hinten oder ohne Rückseite) = nächste Karte */
-export const tippAktion = (seite: "vorne" | "hinten", x: Eintrag): "umdrehen" | "weiter" => (seite === "vorne" && hatRueckseite(x) ? "umdrehen" : "weiter");

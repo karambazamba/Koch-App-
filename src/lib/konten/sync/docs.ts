@@ -14,6 +14,8 @@ import { todayIso } from "@/lib/core/now";
 import { migrateStore } from "@/lib/einkauf/listMigration";
 
 import { roomOf, type Room } from "@/lib/core/entries";
+import { LEER as WT_LEER, migrateWt } from "@/lib/wundertuete/auswahl";
+import { RT_LEER, migrateRaetsel } from "@/lib/raetsel/auswahl";
 
 /** Ein Eintrag, wie er in der Tabelle liegt (ohne Haushalt) */
 export type CloudDoc = {
@@ -37,7 +39,7 @@ type Value = Record<string, unknown>;
 
 export type Adapter = {
   /** Kurzname für den Abgleich-Speicher */
-  name: "kalender" | "notizen" | "pinnwand" | "einkauf" | "wochenplan" | "vorrat" | "spendentopf" | "unterwegs";
+  name: "kalender" | "notizen" | "pinnwand" | "einkauf" | "wochenplan" | "vorrat" | "spendentopf" | "unterwegs" | "wundertuete" | "raetsel";
   key: StorageKey;
   /** Speicher-Version, die der Übersetzer kennt (andere: auslassen, bis migriert) */
   version: number;
@@ -274,8 +276,39 @@ const unterwegs: Adapter = {
   fromDocs: (docs) => ({ version: 1, trips: docs.filter((d) => isObj(d.data)).map((d) => (d.besitzer ? { ...(d.data as Value), von: d.besitzer } : d.data)) }),
 };
 
+// Wundertüte und Rätsel (A-052): je gesehene Karte ein Eintrag (so geht
+// Gesehenes zweier Handys nie verloren, gesehen bleibt gesehen) und je Karte,
+// die Mia nachgelegt hat, einer. Die aktuelle Karte und der KI-Zähler bleiben
+// auf dem Gerät.
+function vorratAdapter<T extends { gesehen: string[]; eigene: { id: string }[] }>(name: "wundertuete" | "raetsel", key: StorageKey, version: number, kurz: string, migrate: (raw: unknown) => T | null, leer: T): Adapter {
+  const typ = { g: `${name}-gesehen`, k: `${name}-karte` };
+  return {
+    name,
+    key,
+    version,
+    typs: [typ.g, typ.k],
+    upgrade: (value) => migrate(value) as unknown as Value | null,
+    toDocs: (value) => {
+      const v = migrate(value);
+      if (!v) return [];
+      return [
+        ...v.gesehen.map((id): LocalDoc => ({ id: `${kurz}:g:${id}`, typ: typ.g, raum: "familie", besitzer: null, data: { id } })),
+        ...v.eigene.map((x): LocalDoc => ({ id: `${kurz}:k:${x.id}`, typ: typ.k, raum: "familie", besitzer: null, data: x })),
+      ];
+    },
+    fromDocs: (docs, value) => {
+      const vorher = migrate(value) ?? leer;
+      const daten = (t: string) => docs.filter((d) => d.typ === t && isObj(d.data)).map((d) => d.data as Value);
+      const neu = migrate({ ...vorher, gesehen: daten(typ.g).map((d) => d.id), eigene: daten(typ.k) });
+      return (neu ?? vorher) as unknown as Value;
+    },
+  };
+}
+const wundertuete = vorratAdapter("wundertuete", "wasgibts.wundertuete", 2, "wt", migrateWt, WT_LEER);
+const raetsel = vorratAdapter("raetsel", "wasgibts.raetsel", 1, "rt", migrateRaetsel, RT_LEER);
+
 /** Alles, was geteilt wird (Einstellungen und Startseite bleiben pro Gerät) */
-export const ADAPTERS: Adapter[] = [kalender, notizen, pinnwand, einkauf, wochenplan, vorrat, spendentopf, unterwegs];
+export const ADAPTERS: Adapter[] = [kalender, notizen, pinnwand, einkauf, wochenplan, vorrat, spendentopf, unterwegs, wundertuete, raetsel];
 
 export const adapterFor = (typ: string): Adapter | undefined => ADAPTERS.find((a) => a.typs.includes(typ));
 

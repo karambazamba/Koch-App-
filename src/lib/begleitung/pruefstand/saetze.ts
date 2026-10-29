@@ -283,13 +283,13 @@ export const PRUEFSAETZE: PruefSatz[] = [
   S("Ich bin müde", ANTWORT),
   S("äh ja also nee doch nicht", ANTWORT),
 
-  // Mias Wundertüte (A-022): Karte aus dem geprüften Pool vorlesen, nichts anlegen
+  // Mias Wundertüte und Rätsel (A-022/A-052): Karte aus dem geprüften Pool vorlesen, nichts anlegen
   R("Erzähl mir was Unnützes"),
   R("Angeberwissen"),
-  R("Gib uns eine Tischfrage", { max: 2 }),
+  R("Erzähl mal einen Witz", { max: 2 }),
   R("Rätsel!", { max: 2 }),
   R("Was heißt Schietwedder auf Hochdeutsch?"),
-  R("Hast du ein Spiel für den Tisch?", { max: 2 }),
+  R("Hast du noch ein Rätsel für die Kinder?", { max: 2 }),
 
   // Durchatmen (A-051): Übung startet gleich (app_befehl mit dem Satz)
   S("Ich brauch kurz Ruhe", ["app_command"]),

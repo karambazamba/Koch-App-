@@ -14,7 +14,7 @@ import { demoTiles } from "@/lib/core/demo";
 import { kontext, rufe } from "../begleitung/werkzeugKontext";
 import { PRUEFSAETZE } from "@/lib/begleitung/pruefstand/saetze";
 import { toolDefinitions } from "@/lib/begleitung/toolset";
-import { ANTWORT_STUFEN, FRAGE_STUFEN } from "@/components/wundertuete/WundertueteTile";
+import { TEXT_STUFEN } from "@/components/wundertuete/WundertueteTile";
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -56,7 +56,7 @@ describe("Baustein: neu an, bestehend unverändert", () => {
 
   it("kein Launch-Aus-Baustein, Mia kennt ihn (Mehr Funktionen)", () => {
     expect(LAUNCH_AUS).not.toContain("wundertuete");
-    expect(BAUSTEINE.find((b) => b.feature === "wundertuete")?.text).toBe("Jeden Tag was Neues: Angeberwissen, Platt, Rätsel und Spiele für den Tisch.");
+    expect(BAUSTEINE.find((b) => b.feature === "wundertuete")?.text).toBe("Jeden Tag was Neues: Witze, Plattdeutsch und Angeberwissen.");
   });
 });
 
@@ -98,40 +98,43 @@ describe("Kachel: Anordnung", () => {
   });
 });
 
-describe("Kachel: Oberfläche", () => {
+describe("Kachel: Oberfläche (A-052, Tafel 137/140)", () => {
   const code = readFileSync("src/components/wundertuete/WundertueteTile.tsx", "utf8");
+  const seite = readFileSync("src/components/wundertuete/WundertueteSeite.tsx", "utf8");
   const css = readFileSync("src/app/globals.css", "utf8");
 
-  it("M = gleiche Karte, Frage größer; Schrift passt sich an, nie „…“ oder abgeschnitten (A-045)", () => {
-    expect(FRAGE_STUFEN.S[0]).toBe(17);
-    expect(FRAGE_STUFEN.M[0]).toBe(21);
-    for (const stufen of [...Object.values(FRAGE_STUFEN), ...Object.values(ANTWORT_STUFEN)]) expect([...stufen].sort((a, b) => b - a)).toEqual(stufen);
+  it("M = gleiche Karte, Schrift größer; passt sich an, nie „…“ oder abgeschnitten (A-045)", () => {
+    expect(TEXT_STUFEN.S[0]).toBe(19);
+    expect(TEXT_STUFEN.M[0]).toBe(23);
+    for (const stufen of Object.values(TEXT_STUFEN)) expect([...stufen].sort((a, b) => b - a)).toEqual(stufen);
     expect(code).not.toMatch(/line-clamp|truncate/);
     expect(code).toContain("useSchriftEinpassen");
     expect(code).toContain('data-name="kurz"');
-    // Fehler beim Rebase auf v0.155 gefunden: `TILE` (relative) schlug `absolute`, die Rückseite lag unter der Kachel
-    expect(code).toMatch(/TILE\.replace\(\/\(\^\| \)relative/);
   });
 
-  it("Farben nur über Tokens (data-tone der Sorte, hell/dunkel und Schlicht kommen mit), kein Emoji", () => {
+  it("keine Punkte, keine Drehung mehr; Antippen öffnet die Seite, Platt/Wissen mit „Antippen für die Lösung“, Witz mit Pointe", () => {
+    expect(code).not.toMatch(/function Punkte|data-punkte|Nochmal tippen|wt-dreh|tippAktion/);
+    expect(code).toContain('href="/wundertuete"');
+    expect(code).toMatch(/meta\.frage && \(/);
+    expect(code).toContain("data-pointe");
+    expect(css).not.toContain(".wt-dreh");
+    expect(css).toContain('.wt-karte section:not([data-eng]) [data-hinweis="kurz"], .wt-karte section[data-eng] [data-hinweis="voll"] { display: none; }');
+  });
+
+  it("Wasserzeichen je Sorte: Anker bei Platt, sonst Geschenk; Farben nur über Tokens, kein Emoji", () => {
+    expect(code).toMatch(/SYMBOL: Record<SorteMeta\["symbol"\], LucideIcon> = \{ gift: Gift, anchor: Anchor \}/);
+    expect(code).toContain('{meta.symbol === "anchor" ? <Anker /> : <KachelWasserzeichen kachel="wundertuete" size={size} frei />}');
     expect(code).not.toMatch(/#[0-9a-f]{3,6}\b|var\(--color-|rgb\(/i);
     expect(code).toMatch(/data-tone=\{meta\.tone\}/);
-    expect(code).toMatch(/border-tile-accent bg-surface/);
     expect(code).not.toMatch(/\p{Extended_Pictographic}/u);
   });
 
-  it("Drehen weich (0,8 s, cubic-bezier(.16,1,.3,1), nur transform), reduced-motion = Überblenden", () => {
-    expect(css).toMatch(/\.wt-dreh \{[^}]*transition: transform 0\.8s cubic-bezier\(\.16,1,\.3,1\)/);
-    const reduced = css.slice(css.indexOf(".wt-neu {"));
-    expect(reduced).toMatch(/@media \(prefers-reduced-motion: reduce\) \{\s*\.wt-dreh, \.wt-karte\[data-seite="hinten"\] \.wt-dreh \{ transform: none; transition: none; \}/);
-    expect(reduced).toMatch(/opacity: 0;/);
-    expect(css).toMatch(/\.wt-karte\[data-seite="hinten"\] \.wt-vorne, \.wt-karte\[data-seite="vorne"\] \.wt-hinten \{ visibility: hidden; \}/);
-  });
-
-  it("Rückseite: „Nochmal tippen = Neues“ und Teilen; Kopf mit Symbol und Sorte", () => {
-    expect(code).toContain("Nochmal tippen = Neues");
-    expect(code).toMatch(/label="Teilen"/);
-    expect(code).toMatch(/Beispiel/);
+  it("Seite: Filter, „Noch eine ›“, „Nie doppelt. <Name> legt immer neue nach.“, Lösung groß", () => {
+    expect(seite).toContain("FILTER.map");
+    expect(seite).toContain("Noch eine");
+    expect(seite).toContain("Nie doppelt. {name} legt immer neue nach.");
+    expect(seite).toContain("data-loesung");
+    expect(seite).toContain("KOMMT_BALD[filter]");
   });
 
   it("Beispiel-Tag: „Beispiel“ nur für VoiceOver, kein eigenes Schild (das eine steht an der Pinnwand, Tafel 119)", () => {
@@ -141,7 +144,7 @@ describe("Kachel: Oberfläche", () => {
 });
 
 describe("Mia per Gespräch", () => {
-  it("Werkzeug wundertuete_karte ist angemeldet und liest nur aus dem Pool", () => {
+  it("Werkzeug wundertuete_karte ist angemeldet und liest nur aus den Paketen", () => {
     expect(toolDefinitions().map((t) => t.name)).toContain("wundertuete_karte");
     const ctx = kontext();
     const wissen = rufe(ctx, "wundertuete_karte", { sorte: "angeberwissen" });
@@ -154,20 +157,18 @@ describe("Mia per Gespräch", () => {
     const ctx = kontext();
     const r = rufe(ctx, "wundertuete_karte", { sorte: "raetsel" });
     expect(r.content).toMatch(/antwort_knoepfe \['Lösung'\]/);
-    const frage = r.content.split("\n")[0].replace(/^Rätselstunde: /, "");
+    const frage = r.content.split("\n")[0].replace(/^Rätsel: /, "");
     expect(rufe(ctx, "wundertuete_karte", { sorte: "raetsel", frage }).content).toMatch(/^Lösung \(nur das sagen, kurz\): /);
     expect(rufe(ctx, "wundertuete_karte", { sorte: "raetsel", frage: "Was ist ein Quatschrätsel ohne Lösung?" }).content).toMatch(/keine Lösung/);
   });
 
-  it("Tischrunde und Wer zuerst: nur die Frage; Heute vor 100 Jahren nur am belegten Tag", () => {
-    expect(rufe(kontext(), "wundertuete_karte", { sorte: "tischrunde" }).content).toMatch(/^Tischrunde: .+\nNur das vorlesen/);
-    expect(rufe(kontext(), "wundertuete_karte", { sorte: "werzuerst" }).content).toMatch(/^Wer zuerst: Wer zuerst /);
-    expect(rufe(kontext(), "wundertuete_karte", { sorte: "heute100" }).content).toMatch(/keine Karte/);
-    expect(rufe(kontext({}, { today: "2026-10-14" }), "wundertuete_karte", { sorte: "heute100" }).content).toMatch(/Pu der Bär/);
+  it("Witz: Anfang und Pointe; Platt mit Antwort", () => {
+    expect(rufe(kontext(), "wundertuete_karte", { sorte: "witz" }).content).toMatch(/^Witz: .+\nPointe: .+/);
+    expect(rufe(kontext(), "wundertuete_karte", { sorte: "platt" }).content).toMatch(/^Platt för Plietsche: .+\nAntwort: /);
   });
 
-  it("Prüfstand-Sätze für die Wundertüte", () => {
+  it("Prüfstand-Sätze für Wundertüte und Rätsel", () => {
     const texte = PRUEFSAETZE.map((s) => s.text);
-    for (const t of ["Erzähl mir was Unnützes", "Angeberwissen", "Gib uns eine Tischfrage", "Rätsel!"]) expect(texte).toContain(t);
+    for (const t of ["Erzähl mir was Unnützes", "Angeberwissen", "Erzähl mal einen Witz", "Rätsel!"]) expect(texte).toContain(t);
   });
 });

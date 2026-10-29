@@ -44,6 +44,8 @@ const FULL = {
   "wasgibts.wochenplan": { version: 3, weeks: { "2026-10-19": { mo: { kind: "text", title: "Nudeln", category: null }, "mo:notiz": { kind: "note", text: "Oma kommt" } } } },
   "wasgibts.vorrat": { version: 4, items: [{ id: "v1", name: "Reis", addedAt: "2026-10-21", place: "schrank", usedAt: null }], places: { reis: "schrank" } },
   "wasgibts.einkaufswege": { version: 1, trips: [{ id: "w1", shop: "REWE", by: "Felix", start: T0, end: null, count: null, vorschlaege: ["Butter"] }] },
+  "wasgibts.wundertuete": { version: 2, aktuell: { id: "aw-001", tag: "2026-10-21" }, gesehen: ["aw-001", "pl-001", "ki-abc-0001"], eigene: [{ id: "ki-abc-0001", sorte: "witz", vorne: "Was sagt der Teebeutel zur Tasse?", hinten: "Ohne dich zieh ich mich nicht an." }], ki: { tag: "2026-10-21", n: 1 } },
+  "wasgibts.raetsel": { version: 1, aktuell: { id: "ra-001", geloest: true }, gesehen: ["ra-001", "ki-abc-0002"], eigene: [{ id: "ki-abc-0002", sorte: "raetsel", vorne: "Was fliegt ohne Flügel über das Wattenmeer?", hinten: "Der **Wind**." }] },
   "wasgibts.spendentopf": { version: 2, region: "ostholstein", support: null, interest: ["kiel"], votes: { "2026": "spielplatz" }, pledge: { betrag: 6, art: "monatlich", monat: "2026-10", status: "vorgemerkt" }, ask: { since: "2026-10-01", asked: 1, next: null, done: false }, voteCardHidden: [], liveAsked: false },
 };
 
@@ -92,7 +94,7 @@ describe("Übersetzer: verlustfrei hin und zurück", () => {
 
   it("geteilt werden nur Familien-Daten aus der Sicherung – nie Beispiel-Tag, Einstellungen oder Startseite", () => {
     const keys = ADAPTERS.map((a) => a.key);
-    expect(keys).toEqual(["wasgibts.eintraege", "wasgibts.notizen", "wasgibts.pinnwand", "wasgibts.einkaufsliste", "wasgibts.wochenplan", "wasgibts.vorrat", "wasgibts.spendentopf", "wasgibts.einkaufswege"]);
+    expect(keys).toEqual(["wasgibts.eintraege", "wasgibts.notizen", "wasgibts.pinnwand", "wasgibts.einkaufsliste", "wasgibts.wochenplan", "wasgibts.vorrat", "wasgibts.spendentopf", "wasgibts.einkaufswege", "wasgibts.wundertuete", "wasgibts.raetsel"]);
     // „Einkauf unterwegs“ ist nur für den Moment (2 Tage) – nicht in der Sicherung
     for (const k of keys) expect(STORAGE.find((s) => s.key === k)?.backup).toBe(k !== "wasgibts.einkaufswege");
     for (const a of ADAPTERS) expect((STORAGE.find((s) => s.key === a.key) as { version?: number } | undefined)?.version).toBe(a.version);

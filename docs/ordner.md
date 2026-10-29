@@ -18,7 +18,9 @@ Gleiche Bereichsnamen in `src/lib/<bereich>` (Logik, rein wo möglich),
 | `tipps` | Tipps aus der Region |
 | `spendentopf` | Spendentopf |
 | `durchatmen` | Durchatmen: 12 Übungen (`content/durchatmen/`), Fenster, Vollbild, Stimme und Klang, leises Angebot |
-| `wundertuete` | Mias Wundertüte: Kachel mit Wissen, Platt, Rätseln und Tischspielen, Pool je Sorte (`data/`) |
+
+| `wundertuete` | Mias Wundertüte: Witze, Plattdeutsch, Angeberwissen, nie doppelt; gemeinsame „nie doppelt“-Logik und Mias KI-Nachschub (`vorrat.ts`, `kiKarte.ts`); Inhalte als Pakete in `content/wundertuete/` (Import über `@/content/…`) |
+| `raetsel` | Rätsel (eigener Bereich, Fenster vom Mini-Kreis): nie doppelt, Pakete in `content/raetsel/` |
 | `begleitung` | Chat, KI-Route, Werkzeuge, Sprache, Avatar, Hallo-Bildschirm |
 | `einstellungen` | Profil, Einstellungen, Mehr Funktionen |
 | `konten` | Konto, Haushalt, Einladen (Supabase), Datenbank-Tests (`tests/datenbank`) |
