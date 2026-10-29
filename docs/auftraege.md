@@ -6,6 +6,18 @@ liegen in `docs/tafeln/` (siehe dort, welche fehlen).
 
 Status: offen · in Arbeit · fertig vX.Y · zurückgestellt (Grund)
 
+## Stand 29.10. abends (nach Sortier-Auftrag)
+
+- **Fertig:** v0.157 Mia hört von Anfang an (A-056) · v0.158 Startseite kompakter (A-048) · v0.159 Durchatmen (A-051) · v0.160 Rätsel + Wundertüte (A-052) · v0.161 Eingebaute Rezepte liefern Zutaten (A-057) · v0.162 Kaputt-Fixes: Notizen-Kachel, Wundertüte zum Umdrehen, Menü erstes Tippen, Wischen unten (A-059) · v0.163 Jetzt-Karte nur mit Nutzen (A-054) · v0.164 Durchatmen ohne Roboterstimme (A-061) · v0.165 Notizen-Vorschau + Mia-Zubehör (A-060/A-058) · v0.166 Startseite neu mit Mini-Kreisen (A-050) · v0.167 „Was los?“ (A-055, Parser wartet).
+- **Zurückgestellt:** A-053 volle Prüfung (auf Zuruf) · Parser „Was los?“ (wartet, bis `www.kreis-oh.de` aus der Arbeitsumgebung erreichbar ist; bis dahin bleibt der Kreis ausgeblendet) · A-039 Wundertüte nachfüllen (monatlich).
+- **Kleine offene Punkte:** Fenster mit ✕ schließen und binnen ~300 ms wieder öffnen → geht gleich wieder zu (Wettlauf in `fensterVerlauf`) · `tests/core/abfragen.test.ts` einmal uhrzeitabhängig rot · alte App-Stände kennen den Raum „Ich“ nicht.
+- **5 Dinge zum Ausprobieren:**
+  1. Mia antippen und sofort lossprechen: „Milch, Eier und Butter auf die Liste“ → drei Sachen.
+  2. Sport-Kreis oben antippen → Tag wählen → „Sa 10:00 … planen“ → Termin im Kalender.
+  3. Pause-Kreis → „Handy-Pause“ → „Los“: erst Erklärung, dann dunkel, am Ende Gong.
+  4. Wundertüte-Kachel antippen: dreht sich und zeigt die Lösung; „Mehr ›“ öffnet die Seite.
+  5. App frisch starten → „•••“ → Einstellungen öffnet beim ersten Tippen.
+
 ## Fragen an Felix
 
 - ~~Darf `www.kreis-oh.de` in die erlaubten Domains der Cloud-Umgebung?~~ **Beantwortet (29.10.): freigegeben.**
@@ -21,7 +33,7 @@ Bei Widersprüchen gilt der neuere Auftrag. Gemergt wird in dieser Reihenfolge, 
 | P1 | Sofort-Fixes | A-056 Mia hört von Anfang an + mehrere Sachen (Vorrang), A-045/A-046 Essen-Kachel final (Tafel 134), A-048 Startseite kompakter + Höhe nach Anzahl (Tafel 135), A-043 Erledigte 12 h, A-042 Familie verbinden, A-038 Vorschau vor „Nehmen“, A-054 Jetzt-Karte nur Nützliches | A-056 fertig v0.157 (Vorrang), A-048 fertig v0.158; A-054 fertig v0.163 |
 | P2 | Gebaut, wartet | A-020/A-034 Räume, A-024 Pinnwand abhaken, A-028 Pinnwand Teil 1 + 2, A-029/A-036 Wasserzeichen | fertig (v0.145–v0.153) |
 | P3 | Einkauf | A-040/A-041 (Tafel 127/128), Einkauf M Läden nebeneinander (Tafel 140, mit P4) | A-040/A-041 fertig v0.154, Einkauf M kommt mit P4 |
-| P4 | Startseite neu | A-050: Mini-Kreise final (Tafel 143, keine Schilder), Fenster Sport/Timer/Rätsel (Tafel 137), Beispiel-Startseite (Tafel 140), Korkrahmen (Tafel 141), Einkauf M, Im Haus von der Startseite | fertig v0.166 (Zweig `startseiteneu`) |
+| P4 | Startseite neu | A-050: Mini-Kreise final (Tafel 143, keine Schilder), Fenster Sport/Timer/Rätsel (Tafel 137), Beispiel-Startseite (Tafel 140), Korkrahmen (Tafel 141), Einkauf M, Im Haus von der Startseite | fertig v0.166 |
 | P5 | Essen/Kochen | A-025 Rezeptseite, Kochmodus, Schnellanleitung (Tafel 122) | fertig v0.146 |
 | P6 | Ergebnis-Karten | A-037 (Tafel 126) | fertig v0.151 |
 | P7 | Sport-Seite | A-044 Stempelkarte (Tafel 132) | fertig v0.153 |
