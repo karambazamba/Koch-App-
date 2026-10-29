@@ -2,7 +2,7 @@
 // Bearbeiten, Wischen, Eintragen, Kalender, Essen, Rezept, Einkauf, Vorrat,
 // Pinnwand, Wetter, Spendentopf, Tipps, Einstellungen, Chat im Testmodus,
 // Konten mit zwei Browsern, Vorführen: Bearbeiten beenden, Memo antippen,
-// Offline, neue Version, Stammartikel, Sport als Stempelkarte, Mikrofon aus, Termin in einem Satz, Stimme, Wochencheck, Kochtipp, Mehr Ideen, Mia zuerst, Sprachnachricht 5× / Mikro hängt / Kachel-Knöpfe, App heißt Mia, Härtetest Familie teilen, nichts abgeschnitten auch auf dem SE, Startseiten-Raster XS · S · M).
+// Offline, neue Version, Stammartikel, Sport als Stempelkarte, Mikrofon aus, Termin in einem Satz, Stimme, Wochencheck, Kochtipp, Mehr Ideen, Mia zuerst, Sprachnachricht 5× / Mikro hängt / Kachel-Knöpfe, App heißt Mia, Härtetest Familie teilen, nichts abgeschnitten auch auf dem SE, Startseiten-Raster XS · S · M, Startseite kompakter).
 // Startet selbst einen Testserver (vorher `npm run build`) oder nutzt
 // E2E_BASE. Nur einzelne Abläufe: `npm run durchklick -- wetter pinnwand`.
 import { checker, launch, newPage, startServer } from "./lib.mjs";
@@ -56,8 +56,9 @@ import * as raumwahl from "./ablaeufe/raumwahl.mjs";
 import * as raster from "./ablaeufe/raster.mjs";
 import * as sport from "./ablaeufe/sport.mjs";
 import * as wundertuete from "./ablaeufe/wundertuete.mjs";
+import * as kompakter from "./ablaeufe/kompakter.mjs";
 
-const ALL = { ...start, ...alltag, ...essen, ...mehr, ...konten, ...vorfuehren, ...mikrofon, ...termin, ...stimme, ...wochencheck, ...kochtipp, ...mehrideen, ...miazuerst, ...pinnwandgesten, ...pinnwandordnen, ...sprachnachricht, ...mianame, ...startseite, ...schnelleingabe, ...kalendertag, ...mails, ...datenschutz, ...mikrocheck, ...zuhoeren, ...serverstimme, ...ohrlive, ...miasprechen, ...wischen, ...abhaken, ...uebersicht, ...ergebniskarten, ...testcode, ...notizen, ...sprechenhaengt, ...heim, ...essenkachel, ...wochenkarte, ...laeden, ...familieTeilen, ...einsortieren, ...einkaufneu, ...kochmodus, ...vorschau, ...erledigt, ...abgeschnitten, ...einkaufnamen, ...raumwahl, ...raster, ...sport, ...wundertuete };
+const ALL = { ...start, ...alltag, ...essen, ...mehr, ...konten, ...vorfuehren, ...mikrofon, ...termin, ...stimme, ...wochencheck, ...kochtipp, ...mehrideen, ...miazuerst, ...pinnwandgesten, ...pinnwandordnen, ...sprachnachricht, ...mianame, ...startseite, ...schnelleingabe, ...kalendertag, ...mails, ...datenschutz, ...mikrocheck, ...zuhoeren, ...serverstimme, ...ohrlive, ...miasprechen, ...wischen, ...abhaken, ...uebersicht, ...ergebniskarten, ...testcode, ...notizen, ...sprechenhaengt, ...heim, ...essenkachel, ...wochenkarte, ...laeden, ...familieTeilen, ...einsortieren, ...einkaufneu, ...kochmodus, ...vorschau, ...erledigt, ...abgeschnitten, ...einkaufnamen, ...raumwahl, ...raster, ...sport, ...wundertuete, ...kompakter };
 const pick = process.argv.slice(2);
 const flows = Object.entries(ALL).filter(([name, run]) => typeof run === "function" && (!pick.length || pick.includes(name)));
 const stop = await startServer();

@@ -60,7 +60,8 @@ export function abgeschnitteneTexte() {
       range.selectNodeContents(node);
       const r = range.getBoundingClientRect();
       if (!r.width || !r.height) continue;
-      if (/(…|\.\.\.)$/.test(text)) out.push(`${name}: „${text}“ (endet auf …)`);
+      // A-048: Platzhalter, die absichtlich auf „ …“ enden („Schnell notieren …“), sind markiert – nur sie dürfen das; abgeschnitten werden dürfen auch sie nicht
+      if (/(…|\.\.\.)$/.test(text) && !el.closest("[data-platzhalter-text]")) out.push(`${name}: „${text}“ (endet auf …)`);
       for (let a = el; a && a !== tile.parentElement; a = a.parentElement) {
         const s = getComputedStyle(a);
         const clamp = s.webkitLineClamp && s.webkitLineClamp !== "none";

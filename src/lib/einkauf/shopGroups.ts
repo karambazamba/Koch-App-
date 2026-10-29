@@ -29,12 +29,13 @@ type TileRow = ShopGroup & { count: number };
 export type TileRows = { rows: TileRow[]; rest: string | null; restZahl: number; ohne: string[] };
 
 /**
- * Einkauf-Kachel (Variante C2, Tafel 99): IMMER eine Zeile je Laden aus
- * „Meine Läden“ in ihrer Reihenfolge (auch mit 0), andere Läden mit Sachen
- * danach (meiste zuerst), bewusst „Egal wo“ zuletzt. Was noch ohne Laden ist,
- * zählt extra („6 noch ohne Laden · Sortieren ›“). Höchstens `max` Zeilen
- * (Kachel im festen Raster: 3, mit der Zeile „ohne Laden“ 2), der Rest (nur
- * Läden mit Sachen) als `rest` bzw. `restZahl` („+2“ im Kopf).
+ * Einkauf-Kachel (Variante C2, Tafel 99; Reihenfolge A-048, Tafel 135):
+ * Läden mit Sachen zuerst, die mit den meisten Sachen vorn (Gleichstand:
+ * Reihenfolge aus „Meine Läden“), danach die Läden aus „Meine Läden“ ohne
+ * Sachen (stehen IMMER da, auch mit 0), bewusst „Egal wo“ zuletzt. Was noch
+ * ohne Laden ist, zählt extra („6 ohne Laden · Sortieren ›“). Höchstens
+ * `max` Zeilen (`kachelLaeden`), der Rest (nur Läden mit Sachen) als `rest`
+ * bzw. `restZahl` („+2“ im Kopf) – also erst ab dem 4. Laden.
  */
 export function tileRows(items: { name: string; shop: string; anywhere?: boolean }[], myShops: string[], max = 3): TileRows {
   const map = new Map<string, { shop: string; names: string[] }>();
@@ -58,13 +59,22 @@ export function tileRows(items: { name: string; shop: string; anywhere?: boolean
     return i < 0 ? mine.length : i;
   };
   const shops: TileRow[] = [...map.values()].map((g) => ({ ...g, count: g.names.length }));
-  const ordered = sortBy(shops, ascNum((g) => rank(g.shop ?? "")), ...byCount);
+  // A-048: Läden mit Sachen zuerst, die mit den meisten vorn (Gleichstand: Reihenfolge aus „Meine Läden“), leere aus „Meine Läden“ danach
+  const ordered = sortBy(shops, ascNum((g) => (g.count > 0 ? 0 : 1)), ascNum((g) => -g.count), ascNum((g) => rank(g.shop ?? "")), ...byCount);
   const all: TileRow[] = egal.length ? [...ordered, { shop: null, names: egal, count: egal.length }] : ordered;
   const rest = all.slice(max).filter((r) => r.count > 0);
   return { rows: all.slice(0, max), rest: rest.length ? `+ ${rest.map((r) => `${r.shop ?? "Egal wo"} ${r.count}`).join(", ")}` : null, restZahl: rest.reduce((n, r) => n + r.count, 0), ohne };
 }
 
-/** Leise Zeile unter den Läden: „6 noch ohne Laden“ */
+/**
+ * Wie viele Laden-Zeilen die Kachel zeigt (A-048): mit „Meine Läden“ und
+ * Höhe = Inhalt immer 3 (die Zeile „n ohne Laden · Sortieren ›“ kommt
+ * darunter dazu). Ohne „Meine Läden“ steht „Liste“ als Zeile in der Liste –
+ * dann 2 + „Liste“. In einer festen Reihe (neben einer Kachel mit eigener
+ * Höhe) wie bisher 2, sobald die Zeile „ohne Laden“ dazukommt.
+ */
+export const kachelLaeden = ({ mine, ohneDa, inhalt }: { mine: boolean; ohneDa: boolean; inhalt: boolean }) => (ohneDa && !(mine && inhalt) ? 2 : 3);
+
 /** Zeile unter den Läden der Kachel: „16 ohne Laden“ (vollständig, notfalls zweizeilig) */
 export const ohneLadenZeile = (n: number) => `${n} ohne Laden`;
 

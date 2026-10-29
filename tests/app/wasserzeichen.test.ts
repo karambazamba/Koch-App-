@@ -1,7 +1,8 @@
 // Wasserzeichen für alle Kacheln ohne eigenes Bild (A-036, Tafel 124 A/125):
 // EINE Komponente, Zuordnung als Tabelle über ALLE Kacheln des Katalogs (neue
 // Kachel ohne Eintrag = rot), Ausnahmen mit Grund (Wetter, Essen, Pinnwand,
-// Spendentopf, Sport mit Stempeln; die Jetzt-Karte ist keine Kachel), XS ohne, Schlicht ohne.
+// Spendentopf, Sport mit Stempeln; die Jetzt-Karte ist keine Kachel), seit A-048
+// (Tafel 135) in ALLEN Größen – XS klein (110 px) und weiter angeschnitten –, Schlicht ohne.
 // Kontrast-Regel: freier Text ohne weißes Kärtchen → leise Deckkraft (9 %).
 import { readFileSync, readdirSync } from "node:fs";
 import { createElement } from "react";
@@ -89,15 +90,17 @@ describe("Komponente", () => {
   it("unten rechts angeschnitten, leicht gedreht, Strich 1,3, still, hinter dem Inhalt", () => {
     const html = renderToStaticMarkup(createElement(KachelWasserzeichen, { kachel: "termine", size: "M" }));
     const span = html.match(/^<span [^>]*>/)?.[0] ?? "";
-    for (const c of ["pointer-events-none", "-z-10", "-bottom-[30px]", "-right-[30px]", "h-[150px]", "w-[150px]", "-rotate-[8deg]", 'aria-hidden="true"', 'data-kachel="termine"']) expect(span).toContain(c);
+    for (const c of ["pointer-events-none", "-z-10", "-bottom-[30px]", "-right-[30px]", "aspect-square", "h-[min(150px,calc(100%-10px))]", "-rotate-[8deg]", 'aria-hidden="true"', 'data-kachel="termine"']) expect(span).toContain(c);
     expect(span).not.toContain("data-art");
     expect(html).toContain(`stroke-width="${WASSERZEICHEN_STRICH}"`);
     expect(WASSERZEICHEN_STRICH).toBe(1.3);
     expect(html).not.toMatch(/animate-|transition|style=/);
   });
 
-  it("XS: keins; frei: leise Deckkraft", () => {
-    expect(renderToStaticMarkup(createElement(KachelWasserzeichen, { kachel: "notizen", size: "XS" }))).toBe("");
+  it("XS (A-048): klein 110 px, rechts 50 / unten 34 px angeschnitten, eigene Deckkraft; frei: leise Deckkraft", () => {
+    const xs = renderToStaticMarkup(createElement(KachelWasserzeichen, { kachel: "notizen", size: "XS" })).match(/^<span [^>]*>/)?.[0] ?? "";
+    for (const c of ["h-[110px]", "w-[110px]", "-right-[50px]", "-bottom-[34px]", "-z-10", "-rotate-[8deg]", 'data-groesse="XS"', 'data-art="xs"']) expect(xs).toContain(c);
+    expect(xs).not.toContain("min(150px");
     expect(renderToStaticMarkup(createElement(KachelWasserzeichen, { kachel: "notizen", size: "S", frei: true }))).toContain('data-art="frei"');
   });
 });
@@ -120,7 +123,25 @@ describe("freier Text ohne Kärtchen → 9 % (data-art=frei), weiße Liste → v
     const html = renderToStaticMarkup(createElement(NotesTile, { size: "S" }));
     expect(zeichen(html)).toContain('data-kachel="notizen"');
     expect(zeichen(html)).toContain('data-art="frei"');
-    expect(renderToStaticMarkup(createElement(NotesTile, { size: "XS" }))).not.toContain("kachel-wasserzeichen");
+    // XS (A-048): kleines Wasserzeichen, die Zeile lässt ihm rechts Platz und stellt sich frei
+    const xs = renderToStaticMarkup(createElement(NotesTile, { size: "XS" }));
+    expect(zeichen(xs)).toContain('data-groesse="XS"');
+    expect(xs).toMatch(/pr-7[^"]*" data-zeile="true" data-notiz-zeile="true">[\s\S]*?<span class="kachel-frei truncate" data-freitext="true">/);
+  });
+
+  // A-048/Tafel 140: leer überall „Schnell notieren …“ (XS früher „Schnell notieren.“ mit Stift, S/M „Schnell was aufschreiben.“)
+  it("Notizen leer: XS, S und M derselbe Leertext „Schnell notieren …“, als Platzhalter markiert, ohne Stift im Text", async () => {
+    store.notes = [];
+    const { NotesTile } = await import("@/components/heute/HomeTiles");
+    for (const size of ["XS", "S", "M"] as const) {
+      const html = renderToStaticMarkup(createElement(NotesTile, { size }));
+      expect(html, size).toContain('<span class="kachel-frei" data-platzhalter-text="true">Schnell notieren\u00a0…</span>');
+      expect(html, size).not.toMatch(/aufschreiben|Schnell notieren\./);
+      // Der Stift ist nur der Knopf oben rechts („Schnellnotiz schreiben“)
+      expect(html.match(/lucide-pen-line/g), size).toHaveLength(1);
+    }
+    const schnell = readFileSync("src/components/notizen/Schnellnotiz.tsx", "utf8");
+    expect(schnell).toContain('placeholder="Schnell notieren …"');
   });
 
   it("Timer S: frei; der Name (grau) freigestellt", async () => {

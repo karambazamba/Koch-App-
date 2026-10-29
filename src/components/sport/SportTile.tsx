@@ -1,14 +1,15 @@
 "use client";
 
 // SPORT – Pastell-Kachel als Stempelkarte (A-044, Tafel 132), im Raster XS,
-// S oder M. XS = EINE Zeile („Do 8:00 · Laufen“). S = die Felder dieser
+// S oder M. XS (A-048, Tafel 135) = zwei kleine Stempel links, rechts „Heute“
+// / „8:00 · Laufen“ (ganz schmal ohne Stempel). S = die Felder dieser
 // Woche (Stempel, leere gestrichelt) und darunter groß das Nächste
 // („Do · 8:00“), klein die Sportart. M = Felder links, rechts „Als Nächstes“
 // mit Wetter zur Trainingszeit („Laufen · ☀ 9°“). Geschafft = Kachel grün,
 // „Geschafft.“ / „Diese Woche“. Leer = „Diese Woche ist noch frei.“ Plus =
 // „Training eintragen“, die Kachel antippen = Sport-Seite. Kein
-// Wasserzeichen: die Stempel sind das Bild. Beispiel-Tag allein (Tafel 119):
-// „2 von 3 diese Woche“.
+// Wasserzeichen (auch nicht in XS): die Stempel sind das Bild. Beispiel-Tag
+// allein (Tafel 119): „2 von 3 diese Woche“.
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -21,12 +22,12 @@ import { weekdayShort } from "@/lib/kalender/model";
 import { clockLabel } from "@/lib/kalender/answers";
 import type { TileSize } from "@/lib/core/homeLayout";
 import { addDays } from "@/lib/core/now";
-import { nextTraining, trainingsBetween, useSport, whenLabel } from "@/lib/sport";
-import { stempelkarte, type Feld } from "@/lib/sport/stempel";
+import { nextTraining, trainingsBetween, useSport } from "@/lib/sport";
+import { XS_BEISPIEL, stempelkarte, xsFelder, xsZeilen, type Feld, type XsFeld } from "@/lib/sport/stempel";
 import { useForecast } from "@/lib/wetter/client";
 import { round } from "@/lib/wetter/forecast";
 import { WeatherSymbol } from "@/components/wetter/WeatherSymbol";
-import { StempelFeld, feldText, useNeueStempel, type StempelGroesse } from "@/components/sport/Stempel";
+import { StempelFeld, StempelZeichen, feldText, useNeueStempel, type StempelGroesse } from "@/components/sport/Stempel";
 import { SportEintragen } from "@/components/sport/SportEintragen";
 
 const BOX = `${TILE} flex flex-col gap-2.5 p-3.5`;
@@ -58,7 +59,7 @@ export function SportTile({ size = "S", entries, today, minutes, me, demo = fals
   const showDemo = demo && !hasOwn;
   const leer = !karte.felder.some((f) => f.art === "stempel") && !next;
   const zustand = showDemo ? "beispiel" : karte.geschafft ? "geschafft" : leer ? "leer" : "normal";
-  const zeile = showDemo ? DEMO_SPORT : karte.geschafft ? "Woche geschafft" : next ? `${whenLabel(next, today)} · ` : "Diese Woche frei";
+  const xs = xsZeilen(karte, next, today, showDemo);
   return (
     <>
       <section
@@ -75,14 +76,19 @@ export function SportTile({ size = "S", entries, today, minutes, me, demo = fals
           <QuickButton icon={Plus} label="Training eintragen" onClick={() => setAdding(true)} />
         </span>
         {size === "XS" ? (
-          <p className="pointer-events-none relative flex min-w-0 whitespace-nowrap text-[15px] font-bold leading-tight" data-zeile>
-            <span className="shrink-0">{zeile}</span>
-            {next && !showDemo && !karte.geschafft && (
-              <span className="min-w-0 truncate" data-freitext>
-                {next.title}
+          <div className="pointer-events-none relative flex min-h-[30px] min-w-0 items-center gap-2" data-zeile data-sport-xs>
+            <span className="sr-only">{xs.vorlesen}</span>
+            <XsFelder felder={showDemo ? XS_BEISPIEL : xsFelder(karte.felder)} />
+            <p className="flex min-w-0 flex-1 flex-col leading-tight" aria-hidden>
+              <span className="whitespace-nowrap text-[14px] font-extrabold tabular-nums">{xs.oben}</span>
+              {/* „8:00 · Laufen“: Teile mit Abstand statt Leerzeichen am Rand (das schluckt flex – „8:00 ·Laufen“, Tafel 135) */}
+              <span className="flex min-w-0 gap-1 whitespace-nowrap text-[12.5px] font-semibold text-muted">
+                {xs.zeit && <span className="shrink-0 tabular-nums">{xs.zeit}</span>}
+                {xs.zeit && <span className="shrink-0">·</span>}
+                <span className={xs.freitext ? "min-w-0 truncate" : undefined} data-freitext={xs.freitext || undefined}>{xs.unten}</span>
               </span>
-            )}
-          </p>
+            </p>
+          </div>
         ) : showDemo ? (
           <p className="pointer-events-none relative text-[15px] font-bold leading-snug">{DEMO_SPORT}</p>
         ) : (
@@ -94,6 +100,15 @@ export function SportTile({ size = "S", entries, today, minutes, me, demo = fals
       </section>
       {adding && <SportEintragen today={today} recent={recent} onClose={() => setAdding(false)} />}
     </>
+  );
+}
+
+/** XS: zwei kleine Felder (30 px); ganz schmal (Board unter 320 px) ohne – dann hat der Text den Platz */
+function XsFelder({ felder }: { felder: XsFeld[] }) {
+  return (
+    <span className="flex shrink-0 gap-1 @max-[320px]:hidden" aria-hidden data-sport-felder>
+      {felder.map((f, i) => (f.art === "stempel" ? <StempelZeichen key={f.stempel.id} stempel={f.stempel} groesse="xs" /> : <StempelFeld key={`feld-${i}`} feld={f} groesse="xs" mitZeit={false} />))}
+    </span>
   );
 }
 

@@ -6,8 +6,8 @@
 // Tippflächen ≥ 44 px, Eingabefelder ≥ 16 px, keine Konsolen-Fehler, keine
 // 404, keine Platzhalter/englischen Reste/geraden Apostrophe im Text; auf der
 // Startseite das feste Raster (Tafel 118: jede Kachel genau XS/S/M groß, S
-// quadratisch – nur ganz schmal etwas höher, `grundZeile` –, nichts quillt
-// über die feste Fläche).
+// quadratisch – nur ganz schmal etwas höher, `grundZeile` –, Listen-Reihen
+// so hoch wie ihr Inhalt (A-048), nichts quillt über).
 // Nur Teile: `npm run pruefen -- --schnell` (nur 15 Pro hell, Browser).
 import { BASE, hello, launch, newPage, seedFamily, setDark, startServer } from "./lib.mjs";
 import { RECIPE_DATA } from "./ablaeufe/essen.mjs";
@@ -137,7 +137,10 @@ function raster() {
     const r = el.getBoundingClientRect();
     // gemessen werden die Kacheln, der Wetter-Himmel und die Bild-Fläche der Essen-Kachel (die schneidet selbst ab – ein Überquellen fiel sonst nicht auf)
     const [w, h] = want[el.dataset.groesse] ?? [r.width, r.height];
-    if (Math.abs(r.width - w) > 1.5 || Math.abs(r.height - h) > 1.5) out.push(`Kachel nicht im Raster: ${el.dataset.unit} ${el.dataset.groesse} ${Math.round(r.width)}×${Math.round(r.height)} statt ${Math.round(w)}×${Math.round(h)}`);
+    // A-048 (Tafel 135): Reihen nur aus Listen (Termine, Aufgaben, Einkauf) sind so hoch wie ihr Inhalt – geprüft wird dort die Breite und dass mindestens Kopf + eine Zeile dasteht
+    if (el.dataset.hoehe === "inhalt") {
+      if (Math.abs(r.width - w) > 1.5 || r.height < 80) out.push(`Kachel nicht im Raster: ${el.dataset.unit} ${el.dataset.groesse} ${Math.round(r.width)}×${Math.round(r.height)} statt ${Math.round(w)} breit, mindestens 80 hoch`);
+    } else if (Math.abs(r.width - w) > 1.5 || Math.abs(r.height - h) > 1.5) out.push(`Kachel nicht im Raster: ${el.dataset.unit} ${el.dataset.groesse} ${Math.round(r.width)}×${Math.round(r.height)} statt ${Math.round(w)}×${Math.round(h)}`);
     for (const sec of el.querySelectorAll("section, a.wx-himmel, [data-essen-antippen]")) if (!sec.closest("[role=dialog]") && sec.scrollHeight > sec.clientHeight + 2) out.push(`Kachel quillt über: ${el.dataset.unit} (${sec.getAttribute("aria-label") || sec.tagName})`);
   }
   for (const m of marks) m.style.display = "";

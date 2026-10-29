@@ -10,7 +10,7 @@ export const notizen = async (page, check) => {
   await hello(page);
   await seedFamily(page);
   await page.goto(BASE + "/notizen");
-  const feld = page.getByRole("textbox", { name: "Schnell was aufschreiben" });
+  const feld = page.getByRole("textbox", { name: "Schnell notieren" });
   await feld.waitFor();
   check(!(await page.getByRole("button", { name: "Sichern" }).count()), "„Sichern“ erst mit Text");
   check(await page.getByText("Return = neue Zeile").isVisible(), "leiser Hinweis „Return = neue Zeile“");

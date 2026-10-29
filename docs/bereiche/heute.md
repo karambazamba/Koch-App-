@@ -6,7 +6,8 @@
   selbst ändert, im festen Raster XS · S · M (Tafel 118, siehe „Festes Raster“
   unten): 2 Spalten, XS = halb breit + halb hoch, S = halb breit +
   quadratisch, M = ganz breit + so hoch wie S; die Höhe hängt nie vom Inhalt
-  ab, der Rest steht als „+n“ im Kopf. Bearbeiten direkt auf der Startseite
+  ab – außer bei den Listen Termine, Aufgaben und Einkauf (A-048, Tafel 135:
+  so hoch wie ihr Inhalt, siehe „Festes Raster“), der Rest steht als „+n“ im Kopf. Bearbeiten direkt auf der Startseite
   (lange drücken: wackeln, ziehen, „–“, XS · S · M, darunter die Farbe) –
   dasselbe Raster wie fertig. Lücke ohne Partner: ruhig leer, im Bearbeiten
   „＋ Kachel“; Essen + Einkauf sind ein festes Paar. Standard je Haushalt
@@ -185,14 +186,19 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
   Schrift der Kachel, deren Standard der Ton ist. „Schlicht“: weiß, der Ton
   nur in Überschrift/Symbol. „Wie am Anfang“ setzt auch die Farben zurück.
   Beispiel-Tag nutzt dieselbe Anordnung, also dieselben Farben.
-- Wasserzeichen (Tafel 124 A/125, A-036): jede Kachel ohne eigenes Bild
-  trägt in S/M ein großes, stilles Linien-Symbol unten rechts im
-  Kachel-Akzent (`ui/KachelWasserzeichen`, `.kachel-wasserzeichen`, Tokens
+- Wasserzeichen (Tafel 124 A/125, A-036; seit A-048/Tafel 135 in ALLEN
+  Größen): jede Kachel ohne eigenes Bild trägt ein großes, stilles
+  Linien-Symbol unten rechts im Kachel-Akzent – in S/M bis 150 px (höchstens
+  Kachelhöhe − 10 px, damit es bei Listen so hoch wie der Inhalt unten rechts
+  bleibt), in XS 110 px, rechts 50 px/unten 34 px angeschnitten, 11 %
+  (dunkel 10 %, `--app-wasserzeichen-xs`); nie sichtbar über Text: die
+  XS-Zeile lässt ihm rechts Platz und Text in seiner Nähe ist freigestellt
+  (`kachel-frei`, auch das Label im Kopf) (`ui/KachelWasserzeichen`, `.kachel-wasserzeichen`, Tokens
   `--app-wasserzeichen*`): Termine Calendar, Aufgaben CircleCheck, Einkauf
   ShoppingCart, Im Haus Refrigerator, Notizen StickyNote, Timer Timer, Tipps
   MapPin, Post (bald) Mail, Wundertüte Gift (nur Vorderseite, leise). Keins
   bei Wetter (Himmel), Essen (Foto), Pinnwand (Zettel), Spendentopf (Topf),
-  Sport (die Stempel sind das Bild, A-044), der Jetzt-Karte, in XS und im Look „Schlicht“. Tabelle `WASSERZEICHEN_SYMBOL`
+  Sport (die Stempel sind das Bild, A-044 – auch in XS: zwei kleine Stempel), der Jetzt-Karte und im Look „Schlicht“. Tabelle `WASSERZEICHEN_SYMBOL`
   (`Record` über alle Kachel-IDs, neue Kachel = Eintrag oder Grund in
   `OHNE_WASSERZEICHEN`, Test `tests/app/wasserzeichen.test.ts`). Freier Text
   ohne weißes Kärtchen → `frei` (9 %, dunkel 8 %), leiser Text dort mit
@@ -212,8 +218,9 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
 - Raster siehe „Festes Raster“. Startseite v6 (`lonelySToM`): eine einzelne
   S, die bisher breit war, wird einmal M.
 - Notizen-Kachel (`heute/notizenKachel.ts`): XS = neueste bzw. angeheftete
-  Notiz (eine Zeile) oder „Schnell notieren.“, S und M = bis 3 Zeilen „Titel ·
-  Anfang“ oder „Schnell was aufschreiben.“, Rest „+n“, Angeheftete zuerst;
+  Notiz (eine Zeile), S und M = bis 3 Zeilen „Titel · Anfang“, Rest „+n“,
+  Angeheftete zuerst; leer überall derselbe Text „Schnell notieren …“
+  (A-048/Tafel 140, wie auf der Notizen-Seite; in XS 13 px, ohne Stift im Text – der Stift ist nur der Knopf oben rechts);
   Listen als „x von y erledigt“. Zeile = diese Notiz, Stift = Schnelleingabe
   „Neue Notiz“.
 - Nichts abgeschnitten (A-045/A-046, Tafel 133/134): kein sichtbarer Text in
@@ -221,7 +228,11 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
   bzw. sind so kurz, dass sie in die feste Fläche des Rasters passen; was
   nicht mehr passt, steht als „+n“ im Kopf. Ausnahme nur frei Eingegebenes
   (Notiz, Aufgabe, Termin, Zettel, Timer- und Trainingsname, Sachen im
-  Haus), markiert mit `data-freitext`. Im Haus: Name vor Schild, Schild
+  Haus), markiert mit `data-freitext`. Bewusster Platzhalter, der auf „ …“
+  endet („Schnell notieren …“, A-048 – bei Konflikten gilt der neuere
+  Auftrag), ist mit `data-platzhalter-text` markiert und nur vom „…“
+  ausgenommen (`abgeschnitteneTexte`, damit `nichtsAbgeschnitten`; `pruefen`
+  prüft „…“ nicht); abgeschnitten werden darf auch er nicht. Im Haus: Name vor Schild, Schild
   10,5 px. Essen-Kachel siehe `essen.md` („Essen-Kachel final“). Prüfung:
   Durchklick `nichtsAbgeschnitten` (Beispiel-Tag und Familie, iPhone SE/15
   Pro/Pixel 7, jede Kachel in XS/S/M, `abgeschnitteneTexte` in
@@ -599,8 +610,36 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
   (`data-luecke`, Auswahl nur passender Kacheln, `fuelleLuecke` stellt sie
   genau in die Lücke, möglichst ohne dass eine andere rückt).
 - `HomeBoard` setzt jede Einheit mit `grid-column`/`grid-row` an ihren
-  Platz; jede Kachel füllt genau ihre Fläche (`h-full`), die Höhe hängt nie
-  vom Inhalt ab. Bearbeiten nutzt dasselbe Raster (Knöpfe IN der Kachel, kein
+  Platz; jede Kachel füllt genau ihre Fläche (`h-full`).
+- Höhe = Inhalt für Listen (A-048, Tafel 135 mit Klarstellung, `zeilenPlan`):
+  Termine, Aufgaben, Einkauf S und Notizen S/M (`INHALT_KACHELN`, Einkauf
+  auch im Paar mit Essen) wachsen und schrumpfen mit dem Inhalt: 1 Eintrag =
+  Kopf + 1 Zeile, 2 = 2, 3 = 3, mehr = 3 Zeilen + „+n weitere“ (halb breit
+  „+n“) im Kopf, leer = Kopf + EIN freundlicher Satz in einer 30-px-Zeile
+  („Termin eintragen“, „Aufgabe eintragen“, „Schnell notieren …“, „Was braucht
+  ihr?“) – so hoch wie mit einem Eintrag; darunter immer 14 px
+  (`pb-3.5`), kein Leerraum bis zu einer festen Rasterhöhe. Ein Band aus zwei
+  Grund-Zeilen, in dem jede Einheit genau dieses Band füllt und eine Liste
+  ist (Lücke daneben bleibt leer), wird EINE Zeile `auto`; die Einheit trägt
+  `data-hoehe="inhalt"` und `render(…, inhalt)`. Feste Höhen nur für Kacheln
+  mit Bild bzw. eigener Fläche (Essen allein, Wetter, Pinnwand, Notizen,
+  Sport, Im Haus, Wundertüte …): steht eine Liste neben so einer Kachel oder
+  einem XS-Paar, bekommen beide die Höhe der größeren – das ist die feste
+  Reihe (die Liste passt mit 3 Zeilen immer hinein). Zwei Kacheln in einer Reihe sind
+  immer gleich hoch, aber nur so hoch, wie die höhere braucht (Essen im Paar
+  = so hoch wie Einkauf bzw. sein eigener Inhalt). Die Plätze (Raster XS · S ·
+  M, Tafel 118/119) ändern sich dadurch nicht. Das Wasserzeichen liegt
+  absolut und macht die Kachel nie höher. Prüfungen: `rasterHoehen` und
+  `pruefen` messen bei `data-hoehe="inhalt"` die Breite und Kopf + 1 Zeile
+  statt der festen Höhe (die feste Höhe ist bei Listen gerade der Fehler aus
+  Tafel 135), `rasterBuendig` erwartet Termine/Aufgaben niedriger als die
+  Pinnwand; Durchklick `startseiteKompakt` (Familie-Beispiel auf SE, 15 Pro,
+  Pixel 7: unter der letzten Listenzeile ≤ 20 px, Einkauf 3 Läden, Paare
+  gleich hoch, XS-Wasserzeichen sichtbar und nie über Text; „Nur für mich“:
+  Sport XS mit zwei Stempeln, Im Haus XS mit Kühlschrank) und `listenHoehen`
+  (Termine, Aufgaben, Notizen, Einkauf S mit 0, 1, 2, 3, 5 Einträgen auf SE,
+  15 Pro, Pixel 7), Tests `tests/heute/hoeheInhalt.test.ts` und
+  `tests/heute/hoeheZeilen.test.ts`. Bearbeiten nutzt dasselbe Raster (Knöpfe IN der Kachel, kein
   Einzug, das Paar ohne Innenabstand) – nach „Fertig“ exakt dieselbe Ansicht
   (Fehler „Pinnwand-S schrumpft nach Fertig auf einen Streifen“, Video 28.10.,
   behoben: feste Höhe statt `h-[156px]`/`min-h` und Nachbar-Strecken).
@@ -608,9 +647,11 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
   Grenze unter ihr, über die keine Kachel reicht (`trennZeile`), Pfeil
   links/rechts/mittig nach Platz (`pfeilZu`).
 - Inhalt je Größe: XS = Kopf + EINE Zeile (Wetter: Temperatur + kurzer
-  Satz), S/M = feste Mengen (Termine/Aufgaben 3, Einkauf 3 Läden bzw. 2 mit
-  „ohne Laden“, Notizen 3, Im Haus 2 + „Was koch ich daraus?“), Rest als „+n“
-  im Kopf; nichts gestaucht. Pinnwand S = Fächer, M = drei nebeneinander.
+  Satz; Sport XS zwei kleine Stempel + „Heute“/„8:00 · Laufen“), S/M = feste
+  Mengen (Termine/Aufgaben höchstens 3, Einkauf 3 Läden – die mit den meisten
+  Sachen zuerst – und darunter „n ohne Laden · Sortieren ›“, „+n“ erst ab dem
+  4. Laden, A-048; nur in einer festen Reihe mit „ohne Laden“ 2; Notizen 3,
+  Im Haus 2 + „Was koch ich daraus?“), Rest als „+n“ im Kopf; nichts gestaucht. Pinnwand S = Fächer, M = drei nebeneinander.
 - Timer ohne festen Platz (`mitLaufendemTimer`): läuft einer und steht die
   Timer-Kachel nicht selbst auf der Startseite, erscheint sie als XS ganz
   oben (im Bearbeiten nicht verschieb-/änderbar), danach wieder weg.

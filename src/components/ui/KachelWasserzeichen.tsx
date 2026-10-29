@@ -5,8 +5,12 @@
 // z −1: über der Fläche, unter Text und weißen Kärtchen; Fenster der Kachel
 // stehen deshalb außerhalb ihrer <section>. Farbe = Kachel-Akzent (folgt der
 // gewählten Farbe), Deckkraft nur über Tokens (`--app-wasserzeichen*`); im
-// Look „Schlicht“ keins. XS (eine Zeile) bleibt ohne. Still, nie antippbar,
-// für VoiceOver unsichtbar.
+// Look „Schlicht“ keins. Seit A-048 (Tafel 135) in ALLEN Größen: in XS kleiner
+// (110 px), weiter rechts angeschnitten, 11 % (`--app-wasserzeichen-xs`) –
+// die Zeile darunter lässt ihm rechts Platz bzw. stellt sich frei
+// (`kachel-frei`), nie liegt es sichtbar über Text. Es richtet sich nach der
+// echten Höhe der Kachel (absolut, unten rechts) und macht sie nie höher.
+// Still, nie antippbar, für VoiceOver unsichtbar.
 
 import { Calendar, CircleCheck, Gift, Mail, MapPin, Refrigerator, ShoppingCart, StickyNote, Timer, type LucideIcon } from "lucide-react";
 import type { HomeTileId, TileSize } from "@/lib/core/homeLayout";
@@ -41,6 +45,17 @@ export const WASSERZEICHEN_SYMBOL: Record<WasserzeichenKachel, LucideIcon> = {
   wundertuete: Gift,
 };
 
+/**
+ * S/M: 150 px, unten/rechts 30 px angeschnitten. Seit A-048 sind Listen-Kacheln
+ * so hoch wie ihr Inhalt – das Zeichen passt sich der echten Höhe an (höchstens
+ * Kachelhöhe − 10 px, quadratisch), damit es unten rechts bleibt und nicht bis
+ * in den Kopf reicht; die Kachel macht es nie höher (absolut).
+ */
+const WASSERZEICHEN_SM = "-bottom-[30px] -right-[30px] aspect-square h-[min(150px,calc(100%-10px))]";
+
+/** XS (A-048): 110 px, rechts 50 px und unten 34 px angeschnitten – sichtbar bleibt ein Streifen von rund 60 px am rechten Rand */
+const WASSERZEICHEN_XS = "-bottom-[34px] -right-[50px] h-[110px] w-[110px]";
+
 /** Strichstärke der Wasserzeichen-Symbole (lucide, relativ zum 24er-Raster) */
 export const WASSERZEICHEN_STRICH = 1.3;
 
@@ -49,13 +64,14 @@ export const WASSERZEICHEN_STRICH = 1.3;
  * leere Liste …) – dann die leise Deckkraft (`--app-wasserzeichen-frei`, 9 %).
  */
 export function KachelWasserzeichen({ kachel, size, frei = false }: { kachel: WasserzeichenKachel; size: TileSize; frei?: boolean }) {
-  if (size === "XS") return null;
   const Symbol = WASSERZEICHEN_SYMBOL[kachel];
+  const xs = size === "XS";
   return (
     <span
-      className="kachel-wasserzeichen pointer-events-none absolute -bottom-[30px] -right-[30px] -z-10 flex h-[150px] w-[150px] -rotate-[8deg] select-none [&>svg]:h-full [&>svg]:w-full"
+      className={`kachel-wasserzeichen pointer-events-none absolute -z-10 flex -rotate-[8deg] select-none [&>svg]:h-full [&>svg]:w-full ${xs ? WASSERZEICHEN_XS : WASSERZEICHEN_SM}`}
       data-kachel={kachel}
-      data-art={frei ? "frei" : undefined}
+      data-groesse={xs ? "XS" : undefined}
+      data-art={xs ? "xs" : frei ? "frei" : undefined}
       aria-hidden
     >
       <Symbol strokeWidth={WASSERZEICHEN_STRICH} aria-hidden />

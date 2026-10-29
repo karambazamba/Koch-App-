@@ -10,13 +10,15 @@ import { useState, type CSSProperties } from "react";
 import type { Feld, Stempel } from "@/lib/sport/stempel";
 import { SportIcon } from "@/components/sport/SportIcon";
 
-export type StempelGroesse = "gross" | "m" | "s" | "mini" | "bonus";
+export type StempelGroesse = "gross" | "m" | "s" | "mini" | "xs" | "bonus";
 
 const MASS: Record<StempelGroesse, { box: string; rand: string; icon: string; tag: string; plan: string; innen: string }> = {
   gross: { box: "h-24 w-24", rand: "border-[3px]", icon: "h-8 w-8", tag: "text-[15px]", plan: "text-[14px]", innen: "inset-[5px]" },
   m: { box: "h-[68px] w-[68px]", rand: "border-[3px]", icon: "h-6 w-6", tag: "text-[12px]", plan: "text-[11px]", innen: "inset-[4px]" },
   s: { box: "h-[54px] w-[54px]", rand: "border-[2.5px]", icon: "h-5 w-5", tag: "text-[11px]", plan: "text-[10px]", innen: "inset-[3px]" },
   mini: { box: "h-[34px] w-[34px]", rand: "border-2", icon: "h-4 w-4", tag: "hidden", plan: "hidden", innen: "inset-[2px]" },
+  // Kachel XS (A-048): zwei kleine Felder links neben „Heute 8:00“ / „Laufen“
+  xs: { box: "h-[30px] w-[30px]", rand: "border-2", icon: "h-3.5 w-3.5", tag: "hidden", plan: "hidden", innen: "inset-[2px]" },
   bonus: { box: "h-12 w-12", rand: "border-2", icon: "h-4 w-4", tag: "text-[10px]", plan: "hidden", innen: "inset-[3px]" },
 };
 

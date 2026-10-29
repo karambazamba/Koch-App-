@@ -1,5 +1,6 @@
 // Startseite im festen Raster XS · S · M (Tafel 118–120, A-023): jede Kachel
-// in jeder erlaubten Größe mit fester Höhe auf SE, 15 Pro und Pixel 7 (S
+// in jeder erlaubten Größe mit fester Höhe – Listen-Reihen so hoch wie ihr
+// Inhalt (A-048, Tafel 135) – auf SE, 15 Pro und Pixel 7 (S
 // quadratisch aus der Breite, XS halb so hoch, M so hoch wie S, nichts quillt
 // über, ganz tippbare Zeilen ≥ 30 px); zwei S und XS-Paare bündig; Größenwechsel lässt die Nachbarn
 // nachrücken; Bearbeiten = Fertig-Ansicht (auch die Pinnwand-S nach „Fertig“);
@@ -56,6 +57,8 @@ const boxes = (page) =>
           verdeckt,
           key: el.dataset.unit,
           size: el.dataset.groesse,
+          // A-048: Listen-Reihen (Termine, Aufgaben, Einkauf) so hoch wie der Inhalt
+          inhalt: el.dataset.hoehe === "inhalt",
           x: Math.round(r.left - board.left),
           y: Math.round(r.top - board.top),
           w: Math.round(r.width),
@@ -81,7 +84,15 @@ const expected = (width, size) => {
   return size === "XS" ? { w: s, h: (h - 8) / 2 } : size === "S" ? { w: s, h } : { w: width, h };
 };
 
-/** Jede Kachel in jeder erlaubten Größe: feste Höhe, nichts quillt über – auf SE, 15 Pro und Pixel 7 */
+/**
+ * Höhe einer Listen-Reihe (A-048, Tafel 135): mindestens Kopf + eine Zeile,
+ * höchstens Kopf + 3 Zeilen + „ohne Laden“-Zeile + Ränder – nie mehr die feste
+ * Rasterhöhe mit Leerraum darunter.
+ */
+const INHALT_MIN = 80;
+const INHALT_MAX = 230;
+
+/** Jede Kachel in jeder erlaubten Größe: feste Höhe (Listen: Höhe = Inhalt, A-048), nichts quillt über – auf SE, 15 Pro und Pixel 7 */
 export const rasterHoehen = async (page, check, device) => {
   await hello(page);
   await seedFamily(page);
@@ -98,12 +109,13 @@ export const rasterHoehen = async (page, check, device) => {
       const bad = [];
       for (const u of units) {
         const want = u.key === "essen+einkauf" ? expected(width, "M") : expected(width, u.size);
-        if (!near(u.w, want.w) || !near(u.h, want.h)) bad.push(`${u.key} ${u.w}×${u.h} statt ${Math.round(want.w)}×${Math.round(want.h)}`);
+        // Listen-Reihen (A-048): Breite wie das Raster, Höhe aus dem Inhalt (zwischen Kopf + 1 Zeile und Kopf + 3 Zeilen + Rand)
+        if (u.inhalt ? !near(u.w, want.w) || u.h < INHALT_MIN || u.h > INHALT_MAX : !near(u.w, want.w) || !near(u.h, want.h)) bad.push(`${u.key} ${u.w}×${u.h} statt ${Math.round(want.w)}×${u.inhalt ? `${INHALT_MIN}–${INHALT_MAX}` : Math.round(want.h)}`);
         if (u.over.length) bad.push(`${u.key} quillt über (${u.over.join(", ")})`);
         if (u.flach.length) bad.push(`${u.key}: Zeile unter 30 px (${u.flach.join(", ")})`);
         if (u.verdeckt.length) bad.push(`${u.key}: ${u.verdeckt.join(", ")}`);
       }
-      check(!bad.length && units.length >= 2, `${where} · ${size}: ${units.length} Kacheln mit fester Höhe, nichts gestaucht${bad.length ? ` – ${bad.join(" · ")}` : ""}`);
+      check(!bad.length && units.length >= 2, `${where} · ${size}: ${units.length} Kacheln mit fester Höhe (Listen so hoch wie der Inhalt), nichts gestaucht${bad.length ? ` – ${bad.join(" · ")}` : ""}`);
     }
   }
 };
@@ -119,7 +131,8 @@ export const rasterBuendig = async (page, check) => {
   const u = Object.fromEntries(units.map((x) => [x.key, x]));
   check(u.pinnwand && u.wetter && u.notizen && near(u.pinnwand.y, u.wetter.y) && near(u.pinnwand.y + u.pinnwand.h, u.notizen.y + u.notizen.h), "Pinnwand S | Wetter XS über Notizen XS: oben und unten bündig");
   check(near(u.wetter.h, u.notizen.h) && near(u.wetter.x, u.notizen.x), "XS-Paar übereinander gleich groß");
-  check(near(u.termine.w, u.aufgaben.w) && near(u.termine.h, u.pinnwand.h), "Termine und Aufgaben (M) so hoch wie die Pinnwand (S)");
+  // A-048 (Tafel 135): Termine und Aufgaben (M) nicht mehr so hoch wie die Pinnwand, sondern so hoch wie ihr Inhalt
+  check(near(u.termine.w, u.aufgaben.w) && u.termine.inhalt && u.aufgaben.inhalt && u.termine.h < u.pinnwand.h && u.aufgaben.h < u.pinnwand.h, `Termine und Aufgaben (M) so hoch wie ihr Inhalt, niedriger als die Pinnwand (${u.termine.h} / ${u.aufgaben.h} / ${u.pinnwand.h})`);
   // zwei S nebeneinander
   await layout(page, [["pinnwand", "S"], ["notizen", "S"], ["termine", "M"]]);
   const two = Object.fromEntries((await boxes(page)).units.map((x) => [x.key, x]));

@@ -6,6 +6,42 @@ ist inzwischen anders. Den aktuellen Stand je Bereich beschreibt
 `docs/bereiche/<bereich>.md`, die festen Regeln stehen in `CLAUDE.md`.
 Ältere Pfadangaben meinen die Orte vor dem Umzug (siehe CLAUDE.md, „Ordner“).
 
+## Startseite kompakter (A-048, v0.158.0)
+
+- Auftrag A-048 (SOFORT, Tafel 135, Wortlaut
+  `docs/auftraege/A-048-startseite-kompakter.md`) nach Screenshots vom 29.10.
+  07:03: unter Termine und Aufgaben viel Leerraum, Einkauf nur 2 Läden +
+  „+4“, Sport und Im Haus XS ohne Bild, „8:00 ·Laufen“.
+- Höhe = Inhalt: `zeilenPlan` (`lib/heute/raster.ts`) macht ein Band aus zwei
+  Grund-Zeilen, in dem nur Listen-Kacheln liegen (Termine, Aufgaben, Einkauf,
+  auch im Paar mit Essen), zu EINER Zeile `auto`. Termine/Aufgaben/Einkauf
+  unten 14 px (`pb-3.5`). Neben Kacheln mit fester Höhe bleibt die Reihe fest
+  (gleich hoch). Raster-Plätze XS · S · M unverändert, kein Speicherformat
+  geändert. Wasserzeichen S/M höchstens Kachelhöhe − 10 px.
+- Klarstellung von Felix zu Tafel 135: auch Einkauf S und Notizen S/M
+  wachsen und schrumpfen mit dem Inhalt (1/2/3 Zeilen, mehr = 3 + „+n
+  weitere“, leer = ein Satz in einer Zeile, so hoch wie ein Eintrag), Liste
+  neben anderer Kachel = beide die Höhe der größeren. Leer-Zeilen 30 px
+  (ganz tippbar, `data-zeile`), Einkauf leer „Was braucht ihr?“; getestet
+  mit 0, 1, 2, 3, 5 Einträgen (Unit-Test und Durchklick `listenHoehen`).
+- Einkauf: bis zu 3 Läden (meiste Sachen zuerst, Gleichstand „Meine
+  Läden“), „+n“ erst ab dem 4., darunter „n ohne Laden · Sortieren ›“
+  (`kachelLaeden`, `tileRows`).
+- Wasserzeichen auch in XS (110 px, 11 %/10 %, `--app-wasserzeichen-xs`):
+  Notizen, Im Haus (Kühlschrank), Timer; Text in seiner Nähe freigestellt.
+  Sport XS bekam die Stempel-Variante (zwei kleine Stempel, „Heute“ /
+  „8:00 · Laufen“, `xsFelder`/`xsZeilen`), daher dort kein Wasserzeichen.
+- Kleinkram: „8:00 ·Laufen“ (Leerzeichen am Ende eines flex-Kinds) behoben;
+  Notizen-Leertext überall „Schnell notieren …“ (Nachtrag Tafel 140: auch XS,
+  auf der Notizen-Seite und im Schnellfeld, ohne Stift im Text – der Stift ist
+  nur der Knopf oben rechts), markiert mit `data-platzhalter-text` und nur
+  dort vom „…“-Verbot aus A-045 ausgenommen.
+- Prüfungen angepasst: `rasterHoehen`/`pruefen` messen bei
+  `data-hoehe="inhalt"` Breite und Mindesthöhe statt fester Höhe,
+  `rasterBuendig` erwartet Termine/Aufgaben niedriger als die Pinnwand; neuer
+  Durchklick `startseiteKompakt`, Tests `tests/heute/hoeheInhalt.test.ts`,
+  `einkaufKachel`, `stempel`, `wasserzeichen`.
+
 ## Mia hört von Anfang an und versteht mehrere Sachen (A-056, v0.157.0)
 
 - Auftrag A-056 (SOFORT, Vorrang, Wortlaut `docs/auftraege/A-056-mia-hoert-sofort.md`),

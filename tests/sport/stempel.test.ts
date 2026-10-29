@@ -221,10 +221,38 @@ describe("Sport-Kachel", () => {
     expect(html).not.toContain(" – ");
   });
 
-  it("XS: eine Zeile", async () => {
-    expect(await kachel(state([run(MO), run(TODAY)]), [], "XS")).toContain("Woche geschafft");
-    // Der Trainingsname ist frei eingegeben (eigenes <span data-freitext>, A-045)
-    expect((await kachel(state([]), [plan("2026-10-22")], "XS")).replace(/<[^>]+>/g, "")).toContain("Morgen · Do 8:00 · Laufen");
+  it("XS (A-048, Tafel 135): zwei kleine Stempel links, rechts Tag und „Uhrzeit · Titel“, kein Wasserzeichen", async () => {
+    const geschafft = await kachel(state([run(MO), run(TODAY)]), [], "XS");
+    expect(geschafft).toContain("Geschafft.");
+    expect(anzahl(geschafft, /data-stempel=/g)).toBe(2);
+    expect(geschafft).toContain("h-[30px] w-[30px]");
+    const morgen = await kachel(state([run(MO)]), [plan("2026-10-22")], "XS");
+    expect(anzahl(morgen, /data-stempel="laufen"/g)).toBe(1);
+    expect(anzahl(morgen, /data-feld=/g)).toBe(1);
+    // Vorlesen als ein Satz, sichtbar „Morgen“ / „Do 8:00 · Laufen“; der Name ist frei eingegeben (data-freitext)
+    expect(morgen).toContain('<span class="sr-only">Morgen · Do 8:00 · Laufen</span>');
+    expect(morgen).toMatch(/>Morgen<\/span><span class="flex[^"]*"><span class="shrink-0 tabular-nums">Do 8:00<\/span><span class="shrink-0">·<\/span><span class="min-w-0 truncate" data-freitext="true">Laufen<\/span>/);
+    expect(morgen).not.toContain("kachel-wasserzeichen");
+  });
+
+  // Fehler (Screenshot 29.10., Tafel 135): „8:00 ·Laufen“ – das Leerzeichen am Ende eines flex-Kinds fiel weg
+  it("XS: „Heute“ / „8:00 · Laufen“ mit Abstand, nie „8:00 ·Laufen“", async () => {
+    const heute = await kachel(state([]), [termin({ title: "Laufen", date: TODAY, start: "16:00", end: "17:00", label: "Sport" })], "XS");
+    expect(heute).toContain('<span class="sr-only">Heute 16:00 · Laufen</span>');
+    expect(heute).not.toMatch(/·L|· <\/span>/);
+    expect(heute).toMatch(/class="flex min-w-0 gap-1 /);
+    const { xsZeilen } = await import("@/lib/sport/stempel");
+    const k = { geschafft: false, zuletzt: null };
+    expect(xsZeilen(k, { date: TODAY, time: "08:00", title: "Laufen" }, TODAY).vorlesen).toBe("Heute 8:00 · Laufen");
+    expect(xsZeilen(k, { date: "2026-10-24", time: "08:00", title: "Laufen" }, TODAY)).toMatchObject({ oben: "Sa", zeit: "8:00", vorlesen: "Sa 8:00 · Laufen" });
+    expect(xsZeilen(k, null, TODAY)).toMatchObject({ oben: "Diese Woche", unten: "noch frei." });
+    expect(xsZeilen(k, null, TODAY, true)).toMatchObject({ oben: "2 von 3", unten: "diese Woche" });
+  });
+
+  it("XS: bei mehr als zwei Feldern die letzten zwei Stempel", async () => {
+    const { xsFelder, stempelkarte } = await import("@/lib/sport/stempel");
+    const karte = stempelkarte(state([run(MO), run("2026-10-20", { sport: "volleyball" }), run(TODAY, { sport: "rad" })], 4), [], TODAY, MITTAG);
+    expect(xsFelder(karte.felder).map((f) => (f.art === "stempel" ? f.stempel.sport : f.art))).toEqual(["volleyball", "rad"]);
   });
 });
 

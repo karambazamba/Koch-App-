@@ -4,8 +4,9 @@
 // (Feinschliff nach Handy-Test, Tafel 58/59): je Kachel EIN weißes Feld mit
 // feinen Trennlinien, Zeilen 30 px (die ganze Zeile tippbar, der Abhak-Kreis
 // mit unsichtbar größerer Fläche), Kopf 26 px mit „+N weitere“ neben dem
-// Plus, unten nichts. Feste Fläche im Raster (S und M gleich hoch): je drei
-// Zeilen, der Rest als „+N weitere“ (halb breit „+N“). Termine chronologisch mit
+// Plus, unten nur 14 px Rand. Höhe = Inhalt (A-048, Tafel 135): Kopf + 1 bis 3
+// Zeilen, der Rest als „+N weitere“ (halb breit „+N“); nur neben einer Kachel
+// mit fester Höhe füllt die Kachel die Reihe. Termine chronologisch mit
 // Strich in Raumfarbe, Uhrzeit, Titel; der laufende bleibt 30 Min („läuft“),
 // der nächste ist zart hervorgehoben („gleich“) – Logik in
 // lib/heute/termineKachel.ts. Erledigte Aufgaben: ca. 1,5 s durchgestrichen,
@@ -98,10 +99,10 @@ export function useLeaving(onDone: (item: DayItem) => void, ms = LEAVE_MS) {
   return { leaving, start };
 }
 
-/** Leere Kachel: freundlich „+ eintragen“ */
+/** Leere Kachel: freundlich „+ eintragen“ – EINE Zeile (30 px, ganz tippbar), so hoch wie ein Eintrag (A-048) */
 function AddLine({ label, onClick }: { label: string; onClick: () => void }) {
   return (
-    <button type="button" onClick={onClick} className="flex h-11 items-center gap-1.5 self-start text-sm font-semibold text-muted" aria-label={label}>
+    <button type="button" onClick={onClick} className="flex h-[30px] items-center gap-1.5 self-start text-sm font-semibold text-muted" aria-label={label} data-zeile>
       <Plus className="h-4 w-4" strokeWidth={2.5} aria-hidden />
       <span className="kachel-frei">{label}</span>
     </button>
@@ -124,9 +125,9 @@ function CheckBox({ item, checked, onClick, round = false }: { item: DayItem; ch
 const entersAnim = (before: string[] | null, key: string) => (before && !before.includes(key) ? { animation: "card-in 0.32s ease-out" } : undefined);
 
 /**
- * Wie viele Zeilen je Größe – Termine und Aufgaben gleich (Tafel 119): S und M
- * sind gleich hoch, also je 3 (passt auch auf dem iPhone SE in die feste
- * Fläche: Kopf 26 + 3 × 30 + Ränder); XS gibt es für diese Kacheln nicht.
+ * Wie viele Zeilen je Größe – Termine und Aufgaben gleich (Tafel 119/135):
+ * höchstens 3 (passt auch neben einer festen Kachel auf dem iPhone SE: Kopf
+ * 26 + 3 × 30 + Ränder); XS gibt es für diese Kacheln nicht.
  */
 const ROW_COUNT: Record<TileSize, number> = { XS: 1, S: 3, M: 3 };
 /** Erledigte Aufgabe: so lange durchgestrichen, dann weich weg */
@@ -166,7 +167,7 @@ export function TermineSection({ rows, label, href, today, size = "M", half = fa
   // Fenster (Möglichkeiten) neben der <section>: nie in der Ebene der Kachel (isolate) gefangen
   return (
     <>
-      <section className={`${TILE} isolate flex h-full flex-col gap-[7px] overflow-hidden px-3 py-2.5`} aria-label="Termine" data-groesse={size}>
+      <section className={`${TILE} isolate flex h-full flex-col gap-[7px] overflow-hidden px-3 pb-3.5 pt-2.5`} aria-label="Termine" data-groesse={size}>
         <KachelWasserzeichen kachel="termine" size={size} frei={rows.length === 0} />
         <TileHead title={demo?.label ?? label ?? "Termine"} more={rest} moreLabel={half ? "" : undefined} href={href} action={plus} />
         {rows.length ? (
@@ -248,7 +249,7 @@ export function AufgabenSection({ items, total, today, label, addOn = today, hre
   const rest = Math.max(0, Math.max(total ?? 0, open.length) - shown.length);
   return (
     <>
-      <section className={`${TILE} isolate flex h-full flex-col gap-[7px] overflow-hidden px-3 py-2.5`} aria-label="Aufgaben" data-groesse={size}>
+      <section className={`${TILE} isolate flex h-full flex-col gap-[7px] overflow-hidden px-3 pb-3.5 pt-2.5`} aria-label="Aufgaben" data-groesse={size}>
         <KachelWasserzeichen kachel="aufgaben" size={size} frei={open.length === 0 || arbeitMorgen > 0} />
         <TileHead title={label ?? "Aufgaben"} more={rest} moreLabel={half ? "" : undefined} href={href} action={plus} />
         {open.length > 0 ? (

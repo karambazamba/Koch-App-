@@ -8,7 +8,11 @@
 // Zeile vor etwas Breitem), eine einzelne S/XS zieht die nächste passende
 // Kachel nach oben. Was ohne
 // Partner frei bleibt, ist eine Lücke (ruhig leer, im Bearbeiten „＋ Kachel“).
-// Die Höhe hängt nie vom Inhalt ab, das Raster nie vom Bearbeiten-Modus.
+// Das Raster hängt nie vom Bearbeiten-Modus ab. Höhe (A-048, Tafel 135): feste
+// Grund-Zeilen für alles mit Bild oder eigener Fläche; ein Band aus zwei
+// Grund-Zeilen, in dem nur Listen-Kacheln (Termine, Aufgaben, Einkauf, Notizen – auch
+// im Paar mit Essen) liegen, wird EINE Zeile so hoch wie ihr Inhalt
+// (`zeilenPlan`).
 
 import { applyHomeChange, fitSize, reorderVisible, tileMeta, type HomeTile, type HomeTileId, type TileSize } from "@/lib/core/homeLayout";
 import { unitsOf, type Unit } from "@/lib/core/homeUnits";
@@ -100,6 +104,47 @@ export function packe(units: Unit[]): Raster {
   }
   luecken.sort((a, b) => a.row - b.row || a.col - b.col);
   return { plaetze, rows, luecken };
+}
+
+/** Listen-Kacheln (A-048, Klarstellung Tafel 135): ihre Höhe kommt aus dem Inhalt (Kopf + 1 bis 3 Zeilen bzw. leer ein Satz, darunter 14 px Rand) */
+export const INHALT_KACHELN: readonly HomeTileId[] = ["termine", "aufgaben", "einkauf", "notizen"];
+
+/** Einheit mit Höhe = Inhalt: eine Listen-Kachel – oder das Paar Essen + Einkauf (Essen ist dann so hoch wie Einkauf bzw. sein eigener Inhalt) */
+export const inhaltsHoch = (u: Unit) => u.tiles.some((t) => INHALT_KACHELN.includes(t.id)) && u.tiles.every((t) => INHALT_KACHELN.includes(t.id) || t.id === "essen");
+
+/**
+ * Zeilen der Anzeige (A-048): `zeilen[i]` = „fest“ (eine Grund-Zeile,
+ * `ZEILE_CSS`) oder „inhalt“ (EINE Zeile, so hoch wie der Inhalt – `auto`),
+ * `von[r]` = Anzeige-Zeile der Grund-Zeile r. Ein Band aus zwei Grund-Zeilen
+ * wird „inhalt“, wenn jede Einheit darin genau dieses Band füllt und
+ * inhaltshoch ist (Lücken daneben bleiben leer); sonst bleiben beide fest –
+ * zwei Kacheln in einer Reihe sind so immer gleich hoch, aber nur so hoch,
+ * wie die höhere braucht.
+ */
+export function zeilenPlan(r: Raster, units: Unit[]): { zeilen: ("fest" | "inhalt")[]; von: number[] } {
+  const zeilen: ("fest" | "inhalt")[] = [];
+  const von: number[] = [];
+  const unitOf = new Map(units.map((u) => [u.key, u]));
+  for (let row = 0; row < r.rows; ) {
+    const drin = r.plaetze.filter((p) => p.row <= row + 1 && p.row + p.h > row);
+    const band = row + 1 < r.rows && drin.length > 0 && drin.every((p) => p.row === row && p.h === 2 && Boolean(unitOf.get(p.key)) && inhaltsHoch(unitOf.get(p.key)!));
+    von[row] = zeilen.length;
+    if (band) {
+      von[row + 1] = zeilen.length;
+      zeilen.push("inhalt");
+      row += 2;
+    } else {
+      zeilen.push("fest");
+      row += 1;
+    }
+  }
+  return { zeilen, von };
+}
+
+/** Anzeige-Fläche eines Platzes (bzw. einer Lücke): erste Anzeige-Zeile und wie viele Zeilen */
+export function anzeigeZeilen(plan: ReturnType<typeof zeilenPlan>, p: { row: number; h: number }): { start: number; span: number } {
+  const start = plan.von[p.row] ?? plan.zeilen.length;
+  return { start, span: plan.zeilen[start] === "inhalt" ? 1 : p.h };
 }
 
 /** Raster der sichtbaren Kacheln in gespeicherter Reihenfolge */

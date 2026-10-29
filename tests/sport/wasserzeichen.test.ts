@@ -29,10 +29,12 @@ async function pantryTile(items: PantryItem[], size: "XS" | "S" = "S") {
 const sache = (name: string, i: number): PantryItem => ({ id: `p${i}`, name, addedAt: TODAY, place: "kuehlschrank" });
 
 describe("Im-Haus-Kachel", () => {
-  it("S: Kühlschrank als Wasserzeichen (freier Text: leise Deckkraft), XS ohne", async () => {
+  it("S: Kühlschrank als Wasserzeichen (freier Text: leise Deckkraft); XS seit A-048 klein (110 px), Name freigestellt", async () => {
     const html = await pantryTile([sache("Würstchen", 1)]);
     expect(html).toMatch(/<span class="kachel-wasserzeichen[^"]*" data-kachel="vorrat" data-art="frei" aria-hidden="true"><svg[^>]*lucide-refrigerator/);
-    expect(await pantryTile([sache("Würstchen", 1)], "XS")).not.toContain("kachel-wasserzeichen");
+    const xs = await pantryTile([sache("Würstchen", 1)], "XS");
+    expect(xs).toMatch(/<span class="kachel-wasserzeichen[^"]*h-\[110px\][^"]*" data-kachel="vorrat" data-groesse="XS" data-art="xs" aria-hidden="true"><svg[^>]*lucide-refrigerator/);
+    expect(xs).toContain('<span class="kachel-frei min-w-0 break-words">Würstchen</span>');
   });
 
   it("Namen nie abgeschnitten: Symbol 20 px, Name 14 px ohne flex-1/truncate, Schild 10,5 px darf umbrechen", async () => {
@@ -71,10 +73,12 @@ const mix = (top: string, bottom: string, a: number) =>
   "#" + [1, 3, 5].map((i) => Math.round(parseInt(top.slice(i, i + 2), 16) * a + parseInt(bottom.slice(i, i + 2), 16) * (1 - a)).toString(16).padStart(2, "0")).join("");
 
 describe("Tokens (Tafel 124 A)", () => {
-  it("Deckkraft hell 12,5 % (frei 9 %), dunkel 10 % (frei 8 %); Dunkel und Automatisch gleich", () => {
+  it("Deckkraft hell 12,5 % (frei 9 %, XS 11 %), dunkel 10 % (frei 8 %, XS 10 %); Dunkel und Automatisch gleich", () => {
     const [h, d, a] = Object.values(THEMES).map((s) => zahlen(block(s)));
-    expect(h).toEqual({ wasserzeichen: 0.125, "wasserzeichen-frei": 0.09 });
-    expect(d).toEqual({ wasserzeichen: 0.1, "wasserzeichen-frei": 0.08 });
+    expect(h).toEqual({ wasserzeichen: 0.125, "wasserzeichen-frei": 0.09, "wasserzeichen-xs": 0.11 });
+    expect(d).toEqual({ wasserzeichen: 0.1, "wasserzeichen-frei": 0.08, "wasserzeichen-xs": 0.1 });
+    // A-048: XS zwischen 10 und 12 %
+    for (const z of [h, d]) expect(z["wasserzeichen-xs"]).toBeGreaterThanOrEqual(0.1), expect(z["wasserzeichen-xs"]).toBeLessThanOrEqual(0.12);
     expect(d).toEqual(a);
   });
 
@@ -83,6 +87,7 @@ describe("Tokens (Tafel 124 A)", () => {
     expect(regeln).toContain("color: var(--tile-ac)");
     expect(regeln).toContain("opacity: var(--app-wasserzeichen)");
     expect(regeln).toContain('[data-art="frei"] { opacity: var(--app-wasserzeichen-frei)');
+    expect(regeln).toContain('[data-art="xs"] { opacity: var(--app-wasserzeichen-xs)');
     expect(regeln).toContain('[data-look="schlicht"] .kachel-wasserzeichen { display: none; }');
     expect(regeln).not.toMatch(/#[0-9a-f]{3,6}|var\(--color-/i);
     const komp = readFileSync("src/components/ui/KachelWasserzeichen.tsx", "utf8");
@@ -98,7 +103,7 @@ describe("Tokens (Tafel 124 A)", () => {
     for (const f of KACHEL_FARBEN) {
       const bg = t[`tile-${f.kachel}`];
       const ac = t[`tile-${f.kachel}-ac`];
-      for (const a of [z.wasserzeichen, z["wasserzeichen-frei"]]) {
+      for (const a of [z.wasserzeichen, z["wasserzeichen-frei"], z["wasserzeichen-xs"]]) {
         expect(contrast(t.ink, mix(ac, bg, a)), `${f.id} ink`).toBeGreaterThanOrEqual(4.5);
       }
     }

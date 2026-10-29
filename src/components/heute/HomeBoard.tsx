@@ -1,7 +1,8 @@
 "use client";
 
 // Die Kacheln auf "Heute" im festen Raster (Tafel 118, `heute/raster.ts`):
-// 2 Spalten, Grund-Zeile = halbe S-Höhe aus der Breite (XS · S · M), dicht
+// 2 Spalten, Grund-Zeile = halbe S-Höhe aus der Breite (XS · S · M; Reihen
+// nur aus Listen-Kacheln so hoch wie ihr Inhalt, A-048/Tafel 135), dicht
 // gefüllt in der gespeicherten Reihenfolge – im Bearbeiten-Modus GENAU
 // dasselbe Raster: alle Kacheln wackeln dezent, Inhalte sind nicht antippbar,
 // "–" oben links entfernt (mit "Gelöscht · Rückgängig"), der Größen-Umschalter
@@ -22,7 +23,7 @@ import { EditLook } from "@/components/heute/EditLook";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { applyHomeChange, reorderVisible, saveHomeTiles, standardLayout, tileMeta, type HomeTile, type HomeTileId, type TileSize } from "@/lib/core/homeLayout";
 import type { Haushalt } from "@/lib/core/haushalt";
-import { RASTER_GAP, ZEILE_CSS, packe, pfeilZu, trennZeile, type Luecke, type Platz } from "@/lib/heute/raster";
+import { RASTER_GAP, ZEILE_CSS, anzeigeZeilen, inhaltsHoch, packe, pfeilZu, trennZeile, zeilenPlan, type Luecke, type Platz } from "@/lib/heute/raster";
 import { Plus } from "lucide-react";
 import { showDeleted } from "@/lib/core/toast";
 import { pushUndo } from "@/lib/core/undo";
@@ -61,7 +62,8 @@ export function HomeBoard({
   tiles: HomeTile[];
   all: HomeTile[];
   editing: boolean;
-  render: (tile: HomeTile, half: boolean, editing: boolean) => ReactNode;
+  /** `inhalt`: die Kachel steht in einer Zeile, deren Höhe der Inhalt bestimmt (A-048) */
+  render: (tile: HomeTile, half: boolean, editing: boolean, inhalt: boolean) => ReactNode;
   /** „Kachel hinzufügen“ offen (auch vom „+ Kachel“ im Kopf) */
   picking: boolean;
   onPicking: (open: boolean) => void;
@@ -336,9 +338,18 @@ export function HomeBoard({
   const tippUnit = vorstellen && !editing ? preview.find((u) => u.tiles.some((t) => t.id === vorstellen.tile)) : undefined;
   const tippAt = tippUnit ? trennZeile(raster, tippUnit.key) : null;
   const pfeil = tippUnit && vorstellen ? pfeilZu(preview, raster, vorstellen.tile) : null;
-  const rowOf = (row: number) => (tippAt !== null && row >= tippAt ? row + 1 : row) + 1;
-  const rowsCss = Array.from({ length: raster.rows + (tippAt !== null ? 1 : 0) }, (_, i) => (tippAt !== null && i === tippAt ? "auto" : "var(--zeile)")).join(" ");
-  const area = (p: { col: number; row: number; w: number; h: number }) => ({ gridColumn: `${p.col + 1} / span ${p.w}`, gridRow: `${rowOf(p.row)} / span ${p.h}` });
+  // Zeilen der Anzeige (A-048): Bänder nur aus Listen-Kacheln sind EINE Zeile so hoch wie ihr Inhalt
+  const plan = zeilenPlan(raster, preview);
+  const tippZeile = tippAt === null ? null : (plan.von[tippAt] ?? plan.zeilen.length);
+  const rowOf = (zeile: number) => (tippZeile !== null && zeile >= tippZeile ? zeile + 1 : zeile) + 1;
+  const zeilenCss = plan.zeilen.map((z) => (z === "inhalt" ? "auto" : "var(--zeile)"));
+  if (tippZeile !== null) zeilenCss.splice(tippZeile, 0, "auto");
+  const rowsCss = zeilenCss.join(" ");
+  const area = (p: { col: number; row: number; w: number; h: number }) => {
+    const { start, span } = anzeigeZeilen(plan, p);
+    return { gridColumn: `${p.col + 1} / span ${p.w}`, gridRow: `${rowOf(start)} / span ${span}` };
+  };
+  const inhaltZeile = (p: Platz | null) => Boolean(p && plan.zeilen[plan.von[p.row]] === "inhalt");
 
   const renderUnit = (unit: Unit, index: number, place: Platz | null, floating = false) => {
     const pair = unit.tiles.length === 2;
@@ -347,6 +358,8 @@ export function HomeBoard({
     const edit = editing && !fixed;
     // Die gezogene Einheit bleibt im Raster – unsichtbar, als gestrichelter Platzhalter an der Zielstelle
     const ghost = !floating && drag?.key === unit.key;
+    // Gezogen (schwebend) behält sie die Art ihres Platzes
+    const inhalt = place ? inhaltZeile(place) : inhaltsHoch(unit);
     return (
       // Außen: Platz im Raster und Ziehen (Ereignisse); innen: Wackeln – nie beides auf demselben Element
       <div
@@ -354,6 +367,7 @@ export function HomeBoard({
         data-unit={floating ? undefined : unit.key}
         data-tile={floating ? undefined : unit.tiles.map((t) => t.id).join(" ")}
         data-groesse={pair ? "S+S" : unit.tiles[0].size}
+        data-hoehe={inhalt ? "inhalt" : "fest"}
         data-vorstellen={!floating && glow && unit.tiles.some((t) => t.id === glow) ? true : undefined}
         onPointerDown={floating || fixed ? undefined : onDown(unit.key)}
         onTouchStart={floating || !editing || fixed ? undefined : onTouchStart(unit.key)}
@@ -386,13 +400,13 @@ export function HomeBoard({
         )}
         {ghost && <div className="absolute inset-0 rounded-card border-2 border-dashed border-accent/50 bg-accent-soft/40" data-platzhalter aria-hidden />}
         <div
-          // Feste Fläche: jede Kachel füllt genau ihren Platz (die Höhe hängt nie vom Inhalt ab)
+          // Jede Kachel füllt genau ihren Platz: feste Zeilen bzw. (Listen, A-048) die Zeile so hoch wie der höhere Inhalt
           className={`h-full ${pair ? `grid grid-cols-2 gap-2 ${editing ? "rounded-pair outline-2 outline-offset-2 outline-dashed outline-line" : ""}` : ""} ${edit ? "[&>div]:h-full" : "[&>div>*]:h-full [&>div>*]:min-h-0"} ${ghost ? "invisible" : ""}`}
           style={edit && !floating && !drag && !holding ? { animation: `${index % 2 ? "wiggle-b" : "wiggle"} 1.6s ease-in-out infinite` } : undefined}
         >
           {unit.tiles.map((tile) => (
             <EditFrame key={tile.id} tile={tile} editing={edit} href={hrefFor?.(tile.id)} onRemove={() => remove(tile.id)} onResize={(sz) => resize(tile.id, sz)} onFarbe={(f) => recolor(tile.id, f)}>
-              {render(tile, half, editing)}
+              {render(tile, half, editing, inhalt)}
             </EditFrame>
           ))}
         </div>
@@ -402,7 +416,7 @@ export function HomeBoard({
 
   const shown = tiles.filter((t) => t.id !== laufend);
   return (
-    // Festes Raster (2 Spalten, Grund-Zeile = halbe S-Höhe aus der Breite, `ZEILE_CSS`): jede Einheit
+    // Festes Raster (2 Spalten, Grund-Zeile = halbe S-Höhe aus der Breite, `ZEILE_CSS`; Listen-Bänder so hoch wie der Inhalt): jede Einheit
     // liegt direkt im Board an ihrem Platz – so behält sie beim Umsortieren ihr Element (React
     // verschiebt es nur). Lücken: ruhig leer, im Bearbeiten gestrichelt „＋ Kachel“.
     <div className="[container-type:inline-size]">
@@ -431,7 +445,7 @@ export function HomeBoard({
             </button>
           ))}
         {tippAt !== null && pfeil && vorstellen && (
-          <div key={`vorstellen-${vorstellen.tile}`} className="col-span-2" style={{ gridRow: `${tippAt + 1}` }}>
+          <div key={`vorstellen-${vorstellen.tile}`} className="col-span-2" style={{ gridRow: `${(tippZeile ?? 0) + 1}` }}>
             <SeitenTipp text={vorstellen.text} pfeil={pfeil} label="Kurz vorgestellt" id={`vorstellen:${vorstellen.tile}`} onOk={vorstellen.ok} zeigMal={vorstellen.zeigMal} />
           </div>
         )}
