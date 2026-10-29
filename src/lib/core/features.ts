@@ -31,6 +31,7 @@ const FEATURES = {
   pinnwand: "Pinnwand (/pinnwand, Kachel): Zettel und Sprachnachrichten für alle im Haushalt",
   spendentopf: "Spendentopf (/spendentopf, Kachel, Beitrags-Frage)",
   wundertuete: "Mias Wundertüte (Kachel): Angeberwissen, Platt, Rätsel und Spiele für den Tisch",
+  durchatmen: "Durchatmen: 12 kurze Übungen (Atmen, Augen, Körper, Ankommen, Fokus) mit Anleitung, leises Angebot in der Jetzt-Karte",
 } as const;
 
 export type Feature = keyof typeof FEATURES;
@@ -53,6 +54,7 @@ export const BAUSTEINE: Baustein[] = [
   { feature: "notizen", name: "Notizen", text: "Notizen und Listen festhalten.", where: "Notizen stehen jetzt als Kachel auf der Startseite.", icon: "note" },
   { feature: "pinnwand", name: "Pinnwand", text: "Zettel und Sprachnachrichten für alle, wie am Kühlschrank.", where: "Die Pinnwand steht jetzt als Kachel auf der Startseite.", icon: "pin" },
   { feature: "spendentopf", name: "Spendentopf", text: "Jeder Euro geht in eure Region.", where: "Der Spendentopf steht jetzt auf der Startseite.", icon: "coins" },
+  { feature: "durchatmen", name: "Durchatmen", text: "Kurz raus, wieder bei dir: Atmen, Augen, Körper, Ankommen, Fokus. Ganz ohne Muss.", where: "Durchatmen findest du unter Einstellungen → Durchatmen.", icon: "wind" },
   { feature: "wundertuete", name: "Wundertüte", text: "Jeden Tag was Neues: Angeberwissen, Platt, Rätsel und Spiele für den Tisch.", where: "Die Wundertüte steht jetzt auf der Startseite.", icon: "gift" },
 ];
 
@@ -85,6 +87,8 @@ export const bausteinOf = (feature: Feature) => BAUSTEINE.find((b) => b.feature 
 const ENABLED: Partial<Record<Feature, true>> = {};
 
 /**
+ * v7: Durchatmen (A-051) ist für alle an – beim Update einmal eingeschaltet
+ * (von Felix gewollte Ausnahme vom Launch-Stopp, danach selbst abschaltbar).
  * v6: Pinnwand ist ein Baustein (Kühlschranktür) – wer sie hatte, behält sie
  * (beim Update einmal an); neue Nutzer allein starten ohne (`startFresh`).
  * v5: „Im Haus“ gehört zu 1.0 – `imHaus` = beim Update einmal eingeschaltet
@@ -93,22 +97,25 @@ const ENABLED: Partial<Record<Feature, true>> = {};
  * eingeschaltete Bausteine + `launch` (Übernahme für 1.0 erledigt). v2 ohne
  * `launch`, v1 hatte `legacy` und `unlocked`.
  */
-type FeatureStore = { version: 6; on: Feature[]; launch: boolean; imHaus: boolean };
+type FeatureStore = { version: 7; on: Feature[]; launch: boolean; imHaus: boolean };
 
 /**
  * Standard für neue Nutzer: Notizen, Pinnwand, Im Haus (Bereich unter Essen;
  * die Kachel nur über die Auswahl) und Mias Wundertüte (A-022, als S-Kachel –
- * von Felix gewollte Ausnahme vom Feature-Stopp). Allein: Pinnwand aus
+ * von Felix gewollte Ausnahme vom Feature-Stopp) und Durchatmen (A-051, ebenso
+ * gewollt; der Kreis auf der Startseite kommt mit A-050). Allein: Pinnwand aus
  * (`startFresh`). Bestehende Nutzer bekommen die Wundertüte nicht von
  * selbst (`launchSchnitt`): ihre Anordnung ändert sich nie von selbst.
  */
-const DEFAULT_ON: Feature[] = ["notizen", "vorrat", "pinnwand", "wundertuete"];
+const DEFAULT_ON: Feature[] = ["notizen", "vorrat", "pinnwand", "wundertuete", "durchatmen"];
 /** Nur für ganz neue Nutzer an (wer schon eine Startseite hat, schaltet selbst zu) */
 const NUR_NEU: Feature[] = ["wundertuete"];
 /** Beim Update auf v6 einmal dazu: wer die Pinnwand hatte, behält sie */
 const PINNWAND_ON: Feature[] = ["pinnwand"];
 /** Beim Update auf v4 einmal dazu (Im Haus kommt über `launchUebernahme`, damit die Kachel aus bleibt) */
 const NOTIZEN_ON: Feature[] = ["notizen"];
+/** Beim Update auf v7 einmal dazu: Durchatmen für alle (A-051) */
+const DURCHATMEN_ON: Feature[] = ["durchatmen"];
 
 const isFeature = (f: unknown): f is Feature => typeof f === "string" && f in FEATURES;
 
@@ -143,16 +150,19 @@ function migrate(raw: unknown): FeatureStore | null {
   const d = raw as { version?: number; legacy?: unknown; unlocked?: unknown; on?: unknown };
   const list = (Array.isArray(d.on) ? d.on : []).filter(isFeature);
   const launch = (d as { launch?: unknown }).launch === true;
-  const keep = (on: Feature[]) => [...new Set([...on, ...PINNWAND_ON])];
-  if (d.version === 6) return { version: 6, on: list, launch, imHaus: (d as { imHaus?: unknown }).imHaus === true };
-  if (d.version === 5) return { version: 6, on: keep(list), launch, imHaus: (d as { imHaus?: unknown }).imHaus === true };
-  if (d.version === 4) return { version: 6, on: keep(list), launch, imHaus: false };
-  if (d.version === 3 || d.version === 2) return { version: 6, on: keep([...list, ...NOTIZEN_ON]), launch: d.version === 3 && launch, imHaus: false };
+  const atem = (on: Feature[]) => [...new Set([...on, ...DURCHATMEN_ON])];
+  const keep = (on: Feature[]) => atem([...on, ...PINNWAND_ON]);
+  const imHaus = (d as { imHaus?: unknown }).imHaus === true;
+  if (d.version === 7) return { version: 7, on: list, launch, imHaus };
+  if (d.version === 6) return { version: 7, on: atem(list), launch, imHaus };
+  if (d.version === 5) return { version: 7, on: keep(list), launch, imHaus };
+  if (d.version === 4) return { version: 7, on: keep(list), launch, imHaus: false };
+  if (d.version === 3 || d.version === 2) return { version: 7, on: keep([...list, ...NOTIZEN_ON]), launch: d.version === 3 && launch, imHaus: false };
   if (d.version !== 1) return null;
   // Alter Test-Schalter: wird zurückgesetzt; was genutzt wurde, wird als Baustein übernommen
   const unlocked = (Array.isArray(d.unlocked) ? d.unlocked : []).filter(isFeature);
   const used = d.legacy === true && typeof localStorage !== "undefined" ? usedFeatures() : [];
-  return { version: 6, on: [...new Set([...unlocked, ...used, ...NOTIZEN_ON, ...PINNWAND_ON])], launch: false, imHaus: false };
+  return { version: 7, on: [...new Set([...unlocked, ...used, ...NOTIZEN_ON, ...PINNWAND_ON, ...DURCHATMEN_ON])], launch: false, imHaus: false };
 }
 
 const store = createLocalStore("wasgibts.funktionen", migrate);
@@ -174,7 +184,7 @@ export function setFeature(feature: Feature, on: boolean): boolean {
   const list = onList();
   if (list.includes(feature) === on) return false;
   const s = store.load();
-  store.save({ version: 6, on: on ? [...list, feature] : list.filter((f) => f !== feature), launch: s?.launch ?? false, imHaus: s?.imHaus ?? false });
+  store.save({ version: 7, on: on ? [...list, feature] : list.filter((f) => f !== feature), launch: s?.launch ?? false, imHaus: s?.imHaus ?? false });
   return true;
 }
 
@@ -224,7 +234,7 @@ function imHausUebernahme() {
     const tiles = loadHomeTiles();
     if (tiles.some((t) => t.id === "vorrat" && t.visible)) saveHomeTiles(tiles.map((t) => (t.id === "vorrat" ? { ...t, visible: false } : t)));
   }
-  store.save({ version: 6, on: [...new Set([...on, "vorrat" as Feature])], launch: s?.launch ?? false, imHaus: true });
+  store.save({ version: 7, on: [...new Set([...on, "vorrat" as Feature])], launch: s?.launch ?? false, imHaus: true });
 }
 
 function launchSchnitt(read: (key: StorageKey) => string | null) {
@@ -246,5 +256,5 @@ function launchSchnitt(read: (key: StorageKey) => string | null) {
   if (shown("spendentopf")) used.push("spendentopf");
   // Ohne gespeicherte Bausteine, aber mit eigener Startseite: bestehender Nutzer – die Wundertüte bleibt aus
   const on = s?.on ?? (home ? DEFAULT_ON.filter((f) => !NUR_NEU.includes(f)) : DEFAULT_ON);
-  store.save({ version: 6, on: [...new Set([...on, ...used])], launch: true, imHaus: s?.imHaus ?? false });
+  store.save({ version: 7, on: [...new Set([...on, ...used])], launch: true, imHaus: s?.imHaus ?? false });
 }

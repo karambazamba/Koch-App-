@@ -3,7 +3,11 @@ import { defineConfig } from "vitest/config";
 
 // Tests für die reine Logik (ohne Browser). `npm test`
 export default defineConfig({
-  resolve: { alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) } },
+  resolve: { alias: [
+    // Feste Inhalte (z. B. content/durchatmen) liegen neben src
+    { find: /^@\/content\//, replacement: `${fileURLToPath(new URL("./content", import.meta.url))}/` },
+    { find: "@", replacement: fileURLToPath(new URL("./src", import.meta.url)) },
+  ] },
   test: {
     include: ["tests/**/*.test.ts"],
     environment: "node",
@@ -13,7 +17,7 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       include: ["src/lib/**/*.ts"],
-      exclude: ["src/lib/**/use[A-Z]*.ts", "src/lib/begleitung/speech.ts", "src/lib/pinnwand/memoAudio.ts", "src/lib/pinnwand/memoPlayer.ts", "src/lib/pinnwand/fotoStore.ts", "src/lib/core/wakeLock.ts", "src/lib/begleitung/aufnahme.ts", "src/lib/begleitung/ohrLiveBrowser.ts"],
+      exclude: ["src/lib/**/use[A-Z]*.ts", "src/lib/begleitung/speech.ts", "src/lib/pinnwand/memoAudio.ts", "src/lib/pinnwand/memoPlayer.ts", "src/lib/pinnwand/fotoStore.ts", "src/lib/core/wakeLock.ts", "src/lib/durchatmen/klang.ts", "src/lib/durchatmen/anleitung.ts", "src/lib/begleitung/aufnahme.ts", "src/lib/begleitung/ohrLiveBrowser.ts"],
       reporter: ["text-summary", "json-summary"],
       // Untergrenze (Aufräumen, Etappe 6): darunter schlägt test:abdeckung fehl
       thresholds: { lines: 80, statements: 80, functions: 80, branches: 75 },

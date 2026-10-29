@@ -71,7 +71,7 @@ const TOOLS: BegleitungTool[] = [
     definition: {
       name: "notiz_anlegen",
       description:
-        "Neue Notiz (nur festhalten – kein Termin, keine Aufgabe): 'Merk dir das WLAN-Passwort: …', 'Notier dir …', 'Schreib auf …', 'Schreib in die Schnellnotiz …', 'Idee: …'. Jede Notiz ist eigen; bei mehreren Zeilen ist die erste der Titel. Text ODER Liste, Absätze im text mit \\n. Kein Emoji im Titel. Passt es in eine vorhandene Liste (z. B. Geschenkideen, Packliste), stattdessen liste_eintrag_hinzufuegen. Auch 'Schreib in die Kladde …'. Notizen gehören zu 1.0: ist der Baustein aus, schaltet das Anlegen ihn wieder ein. Essenswünsche ('Mathis wünscht sich Pfannkuchen') sind wunsch_merken.",
+        "Neue Notiz (nur festhalten – kein Termin, keine Aufgabe): 'Merk dir das WLAN-Passwort: …', 'Notier dir …', 'Schreib auf …', 'Schreib in die Schnellnotiz …', 'Idee: …'. Jede Notiz ist eigen; bei mehreren Zeilen ist die erste der Titel. Text ODER Liste, Absätze im text mit \\n. Kein Emoji im Titel. Passt es in eine vorhandene Liste (z. B. Geschenkideen, Packliste), stattdessen liste_eintrag_hinzufuegen. Auch 'Schreib in die Kladde …'. Notizen gehören zu 1.0: ist der Baustein aus, schaltet das Anlegen ihn wieder ein. Essenswünsche ('Mathis wünscht sich Pfannkuchen') sind wunsch_merken. Nachricht beginnt mit '[Kopf leeren]' (Durchatmen): alles in EINER Antwort ohne Rückfrage einsortieren – Termine (termin_anlegen), Aufgaben (aufgabe_anlegen), Einkauf, der Rest als EINE Notiz 'Aus dem Kopf'; Antwort nur 'Steht drin.'",
       input_schema: {
         type: "object",
         properties: {

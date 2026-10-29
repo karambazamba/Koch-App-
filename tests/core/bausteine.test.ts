@@ -23,7 +23,7 @@ describe("Bausteine an und aus", () => {
     expect(setFeature("rezepte", true)).toBe(true);
     expect(setFeature("rezepte", true)).toBe(false);
     expect(featureOn("rezepte")).toBe(true);
-    expect(JSON.parse(win.localStorage.getItem(KEY)!)).toEqual({ version: 6, on: ["notizen", "vorrat", "pinnwand", "wundertuete", "rezepte"], launch: false, imHaus: false });
+    expect(JSON.parse(win.localStorage.getItem(KEY)!)).toEqual({ version: 7, on: ["notizen", "vorrat", "pinnwand", "wundertuete", "durchatmen", "rezepte"], launch: false, imHaus: false });
     expect(setFeature("rezepte", false)).toBe(true);
     expect(featureOn("rezepte")).toBe(false);
     expect(setFeature("rezepte", false)).toBe(false);
@@ -73,10 +73,10 @@ describe("Bausteine: Migration", () => {
     expect((await load({ [KEY]: "{kaputt" })).featureOn("notizen")).toBe(true);
   });
 
-  it("v1 ohne alten Test-Schalter: freigeschaltete bleiben (+ Notizen, Pinnwand), wird als v6 zurückgeschrieben", async () => {
+  it("v1 ohne alten Test-Schalter: freigeschaltete bleiben (+ Notizen, Pinnwand), wird als v7 zurückgeschrieben (+ Durchatmen)", async () => {
     const { win, featureOn } = await load({ [KEY]: JSON.stringify({ version: 1, legacy: false, unlocked: ["wochenplan", "nix"] }) });
     expect(featureOn("wochenplan")).toBe(true);
-    expect(JSON.parse(win.localStorage.getItem(KEY)!)).toEqual({ version: 6, on: ["wochenplan", "notizen", "pinnwand"], launch: false, imHaus: false });
+    expect(JSON.parse(win.localStorage.getItem(KEY)!)).toEqual({ version: 7, on: ["wochenplan", "notizen", "pinnwand", "durchatmen"], launch: false, imHaus: false });
     const { featureOn: on2 } = await load({ [KEY]: JSON.stringify({ version: 1 }) });
     expect(on2("wochenplan")).toBe(false);
   });

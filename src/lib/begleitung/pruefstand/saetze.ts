@@ -291,6 +291,13 @@ export const PRUEFSAETZE: PruefSatz[] = [
   R("Was heißt Schietwedder auf Hochdeutsch?"),
   R("Hast du ein Spiel für den Tisch?", { max: 2 }),
 
+  // Durchatmen (A-051): Übung startet gleich (app_befehl mit dem Satz)
+  S("Ich brauch kurz Ruhe", ["app_command"]),
+  S("Atemübung", ["app_command"]),
+  S("Handy-Pause", ["app_command"]),
+  S("Kopf leeren", ["app_command"]),
+  S("Was ist jetzt wichtig?", ["app_command"]),
+
   // Mehreres auf einmal: alle Aktionen, Text nur „Steht drin.“ (3)
   S("Pack Milch, Brot und Eier auf die Liste und Kita-Formular und Geschenk für Oma in die Aufgaben", ["add_shopping", "upsert_entry"], { alle: true, woerter: 2 }),
   S("Zahnarzt Montag 10 Uhr, Turnen Freitag 16 Uhr und Butter auf die Liste", ["upsert_entry", "add_shopping"], { alle: true, woerter: 2, lage: ["ohne-zahnarzt"] }),

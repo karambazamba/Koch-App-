@@ -34,6 +34,8 @@ import { replaceWeekPlans, toIsoDate, weekStartFor } from "@/lib/essen/weekPlan"
 import { isWeekCheckRequest } from "@/lib/kalender/wochencheck";
 import { isKochtippRequest } from "@/lib/essen/kochtipp/start";
 import { openHelper } from "@/lib/begleitung/open";
+import { durchatmenAusSatz } from "@/lib/durchatmen/erkennen";
+import { starteDurchatmen } from "@/lib/durchatmen/oeffnen";
 import { applyOps, INSTANT_OP_TYPES, selectedOps, weekOf, type AssistantData, type ChangeOp } from "@/lib/begleitung/ops";
 import { isExpired, isPaused, leftMs, stopwatchMs } from "@/lib/timer/model";
 import { loadTimers } from "@/lib/timer/store";
@@ -239,6 +241,14 @@ export function runInstantOps(ops: ChangeOp[]): { rest: ChangeOp[]; notes: strin
   let tileShown = false;
   const weekCheck = (op: ChangeOp) => op.type === "app_command" && isWeekCheckRequest(op.text);
   const cookTip = (op: ChangeOp) => op.type === "app_command" && isKochtippRequest(op.text);
+  // Durchatmen (A-051): „Handy-Pause“, „Ich brauch kurz Ruhe“ … startet die Übung sofort (die Bühne geht zu)
+  const atem = (op: ChangeOp) => op.type === "app_command" && durchatmenAusSatz(op.text) !== null;
+  const atemOp = ops.find(atem);
+  if (atemOp?.type === "app_command") {
+    // Versteckt? Mia schaltet frei und sagt, wo es steht
+    if (unlockFeature("durchatmen")) notes.push(bausteinOf("durchatmen")!.where);
+    starteDurchatmen(durchatmenAusSatz(atemOp.text)!);
+  }
   if (ops.some(weekCheck)) openHelper("wochencheck");
   else if (ops.some(cookTip)) openHelper("kochtipp");
   for (const op of ops) {
@@ -262,7 +272,7 @@ export function runInstantOps(ops: ChangeOp[]): { rest: ChangeOp[]; notes: strin
   if (tileShown) notes.push("Der Timer steht jetzt auf der Startseite.");
   // Rückwärts: jedes Zurücknehmen stellt den Stand vor seinem Schritt wieder her
   const back = undo.length ? pushUndo("den Timer", () => [...undo].reverse().forEach((u) => u())) : undefined;
-  return { rest: ops.filter((op) => !INSTANT_OP_TYPES.has(op.type) && !weekCheck(op) && !cookTip(op)), notes, ...(back ? { undo: back } : {}) };
+  return { rest: ops.filter((op) => !INSTANT_OP_TYPES.has(op.type) && !weekCheck(op) && !cookTip(op) && !atem(op)), notes, ...(back ? { undo: back } : {}) };
 }
 
 type AskOptions = {

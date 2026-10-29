@@ -26,6 +26,7 @@ import { text, tools } from "@/lib/begleitung/mockShared";
 import { jetztCommand } from "@/lib/heute/jetztCommand";
 import { tipsMode } from "@/lib/tipps/server";
 import { tipQuestion } from "@/lib/tipps/question";
+import { durchatmenAusSatz } from "@/lib/durchatmen/erkennen";
 
 // --- Termine und Aufgaben (Testmodus: Satz-Erkennung ohne KI) --------------------
 
@@ -64,6 +65,8 @@ export function everydayUses(latest: string, system: string): Anthropic.Beta.Bet
     if (home.kind === "remove_shopping") return tools([{ name: "einkaufsliste_entfernen", input: { artikel: home.names } }]);
     return tools([{ name: "app_befehl", input: { text: latest } }]);
   }
+  // Durchatmen (A-051): „Handy-Pause“, „Ich brauch kurz Ruhe“ … → app_befehl mit dem Satz
+  if (durchatmenAusSatz(latest)) return tools([{ name: "app_befehl", input: { text: latest } }]);
   // App-Bedienung (Ansicht, Vorlesen, Einstellungen, neue Person, Produkte, Seiten)
   if (greetingCommand(latest) || isCalendarImportRequest(latest) || isWeekCheckRequest(latest)) return tools([{ name: "app_befehl", input: { text: latest } }]);
   if (/\b(ansicht|dunkel|ruhiger|schlichter|dezenter|weniger bunt|bunter|farbiger|wieder farbig|vorlesen|lies mir|sprich (langsamer|schneller)|melde dich|keine tipps|isst jetzt|mag kein\w*|allergisch|wohnt jetzt|immer .+ statt|zeig mir (alles|unsere rezepte|den vorrat)|koche jetzt spontan)\b/.test(t)) {

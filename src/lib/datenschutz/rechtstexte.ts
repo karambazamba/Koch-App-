@@ -66,6 +66,7 @@ export const DATENSCHUTZ: Abschnitt[] = [
     absaetze: [
       `${APP_NAME} ist eine KI. Antworten können Fehler enthalten. Für eine Antwort schicken wir deinen Satz und den nötigen Ausschnitt (zum Beispiel heutige Termine oder die Einkaufsliste) an Anthropic PBC (USA). Sprachnachrichten gehen nie an die KI. Wie lange Anthropic Anfragen aufbewahrt und ob sie zum Training genutzt werden: [nach Prüfung der aktuellen Anbieter-Bedingungen ergänzen].`,
       `Damit ${APP_NAME} auf jedem Handy gleich klingt und dich gut versteht, gehen ihre Antworten zum Vorlesen und dein Ton beim Sprechen mit ${APP_NAME} an unseren Sprach-Anbieter ElevenLabs. Der Ton wird dabei live übertragen, damit du deinen Satz schon beim Sprechen siehst; weder wir noch die App speichern ihn, er dient nur dazu, deinen Satz zu verstehen. Pinnwand-Sprachnachrichten gehen nie dorthin. Ohne KI-Einwilligung oder wenn du „Stimme des Handys“ wählst, bleibt es bei den Funktionen deines Browsers. Speicherdauer und Serverstandort bei ElevenLabs: [nach Prüfung der Anbieter-Bedingungen ergänzen].`,
+      `Durchatmen: Die Ansagen sind feste Sätze, die wir einmal vorab mit ${APP_NAME}s Stimme bei ElevenLabs erzeugt haben, ohne Daten von dir. Sie liegen öffentlich und ohne Personenbezug in unserem Speicher bei Supabase; sonst spricht die Stimme deines Handys. Bei den Übungen wird nichts aufgenommen und nichts gesendet. Auf deinem Gerät merkt sich ${APP_NAME} nur deine Lieblinge, wie sie anleiten soll und ob das leise Angebot an ist.`,
     ],
   },
   {

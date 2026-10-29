@@ -108,6 +108,14 @@
   /* Dunkle Schrift auf hellem Knopf über Fotos („Wochenplan“ auf der Essen-Kachel): immer fast schwarz */
   --color-on-photo-dark: #1f1b16;
   /* Kochmodus (Tafel 122): dunkler Bildschirm in hell und dunkel, gut lesbar aus einem Meter */
+  --color-atem: var(--app-atem);
+  --color-atem-ink: var(--app-atem-ink);
+  --color-atem-tief: var(--app-atem-tief);
+  --color-atem-on: var(--app-atem-on);
+  --color-atem-soft: var(--app-atem-soft);
+  --color-atem-dunkel: var(--app-atem-dunkel);
+  --color-atem-dunkel-ink: var(--app-atem-dunkel-ink);
+  --color-atem-dunkel-soft: var(--app-atem-dunkel-soft);
   --color-cook: var(--app-cook);
   --color-cook-ink: var(--app-cook-ink);
   --color-cook-soft: var(--app-cook-soft);
@@ -140,6 +148,15 @@
   --app-spark-yellow: #ffc23d;
   /* Mias kleine Sonne (Zubehör, A-033) – gleich in hell und dunkel */
   --app-sonne: #f5b82e;
+  /* Durchatmen (A-051, Tafel 138/139): Mint, ruhiges Petrol für Knöpfe (weiß ≥ 4,5:1), dunkler Bildschirm beim Weglegen */
+  --app-atem: #e7f4ef;
+  --app-atem-ink: #15463a;
+  --app-atem-tief: #22785f;
+  --app-atem-on: #ffffff;
+  --app-atem-soft: #c7e6dc;
+  --app-atem-dunkel: #0f1d1a;
+  --app-atem-dunkel-ink: #9fd3c3;
+  --app-atem-dunkel-soft: rgb(159 211 195 / 0.14);
   /* Essen-Kachel (Tafel 122): oben leicht, unten dunkel – weiße Schrift überall ≥ 4,5:1 (lib/heute/essenKachel.ts) */
   --app-cook: #1c1916;
   --app-cook-ink: #ffffff;
@@ -336,6 +353,9 @@
 }
 
 :root[data-theme="nacht"] {
+  --app-atem: #13221e;
+  --app-atem-ink: #cdeee3;
+  --app-atem-soft: #24433b;
   --app-background: #17191c;
   --app-surface: #23262b;
   --app-line: #353a41;
@@ -492,6 +512,9 @@
 
 @media (prefers-color-scheme: dark) {
   :root[data-theme="auto"] {
+    --app-atem: #13221e;
+    --app-atem-ink: #cdeee3;
+    --app-atem-soft: #24433b;
     --app-background: #17191c;
     --app-surface: #23262b;
     --app-line: #353a41;

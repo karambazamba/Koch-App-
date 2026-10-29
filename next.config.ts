@@ -21,6 +21,12 @@ const SECURITY_HEADERS = [
   { key: "Content-Security-Policy", value: "frame-ancestors 'none'; base-uri 'self'; object-src 'none'; form-action 'self'" },
 ];
 
+/** Öffentlicher Supabase-Bucket der Durchatmen-Ansagen (ohne Supabase: keiner, dann spricht das Handy) */
+function ansagenBucket(): string | null {
+  const url = (process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || "").trim().replace(/\/+$/, "");
+  return /^https:\/\//.test(url) ? `${url}/storage/v1/object/public/durchatmen-ansagen` : null;
+}
+
 const nextConfig: NextConfig = {
   // Stand der Auslieferung – in den Einstellungen "Version 0.25 · Stand 20.10.2026"
   env: { BUILD_DATE: new Date().toISOString().slice(0, 10) },
@@ -40,7 +46,12 @@ const nextConfig: NextConfig = {
   },
   // Einladungs-Links (Tafel 22): /e/<token> zeigt die statische Einladungsseite (Token liest die Seite selbst)
   async rewrites() {
-    return [{ source: "/e/:token", destination: "/einladung" }];
+    return {
+      beforeFiles: [],
+      afterFiles: [{ source: "/e/:token", destination: "/einladung" }],
+      // Durchatmen-Ansagen (A-051): aus dem öffentlichen Bucket, über die eigene Adresse (Service-Worker merkt sie sich)
+      fallback: ansagenBucket() ? [{ source: "/audio/durchatmen/:datei", destination: `${ansagenBucket()}/:datei` }] : [],
+    };
   },
   async headers() {
     return [

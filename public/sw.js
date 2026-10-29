@@ -3,7 +3,7 @@
 // CACHE_VERSION bei jeder Auslieferung erhöhen. Eine neue Version wartet, bis
 // man den Hinweis "Neue Version da" antippt (Nachricht "SKIP_WAITING") – nie
 // ein Zwangs-Neuladen mitten im Tippen. Beim allerersten Mal sofort aktiv.
-const CACHE_VERSION = "v207";
+const CACHE_VERSION = "v208";
 // Interner Name (alter Arbeitsname) bleibt, damit alte Caches sauber aufgeräumt werden.
 const CACHE_NAME = `familienkueche-${CACHE_VERSION}`;
 
@@ -38,6 +38,7 @@ const PRECACHE_URLS = [
   "/profil/daten",
   "/profil/admin",
   "/profil/mitteilungen",
+  "/profil/durchatmen",
   "/profil/einkaufstag",
   "/profil/essen",
   "/profil/familie",
@@ -80,11 +81,29 @@ const PRECACHE_URLS = [
   "/demo/gericht.webp",
 ];
 
+// Durchatmen (A-051): einmal auf dem Server erzeugte Ansagen (Bucket
+// „durchatmen-ansagen“, über /audio/durchatmen/ mit manifest.json) – sobald es
+// Dateien gibt, werden sie gemerkt (offline).
+// Fehlt etwas, passiert nichts: die App spricht dann mit der Stimme des Handys.
+const AUDIO_ORDNER = "/audio/durchatmen/";
+async function ansagenMerken(cache) {
+  try {
+    const r = await fetch(`${AUDIO_ORDNER}manifest.json`, { cache: "no-store" });
+    if (!r.ok) return;
+    await cache.put(`${AUDIO_ORDNER}manifest.json`, r.clone());
+    const liste = await r.json();
+    const dateien = Object.values((liste && liste.dateien) || {}).filter((d) => typeof d === "string" && /^[a-z0-9-]+\.(mp3|m4a|ogg|wav)$/.test(d));
+    await Promise.all(dateien.map((d) => cache.add(AUDIO_ORDNER + d).catch(() => {})));
+  } catch {
+    // keine Ansagen – kein Fehler
+  }
+}
+
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches
       .open(CACHE_NAME)
-      .then((cache) => cache.addAll(PRECACHE_URLS))
+      .then((cache) => cache.addAll(PRECACHE_URLS).then(() => ansagenMerken(cache)))
       .then(() => {
         if (!self.registration.active) return self.skipWaiting();
       }),
@@ -153,6 +172,12 @@ self.addEventListener("fetch", (event) => {
   // (/gerichte/…) werden nicht vorgeladen, sondern beim ersten Anzeigen gemerkt.
   if (url.pathname.startsWith("/_next/static/") || url.pathname.startsWith("/icons/") || url.pathname.startsWith("/gerichte/")) {
     event.respondWith(cacheFirst(request));
+    return;
+  }
+
+  // Durchatmen-Ansagen: aus dem Speicher, sonst Netz; fehlt die Datei → leere Antwort statt Fehler
+  if (url.pathname.startsWith(AUDIO_ORDNER)) {
+    event.respondWith(cacheFirst(request).catch(() => new Response(null, { status: 404 })));
     return;
   }
 

@@ -75,3 +75,8 @@ Grundregeln stehen in CLAUDE.md, Abschnitt 7.
   `bg-good-pill`/`text-on-good-pill` (≥ 4,5:1), „Übernehmen“ = Akzent (Orange).
   Aufleuchten in der Kachel nur über `data-leuchtet` (Ring `--app-leuchten`,
   Fläche `--app-leuchten-flaeche`, nur opacity). Details `docs/bereiche/begleitung.md`.
+- Durchatmen (A-051, Tafel 138/139): eigene ruhige Welt wie der Kochmodus –
+  Mint `--app-atem`, Schrift `--app-atem-ink`, Knöpfe Petrol
+  `--app-atem-tief` (weiß ≥ 4,5:1, so auf der Tafel; bewusst nicht Orange),
+  dunkler Bildschirm `--app-atem-dunkel`. Vollbild `z-[55]` über Leiste und
+  Mia, Herz in Orange. Details `docs/bereiche/durchatmen.md`.

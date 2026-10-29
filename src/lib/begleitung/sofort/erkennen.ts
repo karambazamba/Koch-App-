@@ -6,7 +6,8 @@
 // eingetragen, kein Katalog-Artikel …), gibt es `null` und die KI macht es wie
 // bisher. Der Prüfstand `pruefstand/sofort.ts` verlangt ≥ 98 % richtig.
 // Erkannt: Einkauf (nur Katalog), Termin mit Uhrzeit, Aufgabe (Ding +
-// Tätigkeit, „Erinner mich …“), Notiz, Pinnwand, Timer. Termine und Aufgaben
+// Tätigkeit, „Erinner mich …“), Notiz, Pinnwand, Timer, Durchatmen („Handy-Pause“,
+// „Atemübung“, „Kopf leeren“, „Ich brauch kurz Ruhe“ – startet die Übung). Termine und Aufgaben
 // bekommen den Raum wie überall (`raum/raten.ts`: gesagt › gelernt › Inhalt ›
 // Standard Termine Familie, Aufgaben Ich); ist er unklar, macht es die KI.
 // A-056: nur GENAU EINE Sache – mit „und“, Komma, „außerdem“, „dann“, mehreren
@@ -26,8 +27,10 @@ import { kurzeBestaetigung } from "@/lib/begleitung/bestaetigung";
 import { einkaufErkennen } from "@/lib/begleitung/sofort/einkauf";
 import { mehrteilig } from "@/lib/begleitung/aufteilen";
 import { ohneFuellwoerter } from "@/lib/begleitung/fuellwoerter";
+import { durchatmenBefehl, durchatmenBefehlText } from "@/lib/durchatmen/erkennen";
+import { uebungVon } from "@/lib/durchatmen/uebungen";
 
-export type SofortArt = "einkauf" | "termin" | "aufgabe" | "notiz" | "pinnwand" | "timer";
+export type SofortArt = "einkauf" | "termin" | "aufgabe" | "notiz" | "pinnwand" | "timer" | "durchatmen";
 
 export type SofortKontext = {
   today: string;
@@ -191,6 +194,9 @@ export function sofortErkennen(text: string, ctx: SofortKontext): Sofort | null 
   if (NIE.test(t)) return null;
   // „Zettel für alle sichtbar machen“ ist Bedienung der Pinnwand (Tafel 123), keine Aufgabe
   if (pinForAllCommand(t) !== null) return null;
+  // Durchatmen (A-051): eindeutiger Kurzbefehl startet die Übung (die App öffnet sie selbst)
+  const atem = durchatmenBefehl(t);
+  if (atem) return durchatmenSofort(atem);
   const treffer = (
     [
       ["timer", timer(t)],
@@ -207,6 +213,14 @@ export function sofortErkennen(text: string, ctx: SofortKontext): Sofort | null 
   // Nie raten: genau eine Lesart
   if (treffer.length !== 1) return null;
   return antwort(treffer[0][0], treffer[0][1], ctx);
+}
+
+/** Kurze Bestätigung je Übung (Mia startet sie gleich) */
+const ATEM_SATZ: Record<string, string> = { "handy-pause": "Handy weg. Ich sag Bescheid.", "kopf-leeren": "Raus damit.", "eine-sache": "Eine Sache. Los." };
+
+function durchatmenSofort(id: string): Sofort {
+  const titel = uebungVon(id)?.titel ?? "Durchatmen";
+  return { art: "durchatmen", ops: [{ id: "sofort-1", type: "app_command", text: durchatmenBefehlText(id) }], reply: ATEM_SATZ[id] ?? "Komm, kurz durchatmen.", was: `Durchatmen gestartet: ${titel}` };
 }
 
 const antwort = (art: SofortArt, ops: ChangeOp[], ctx: SofortKontext): Sofort => ({ art, ops, reply: kurzeBestaetigung(ops, ctx.today), was: was(art, ops) });

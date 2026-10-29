@@ -244,6 +244,42 @@ function abspielen(a: HTMLAudioElement, blob: Blob, anfang: () => void): Promise
   });
 }
 
+/**
+ * Feste, vorab erzeugte Ansage (Durchatmen, `public/audio/durchatmen/`) über
+ * denselben freigeschalteten Abspieler. Leiser als Mias Antworten (`laut`).
+ * "gestoppt" = jemand hat abgebrochen (dann nichts nachsprechen), "fehler" =
+ * Datei fehlt oder spielt nicht (dann spricht das Handy).
+ */
+export function ansageAbspielen(url: string, laut: number, anfang: () => void): Promise<"fertig" | "gestoppt" | "fehler"> {
+  audioFreischalten();
+  const a = audio;
+  if (!a) return Promise.resolve("fehler");
+  const mine = ++lauf;
+  return new Promise((resolve) => {
+    const ende = (wie: "fertig" | "gestoppt" | "fehler") => {
+      a.onended = null;
+      a.onerror = null;
+      a.onplaying = null;
+      if (abbrechen === stopp) abbrechen = null;
+      a.volume = 1;
+      resolve(wie);
+    };
+    const stopp = () => ende("gestoppt");
+    abbrechen = stopp;
+    a.onplaying = () => mine === lauf && anfang();
+    a.onended = () => ende("fertig");
+    a.onerror = () => ende("fehler");
+    try {
+      a.volume = Math.min(1, Math.max(0, laut));
+    } catch {
+      // Lautstärke nicht setzbar (iPhone) – dann wie sie ist
+    }
+    a.src = url;
+    const p = a.play();
+    if (p) p.catch(() => ende("fehler"));
+  });
+}
+
 type Rueckmeldung = {
   /** Ton läuft (Mia spricht) */
   anfang: () => void;

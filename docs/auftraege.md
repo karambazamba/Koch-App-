@@ -25,7 +25,7 @@ Bei Widersprüchen gilt der neuere Auftrag. Gemergt wird in dieser Reihenfolge, 
 | P5 | Essen/Kochen | A-025 Rezeptseite, Kochmodus, Schnellanleitung (Tafel 122) | fertig v0.146 |
 | P6 | Ergebnis-Karten | A-037 (Tafel 126) | fertig v0.151 |
 | P7 | Sport-Seite | A-044 Stempelkarte (Tafel 132) | fertig v0.153 |
-| P8 | Durchatmen, Rätsel, Wundertüte | A-051 Durchatmen + Stimme/Klang (Tafel 138/139), A-052 Rätsel + Wundertüte | in Arbeit, Ziel v0.160 / v0.161 |
+| P8 | Durchatmen, Rätsel, Wundertüte | A-051 Durchatmen + Stimme/Klang (Tafel 138/139), A-052 Rätsel + Wundertüte | A-051 fertig v0.159; A-052 in Arbeit |
 | P9 | Was los? | A-055 (Tafel 142) | in Arbeit, Ziel v0.162; Parser wartet auf Freigabe von www.kreis-oh.de |
 | P10 | Volle Prüfung | A-053 | am Ende |
 
@@ -180,7 +180,7 @@ Ersetzt und nicht mehr gebaut: Essen-Kachel Tafel 121/122/133 → Tafel 134 (Rez
 | A-048 | SOFORT: Startseite kompakter – Termine/Aufgaben/Einkauf S/Notizen Höhe = Inhalt (0/1/2/3, ab 4 „+n weitere“, 14 px Rand, Paare gleich hoch), Einkauf 3 Läden, Wasserzeichen in allen Größen, Notizen-Leertext „Schnell notieren …“ (Wortlaut `docs/auftraege/A-048-startseite-kompakter.md`) | `tafel-135.png` | fertig v0.158 (v0.157 = Vorrang-Fix „Mia hört sofort“) |
 | A-049 | SOFORT: Wundertüte – keine Punkte, nie wiederholen | – | ersetzt durch A-052 |
 | A-050 | Startseite neu (P4): Mini-Kreise final (Sport · Pause · Was los? · Rätsel · Timer, 56/64 px, ein Wort, keine Schilder), Fenster Sport/Timer/Rätsel, Beispiel-Startseite neu geordnet, Wasserzeichen in allen XS, Pinnwand-Korkrahmen, Einkauf M Läden nebeneinander, Im Haus von der Startseite (Wortlaut `docs/auftraege/A-050-minikreise-durchatmen.md`) | `tafel-137.png`, `tafel-140.png`, `tafel-141.png`, `tafel-143.png` | wartet auf A-048 (Ziel v0.159) |
-| A-051 | Durchatmen (12 Übungen, Vorschlag nach Tageszeit, Lieblinge, kein Zähler) + Mia leitet an (Stimme + Klang / Nur Klang / Still, Bildschirm dunkel, Wake Lock) | `tafel-138.png`, `tafel-139.png` | in Arbeit (Ziel v0.160; Lola-Ansagen: siehe Fragen an Felix) |
+| A-051 | Durchatmen (12 Übungen, Vorschlag nach Tageszeit, Lieblinge, kein Zähler) + Mia leitet an (Stimme + Klang / Nur Klang / Still, Bildschirm dunkel, Wake Lock) | `tafel-138.png`, `tafel-139.png` | fertig v0.159 (Lola-Ansagen: einmal auf dem Server erzeugen – Für Entwickler → „Ansagen erzeugen“ → Bucket `durchatmen-ansagen`; bis dahin Handy-Stimme; `docs/bereiche/durchatmen.md`) |
 | A-052 | Rätsel als eigener Bereich + Wundertüte (Witze, „Platt för Plietsche“, Angeberwissen), „Noch eine ›“, nie doppelt im Haushalt, KI-Nachschub nur Witze/Rätsel | `tafel-137.png` (Bild 4), `tafel-140.png` | in Arbeit (Ziel v0.161) |
 | A-053 | Gesamtauftrag Teil 7: Tests gesamt + volle Prüfung | – | am Ende |
 | A-054 | SOFORT: Jetzt-Karte nur mit Nutzen für heute (Rangliste, keine Füllsätze, sonst ausblenden), Wochenende planen nur freitags 12–20 Uhr | – | in Arbeit (Ziel v0.158) |

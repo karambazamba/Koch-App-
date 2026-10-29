@@ -6,6 +6,27 @@ ist inzwischen anders. Den aktuellen Stand je Bereich beschreibt
 `docs/bereiche/<bereich>.md`, die festen Regeln stehen in `CLAUDE.md`.
 Ältere Pfadangaben meinen die Orte vor dem Umzug (siehe CLAUDE.md, „Ordner“).
 
+## Durchatmen + Mia leitet an (A-051, v0.159.0)
+
+- Paket B des Gesamtauftrags vom 29.10. (A-050 bis A-053, Tafel 138/139):
+  Baustein `durchatmen`, Standard an (Bausteine v7: beim Update einmal an),
+  von Felix gewollte Ausnahme vom Launch-Stopp.
+- 12 feste Übungen (`content/durchatmen/`), Fenster „Durchatmen“ mit
+  „Passt gerade“ (Tageszeit, Lieblinge öfter), Sorten, Herz; Vollbild je
+  Sorte, nach 3 s dunkel (Handy-Pause sofort), Antippen = hell, Ende ohne
+  Zähler. „Eine Sache“ legt eine Aufgabe ganz oben an, „Kopf leeren“
+  sortiert (KI zuerst, sonst Regel-Weg).
+- Stimme und Klang: Art „Stimme + Klang“ / „Nur Klang“ / „Still“ pro Gerät
+  (`wasgibts.durchatmen` v1), Ansagen über `speak` (Datei oder Handy-Stimme
+  langsamer und leiser), Lolas Ansagen einmal auf dem Server erzeugen
+  (`/api/durchatmen/ansagen-erzeugen`, Knopf auf „Für Entwickler“) in den
+  öffentlichen Bucket `durchatmen-ansagen` (Migration, Manifest, Hash im
+  Dateinamen, nur Fehlendes),
+  Web-Audio-Klang, Wake Lock, Vibration, Stumm-Schalter-Hinweis einmal.
+- Jetzt-Karte: Thema `durchatmen` (höchstens 2× am Tag, nie nachts, nie
+  Push), Mia: `app_befehl` + Sofort-Weg, 5 + 12 Prüfstand-Sätze. Einstieg
+  bis zum Kreis (A-050): Einstellungen → Durchatmen.
+
 ## Startseite kompakter (A-048, v0.158.0)
 
 - Auftrag A-048 (SOFORT, Tafel 135, Wortlaut

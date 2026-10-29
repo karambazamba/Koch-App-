@@ -17,6 +17,7 @@ Gleiche Bereichsnamen in `src/lib/<bereich>` (Logik, rein wo möglich),
 | `timer` | Timer, Stoppuhr |
 | `tipps` | Tipps aus der Region |
 | `spendentopf` | Spendentopf |
+| `durchatmen` | Durchatmen: 12 Übungen (`content/durchatmen/`), Fenster, Vollbild, Stimme und Klang, leises Angebot |
 | `wundertuete` | Mias Wundertüte: Kachel mit Wissen, Platt, Rätseln und Tischspielen, Pool je Sorte (`data/`) |
 | `begleitung` | Chat, KI-Route, Werkzeuge, Sprache, Avatar, Hallo-Bildschirm |
 | `einstellungen` | Profil, Einstellungen, Mehr Funktionen |

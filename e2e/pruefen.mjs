@@ -25,7 +25,7 @@ export const PAGES = [
   "/wetter", "/brand", "/spendentopf", "/tipps", "/sport", "/wochenplan", "/woche/check",
   "/profil", "/profil/kuechenhelfer", "/profil/familie", "/profil/person?id=a1", "/profil/daten", "/profil/bausteine", "/profil/startseite",
   "/profil/tagesablauf", "/profil/kalender", "/profil/essen", "/profil/kochstil", "/profil/das-moegt-ihr", "/profil/gesundheit", "/profil/lieblingsgerichte",
-  "/profil/nie-wieder", "/profil/basen", "/profil/einkaufstag", "/profil/produkte", "/profil/haushalt", "/profil/mails", "/profil/pause",
+  "/profil/nie-wieder", "/profil/basen", "/profil/einkaufstag", "/profil/produkte", "/profil/haushalt", "/profil/mails", "/profil/pause", "/profil/durchatmen",
   "/profil/regiontipps", "/profil/standardwoche", "/profil/warme-mahlzeit", "/profil/wetter", "/konto",
 ];
 

@@ -10,6 +10,7 @@
 // "Startseite bearbeiten" + "Fertig", Kacheln wackeln, ziehen, "–", XS · S · M.
 // Ein laufender Timer erscheint als XS ganz oben, solange er läuft.
 
+import { oeffneDurchatmen } from "@/lib/durchatmen/oeffnen";
 import { useMiaRoutinen } from "@/components/heute/useMiaRoutinen";
 import { greetOncePerDay } from "@/lib/core/avatarState";
 import { useRouter } from "next/navigation";
@@ -390,6 +391,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
         return kachel ? kachel.scrollIntoView({ behavior: "smooth", block: "center" }) : setTimerOpen(true);
       }
       if (t.target.action === "pause") return endPause();
+      if (t.target.action === "durchatmen") return oeffneDurchatmen();
       if (t.target.action === "wochencheck") {
         weekCheckDone(t.id.slice("wochencheck:".length));
         return openHelper("wochencheck");

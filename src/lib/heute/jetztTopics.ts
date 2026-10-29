@@ -15,6 +15,7 @@ import type { Anlass } from "@/lib/kalender/anlass";
 import { birthdayName, eigenerJahrestag } from "@/lib/kalender/anlass";
 import { abendThemen, isAbend } from "@/lib/heute/abendThema";
 import { kuehlThema } from "@/lib/vorrat/kuehlcheck";
+import { durchatmenThema } from "@/lib/durchatmen/angebot";
 
 export type JetztKind =
   | "erinnerung"
@@ -50,10 +51,11 @@ export type JetztKind =
   | "packen"
   | "beispiel"
   | "spruch"
+  | "durchatmen"
   | "ruhig";
 
 /** Wohin Antippen führt: eine Seite oder etwas, das die Startseite selbst öffnet */
-type JetztTarget = { href: string } | { action: "essen" | "ideen" | "timer" | "pinnwand" | "pause" | "wochencheck" };
+type JetztTarget = { href: string } | { action: "essen" | "ideen" | "timer" | "pinnwand" | "pause" | "wochencheck" | "durchatmen" };
 
 /** Der eine Knopf rechts: „Erledigt“ hakt ab (Thema geht für heute weg), sonst wie Antippen */
 type JetztButton = "Erledigt" | "Öffnen" | "Antworten" | "Liste" | "Kochen" | "Packliste";
@@ -148,6 +150,8 @@ export type JetztInput = {
   demoThema?: { title: string; detail: string } | null;
   /** Sichtbare Kacheln – was sie zeigen, wiederholt die Karte nicht */
   tiles: HomeTileId[];
+  /** Leises Angebot „Kurz durchatmen?“ (A-051, `durchatmen/angebot.ts`: höchstens 2× am Tag, nie nachts) – sonst null */
+  durchatmen?: { anlass: string; detail: string } | null;
   /** Spruch des Tages (Mia denkt mit) – steht nur, wenn sonst nichts dran ist */
   spruch?: string | null;
   /** Interesse je Art (lokal gezählt), heute erledigte/ausgeblendete Themen */
@@ -325,6 +329,8 @@ export function jetztTopics(x: JetztInput): JetztTopic[] {
   if (x.potInvite && !night) add({ id: `spendentopf:live`, kind: "spendentopf", title: x.potInvite.title, detail: x.potInvite.detail, score: 40, target: { href: "/spendentopf" }, button: "Öffnen", gentle: true });
   if (x.tip) add({ id: `tipp:${x.today}`, kind: "tipp", title: x.tip, detail: "Kleiner Tipp", score: 18, target: null, button: null, gentle: true });
 
+  // Durchatmen (A-051): leise, nie nachts, nie vor anderem Wichtigen
+  if (x.durchatmen && !night) add({ ...durchatmenThema(x.durchatmen.anlass, x.today, x.durchatmen.detail), gentle: true });
   if (x.weekCheck && !night) add({ id: `wochencheck:${x.weekCheck}`, kind: "wochencheck", title: "Kurzer Wochencheck?", detail: "Sag einfach alles, ich sortiere.", score: 50, target: { action: "wochencheck" }, button: "Öffnen", gentle: true });
   if (x.kuehlCheck && !night) add({ ...kuehlThema(x.kuehlCheck), gentle: true });
   if (x.demo && x.demoThema) add({ id: "beispiel", kind: "beispiel", title: x.demoThema.title, detail: x.demoThema.detail, score: 96, target: null, button: null, gentle: true, first: true });

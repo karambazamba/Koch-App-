@@ -18,6 +18,7 @@ import { TON_SAETZE, TON_ZIEL } from "@/lib/begleitung/pruefstand/ton";
 import { MicLogList } from "@/components/einstellungen/settings/MicLogSection";
 import { PruefstandLauf } from "@/components/einstellungen/settings/PruefstandLauf";
 import { TempoSection } from "@/components/einstellungen/settings/TempoSection";
+import { AnsagenErzeugen } from "@/components/durchatmen/AnsagenErzeugen";
 
 export function AdminView() {
   // Erst im Browser (beim Vorrendern gibt es kein „heute“ und keinen Speicher)
@@ -62,6 +63,7 @@ export function AdminView() {
         />
         <PruefstandLauf titel="Prüfstand" saetze={PRUEFSAETZE} secret={secret} hinweis={`${PRUEFSAETZE.length} Alltagssätze durch ${helperName(null)}. Ziel: mindestens 95 % richtig. Kostet ein paar Cent.`} dauer="Bildschirm anlassen, dauert ca. 5 Minuten." />
         <PruefstandLauf titel="Prüfstand Ton" art="ton" saetze={TON_SAETZE} secret={secret} hinweis={`${TON_SAETZE.length} Alltagssätze: kurz, locker, ohne Floskel, höchstens eine Frage. Ziel: mindestens ${TON_ZIEL} %.`} dauer="Bildschirm anlassen, dauert ca. 1 Minute." />
+        <AnsagenErzeugen secret={secret} />
       </main>
     </div>
   );
