@@ -6,6 +6,23 @@ ist inzwischen anders. Den aktuellen Stand je Bereich beschreibt
 `docs/bereiche/<bereich>.md`, die festen Regeln stehen in `CLAUDE.md`.
 Ältere Pfadangaben meinen die Orte vor dem Umzug (siehe CLAUDE.md, „Ordner“).
 
+## Rätsel in der Wundertüte, vier Kreise oben (A-064, v0.172.0)
+
+- Rätsel und Wundertüte waren zu ähnlich (Frage → Antippen → Lösung): Rätsel
+  ist die vierte Sorte der Wundertüte (Witz · Platt · Wissen · Rätsel). Die
+  Kachel wechselt die Sorten streng der Reihe nach, nie doppelt; Seite mit
+  Filter Alles · Witze · Platt · Wissen · Rätsel (`wundertuete/mischung.ts`).
+- Die Rätsel behalten ihren Vorrat (`lib/raetsel`, Paket 001, `wasgibts.raetsel`
+  mit „gesehen“, Mias Nachschub und Abgleich) – keine Daten umgezogen, nichts
+  gelöscht. Die aktuelle Karte merkt sich `raetsel: true`.
+- Mini-Kreis „Rätsel“ und `RaetselFenster` entfallen: oben Sport · Pause ·
+  Was los? · Timer (höchstens 4, 64 px, gleich verteilt). Gespeicherte
+  Anordnungen verlieren den Rätsel-Kreis still (`sanitizeKreise`).
+- Mia: „Gib mir ein Rätsel“ → `app_befehl` „Rätsel“ → Bühne zu, Seite
+  `/wundertuete?sorte=raetsel` (`wundertuete/oeffnen.ts`, auch ohne KI).
+  Prüfstand: „Rätsel!“, „Gib mir ein Rätsel“, „Hast du noch ein Rätsel für
+  die Kinder?“ → app_command; „Nimm Rätsel oben raus“ → „Nimm Was los oben raus“.
+
 ## „Was los?“-Kreis immer da, wenn an (A-063, v0.171.0)
 
 - Felix sah den Kreis auf v0.169 erst nicht (der erste Abruf lief erst beim

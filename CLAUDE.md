@@ -56,8 +56,8 @@ Die frühere Lieblingsfarbe ist „Meine Farbe im Kalender“ (Profil
 - Termin = feste Uhrzeit, Aufgabe = steht jetzt an (ohne Tag heute, mit
   genanntem Tag ab dem Tag, bis dahin „Geplant“), Notiz = nur festhalten.
   Leerer Kalender = Angebot „Kalender mitbringen“ (Apple/Google/Outlook).
-- Startseite = oben die Mini-Kreise (Sport · Pause · Was los? · Rätsel · Timer,
-  ein Wort, keine Schilder, Tafel 143) und darunter EINE gespeicherte Anordnung
+- Startseite = oben die Mini-Kreise (Sport · Pause · Was los? · Timer, ein
+  Wort, keine Schilder, Tafel 143; Rätsel sind eine Sorte der Wundertüte) und darunter EINE gespeicherte Anordnung
   (ändert sich nie von selbst) im festen Raster XS · S · M (Tafel 118), Standard
   je Haushalt (Tafel 140); `docs/bereiche/heute.md`.
 - Auf der Startseite gibt es genau zwei Mias: das eckige Logo (BrandMark,

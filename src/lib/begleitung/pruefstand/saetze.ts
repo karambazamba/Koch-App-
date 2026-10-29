@@ -279,7 +279,7 @@ export const PRUEFSAETZE: PruefSatz[] = [
   S("Mach das Wetter ganz klein", ["home"]),
   S("Pinnwand wieder in Standardfarbe", ["home"]),
   // Mini-Kreise oben (A-050, Tafel 143)
-  S("Nimm Rätsel oben raus", ["kreise"]),
+  S("Nimm Was los oben raus", ["kreise"]),
   S("Timer nach vorn", ["kreise"]),
   S("Hol die Pause wieder nach oben", ["kreise"]),
   S("Den Sport-Kreis bitte ganz nach hinten", ["kreise"]),
@@ -293,13 +293,15 @@ export const PRUEFSAETZE: PruefSatz[] = [
   S("Ich bin müde", ANTWORT),
   S("äh ja also nee doch nicht", ANTWORT),
 
-  // Mias Wundertüte und Rätsel (A-022/A-052): Karte aus dem geprüften Pool vorlesen, nichts anlegen
+  // Mias Wundertüte (A-022/A-052): Karte aus dem geprüften Pool vorlesen, nichts anlegen
   R("Erzähl mir was Unnützes"),
   R("Angeberwissen"),
   R("Erzähl mal einen Witz", { max: 2 }),
-  R("Rätsel!", { max: 2 }),
   R("Was heißt Schietwedder auf Hochdeutsch?"),
-  R("Hast du noch ein Rätsel für die Kinder?", { max: 2 }),
+  // Rätsel (A-064): öffnen die Wundertüte mit der Sorte Rätsel (app_befehl „Rätsel“)
+  S("Rätsel!", ["app_command"], { max: 2 }),
+  S("Gib mir ein Rätsel", ["app_command"], { max: 2 }),
+  S("Hast du noch ein Rätsel für die Kinder?", ["app_command"], { max: 2 }),
 
   // Durchatmen (A-051): Übung startet gleich (app_befehl mit dem Satz)
   S("Ich brauch kurz Ruhe", ["app_command"]),

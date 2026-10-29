@@ -1,7 +1,8 @@
-// Mias Wundertüte und Rätsel im Gespräch (A-022/A-052, Bereich "alltag"):
-// „Erzähl mir was Unnützes“, „Angeberwissen“, „Erzähl einen Witz“, „Rätsel!“,
+// Mias Wundertüte im Gespräch (A-022/A-052, Bereich "alltag"):
+// „Erzähl mir was Unnützes“, „Angeberwissen“, „Erzähl einen Witz“,
 // „Was heißt … auf Platt?“ → Mia liest eine Karte aus den geprüften Paketen
-// vor (Frage, kurze Pause, Antwort; beim Rätsel erst auf „Lösung“). Nur
+// vor (Frage, kurze Pause, Antwort). Rätsel öffnen seit A-064 die Wundertüte
+// mit der Sorte Rätsel (app_befehl „Rätsel“, `wundertuete/oeffnen.ts`). Nur
 // Lesen, nichts wird geändert; Fakten kommen NUR aus dem Pool (nie erfinden).
 // Die Kachel-Karte und „gesehen“ bleiben davon unberührt.
 
@@ -9,18 +10,18 @@ import type { BegleitungTool } from "@/lib/begleitung/registry";
 import type { ToolContext } from "@/lib/begleitung/tools";
 import { passt } from "@/lib/wundertuete/auswahl";
 import { POOL, eintraegeDer } from "@/lib/wundertuete/pool";
-import { RT_POOL } from "@/lib/raetsel/auswahl";
 import { ohneFett, SORTE_IDS, sorteMeta, type Sorte } from "@/lib/wundertuete/sorten";
 import type { Karte } from "@/lib/wundertuete/vorrat";
 
-const SORTEN = [...SORTE_IDS, "raetsel", "egal"] as const;
-type Wahl = (typeof SORTEN)[number];
+/** Sorten zum Vorlesen (Rätsel öffnen die Wundertüte, A-064) */
+const SORTEN = [...SORTE_IDS.filter((s) => s !== "raetsel"), "egal"];
+type Wahl = Exclude<Sorte, "raetsel"> | "egal";
 
 const norm = (t: string) => t.toLowerCase().replace(/[^a-zäöüß0-9]+/g, " ").trim();
 
 /** Eine Karte der Sorte (Anlass-Karten nur, wenn sie passen; Wetter/Gericht spielen hier keine Rolle) */
 function karte(ctx: ToolContext, sorte: Wahl, rng: () => number): Karte | null {
-  const list = sorte === "raetsel" ? RT_POOL.karten : eintraegeDer(sorte === "egal" ? "angeberwissen" : (sorte as Sorte)).filter((x) => passt(x, { heute: ctx.today }));
+  const list = eintraegeDer(sorte === "egal" ? "angeberwissen" : sorte).filter((x) => passt(x, { heute: ctx.today }));
   return list.length ? list[Math.floor(rng() * list.length) % list.length] : null;
 }
 
@@ -28,7 +29,7 @@ function karte(ctx: ToolContext, sorte: Wahl, rng: () => number): Karte | null {
 function loesung(frage: string): Karte | null {
   const f = norm(frage);
   if (f.length < 8) return null;
-  return [...POOL, ...RT_POOL.karten].find((x) => x.hinten && (norm(x.vorne).includes(f) || f.includes(norm(x.vorne)))) ?? null;
+  return POOL.find((x) => x.hinten && (norm(x.vorne).includes(f) || f.includes(norm(x.vorne)))) ?? null;
 }
 
 export const WUNDERTUETE_TOOLS: BegleitungTool[] = [
@@ -37,7 +38,7 @@ export const WUNDERTUETE_TOOLS: BegleitungTool[] = [
     definition: {
       name: "wundertuete_karte",
       description:
-        "Holt eine Karte aus Mias Wundertüte bzw. den Rätseln: geprüftes unnützes Wissen (angeberwissen), Plattdeutsch (platt), Witze (witz), Rätsel (raetsel). Für 'Erzähl mir was Unnützes', 'Angeberwissen', 'Erzähl einen Witz', 'Rätsel!', 'Was heißt was auf Platt?'. Lies GENAU diesen Text vor, nichts dazuerfinden. Wissen und Platt: Frage, dann als eigener Satz die Antwort. Witz: Anfang, dann die Pointe. Rätsel: nur die Frage und antwort_knoepfe ['Lösung']; sagt jemand 'Lösung', rufe das Werkzeug mit frage = deiner Frage von eben.",
+        "Holt eine Karte aus Mias Wundertüte: geprüftes unnützes Wissen (angeberwissen), Plattdeutsch (platt), Witze (witz). Für 'Erzähl mir was Unnützes', 'Angeberwissen', 'Erzähl einen Witz', 'Was heißt was auf Platt?'. Lies GENAU diesen Text vor, nichts dazuerfinden. Wissen und Platt: Frage, dann als eigener Satz die Antwort. Witz: Anfang, dann die Pointe. Rätsel NICHT hier: dafür app_befehl 'Rätsel' (öffnet die Wundertüte mit der Sorte Rätsel).",
       input_schema: {
         type: "object",
         properties: {
@@ -58,7 +59,6 @@ export const WUNDERTUETE_TOOLS: BegleitungTool[] = [
       const sorte = (SORTEN as readonly string[]).includes(input.sorte ?? "") ? (input.sorte as Wahl) : "egal";
       const x = karte(ctx, sorte, Math.random);
       if (!x) return { content: "Dazu gibt es grad keine Karte. Biete kurz eine andere Sorte an (z. B. Angeberwissen)." };
-      if (x.sorte === "raetsel") return { content: `Rätsel: ${x.vorne}\n(Lösung kommt erst auf „Lösung“: ${ohneFett(x.hinten ?? "")})\nJetzt nur die Frage sagen und antwort_knoepfe ['Lösung'].` };
       const meta = sorteMeta(x.sorte as Sorte);
       if (x.sorte === "witz") return { content: `Witz: ${x.vorne}\nPointe: ${x.hinten ?? ""}\nErst den Anfang, dann die Pointe. Nichts dazuerfinden.` };
       return { content: `${meta.label ?? meta.titel}: ${x.vorne}\nAntwort: ${ohneFett(x.hinten ?? "")}\nFrage, dann die Antwort als eigener Satz. Nichts dazuerfinden.` };

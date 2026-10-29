@@ -8,7 +8,7 @@ import { describe, expect, it } from "vitest";
 import { LEER, PAKET_NOETIG_AB, brauchtWitze, karteVon, migrateWt, naechste, tageskarte, uebrigAusPaketen, type Lage, type WtStand } from "@/lib/wundertuete/auswahl";
 import { RT_LEER, RT_POOL, brauchtRaetsel, hatUngesehenes, loesen, migrateRaetsel, naechstesRaetsel, oeffnen, raetselStart, raetselVon, type RtStand } from "@/lib/raetsel/auswahl";
 import { WT_POOL, POOL, eintraegeDer } from "@/lib/wundertuete/pool";
-import { SORTEN } from "@/lib/wundertuete/sorten";
+import { KOMMT_BALD, SORTEN } from "@/lib/wundertuete/sorten";
 import { nachlegen, poolAus, ziehe, VORRAT_ZIEL, type KiHolen, type Karte } from "@/lib/wundertuete/vorrat";
 
 const LAGE: Lage = { heute: "2027-03-09", minuten: 600, haushalt: "familie", wetter: null, gericht: null, feiertag: null };
@@ -161,22 +161,17 @@ describe("Rätsel-Fenster (rein)", () => {
     expect(oeffnen(alle)).toBe(alle);
   });
 
-  it("Fenster: Kopf, Frage 27 px, Lösung im gestrichelten Kasten erst nach Antippen, „Noch eins ›“, „Neue Rätsel kommen bald.“", () => {
-    const code = readFileSync("src/components/raetsel/RaetselFenster.tsx", "utf8");
-    expect(code).toContain("Kinder raten zuerst");
-    expect(code).toContain("text-[27px]");
-    expect(code).toMatch(/\{geloest && raetsel\.hinten && \(/);
-    expect(code).toContain("border-dashed");
-    expect(code).toContain("Noch eins");
-    expect(code).toContain("Antippen zeigt die Lösung · nie doppelt");
-    expect(code).toContain('"Neue Rätsel kommen bald."');
-    expect(code).toContain("<Sheet");
+  it("A-064: kein eigenes Rätsel-Fenster mehr – Rätsel sind eine Sorte der Wundertüte", async () => {
+    const { existsSync } = await import("node:fs");
+    expect(existsSync("src/components/raetsel/RaetselFenster.tsx")).toBe(false);
+    expect(KOMMT_BALD.raetsel).toBe("Neue Rätsel kommen bald.");
   });
+
 });
 
 describe("KI nur für Witze und Rätsel, Schwelle „Paket nötig“", () => {
-  it("nur Witze dürfen per KI nachgelegt werden (Platt und Angeberwissen nur geprüft)", () => {
-    expect(SORTEN.filter((s) => s.ki).map((s) => s.id)).toEqual(["witz"]);
+  it("nur Witze und Rätsel dürfen per KI nachgelegt werden (Platt und Angeberwissen nur geprüft)", () => {
+    expect(SORTEN.filter((s) => s.ki).map((s) => s.id)).toEqual(["witz", "raetsel"]);
     const store = readFileSync("src/lib/wundertuete/store.ts", "utf8");
     expect(store).toContain('nachschub("wundertuete", "witz", WT_POOL');
     expect(readFileSync("src/lib/raetsel/store.ts", "utf8")).toContain('nachschub("raetsel", "raetsel", RT_POOL');

@@ -18,8 +18,8 @@ import { brauchtNachschub, eigeneAus, gesehenAus, karteAus, kiZaehlerAus, merke,
 /** Gespeicherter Stand (`wasgibts.wundertuete` v2; `gesehen` und `eigene` im Haushalt geteilt) */
 export type WtStand = {
   version: 2;
-  /** Die Karte auf Kachel und Seite, mit dem Tag, an dem sie kam (nur Gerät) */
-  aktuell: { id: string; tag: string } | null;
+  /** Die Karte auf Kachel und Seite, mit dem Tag, an dem sie kam (nur Gerät); `raetsel` = aus dem Rätsel-Vorrat (A-064) */
+  aktuell: { id: string; tag: string; raetsel?: true } | null;
   /** Gesehene IDs, nie wieder zeigen */
   gesehen: string[];
   /** Witze, die Mia nachgelegt hat (ID `ki-…`), gesehen oder noch im Vorrat */
@@ -111,8 +111,8 @@ export function migrateWt(raw: unknown): WtStand | null {
   const r = raw as Record<string, unknown>;
   if (r.version === 1) return ausV1(r);
   if (r.version !== 2) return null;
-  const a = r.aktuell as { id?: unknown; tag?: unknown } | null | undefined;
-  const aktuell = a && typeof a.id === "string" && typeof a.tag === "string" && /^\d{4}-\d{2}-\d{2}$/.test(a.tag) ? { id: a.id, tag: a.tag } : null;
+  const a = r.aktuell as { id?: unknown; tag?: unknown; raetsel?: unknown } | null | undefined;
+  const aktuell = a && typeof a.id === "string" && typeof a.tag === "string" && /^\d{4}-\d{2}-\d{2}$/.test(a.tag) ? { id: a.id, tag: a.tag, ...(a.raetsel === true ? { raetsel: true as const } : {}) } : null;
   const eigene = eigeneAus(r.eigene, SORTE_IDS).filter((x) => x.sorte === "witz" && !eintragVon(x.id));
   const ki = kiZaehlerAus(r.ki);
   return { version: 2, aktuell, gesehen: gesehenAus(r.gesehen), eigene, ...(ki ? { ki } : {}) };

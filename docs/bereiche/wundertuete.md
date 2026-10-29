@@ -1,9 +1,16 @@
-# Mias Wundertüte und Rätsel
+# Mias Wundertüte (mit Rätseln)
 
 ## Feste Regeln (A-022, Tafel 116; neu mit A-052, Tafel 137/140)
 
-- **Wundertüte = Witze, Plattdeutsch, Angeberwissen.** Rätsel sind seit
-  A-052 ein eigener Bereich (Mini-Kreis „Rätsel“ mit Fenster, siehe unten).
+- **Wundertüte = Witze, Plattdeutsch, Angeberwissen und Rätsel** (seit
+  A-064 vierte Sorte; vorher eigener Bereich mit Mini-Kreis und Fenster).
+  Die Kachel wechselt die Sorten streng der Reihe nach (Witz · Platt ·
+  Wissen · Rätsel; Sorten ohne Ungesehenes fallen aus der Reihe, Anlass-Karten
+  kommen innerhalb ihrer Sorte zuerst), nie doppelt. Seite mit Filter Alles ·
+  Witze · Platt · Wissen · Rätsel. Gemischt wird in `wundertuete/mischung.ts`;
+  die Rätsel behalten ihren eigenen Vorrat (`lib/raetsel`, Paket 001 bleibt
+  Quelle, `wasgibts.raetsel` mit „gesehen“ und Mias Nachschub, Abgleich
+  unverändert).
   Tischrunde, Schätz mal, Wer zuerst und Heute vor 100 Jahren gibt es nicht
   mehr (Schätz-mal-Fakten wurden Angeberwissen, IDs `sm-…` blieben).
 - **Nie doppelt:** jede Karte hat eine feste ID; was der Haushalt gesehen
@@ -125,19 +132,20 @@ Wort oder Angeberwissen; die Rätsel sind für die Kinder am Tisch.
 - Beispiel-Tag: feste Karte „Was heißt ‚Kiek mol an‘?“, nie gespeichert;
   „Beispiel“ nur für VoiceOver. Antippen leert das Beispiel und dreht die Karte um.
 
-## Rätsel (eigener Bereich, A-052)
+## Rätsel (Sorte der Wundertüte seit A-064)
 
-- Mini-Kreis „Rätsel“ auf der Startseite (baut Paket A, A-050), ohne Schild
-  „neu“ und ohne Zahl (Nachtrag von Felix: kein Kreis bekommt ein Schild;
-  `hatUngesehenes` bleibt nur intern). Bis dahin
-  öffnet „Für Entwickler“ → „Rätsel-Fenster öffnen“ das Fenster.
-- **Fenster** (`ui/Sheet`, Tafel 137 Bild 4): rundes Symbol, „Rätsel“,
-  „Kinder raten zuerst“, ✕; Frage groß (27 px), darunter verdeckt
-  „↻ Antippen für die Lösung“; erst Antippen zeigt die Lösung im
-  gestrichelten Kasten („LÖSUNG“); großer Knopf „Noch eins ›“ (beliebig oft,
-  vor dem Aufdecken hell, A-059); „Antippen zeigt die Lösung · nie doppelt“. Ein noch
-  ungelöstes Rätsel bleibt beim nächsten Öffnen stehen, ein gelöstes macht
-  Platz für das nächste. Kein Zähler, keine Punkte.
+- Kein eigener Kreis und kein eigenes Fenster mehr (bis v0.171: Mini-Kreis
+  „Rätsel“ mit `RaetselFenster`). Rätsel erscheinen auf der Kachel im Wechsel
+  mit den anderen Sorten und auf der Seite (Filter „Rätsel“); Lösung wie bei
+  allen Sorten erst nach Antippen. Farbe Pfirsich (`data-tone="essen"`),
+  Titel „Wundertüte“, Sorte „Rätsel“. Leer: „Neue Rätsel kommen bald.“
+- Die aktuelle Karte der Wundertüte merkt sich `raetsel: true`, wenn sie aus
+  dem Rätsel-Vorrat kommt (`wasgibts.wundertuete` v2, Feld optional – alte
+  Stände bleiben gültig). Gezogene Rätsel gelten im Rätsel-Vorrat als gesehen.
+- Mia: „Gib mir ein Rätsel“, „Rätsel!“, „Hast du ein Rätsel für die Kinder?“
+  → `app_befehl` „Rätsel“ → Bühne zu, Seite `/wundertuete?sorte=raetsel`
+  (`wundertuete/oeffnen.ts`, Gastgeber `begleitung/KitchenHelper`). Ohne KI
+  dieselbe Erkennung (`raetselWunsch`). Mia liest keine Rätsel mehr vor.
 - Paket 001: die 55 Rätsel der alten Wundertüte (IDs `ra-001` bis `ra-055`)
   und 36 neue, geprüfte (`ra-056` bis `ra-091`) = **91 Rätsel**; den Rest
   legt Mia per KI nach (20 im Voraus).
@@ -192,10 +200,9 @@ Wundertüte: 302 Karten in Paket 001, Rätsel: 91 in Paket 001.
 ## Begleitung
 
 - „Erzähl mir was Unnützes“, „Angeberwissen“, „Erzähl mal einen Witz“,
-  „Rätsel!“, „Was heißt Schietwedder auf Hochdeutsch?“ →
-  `wundertuete_karte`: Frage, dann Antwort; Witz mit Pointe; Rätsel erst die
-  Frage mit Knopf „Lösung“. Mia ändert dabei nichts und merkt nichts als
-  gesehen.
+  „Was heißt Schietwedder auf Hochdeutsch?“ → `wundertuete_karte`: Frage,
+  dann Antwort; Witz mit Pointe. Mia ändert dabei nichts und merkt nichts
+  als gesehen. Rätsel öffnen die Wundertüte mit der Sorte Rätsel (siehe oben).
 
 ## Tests
 

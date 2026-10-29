@@ -47,6 +47,7 @@ import { openHelper } from "@/lib/begleitung/open";
 import { isWeekCheckRequest } from "@/lib/kalender/wochencheck";
 import { durchatmenAusSatz } from "@/lib/durchatmen/erkennen";
 import { starteDurchatmen } from "@/lib/durchatmen/oeffnen";
+import { oeffneWundertuete, raetselWunsch } from "@/lib/wundertuete/oeffnen";
 import { isKochtippRequest } from "@/lib/essen/kochtipp/start";
 import { daySummary, isDayQuestion, openDeinTag } from "@/lib/heute/deinTag";
 import { itemsForDay, weekdayIndex } from "@/lib/kalender/model";
@@ -205,6 +206,13 @@ export function useChatRules({ ruleCtx, chat, setGuided, startSpontan, pantry, s
       setInput("");
       unlockFeature("durchatmen");
       starteDurchatmen(atem);
+      return true;
+    }
+    // „Gib mir ein Rätsel“ → Wundertüte mit der Sorte Rätsel (A-064)
+    if (raetselWunsch(t)) {
+      setInput("");
+      unlockFeature("wundertuete");
+      oeffneWundertuete("raetsel");
       return true;
     }
     // „Kochtipp“, „Was soll ich kochen?“ → Kochtipp mit drei Schnellantworten

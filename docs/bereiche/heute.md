@@ -629,23 +629,23 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
   allen Kacheln und Hinweisen (`components/heute/kreise/KreisReihe.tsx`, rein
   `lib/heute/kreise.ts`). Nicht wischbar: kein seitliches Scrollen, Wischen
   wechselt weiter die Seite (Kalender · Heute · Essen).
-- Bis zu 5 Kreise gleich verteilt über die ganze Breite (14 px Rand): 5 = 56 px
-  (Symbol 23, Wort 12,5 px), 4 oder weniger = 64 px (26, 13 px) –
+- Bis zu 4 Kreise gleich verteilt über die ganze Breite (14 px Rand, A-064;
+  bis v0.171 waren es 5 mit Rätsel): 64 px (Symbol 26, Wort 13 px) –
   `kreisMasse`. Unter jedem Kreis genau EIN Wort, fett, nie zweite Zeile, nie
   „…“. Fläche = Kachelfarbe des Bereichs (`data-tone`: Sport Flieder bzw. die
-  Farbe der Sport-Kachel, Pause Mint, Was los? Lavendel-Blau, Rätsel Pfirsich,
-  Timer Sand), Symbol im Akzent; Schlicht: weiß mit feinem Rand.
+  Farbe der Sport-Kachel, Pause Mint, Was los? Lavendel-Blau, Timer Sand), Symbol im Akzent; Schlicht: weiß mit feinem Rand.
 - Standard (`STANDARD_KREISE`): Sport (Laufschuh bzw. Symbol der nächsten
   Sportart; Ring = Wochenziel, Stücke füllen sich, geschafft grün; im
   Beispiel-Tag 2 von 3) · Pause (Wind, öffnet Durchatmen über
-  `oeffneDurchatmen`) · Was los? (Fahne; nur mit `useWasLosSichtbar()` aus
-  A-055 – Quelle an, Baustein an, etwas in 14 Tagen –, öffnet `WasLosFenster`) ·
-  Rätsel (Puzzle, `RaetselFenster`, KEIN Schild „neu“) · Timer (Stoppuhr,
-  `TimerFenster`).
+  `oeffneDurchatmen`) · Was los? (Fahne; mit `useWasLosSichtbar()` – Quelle
+  an und Baustein an, A-063 auch ohne Einträge –, öffnet `WasLosFenster`) ·
+  Timer (Stoppuhr, `TimerFenster`). Rätsel ist seit A-064 kein Kreis mehr,
+  sondern eine Sorte der Wundertüte; ein gespeicherter Rätsel-Kreis fällt
+  beim Laden still weg (`sanitizeKreise`), die übrige Reihenfolge bleibt.
 - Läuft ein Timer: Restzeit des kürzesten groß im Kreis (orange), oranger
   Fortschritts-Ring, Position 1 (`timerImKreis`, `sichtbareKreise`); danach
   zurück an seinen Platz. Ist der Timer-Kreis aus, steht er nur, solange einer
-  läuft. Mehr als 5: hinten fällt weg, der laufende Timer nie.
+  läuft. Mehr als 4: hinten fällt weg, der laufende Timer nie.
 - Nur Kreise eingeschalteter Bausteine (Sport, Durchatmen). Kein Schild, keine
   Zahl, keine Plakette – einziges Zeichen sind Sport-Ring und Timer-Restzeit.
 - Antippen = Fenster von unten (`ui/Sheet`), der Kreis hat solange einen orangen
@@ -654,16 +654,16 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
 - Bearbeiten: statt der Reihe der Abschnitt „Kreise oben“ (`KreiseBearbeiten`):
   an/aus je Kreis (einschalten schaltet den Baustein mit ein), Reihenfolge
   ziehen am Griff (Knöpfe „Nach oben/unten“ für Screenreader, Pfeile mit Maus),
-  Hinweis „Höchstens 5 Kreise“. „Was los?“ erscheint erst mit Quelle.
+  Hinweis „Höchstens 4 Kreise“. „Was los?“ erscheint erst mit Quelle.
 - Speicher: Feld `kreise` in `wasgibts.startseite` (v10, in der Sicherung),
   `loadKreise`/`saveKreise`/`changeKreise`/`useKreise` in `core/homeLayout.ts`.
-- Mia: Werkzeug `kreise_anpassen` (Vorschau „Kreis Rätsel – ist oben raus“ mit
+- Mia: Werkzeug `kreise_anpassen` (Vorschau „Kreis Timer – ist oben raus“ mit
   Übernehmen, Op `kreise`), ohne KI `parseKreisCommand` in
-  `begleitung/homeChat.ts` („Nimm Rätsel oben raus“, „Timer nach vorn“, „Hol
+  `begleitung/homeChat.ts` („Nimm Was los oben raus“, „Timer nach vorn“, „Hol
   die Pause wieder nach oben“ – nur mit „oben/vorn/hinten/Kreis“ im Satz).
   Nutzt Mia Sport, kommt der Sport-Kreis (`heute/sportKreis.ts`), keine Kachel.
 - Fenster: Sport und Timer siehe `sport.md`/`timer.md`; Durchatmen
-  `durchatmen.md`; Rätsel `wundertuete.md`.
+  `durchatmen.md`; Rätsel (Sorte der Wundertüte) `wundertuete.md`.
 - Tests: `tests/heute/kreise.test.ts`, `tests/heute/kreisFenster.test.ts`,
   Durchklick `e2e/ablaeufe/kreise.mjs` (`kreiseOben` SE/15 Pro/Pixel 7,
   `kreisFenster`, `kreiseBearbeiten`, `kreiseMigration`), `raster.mjs`

@@ -78,7 +78,7 @@ describe("Sport-Fenster (Tafel 137/2)", () => {
     const { startFresh } = await import("@/lib/einstellungen/welcomeStore");
     const f = await import("@/lib/core/features");
     const home = await import("@/lib/core/homeLayout");
-    home.saveKreise([{ id: "raetsel", an: false }]);
+    home.saveKreise([{ id: "waslos", an: false }]);
     startFresh("farbig", "familie");
     expect(f.featureOn("sport")).toBe(true);
     expect(home.loadKreise().every((k) => k.an)).toBe(true);
