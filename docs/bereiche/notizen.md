@@ -98,9 +98,9 @@ Sammel-Schnellnotiz wird in einzelne Notizen geteilt.
   (`persistNote`); ohne Titel nimmt sie die erste Textzeile.
 
 ### Notizen-Kachel
-- S = neueste bzw. angeheftete Notiz (Titel + 1 Zeile), M = 3 Zeilen
-  „Titel · Anfang“, L = bis 5; Listen als „1 von 3 erledigt“. Antippen einer
-  Zeile öffnet genau diese Notiz, der Kopf die Seite, der Stift die
+- XS = neueste bzw. angeheftete Notiz, S und M = bis 3 Zeilen
+  „Titel · Anfang“; Listen als „1 von 3 erledigt“. Antippen der Kachel
+  öffnet immer die Notizen-Seite (A-059), der Stift die
   Schnelleingabe „Neue Notiz“ (mehrzeilig, erste Zeile = Titel). Leer:
   „Schnell notieren …“ in Grau. Die neueste Notiz steht in bis zu 2 Zeilen,
   die zweite läuft weich aus statt mit „…“ (A-060, Tafel 144; Einzelheiten
