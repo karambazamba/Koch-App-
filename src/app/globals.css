@@ -1156,6 +1156,12 @@ body {
 /* Leiser Text über dem Wasserzeichen (grau, orange) bekommt die Kachel-Fläche als
    enge Freistellung: sein Kontrast bleibt genau wie ohne Wasserzeichen. */
 .kachel-frei { background: var(--tile-bg); -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+/* Notizen-Kachel (A-060, Tafel 144): neueste Notiz in bis zu 2 Zeilen, die zweite läuft
+ * nach rechts weich aus (Maske = immer genau die Kachelfarbe, auch dunkel und „Schlicht“). */
+.notiz-ausblenden { --zeile: 17px; display: block; line-height: var(--zeile); max-height: calc(2 * var(--zeile)); overflow: hidden;
+  -webkit-mask-image: linear-gradient(#000, #000), linear-gradient(to right, #000 45%, transparent 96%); mask-image: linear-gradient(#000, #000), linear-gradient(to right, #000 45%, transparent 96%);
+  -webkit-mask-size: 100% var(--zeile), 100% var(--zeile); mask-size: 100% var(--zeile), 100% var(--zeile);
+  -webkit-mask-position: 0 0, 0 var(--zeile); mask-position: 0 0, 0 var(--zeile); -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; }
 /* Sport-Stempelkarte (A-044, Tafel 132): Stempel fest gedreht je Training (--dreh aus der ID),
    ein neuer Stempel setzt weich auf (kurz größer, dann aufsetzen; nur transform/opacity),
    reduced-motion = nur Überblenden. Geschafft = Grün statt Kachel-Farbe (Schlicht: Fläche weiß). */
@@ -1436,16 +1442,26 @@ body:has(.mia-buehne-hintergrund, .mia-geist-schleier) [data-mia-knopf] { opacit
 [data-zustand="herzen"] .av-herzen path:nth-child(2){animation-delay:.15s}
 [data-zustand="herzen"] .av-herzen path:nth-child(3){animation-delay:.3s}
 @keyframes av-herz{0%{opacity:0;transform:translateY(6px) scale(.6)}30%{opacity:1}100%{opacity:0;transform:translateY(-8px) scale(1)}}
-/* Kurze Momente am Knopf: Sturm = einmal wackeln, Herbst = ein Blatt fällt */
-[data-moment="wackeln"] .av-body{animation:av-wackeln 1.4s ease-in-out both}
+/* Kurze Momente am Knopf: Sturm = einmal wackeln (im Herbst mit Blättern: „sturm“) */
+[data-moment="wackeln"] .av-body,[data-moment="sturm"] .av-body{animation:av-wackeln 1.4s ease-in-out both}
 @keyframes av-wackeln{0%,100%{transform:rotate(0)}20%{transform:rotate(-6deg)}40%{transform:rotate(5deg)}60%{transform:rotate(-3deg)}80%{transform:rotate(2deg)}}
-.mia-blatt{position:absolute;top:-6px;left:10px;width:12px;height:12px;border-radius:0 70% 0 70%;background:var(--app-tile-essen-ac);opacity:0;animation:mia-blatt 2.4s cubic-bezier(.16,1,.3,1) both;pointer-events:none}
-@keyframes mia-blatt{0%{opacity:0;transform:translate(0,0) rotate(0)}15%{opacity:.9}100%{opacity:0;transform:translate(-18px,64px) rotate(160deg)}}
+/* Herbstblätter bei Wind (A-058): 6–8 Blätter wehen von links an Mia vorbei,
+ * wirbeln kurz um sie herum und sind weg (je Blatt 2,2 s, versetzt; der ganze
+ * Moment unter 3 s). Nur transform/opacity. Mia kneift dabei die Augen zu. */
+.av-blatt-weg{opacity:0;animation:av-blatt-weg 2.2s cubic-bezier(.16,1,.3,1) var(--d,0s) both}
+.av-blatt-dreh{transform-box:fill-box;transform-origin:center;animation:av-blatt-dreh 2.2s cubic-bezier(.16,1,.3,1) var(--d,0s) both}
+@keyframes av-blatt-weg{0%{opacity:0;transform:translate(0,0)}12%{opacity:1}40%{transform:translate(64px,calc(var(--h,0px) - 8px))}60%{transform:translate(94px,calc(var(--h,0px) + 10px))}75%{opacity:1;transform:translate(80px,calc(var(--h,0px) + 22px))}100%{opacity:0;transform:translate(150px,var(--h,0px))}}
+@keyframes av-blatt-dreh{from{transform:rotate(0)}to{transform:rotate(var(--r,540deg))}}
+.av-kneifen{opacity:0}
+.avatar[data-kneifen] .av-look{animation:av-kneif-auf 1.8s cubic-bezier(.16,1,.3,1) .2s both}
+.avatar[data-kneifen] .av-kneifen{animation:av-kneif 1.8s cubic-bezier(.16,1,.3,1) .2s both}
+@keyframes av-kneif-auf{0%,100%{opacity:1}20%,75%{opacity:0}}
+@keyframes av-kneif{0%,100%{opacity:0}20%,75%{opacity:1}}
 /* Sonne (A-033): Strahlen drehen sich beim Öffnen einmal sehr langsam, sonst still */
 .av-sonne-strahlen{transform-origin:68px 12px}
 [data-moment="sonne"] .av-sonne-strahlen{animation:av-sonne 8s cubic-bezier(.16,1,.3,1) both}
 @keyframes av-sonne{from{transform:rotate(0)}to{transform:rotate(360deg)}}
-@media (prefers-reduced-motion:reduce){[data-moment] .av-body{animation:none!important}.mia-blatt{display:none}[data-moment] .av-sonne-strahlen{animation:none!important}}
+@media (prefers-reduced-motion:reduce){[data-moment] .av-body{animation:none!important}.av-blaetter{display:none}.avatar[data-kneifen] .av-look,.avatar[data-kneifen] .av-kneifen{animation:none}[data-moment] .av-sonne-strahlen{animation:none!important}}
 
 /*
  * Pinnwand als Kühlschranktür (Tafel 106/107): Tür, Zettel, Papiere. Farben nur

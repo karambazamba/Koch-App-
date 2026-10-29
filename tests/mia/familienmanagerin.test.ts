@@ -1,5 +1,5 @@
 // Mia – die Familienmanagerin (Tafel 81/82): Zubehör je Datum/Uhrzeit/Wetter
-// mit Rangfolge, Schlafzeit, Silvester, kurze Momente (Sturm/Blatt), Sätze
+// mit Rangfolge, Schlafzeit, Silvester, kurze Momente (Sturm/Sonne), Sätze
 // ohne Druck, Varianten nie doppelt, Reaktions-Grenzen.
 import { describe, expect, it } from "vitest";
 import { easterSunday, isNewYear, miaLook, miaMoment, miaWetter, type MiaLage } from "@/lib/mia/zubehoer";
@@ -105,16 +105,15 @@ describe("Kurze Momente", () => {
     expect(miaMoment(lage("2027-01-10", "12:00", { wetter: { ...dry, boeen: 59 } }), {}, nowMs)).toBeNull();
   });
 
-  it("Herbstblatt höchstens 1×/h, nur Sep–Nov", () => {
-    expect(miaMoment(lage("2026-10-23"), {}, nowMs)).toBe("blatt");
-    expect(miaMoment(lage("2026-10-23"), { blatt: nowMs - 59 * 60_000 }, nowMs)).toBeNull();
-    expect(miaMoment(lage("2027-03-23"), {}, nowMs)).toBeNull();
+  it("ohne Wind kein Herbstblatt mehr (A-058: das einzelne fallende Blatt entfällt)", () => {
+    expect(miaMoment(lage("2026-10-23"), {}, nowMs)).toBeNull();
+    expect(miaMoment(lage("2026-10-23", "12:00", { wetter: dry }), {}, nowMs)).toBeNull();
   });
 
-  it("Sonnenstrahlen drehen sich einmal, nur mit Sonne, höchstens 1×/h, vor dem Herbstblatt", () => {
+  it("Sonnenstrahlen drehen sich einmal, nur mit Sonne, höchstens 1×/h", () => {
     const sonne = lage("2026-10-15", "12:00", { wetter: { ...dry, sonnig: true, grad: 13 } });
     expect(miaMoment(sonne, {}, nowMs)).toBe("sonne");
-    expect(miaMoment(sonne, { sonne: nowMs - 59 * 60_000 }, nowMs)).toBe("blatt");
+    expect(miaMoment(sonne, { sonne: nowMs - 59 * 60_000 }, nowMs)).toBeNull();
     expect(miaMoment(lage("2027-04-10", "12:00", { wetter: { ...dry, sonnig: true, grad: 19 } }), {}, nowMs)).toBeNull();
   });
 });

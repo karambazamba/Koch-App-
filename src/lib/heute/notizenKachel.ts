@@ -25,3 +25,18 @@ export function notizZeilen(notes: Note[], size: TileSize): NotizZeile[] {
     .slice(0, MAX[size])
     .map((n) => ({ id: n.id, title: n.data.title, line: notizAnfang(n), pinned: n.data.pinned }));
 }
+
+/**
+ * Vorschau der neuesten Notiz in der Kachel (A-060, Tafel 144): Titel und
+ * Anfang fließen in bis zu 2 Zeilen, die zweite läuft weich aus – darum nie
+ * ein „…“ am Ende. Ein auf 80 Zeichen gekürzter Titel („… …“) steht ganz im
+ * Text: dann zeigt die Vorschau gleich den vollen Anfang.
+ */
+export function notizVorschau(z: Pick<NotizZeile, "title" | "line">): { titel: string; rest: string } {
+  // Auch unvollständige Altdaten (ohne Titel/Text) zeigen sich ruhig
+  const title = (z.title ?? "").trim();
+  const line = z.line ?? "";
+  const kurz = title.replace(/\s*(…|\.\.\.)$/, "").trim();
+  if (kurz !== title && line.startsWith(kurz)) return { titel: line, rest: "" };
+  return { titel: kurz, rest: line };
+}

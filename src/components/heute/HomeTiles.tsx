@@ -44,6 +44,7 @@ import { ladenHref } from "@/lib/einkauf/seite/karten";
 import { useNotes } from "@/lib/notizen";
 import { openQuick } from "@/lib/core/schnelleingabe";
 import { notizZeilen } from "@/lib/heute/notizenKachel";
+import { NotizVorschau } from "@/components/notizen/NotizVorschau";
 import type { HomeData } from "@/components/heute/useHomeData";
 import { dishOf, useMeals } from "@/components/essen/useMeals";
 import { KochideeKnopf } from "@/components/essen/kochtipp/KochideeKnopf";
@@ -58,11 +59,6 @@ const HALF = `${TILE} flex h-full flex-col overflow-hidden p-3`;
 const XS_BOX = `${TILE} flex h-full flex-col justify-between overflow-hidden px-3 py-2.5`;
 /** Leertext der Notizen – überall gleich (A-048, Tafel 140), endet absichtlich auf „ …“ (`data-platzhalter-text`, A-045 nimmt ihn aus) */
 const NOTIZ_LEERTEXT = "Schnell notieren\u00a0…";
-/**
- * XS: EINE Zeile; frei Eingegebenes darin kürzt sich selbst (`truncate` + `data-freitext`), alles andere ist so kurz, dass es passt (A-045).
- * Die Zeile ist ganz tippbar (`data-zeile`) und darum mindestens 30 px hoch – 26 px Kopf + 30 px Zeile passen auch auf dem iPhone SE in XS.
- */
-const XS_LINE = "flex min-h-[30px] min-w-0 items-center overflow-hidden whitespace-nowrap text-[15px] font-bold leading-tight";
 const HALF_LABEL = `flex min-w-0 items-center gap-1.5 ${TILE_LABEL}`;
 
 /**
@@ -310,10 +306,12 @@ function KleinKopf({ icon: Icon, label, href, more = 0, knopf }: { icon: typeof 
 }
 
 /**
- * NOTIZEN je Größe (Raster): XS = EINE Zeile (neueste bzw. angeheftete Notiz,
- * sonst „Schnell notieren …“ wie überall), S und M = bis 3 Zeilen „Titel · Anfang“
- * (angeheftete zuerst), der Rest als „+N“. Ganze Kachel (auch Zeilen und
- * Leertext) = Notizen-Seite, nur der Stift = neue Notiz (A-059, Tafel 144).
+ * NOTIZEN je Größe (Raster): XS = die neueste bzw. angeheftete Notiz in bis zu
+ * 2 Zeilen, die zweite läuft weich aus (`NotizVorschau`, A-060, Tafel 144),
+ * sonst „Schnell notieren …“ in Grau wie überall; S und M = bis 3 Zeilen
+ * „Titel · Anfang“ (angeheftete zuerst), die erste davon ebenso in bis zu 2
+ * Zeilen, der Rest als „+N“. Ganze Kachel (auch Zeilen und Leertext) =
+ * Notizen-Seite, nur der Stift = neue Notiz (A-059, Tafel 144).
  * Beispiel-Tag: „WLAN: Tohuus2026“.
  */
 export function NotesTile({ size = "XS", demo = false }: { size?: TileSize; demo?: boolean }) {
@@ -337,10 +335,9 @@ export function NotesTile({ size = "XS", demo = false }: { size?: TileSize; demo
         <KachelWasserzeichen kachel="notizen" size={size} />
         <KleinKopf icon={StickyNote} label="Notizen" href="/notizen" knopf={pen} />
         {top ? (
-          // Rechts Platz für das kleine Wasserzeichen (A-048): der Titel kürzt sich davor
-          <Link href={href} className={`${XS_LINE} gap-1 pr-7 @max-[320px]:pr-0`} data-zeile data-notiz-zeile>
-            {top.pinned && <Pin className="h-3 w-3 shrink-0 text-tile-accent" strokeWidth={2.25} aria-hidden />}
-            <span className="kachel-frei truncate" data-freitext>{top.title}</span>
+          // Neueste Notiz in bis zu 2 Zeilen, die zweite läuft weich aus (A-060, Tafel 144)
+          <Link href={href} className="flex min-h-[30px] min-w-0 items-end leading-tight" data-zeile data-notiz-zeile>
+            <NotizVorschau zeile={top} gross />
           </Link>
         ) : (
           // Derselbe Leertext wie in S/M und auf der Notizen-Seite (Tafel 140), ohne Stift im Text – der Stift ist der Knopf oben rechts
@@ -357,14 +354,19 @@ export function NotesTile({ size = "XS", demo = false }: { size?: TileSize; demo
       <KleinKopf icon={StickyNote} label="Notizen" href="/notizen" more={more} knopf={pen} />
       {rows.length ? (
         <ul className="flex flex-col" aria-label="Notizen">
-          {rows.map((r) => (
+          {rows.map((r, i) => (
             <li key={r.id || "beispiel"}>
-              <Link href={href} className="flex min-h-[30px] items-center gap-1.5 text-[13.5px]" data-zeile data-notiz-zeile>
-                {r.pinned ? <Pin className="h-3.5 w-3.5 shrink-0 text-tile-accent" strokeWidth={2.25} aria-hidden /> : <StickyNote className="h-3.5 w-3.5 shrink-0 text-tile-accent" strokeWidth={2} aria-hidden />}
-                <span className="min-w-0 flex-1 truncate" data-freitext>
-                  <span className="font-semibold">{r.title}</span>
-                  {r.line && <span className="kachel-frei text-muted"> · {r.line}</span>}
-                </span>
+              <Link href={href} className={`flex min-h-[30px] gap-1.5 text-[13.5px] ${i === 0 ? "items-start py-0.5" : "items-center"}`} data-zeile data-notiz-zeile>
+                {r.pinned ? <Pin className={`h-3.5 w-3.5 shrink-0 text-tile-accent ${i === 0 ? "mt-px" : ""}`} strokeWidth={2.25} aria-hidden /> : <StickyNote className={`h-3.5 w-3.5 shrink-0 text-tile-accent ${i === 0 ? "mt-px" : ""}`} strokeWidth={2} aria-hidden />}
+                {i === 0 ? (
+                  // Die neueste Notiz in bis zu 2 Zeilen, weich ausgeblendet (A-060, Tafel 144)
+                  <NotizVorschau zeile={{ ...r, pinned: false }} />
+                ) : (
+                  <span className="min-w-0 flex-1 truncate" data-freitext>
+                    <span className="font-semibold">{r.title}</span>
+                    {r.line && <span className="kachel-frei text-muted"> · {r.line}</span>}
+                  </span>
+                )}
               </Link>
             </li>
           ))}

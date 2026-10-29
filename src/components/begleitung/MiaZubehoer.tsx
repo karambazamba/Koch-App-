@@ -4,6 +4,7 @@
 // (wie die Gerichte-Bilder), keine Knöpfe. Die Sonne liegt halb HINTER Mia
 // (BegleitungAvatar zeichnet sie vor dem Körper), Gelb über `--app-sonne`.
 
+import type { CSSProperties } from "react";
 import type { Zubehoer } from "@/lib/mia/zubehoer";
 
 export function MiaZubehoer({ was }: { was: Zubehoer }) {
@@ -96,4 +97,35 @@ export function MiaZubehoer({ was }: { was: Zubehoer }) {
         </g>
       );
   }
+}
+
+/** Herbstblätter (A-058): Start links neben Mia (x, y), Größe, Versatz, Höhen-Drift, Drehung – Farben Orange, Rot, Gelb, Braun */
+const BLAETTER: { x: number; y: number; s: number; d: number; h: number; r: number; farbe: string }[] = [
+  { x: -26, y: 8, s: 1.2, d: 0, h: 6, r: 540, farbe: "#F28C28" },
+  { x: -34, y: 30, s: 0.8, d: 0.15, h: -4, r: -420, farbe: "#D94B3D" },
+  { x: -22, y: 52, s: 1, d: 0.3, h: -10, r: 480, farbe: "#F2B84B" },
+  { x: -30, y: 70, s: 0.7, d: 0.1, h: -18, r: -540, farbe: "#8B5A2B" },
+  { x: -40, y: 18, s: 0.9, d: 0.45, h: 14, r: 600, farbe: "#D94B3D" },
+  { x: -28, y: 42, s: 1.3, d: 0.55, h: 4, r: -480, farbe: "#F28C28" },
+  { x: -38, y: 62, s: 0.85, d: 0.4, h: -8, r: 420, farbe: "#C9A227" },
+];
+
+/** 7 Blätter wehen an Mia vorbei (nur kurz, `.av-blaetter`; bei reduzierter Bewegung unsichtbar) */
+export function MiaBlaetter() {
+  return (
+    <g className="av-blaetter" data-blaetter aria-hidden>
+      {BLAETTER.map((b, i) => (
+        <g key={i} transform={`translate(${b.x} ${b.y})`}>
+          <g className="av-blatt-weg" style={{ "--d": `${b.d}s`, "--h": `${b.h}px` } as CSSProperties}>
+            <g className="av-blatt-dreh" style={{ "--r": `${b.r}deg` } as CSSProperties}>
+              <g transform={`scale(${b.s * 1.5})`}>
+                <path d="M0 -6C5 -4 5 3 0 6C-5 3 -5 -4 0 -6z" fill={b.farbe} stroke="#fff" strokeWidth="1" />
+                <path d="M0 -4.5V5" stroke="#fff" strokeWidth=".8" strokeLinecap="round" opacity=".7" />
+              </g>
+            </g>
+          </g>
+        </g>
+      ))}
+    </g>
+  );
 }

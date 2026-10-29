@@ -6,6 +6,27 @@ ist inzwischen anders. Den aktuellen Stand je Bereich beschreibt
 `docs/bereiche/<bereich>.md`, die festen Regeln stehen in `CLAUDE.md`.
 Ältere Pfadangaben meinen die Orte vor dem Umzug (siehe CLAUDE.md, „Ordner“).
 
+## Notizen-Vorschau + Mia-Zubehör (A-060 Block B, v0.164.0)
+
+- Notizen-Kachel (Punkt 3, Tafel 144): die neueste Notiz in XS (und als
+  erste Zeile in S/M) in bis zu 2 Zeilen, Umbruch an Wortgrenzen, die zweite
+  läuft weich aus (Maske statt „…“, `NotizVorschau`, `data-ausblenden`);
+  `abgeschnitteneTexte` erlaubt das nur mit Maske und nie seitlich
+  (Gegenproben im Durchklick `notizVorschau`, SE/15 Pro/Pixel 7).
+- Mia-Zubehör (Punkt 4, darin aufgegangen A-058, Nachtrag vom 29.10.,
+  Wortlaut `docs/auftraege/A-058-zubehoer-sonne-blaetter.md`).
+- Sonnig großzügiger und als Tagesentscheidung: Code ≤ 2 oder ≥ 30
+  Sonnenminuten je Stunde, sonniger Tag ab der Hälfte der hellen Stunden;
+  Sonne bzw. Sonnenbrille dann den ganzen hellen Tag, Schirm bei Regen bald
+  weiter mit Vorrang. Gemerkt pro Tag in `wasgibts.miazubehoer` v1 (neu im
+  Speicher-Verzeichnis, pro Gerät, nicht in der Sicherung).
+- Das einzelne fallende Blatt entfällt. Neu: Herbstblätter bei Wind
+  (Sep–Nov, Wind ≥ 25 / Böen ≥ 35 km/h), 7 Blätter in 2–3 s an Mia vorbei,
+  Mia kneift die Augen (neue Augenform `av-kneifen`); Öffnen alle 30 Min,
+  Antippen alle 5 Min (dann auf der Bühne), Sturm = Wackeln + Blätter.
+- Daten: Wind, Böen und Sonnenminuten kamen schon je Stunde aus Bright Sky
+  (DWD) bzw. Open-Meteo; keine neue Quelle.
+
 ## Durchatmen verständlich, keine Roboterstimme (A-061, v0.164.0)
 
 - SOFORT-Fix von Felix (Tafel 146): Jede der 12 Übungen erklärt sich vorher

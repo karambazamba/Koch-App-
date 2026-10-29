@@ -4,7 +4,7 @@ import type { CSSProperties } from "react";
 import { useAvatarZustand, type AvatarZustand } from "@/lib/core/avatarState";
 import { avatarHex } from "@/lib/einstellungen/profile";
 import type { Zubehoer } from "@/lib/mia/zubehoer";
-import { MiaZubehoer } from "@/components/begleitung/MiaZubehoer";
+import { MiaBlaetter, MiaZubehoer } from "@/components/begleitung/MiaZubehoer";
 
 /** Dunkle Icon-Farben bekommen im Dunkel-Modus (und auf der dunklen Leiste) einen feinen hellen Rand */
 const DARK_COLORS = new Set(["#2B4470", "#3E3A37", "#A33B67"]);
@@ -20,7 +20,7 @@ const DARK_COLORS = new Set(["#2B4470", "#3E3A37", "#A33B67"]);
  * "begruessen"). `.klein` (< 44 px) und `.gross` (≥ 56 px) steuern Blinzeln
  * und Denk-Punkte.
  */
-export function BegleitungAvatar({ size, color, zustand, groesse: fest, stabil = false, zubehoer = null, stimmung }: { size: number; color?: string; zustand?: AvatarZustand; groesse?: "klein" | "gross"; /** Zustand wechselt am selben Element (kein Neuaufbau) – für Abläufe wie den Hallo-Bildschirm */ stabil?: boolean; /** EIN Zubehör (Kürbis, Mütze …) aus `miaLook` */ zubehoer?: Zubehoer | null; /** verschlafen (6–8 Uhr) bzw. ruhig (ab 19 Uhr) – nur Atmen/Blick */ stimmung?: "verschlafen" | "ruhig" }) {
+export function BegleitungAvatar({ size, color, zustand, groesse: fest, stabil = false, zubehoer = null, stimmung, blaetter = false }: { size: number; color?: string; zustand?: AvatarZustand; groesse?: "klein" | "gross"; /** Zustand wechselt am selben Element (kein Neuaufbau) – für Abläufe wie den Hallo-Bildschirm */ stabil?: boolean; /** EIN Zubehör (Kürbis, Mütze …) aus `miaLook` */ zubehoer?: Zubehoer | null; /** verschlafen (6–8 Uhr) bzw. ruhig (ab 19 Uhr) – nur Atmen/Blick */ stimmung?: "verschlafen" | "ruhig"; /** Herbstblätter wehen vorbei, Mia kneift kurz die Augen (A-058) */ blaetter?: boolean }) {
   const shared = useAvatarZustand();
   // Mia ist immer orange (Marke); `color` nur für feste Vorschauen
   const c = color ?? avatarHex("orange");
@@ -30,7 +30,7 @@ export function BegleitungAvatar({ size, color, zustand, groesse: fest, stabil =
   // Leiste zählt als klein (ganz still), Chat-Kopf und Vorstellung als groß (blinzeln)
   const groesse = fest ?? (size < 44 ? "klein" : size >= 56 ? "gross" : "");
   return (
-    <span key={key} className={`avatar ${groesse} inline-flex shrink-0`} data-zustand={z} data-stimmung={stimmung} style={{ "--c": c, width: size, height: size } as CSSProperties} aria-hidden>
+    <span key={key} className={`avatar ${groesse} inline-flex shrink-0`} data-zustand={z} data-stimmung={stimmung} data-kneifen={blaetter || undefined} style={{ "--c": c, width: size, height: size } as CSSProperties} aria-hidden>
       <svg width={size} height={size} viewBox="0 0 80 80" overflow="visible" className="begleitung-avatar" data-farbe={c} data-dunkel={DARK_COLORS.has(c.toUpperCase()) || undefined}>
         {/* Sonne halb hinter Mia (oben rechts) */}
         {zubehoer === "sonne" && <MiaZubehoer was="sonne" />}
@@ -57,12 +57,18 @@ export function BegleitungAvatar({ size, color, zustand, groesse: fest, stabil =
                   <path d="M46.5 35c2 2.5 5 2.5 7 0" />
                 </g>
               </g>
+              {/* Kurz zugekniffen (Wind, A-058): „> <“ */}
+              <g className="av-kneifen" fill="none" stroke="var(--c)" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M27 30.5l5.5 3.5-5.5 3.5" />
+                <path d="M53 30.5l-5.5 3.5 5.5 3.5" />
+              </g>
               <path className="av-flat" d="M33 47h14" stroke="var(--c)" strokeWidth="4.2" strokeLinecap="round" />
               <path className="av-mouth" d="M31 45.5c5 4 13 4 18 0" stroke="var(--c)" strokeWidth="4.2" fill="none" strokeLinecap="round" />
             </g>
           </g>
         </g>
         {zubehoer && zubehoer !== "sonne" && <MiaZubehoer was={zubehoer} />}
+        {blaetter && <MiaBlaetter />}
         {/* Zwei kleine "z" – als Linien gezeichnet (kein Text, damit sie nicht im Seitentext/Vorlesen auftauchen) */}
         <g className="av-zzz" fill="none" stroke="var(--c)" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
           <path d="M64.5 4.5h6l-6 7h6" />
