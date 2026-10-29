@@ -45,11 +45,14 @@ Grundregeln stehen in CLAUDE.md, Abschnitt 7.
   Rand (`.kreis-aktiv`). Keine Schilder, Zahlen, Plaketten. Die Fenster haben
   einen gemeinsamen Kopf (`heute/kreise/FensterKopf`: rundes Symbol, Titel
   fett, Unterzeile grau, ✕).
-- Pinnwand mit Korkrahmen (A-050, Tafel 141 A): `.korkrahmen` 7 px eingerückt,
-  Rand 6 px im Kachel-Akzent (`--app-kork-rand` 16 %, dunkel 20 %), Radius
-  16 px, zwei versetzte Punkt-Raster (`--app-kork-punkt` 9 %, dunkel 6 %),
-  Schlicht nur feiner Rand; die Pinnwand-Seite zeigt dieselbe Wand
-  (`.korkwand`) statt der grauen Tür. Statt Wasserzeichen.
+- Pinnwand flach wie alle Kacheln (Tafel 147 B, ersetzt den Korkrahmen aus
+  Tafel 141 A): kein innerer Rahmen, `.korkpunkte` über die ganze Fläche
+  (zwei versetzte Punkt-Raster, `--app-kork-punkt` 9 %, dunkel 6 %), Ecken
+  wie die Kachel; Schlicht ohne Punkte. Zettel und Pins sind ihr Bild. Die
+  Pinnwand-Seite zeigt dieselbe Wand (`.korkwand`). Statt Wasserzeichen.
+- Termin-Zeile nie mit „…“ gekürzt (Tafel 147): Ort nach Komma bzw. „ · “
+  klein in der zweiten Zeile (`titelUndOrt`), sonst bricht der Titel um;
+  passt es nicht in die Kachel, eine Zeile weniger (zählt bei „+N“).
 - Wetter-Kachel mit Himmel (Tafel 120): Hintergrund wie bisher
   `--app-sky-*`, rechts oben eine kleine, leicht angeschnittene, stille
   Szene (`WetterSzene`: Sonne, leicht bewölkt, bewölkt, Regen, Gewitter,

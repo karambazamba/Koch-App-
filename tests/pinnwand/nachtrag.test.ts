@@ -201,7 +201,7 @@ describe("Wörter überall gleich", () => {
 describe("Behoben (Bildschirmfoto v0.138, iPhone 15 Pro)", () => {
   it("die Wand wächst mit dem Inhalt: keine Mindesthöhe, kein innerer Scrollbereich, kein Griff wie ein Scrollbalken (seit A-050 im Korkrahmen)", () => {
     const view = read("src/components/pinnwand/PinboardView.tsx");
-    const door = view.match(/<div className="korkrahmen ([^"]*)"/)![1];
+    const door = view.match(/<div className="korkpunkte ([^"]*)"/)![1];
     expect(door).not.toMatch(/overflow|max-h|h-screen|dvh/);
     // Tafel 123: so hoch wie der Inhalt – gar keine Mindesthöhe mehr
     expect(door).not.toMatch(/min-h/);

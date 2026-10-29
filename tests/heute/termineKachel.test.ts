@@ -1,6 +1,6 @@
 // Termine-Kachel: läuft 30 Min (bzw. bis Ende), ganztägig oben, „gleich“, alles vorbei → Morgen.
 import { describe, expect, it } from "vitest";
-import { terminRows, termineTile } from "@/lib/heute/termineKachel";
+import { terminRows, termineDiePassen, termineTile, titelUndOrt, zeilenBedarf } from "@/lib/heute/termineKachel";
 import type { DayItem } from "@/lib/kalender/model";
 
 const t = (title: string, time: string | null, end: string | null = null, done = false): DayItem =>
@@ -47,4 +47,41 @@ describe("Termine-Kachel", () => {
     expect(termineTile([], [], "2026-10-24", H(18))).toEqual({ label: null, rows: [] });
     expect(termineTile(day, tomorrow, "2026-10-24", H(9)).label).toBeNull();
   });
+});
+
+// Tafel 147: Termin-Zeile nie mit „…“ kürzen – Ort klein in der zweiten Zeile, sonst umbrechen
+describe("Titel und Ort der Termin-Zeile", () => {
+  it("Ort nach dem letzten Komma bzw. „ · “ in die zweite Zeile", () => {
+    expect(titelUndOrt("Zahnarzt, Praxis Meyer")).toEqual({ titel: "Zahnarzt", ort: "Praxis Meyer" });
+    expect(titelUndOrt("Elternabend, Klasse 3b, Grundschule Eutin")).toEqual({ titel: "Elternabend, Klasse 3b", ort: "Grundschule Eutin" });
+    expect(titelUndOrt("Laternenumzug · Marktplatz")).toEqual({ titel: "Laternenumzug", ort: "Marktplatz" });
+  });
+  it("sonst bleibt der Titel ganz (bricht um), nie gekürzt", () => {
+    expect(titelUndOrt("Kita – Laternenfest mit Basteln für alle Kinder")).toEqual({ titel: "Kita – Laternenfest mit Basteln für alle Kinder", ort: null });
+    expect(titelUndOrt("Zahnarzt, 10 Uhr")).toEqual({ titel: "Zahnarzt, 10 Uhr", ort: null });
+    expect(titelUndOrt("Training")).toEqual({ titel: "Training", ort: null });
+  });
+  it("Kachel: kein truncate in der Termin-Zeile, Höhe wächst mit, passt es nicht → eine Zeile weniger", async () => {
+    const { readFileSync } = await import("node:fs");
+    const src = readFileSync("src/components/heute/MiniCards.tsx", "utf8");
+    const zeile = src.slice(src.indexOf("function TerminLine"), src.indexOf("export function TermineSection"));
+    expect(zeile).not.toMatch(/truncate|line-clamp|(?<!min-)h-\[30px\]/);
+    expect(zeile).toMatch(/min-h-\[30px\]/);
+    expect(src).toMatch(/termineDiePassen\(rows\.map/);
+  });
+  it("lange Titel: weniger Termine, mindestens einer – nie abgeschnitten (je = Zeichen pro Zeile)", () => {
+    expect(zeilenBedarf("Training", 13)).toBe(1);
+    expect(zeilenBedarf("Zahnarzt, Praxis Meyer", 13)).toBe(2);
+    expect(zeilenBedarf("Elternabend der Klasse 3b", 13)).toBe(2);
+    // iPhone SE, halbe Kachel: ~8 Zeichen
+    expect(zeilenBedarf("Mathis Fußball", 8)).toBe(2);
+    expect(zeilenBedarf("Laternelaufen", 8)).toBe(2);
+    expect(termineDiePassen(["Mathis Fußball", "Laternelaufen"], 3, 8)).toBe(1);
+    expect(termineDiePassen(["Training", "Kita", "Yoga", "Chor"], 3, 13)).toBe(3);
+    expect(termineDiePassen(["Zahnarzt, Praxis Meyer", "Kita", "Yoga"], 3, 13)).toBe(2);
+    expect(termineDiePassen(["Elternabend der Klasse 3b in der Grundschule am Wald", "Kita"], 3, 13)).toBe(1);
+    expect(termineDiePassen(["Elternabend der Klasse 3b", "Kita"], 3, 30)).toBe(2);
+    expect(termineDiePassen([], 3, 13)).toBe(1);
+  });
+
 });

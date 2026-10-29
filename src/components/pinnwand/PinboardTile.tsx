@@ -65,8 +65,8 @@ export function PinboardTile({ size = "S", me, demo = false, haushalt = "familie
   return (
     <>
       <section className={`${TILE} isolate flex h-full flex-col overflow-hidden px-3.5 pb-2.5 pt-3`} aria-label="Pinnwand" data-groesse={size}>
-        {/* Korkrahmen (A-050, Tafel 141 A): 7 px eingerückt, Rand im Kachel-Akzent, feine Kork-Punkte – nur Deko */}
-        <span className="korkrahmen pointer-events-none absolute inset-[7px] -z-10" aria-hidden data-korkrahmen />
+        {/* Flach wie alle Kacheln (Tafel 147 B): feine Kork-Punkte über die ganze Fläche, kein Rahmen – nur Deko */}
+        <span className="korkpunkte pointer-events-none absolute inset-0 -z-10" aria-hidden data-korkpunkte />
         <div className="flex items-center gap-2">
           <Link href="/pinnwand" className={`hit flex min-w-0 flex-1 items-center gap-1.5 ${TILE_LABEL}`} aria-label="Pinnwand öffnen">
             <Pin className="h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden />

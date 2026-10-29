@@ -140,26 +140,26 @@ describe("Einkauf M: Läden nebeneinander (Tafel 140 unten)", () => {
   });
 });
 
-describe("Pinnwand mit Korkrahmen (Tafel 141 A)", () => {
+describe("Pinnwand flach mit Kork-Punkten (Tafel 147 B, ersetzt Korkrahmen 141 A)", () => {
   const css = readFileSync("src/app/globals.css", "utf8");
 
-  it("Rahmen 7 px eingerückt, Rand 6 px im Akzent (16 %, dunkel 20 %), Radius 16 px, Kork-Punkte (9 %, dunkel 6 %)", () => {
-    const kork = css.slice(css.indexOf(".korkrahmen {"), css.indexOf("}", css.indexOf(".korkrahmen {")));
-    expect(kork).toMatch(/border: 6px solid color-mix\(in srgb, var\(--tile-ac\) var\(--app-kork-rand\)/);
-    expect(kork).toMatch(/border-radius: 16px/);
+  it("kein Rahmen, Punkte über die ganze Fläche (9 %, dunkel 6 %), Ecken wie die Kachel; Schlicht ohne Punkte", () => {
+    const kork = css.slice(css.indexOf(".korkpunkte {"), css.indexOf("}", css.indexOf(".korkpunkte {")));
+    expect(kork).not.toMatch(/border:/);
+    expect(kork).toMatch(/border-radius: inherit/);
     expect((kork.match(/radial-gradient/g) ?? []).length).toBe(2);
-    expect(css).toMatch(/--app-kork-rand: 16%; --app-kork-punkt: 9%;/);
-    expect((css.match(/--app-kork-rand: 20%; --app-kork-punkt: 6%;/g) ?? []).length).toBe(2);
-    // Schlicht: nur feiner Rand, keine Punkte
-    expect(css).toMatch(/\[data-look="schlicht"\] \.korkrahmen \{ border-width: 1px; border-color: var\(--app-line\); background-image: none; \}/);
+    expect(css).not.toMatch(/korkrahmen|--app-kork-rand/);
+    expect(css).toMatch(/--app-kork-punkt: 9%;/);
+    expect((css.match(/--app-kork-punkt: 6%;/g) ?? []).length).toBe(2);
+    expect(css).toMatch(/\[data-look="schlicht"\] \.korkpunkte \{ background-image: none; \}/);
   });
 
-  it("Kachel: Rahmen nur Deko, Zettel IM Rahmen (≥ 8 px Abstand), Titel und Plus darüber; Seite: dieselbe Wand im Rahmen", () => {
+  it("Kachel: Punkte nur Deko über die ganze Kachel, Zettel und Plus bleiben; Seite: dieselbe flache Wand", () => {
     const tile = readFileSync("src/components/pinnwand/PinboardTile.tsx", "utf8");
-    expect(tile).toMatch(/korkrahmen pointer-events-none absolute inset-\[7px\] -z-10" aria-hidden/);
-    expect(tile).toMatch(/mx-\[7px\] mb-\[11px\]/);
+    expect(tile).toMatch(/korkpunkte pointer-events-none absolute inset-0 -z-10" aria-hidden/);
+    expect(tile).not.toMatch(/korkrahmen/);
     const view = readFileSync("src/components/pinnwand/PinboardView.tsx", "utf8");
     expect(view).toMatch(/<section className="korkwand"/);
-    expect(view).toMatch(/<div className="korkrahmen /);
+    expect(view).toMatch(/<div className="korkpunkte /);
   });
 });

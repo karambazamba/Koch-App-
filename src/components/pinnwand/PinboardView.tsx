@@ -130,9 +130,9 @@ export function PinboardView() {
             </div>
           </section>
         )}
-        {/* Die Wand im Korkrahmen (A-050, Tafel 141 A) statt der grauen Kühlschranktür */}
+        {/* Die Wand flach mit Kork-Punkten (Tafel 147 B) statt der grauen Kühlschranktür */}
         <section className="korkwand" aria-label="Kühlschranktür" data-wand-rahmen>
-          <div className="korkrahmen px-1.5 py-2">
+          <div className="korkpunkte px-1.5 py-2">
           {!list ? (
             <div className="h-40 animate-pulse" />
           ) : demo ? (
@@ -197,7 +197,7 @@ export function PinboardView() {
       {older && (
         <Sheet title="Ältere Zettel" onClose={() => setOlder(false)} tall>
           <div className="korkwand mb-4" data-tone="pinnwand">
-            <div className="korkrahmen px-1.5 py-2">
+            <div className="korkpunkte px-1.5 py-2">
             <Wand items={board.archived} render={(item) => <Zettel item={item} me={me} household={board.household} onOpen={() => setHeld({ id: item.id, archived: true })} />} label="Ältere Zettel" />
             </div>
           </div>

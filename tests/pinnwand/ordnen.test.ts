@@ -152,7 +152,7 @@ describe("Größe und Wand", () => {
 
   it("Wand so hoch wie der Inhalt, Gesten wie das Kachel-Ziehen (Fenster bzw. ziehen), nur transform, reduziert ohne Gleiten", () => {
     const view = read("src/components/pinnwand/PinboardView.tsx");
-    expect(view.match(/<div className="korkrahmen ([^"]*)"/)![1]).not.toMatch(/min-h|overflow|max-h/);
+    expect(view.match(/<div className="korkpunkte ([^"]*)"/)![1]).not.toMatch(/min-h|overflow|max-h/);
     const gesten = read("src/components/pinnwand/useWandGesten.ts");
     expect(gesten).toContain('"transform 0.8s cubic-bezier(.16,1,.3,1)"');
     expect(gesten).toMatch(/prefers-reduced-motion: reduce/);

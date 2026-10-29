@@ -145,10 +145,10 @@ ziehen) und unten die Ecke „Nur für mich“.
 
 ### Die Tür (Tafel 106/1)
 - Kopf „‹ Heute“, rechts das orange Seiten-Plus (= „Neuer Zettel“), großer
-  Titel. Darunter die Wand im Korkrahmen (A-050, Tafel 141 A – ersetzt die
+  Titel. Darunter die Wand (Tafel 147 B – ersetzt Korkrahmen 141 A und die
   graue Tür mit Griff): Fläche in Pinnwand-Farbe (`.korkwand`, 4 px Rand),
-  darin `.korkrahmen` (6 px Rand im Akzent, feine Kork-Punkte), so hoch wie
-  der Inhalt; Schlicht nur feiner Rand. Region heißt weiter „Kühlschranktür“.
+  darin `.korkpunkte` (feine Kork-Punkte, kein Rahmen), so hoch wie
+  der Inhalt; Schlicht ohne Punkte. Region heißt weiter „Kühlschranktür“.
 - Zettel in zwei Spalten (`twoColumns`: das Erste oben links, dann in die
   kürzere Spalte), fest leicht schief, weicher Schatten, Ecke unten rechts
   gerundet. „Bleibt hängen“ steht oben links und hängt am roten Pin, Zeile
@@ -221,13 +221,12 @@ ziehen) und unten die Ecke „Nur für mich“.
 ### Kachel (Tafel 107, Variante 1 „Fächer“)
 - Bleibt rosa (`--app-tile-pinnwand`), Kopf „PINNWAND“ + ＋ (= „Neuer
   Zettel“); Look „Schlicht“: Kachel weiß, die Zettel behalten ihre Farbe.
-- Korkrahmen statt Wasserzeichen (A-050, Tafel 141 A): 7 px eingerückt, Rand
-  6 px im Kachel-Akzent mit 16 % (dunkel 20 %), Radius 16 px, innen zwei
-  versetzte Punkt-Raster im Akzent (9 %, dunkel 6 %), nur Deko (`aria-hidden`,
-  hinter dem Inhalt). Folgt der gewählten Kachel-Farbe (8 Töne), Schlicht:
-  nur feiner Rand, keine Punkte. Zettel und Fotos liegen IM Rahmen (≥ 8 px
-  Abstand zu seinem Rand), Titelzeile und Plus liegen darüber. Tokens
-  `--app-kork-rand`/`--app-kork-punkt`, Klassen `.korkrahmen`/`.korkwand`.
+- Flach wie alle Kacheln statt Wasserzeichen (Tafel 147 B, ersetzt den
+  Korkrahmen aus Tafel 141 A): kein innerer Rahmen, feine Kork-Punkte über
+  die ganze Fläche (zwei versetzte Raster im Akzent, 9 %, dunkel 6 %), Ecken
+  wie die Kachel, nur Deko (`aria-hidden`, hinter dem Inhalt). Folgt der
+  gewählten Kachel-Farbe (8 Töne), Schlicht: flach ohne Punkte. Zettel und
+  Pins sind ihr Bild. Token `--app-kork-punkt`, Klassen `.korkpunkte`/`.korkwand`.
 - S (feste Fläche im Raster, Tafel 118 – quadratisch, nach „Fertig“ nie ein
   Streifen): die drei neuesten
   Zettel aufgefächert (−10°, −2°, +7°), der neueste vorn gut lesbar (bis 3
