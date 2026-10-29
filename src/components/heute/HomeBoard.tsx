@@ -26,6 +26,7 @@ import { useBausteine } from "@/lib/core/features";
 import { buttonClass } from "@/components/ui/styles";
 import type { Haushalt } from "@/lib/core/haushalt";
 import { RASTER_GAP, ZEILE_CSS, anzeigeZeilen, inhaltsHoch, packe, pfeilZu, trennZeile, zeilenPlan, type Luecke, type Platz } from "@/lib/heute/raster";
+import { hinweisZeilen } from "@/lib/heute/demoHinweise";
 import { Plus } from "lucide-react";
 import { showDeleted } from "@/lib/core/toast";
 import { pushUndo } from "@/lib/core/undo";
@@ -60,6 +61,7 @@ export function HomeBoard({
   vorstellen = null,
   haushalt,
   laufend = null,
+  hinweise = null,
 }: {
   tiles: HomeTile[];
   all: HomeTile[];
@@ -79,6 +81,8 @@ export function HomeBoard({
   haushalt?: Haushalt;
   /** Kachel, die nur vorübergehend dasteht (laufender Timer): nicht verschieb- oder änderbar */
   laufend?: HomeTileId | null;
+  /** Beispiel-Tag (Tafel 150): grauer Satz unter diesen Kacheln, was sie können */
+  hinweise?: Partial<Record<HomeTileId, string>> | null;
 }) {
   const units = unitsOf(tiles);
   const board = useRef<HTMLDivElement>(null);
@@ -347,10 +351,27 @@ export function HomeBoard({
   // Zeilen der Anzeige (A-048): Bänder nur aus Listen-Kacheln sind EINE Zeile so hoch wie ihr Inhalt
   const plan = zeilenPlan(raster, preview);
   const tippZeile = tippAt === null ? null : (plan.von[tippAt] ?? plan.zeilen.length);
-  const rowOf = (zeile: number) => (tippZeile !== null && zeile >= tippZeile ? zeile + 1 : zeile) + 1;
+  // Beispiel-Tag (Tafel 150): Erklärsätze in eigenen Zeilen unter den Kacheln, die Kacheln behalten ihre Größe
+  const hinweisTexte = new Map<string, string>();
+  if (hinweise && !editing)
+    for (const u of preview) {
+      const text = u.tiles.map((t) => hinweise[t.id]).filter(Boolean).join(" ");
+      if (text) hinweisTexte.set(u.key, text);
+    }
+  const hZeilen = hinweisTexte.size
+    ? hinweisZeilen(
+        raster.plaetze.map((p) => ({ key: p.key, col: p.col, w: p.w, ...anzeigeZeilen(plan, p) })),
+        hinweisTexte,
+      )
+    : [];
+  // Eingeschobene Zeilen (Hinweise vor Mias Tipp an derselben Grenze), je mit ihrer Rasterzeile (1-basiert)
+  const einschuebe = [...hZeilen.map((z) => ({ vor: z.vor, hinweis: z })), ...(tippZeile !== null ? [{ vor: tippZeile, hinweis: null }] : [])].sort((a, b) => a.vor - b.vor || (a.hinweis ? -1 : 1));
+  const rowOf = (zeile: number) => zeile + einschuebe.filter((e) => e.vor <= zeile).length + 1;
+  const einschubZeile = (i: number) => einschuebe[i].vor + i + 1;
   const zeilenCss = plan.zeilen.map((z) => (z === "inhalt" ? "auto" : "var(--zeile)"));
-  if (tippZeile !== null) zeilenCss.splice(tippZeile, 0, "auto");
+  einschuebe.forEach((e, i) => zeilenCss.splice(e.vor + i, 0, "auto"));
   const rowsCss = zeilenCss.join(" ");
+  const tippRow = einschuebe.findIndex((e) => !e.hinweis);
   const area = (p: { col: number; row: number; w: number; h: number }) => {
     const { start, span } = anzeigeZeilen(plan, p);
     return { gridColumn: `${p.col + 1} / span ${p.w}`, gridRow: `${rowOf(start)} / span ${span}` };
@@ -450,8 +471,15 @@ export function HomeBoard({
               Kachel
             </button>
           ))}
+        {einschuebe.map((e, i) =>
+          e.hinweis?.saetze.map((s) => (
+            <p key={`hinweis-${e.vor}-${s.col}`} className="-mt-1 px-1.5 text-center text-[12.5px] leading-snug text-muted" style={{ gridColumn: `${s.col + 1} / span ${s.w}`, gridRow: `${einschubZeile(i)}` }} data-demo-hinweis>
+              {s.text}
+            </p>
+          )),
+        )}
         {tippAt !== null && pfeil && vorstellen && (
-          <div key={`vorstellen-${vorstellen.tile}`} className="col-span-2" style={{ gridRow: `${(tippZeile ?? 0) + 1}` }}>
+          <div key={`vorstellen-${vorstellen.tile}`} className="col-span-2" style={{ gridRow: `${tippRow >= 0 ? einschubZeile(tippRow) : 1}` }}>
             <SeitenTipp text={vorstellen.text} pfeil={pfeil} label="Kurz vorgestellt" id={`vorstellen:${vorstellen.tile}`} onOk={vorstellen.ok} zeigMal={vorstellen.zeigMal} />
           </div>
         )}

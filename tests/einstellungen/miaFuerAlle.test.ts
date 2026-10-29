@@ -53,38 +53,37 @@ describe("Wörter je Haushaltsart", () => {
   });
 });
 
-describe("Beispiel-Tag je Haushaltsart", () => {
-  it("allein: Laufen, Meeting, Yoga; Wochenende Brunch, Freunde, Kino", () => {
-    expect(demoDay("2026-10-21", "allein").map((t) => t.title)).toEqual(["Laufen", "Meeting", "Yoga"]);
-    expect(demoDay("2026-10-24", "allein").map((t) => t.title)).toEqual(["Brunch", "Freunde treffen", "Kino"]);
-  });
-
-  it("zu zweit: Zahnarzt, Wocheneinkauf, Kino zu zweit; Wochenende Frühstück, Ausflug, Essen gehen", () => {
-    expect(demoDay("2026-10-21", "paar").map((t) => t.title)).toEqual(["Zahnarzt", "Wocheneinkauf", "Kino zu zweit"]);
-    expect(demoDay("2026-10-24", "paar").map((t) => t.title)).toEqual(["Frühstück", "Ausflug an die Ostsee", "Essen gehen"]);
-  });
-
-  it("Familie ohne Angabe ebenso; Aufgaben je Haushalt wie Tafel 119 (Mitte = Arbeit, zu zweit „Mama anrufen“ = Ich)", () => {
-    expect(demoDay("2026-10-21")).toEqual(demoDay("2026-10-21", "familie"));
-    expect(demoDay("2026-10-21").map((t) => t.title)).toContain("Laternelaufen");
-    const tasks = (h: "allein" | "paar") => demoEntries("2026-10-21", 6 * 60, h).entries.filter((e) => e.typ === "aufgabe").map((e) => `${(e.data as { title: string }).title}:${e.raum}`);
-    expect(tasks("allein")).toEqual(["Steuererklärung:familie", "Bericht schicken:arbeit", "Jana zurückrufen:familie"]);
-    expect(tasks("paar")).toEqual(["Urlaub buchen:familie", "Präsentation fertig:arbeit", "Mama anrufen:ich"]);
-    const titles = demoEntries("2026-10-21", 6 * 60, "allein").entries.map((e) => (e.data as { title: string }).title);
-    expect(titles).toContain("Laufen");
-  });
-
-  it("Thema der Jetzt-Karte je Haushalt (≤ 32 Zeichen, nie „vergiss nicht“), am Wochenende keins", () => {
-    for (const h of ["familie", "paar", "allein"] as const)
-      for (const tomorrow of [false, true]) {
-        const t = demoJetzt("2026-10-21", tomorrow, h)!;
-        expect(t.title.length).toBeLessThanOrEqual(32);
-        expect(`${t.title} ${t.detail}`).not.toMatch(/vergiss|vergessen|musst|solltest/i);
+describe("Beispiel-Tag je Haushaltsart (Tafel 150)", () => {
+  const woerter = (x: string) => x.split(/\s+/).length;
+  it("allein und zu zweit: eigene, alltägliche Pläne, 1–3 Wörter, über den Tag verteilt", () => {
+    for (const h of ["allein", "paar", "familie"] as const)
+      for (const tag of ["2026-10-21", "2026-10-22", "2026-10-24", "2026-10-25"]) {
+        const plan = demoDay(tag, h);
+        expect(plan.length).toBeGreaterThanOrEqual(3);
+        expect(plan.every((x) => woerter(x.title) <= 3 && !/…|,/.test(x.title))).toBe(true);
+        expect(plan.at(-1)!.at).toBeGreaterThanOrEqual(18 * 60);
       }
-    expect(demoJetzt("2026-10-21", false, "familie")).toEqual({ title: "Moin! Heute ist Laternelaufen.", detail: "17 Uhr. Laterne schon bereit?" });
-    expect(demoJetzt("2026-10-21", false, "paar")?.title).toBe("Moin! Kino heute um 20:15.");
-    expect(demoJetzt("2026-10-21", false, "allein")?.title).toBe("Moin! Heute um 18 Uhr Yoga.");
-    expect(demoJetzt("2026-10-24", false, "familie")).toBeNull();
+    expect(demoDay("2026-10-21", "allein")).not.toEqual(demoDay("2026-10-21", "paar"));
+    expect(demoDay("2026-10-21")).toEqual(demoDay("2026-10-21", "familie"));
+  });
+
+  it("Aufgaben je Haushalt: werktags drei, am Wochenende zwei; zu zweit die zweite „Ich“", () => {
+    const tasks = (tag: string, h: "allein" | "paar" | "familie") => demoEntries(tag, 6 * 60, h).entries.filter((e) => e.typ === "aufgabe");
+    expect(tasks("2026-10-21", "familie")).toHaveLength(3);
+    expect(tasks("2026-10-24", "familie")).toHaveLength(2);
+    expect(tasks("2026-10-21", "paar")[1].raum).toBe("ich");
+    expect(tasks("2026-10-21", "allein").every((e) => e.raum === "familie")).toBe(true);
+  });
+
+  it("Thema der Jetzt-Karte: nächster Termin (≤ 32 Zeichen, nie „vergiss nicht“), ab 20 Uhr „Morgen“", () => {
+    for (const h of ["familie", "paar", "allein"] as const)
+      for (const tag of ["2026-10-21", "2026-10-24", "2026-10-25"])
+        for (const m of [7 * 60, 10 * 60 + 15, 14 * 60, 16 * 60 + 5, 21 * 60]) {
+          const t = demoJetzt(tag, m, h)!;
+          expect(t.title.length).toBeLessThanOrEqual(32);
+          expect(`${t.title} ${t.detail}`).not.toMatch(/vergiss|vergessen|musst|solltest/i);
+          if (m >= 20 * 60) expect(t.title).toMatch(/^Morgen[ :]/);
+        }
   });
 });
 

@@ -24,7 +24,7 @@ export const hallo = async (page, check) => {
   await page.getByRole("tab", { name: "Heute", selected: true }).waitFor({ timeout: 5000 });
   await page.waitForTimeout(900);
   check((await page.evaluate(() => JSON.parse(localStorage.getItem("familienkueche.haushaltsprofil") || "{}").look)) === "farbig", "Standard bleibt Farbig");
-  check(await page.getByText("So sieht ein Tag aus").isVisible(), "danach die Startseite mit Beispiel-Tag");
+  check(await page.getByText("Beispiel · tipp überall rein").isVisible(), "danach die Startseite mit Beispiel-Tag");
   // Pinnwand im Beispiel (Tafel 107/119): Felix vorn, Mathis’ Sprachnachricht, Lisa „Ole: Gummistiefel!“, „Beispiel“
   const pinTile = page.getByRole("region", { name: "Pinnwand" });
   if (await pinTile.count()) {
@@ -78,7 +78,7 @@ export const ersterStart = async (page, check, device) => {
       if (!(await p.getByRole("button", { name: "Für die Familie" }).isVisible())) await los.click();
       await p.getByRole("button", { name: "Für die Familie" }).click();
       check(await p.getByRole("tab", { name: "Heute", selected: true }).waitFor({ timeout: 5000 }).then(() => true, () => false), `${name}: danach die Startseite`);
-      check(await p.getByText("So sieht ein Tag aus").waitFor({ timeout: 3000 }).then(() => true, () => false), `${name}: mit Beispiel-Tag`);
+      check(await p.getByText("Beispiel · tipp überall rein").waitFor({ timeout: 3000 }).then(() => true, () => false), `${name}: mit Beispiel-Tag`);
     } finally {
       await p.context().close();
     }
@@ -509,7 +509,7 @@ export const nurFuerMich = async (page, check) => {
   await page.waitForTimeout(900);
   check((await page.evaluate(() => JSON.parse(localStorage.getItem("familienkueche.haushaltsprofil") || "{}").householdType)) === "single", "Profil: nur für mich");
   check(!(await page.locator('section[aria-label^="Pinnwand"]').count()), "Pinnwand-Kachel aus");
-  check(!(await page.getByText(/Kita, Jonne|Laternelaufen|Mathis/).count()), "Beispiel-Tag ohne Familie");
+  check(!(await page.getByText(/^(Kita|Elternabend|Schwimmen|Laternenumzug|Oma und Opa)$/).count()), "Beispiel-Tag ohne Familie");
   // Tafel 140: Wetter und Notizen als XS links, Wundertüte daneben; Sport als Kreis oben, Im Haus nicht auf der Startseite (A-050)
   for (const id of ["wetter", "notizen"]) check((await page.locator(`[data-unit="${id}"][data-groesse="XS"]`).count()) === 1, `${id} als XS`);
   check((await page.locator('[data-unit="wundertuete"]').count()) === 1, "Wundertüte neben Wetter/Notizen");

@@ -1,12 +1,12 @@
 "use client";
 
-// Beispiel-Tag: die Zeile oben („So sieht ein Tag aus · Eigenen starten“)
+// Beispiel-Tag: der Streifen oben („Beispiel · tipp überall rein · Hinweise aus“)
 // und das Fenster beim Antippen eines Beispiels.
 
 import { Sheet } from "@/components/ui/Sheet";
 import type { DayItem } from "@/lib/kalender/model";
-import { CARD, buttonClass } from "@/components/ui/styles";
-import { clearDemo, markDemoAsked } from "@/lib/core/demo";
+import { buttonClass } from "@/components/ui/styles";
+import { clearDemo, hinweiseAusblenden, markDemoAsked } from "@/lib/core/demo";
 import { neuEintragen } from "@/lib/kalender/eintragen/oeffnen";
 
 export function DemoBadge() {
@@ -14,17 +14,18 @@ export function DemoBadge() {
 }
 
 /**
- * Beispiel-Tag: EINE weiße Zeile oben über den Kacheln – „[BEISPIEL] So sieht
- * ein Tag aus · Eigenen starten“. Keine gestrichelten Rahmen, keine Schilder
- * an den Kacheln. Nach dem ersten Eigenen einmal „Alle Beispiele entfernen?“.
+ * Beispiel-Tag: EIN Streifen oben unter dem Kopf (Tafel 150) – „Beispiel ·
+ * tipp überall rein“ und rechts „Hinweise aus“ (blendet die grauen
+ * Erklärsätze aus), danach „Eigenen starten“. Keine gestrichelten Rahmen,
+ * keine Schilder an den Kacheln. Nach dem ersten Eigenen einmal „Alle
+ * Beispiele entfernen?“.
  */
-export function DemoRow({ ask = false }: { ask?: boolean }) {
+export function DemoRow({ ask = false, hinweise = false }: { ask?: boolean; hinweise?: boolean }) {
   return (
-    <div className={`${CARD} flex min-h-11 items-center gap-2.5 px-3.5 py-2 text-[13.5px] font-semibold`} role="note" aria-label="Beispiel-Tag">
-      <DemoBadge />
+    <div className="flex min-h-11 items-center gap-2.5 rounded-field bg-fill px-3.5 py-1.5 text-[13.5px] font-semibold text-muted" role="note" aria-label="Beispiel-Tag" data-demo-streifen>
       {ask ? (
         <>
-          <span className="min-w-0 flex-1">Alle Beispiele entfernen?</span>
+          <span className="min-w-0 flex-1 text-ink">Alle Beispiele entfernen?</span>
           <button type="button" onClick={() => (markDemoAsked(), clearDemo())} className="hit shrink-0 font-extrabold text-accent-strong">
             Ja
           </button>
@@ -34,13 +35,28 @@ export function DemoRow({ ask = false }: { ask?: boolean }) {
         </>
       ) : (
         <>
-          <span className="min-w-0 flex-1 truncate">So sieht ein Tag aus</span>
-          <button type="button" onClick={clearDemo} className="hit shrink-0 font-extrabold text-accent-strong">
-            Eigenen starten
-          </button>
+          <span className="min-w-0 flex-1">Beispiel · tipp überall rein</span>
+          {hinweise ? (
+            <button type="button" onClick={hinweiseAusblenden} className="hit shrink-0 font-extrabold text-accent-strong" data-hinweise-aus>
+              Hinweise aus
+            </button>
+          ) : (
+            <button type="button" onClick={clearDemo} className="hit shrink-0 font-extrabold text-accent-strong">
+              Eigenen starten
+            </button>
+          )}
         </>
       )}
     </div>
+  );
+}
+
+/** Grauer Erklärsatz unter Jetzt-Karte bzw. Kreisen (Tafel 150, nur in der Demo) */
+export function DemoHinweis({ text }: { text: string }) {
+  return (
+    <p className="-mt-1.5 text-center text-[12.5px] leading-snug text-muted" data-demo-hinweis>
+      {text}
+    </p>
   );
 }
 

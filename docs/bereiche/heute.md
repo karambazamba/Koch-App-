@@ -477,36 +477,36 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
   beim ersten Erscheinen einmal zwinkert; „Schreiben & sprechen“ erst nach 4 s.
   Jeder Schritt ist ein Verlaufseintrag (Zurück = ein Schritt), nach „Zeig
   mal“ werden die Schritte aus dem Verlauf genommen.
-- Beispiele liegen nie in echten Speichern. Termine aus `demoDay(datum)`,
-  passend zum Wochentag (seit v0.99, `demoArt`; Feiertage bundesweit + SH aus
-  `core/feiertage.ts` wie Sonntag), echte Termine statt Mahlzeiten:
-  - Mo–Fr (Tafel 119): 8:00 Kita, Jonne bringt Lisa · 16:00 Mathis Fußball ·
-    17:00 Laternelaufen (zu zweit: 9:30 Zahnarzt · 18:00 Wocheneinkauf · 20:15
-    Kino zu zweit; allein: 7:30 Laufen · 10:00 Meeting · 18:00 Yoga)
-  - Samstag: 9:00 Brötchen holen, 10:00 Wochenmarkt, 11:30 Fußballspiel
-    Mathis, 15:00 Kindergeburtstag Ben, 18:30 Grillen mit Nachbarn
-  - Sonntag/Feiertag: 9:30 Familienfrühstück, 11:00 Spaziergang am See, 15:00
-    Kaffee bei Oma, 18:00 Pizza backen, 20:15 Tatort
-
-  Nur was heute noch kommt; weniger als 2 → Beispiele für morgen mit dem Plan
-  von morgen („Morgen · Sa“). Drei Beispiel-Aufgaben je Haushalt (Tafel 119;
-  die mittlere mit Schild „Arbeit“: Elternbrief unterschreiben ·
-  Steuerberater anrufen · Geschenk für Oma; zu zweit Urlaub buchen ·
-  Präsentation fertig · Mama anrufen; allein Steuererklärung · Bericht
-  schicken · Jana zurückrufen; am Wochenende/Feiertag „diese Woche“, nie
-  dringend, nichts vorab abgehakt), Pinnwand (Kachel und Seite: Felix „Bin
-  um 18 Uhr da“, Mathis’ Sprachnachricht 0:08, Lisa „Ole: Gummistiefel!“; zu
-  zweit Anna/Tom; klein „Beispiel“; `pinnwand/beispiel.ts`), Notizen „WLAN:
-  Tohuus2026“, Sport „2 von 3 diese Woche“, Im Haus „Hähnchen · heute“,
-  Jetzt-Karte werktags „Moin! Heute ist Laternelaufen.“ · „17 Uhr. Laterne
-  schon bereit?“ (zu zweit „Moin! Kino heute um 20:15.“, allein „Moin! Heute
-  um 18 Uhr Yoga.“; `demoJetzt`), Einkauf `DEMO_SHOPS`,
-  Beispielgericht je Tag (`demoDishAt(heute, minuten)`: werktags Pasta 18:30,
-  samstags Lasagne 18:30, sonntags Ofen-Hähnchen 12:30; danach das von morgen).
-  Wechselt der Tag, wechselt der Plan von selbst (alles aus Datum und Uhrzeit).
-- Eine Zeile oben (`DemoRow`): „So sieht ein Tag aus“ · „Eigenen starten“.
-  Je Kachel verschwinden die Beispiele beim ersten Eigenen (`clearDemoTile`),
-  alle nach 3 Tagen oder per „Eigenen starten“. Danach einmal „Alle Beispiele
+- Beispiele liegen nie in echten Speichern. Demo-Startseite nach Tafel 150
+  (`core/demo.ts`):
+  - **Einfach:** Termine und Aufgaben in 1–3 Wörtern, alltäglich, keine
+    Adressen (Schwimmen, Zahnarzt, Blumen gießen).
+  - **Immer zur echten Uhrzeit** (beim Öffnen und bei jedem Wechsel zurück
+    in die App, `useMinutes`): vorbei = weg, gerade dran bleibt 30 Min
+    („läuft“), ab 20 Uhr (oder wenn heute nichts mehr kommt) der Plan von
+    morgen („Morgen · Mi“). Essen = nächste Mahlzeit (`demoDishAt`: vor 13
+    Uhr Mittag 12:30, dann Abend 18:30 bis 20 Uhr, danach Mittag von morgen).
+    Jetzt-Karte = der nächste Termin („15 Uhr Schwimmen.“ · vorbereitender
+    Satz, `demoJetzt`), Sport-Ring nach Wochentag (`demoSportRing`: Mo 0,
+    Di/Mi 1, Do/Fr 2, Sa/So geschafft).
+  - **Wochentag passt** (`demoArt`, Feiertage wie Sonntag): Mo–Fr Kita,
+    Schwimmen, Elternabend …; Sa/So Familie, Ausflug, Laternenumzug – nie Kita
+    oder Elternabend am Wochenende. Je Art drei Varianten (`variante` nach
+    Datum), zu zweit/allein eigene Pläne. Aufgaben werktags drei, am
+    Wochenende zwei („diese Woche“, nie dringend).
+  - Wetter echt vom Ort (sonst Eutin), Pinnwand/Notizen/Einkauf/Wundertüte
+    wie bisher.
+- **Streifen oben** (`DemoRow`, unter dem Kopf): „Beispiel · tipp überall
+  rein“ · „Hinweise aus“ (danach „Eigenen starten“). Je Kachel verschwinden
+  die Beispiele beim ersten Eigenen (`clearDemoTile`), alle nach 3 Tagen oder
+  per „Eigenen starten“; danach einmal „Alle Beispiele entfernen?“.
+- **Graue Erklärsätze** (Tafel 150, `heute/demoHinweise.ts`): unter
+  Jetzt-Karte, Kreisen und jeder Kachel, die gerade Beispiele zeigt (Wetter
+  immer), Wortlaut wie Tafel 150. Im Raster als eigene Zeile (Höhe = Inhalt,
+  `hinweisZeilen`) an der ersten Grenze unter der Kachel, über die keine
+  andere reicht – die Kacheln behalten ihre Größe; Wetter und Notizen
+  übereinander teilen sich einen Satz. „Hinweise aus“ (`hinweiseAus` in
+  `wasgibts.beispiel`) blendet sie aus; nie im Bearbeiten.
   entfernen?“ (`askRemoveAll`).
 
 ### Seiten-Pager

@@ -58,6 +58,8 @@ export const mehrIdeen = async (page, check) => {
  */
 export const essenIdeen = async (page, check) => {
   await hello(page);
+  // Tafel 150: erst „Hinweise aus“, dann steht im Streifen „Eigenen starten“
+  await page.getByRole("button", { name: "Hinweise aus" }).click();
   await page.getByRole("button", { name: "Eigenen starten" }).click();
   await page.waitForTimeout(600);
   await page.getByRole("tab", { name: "Essen" }).click();
