@@ -18,6 +18,11 @@
 // Mit Konto (Einkauf Teil 6): beim ersten Abhaken (oder unterwegs geöffnet,
 // „Ich bin bei REWE“) einmal „Familie Bescheid sagen?“; Neues von anderen
 // erscheint gelb mit „Steh grad davor“, „Einkauf fertig“ meldet es.
+// A-067 (Tafel 151 Bild 5): mit Laden-Plan „9 Sachen · sortiert wie im
+// Laden“, nach Sorten im Laufweg, oben Reiter für die anderen Läden mit
+// Anzahl, „auch Markt“ unter Sachen mehrerer Läden. Nach dem Abhaken
+// höchstens EINE Lern-Frage je Besuch („Butter holst du oft bei Lidl. Ab
+// jetzt immer dort?“ – Ja = Ausnahme, Nein = nie wieder fragen).
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -36,6 +41,7 @@ import { newId } from "@/lib/einkauf/listModel";
 import { useMeineLaeden } from "@/lib/einkauf/meineLaeden";
 import { einsortieren, einsortiertText } from "@/lib/einkauf/einsortieren";
 import { sachenText, useEinkaufWoche } from "@/lib/einkauf/seite/karten";
+import { inLaden } from "@/lib/einkauf/listModel";
 import { KATALOG_ALLE } from "@/lib/einkauf/aussuchen/katalog";
 import { addTrip, answered, aufLadenSeite, boughtCount, changeBescheid, changeTrips, finishTrip, loadBescheid, newDuringTrip, sameTrip, sendAnswer, tripSuggestions, useBescheid, useTrips } from "@/lib/einkauf/unterwegs/unterwegs";
 import { cloudSync, useCachedAccount } from "@/lib/konten/cache";
@@ -64,6 +70,14 @@ import { ladenFarbe } from "@/components/einkauf/seite/LadenKarten";
 import { mitgliedName } from "@/lib/konten/namen";
 import { SacheFenster } from "@/components/einkauf/seite/SacheFenster";
 import { WochenplanAngebot } from "@/components/einkauf/seite/WochenplanAngebot";
+import Link from "next/link";
+import { loadShoppingSettings } from "@/lib/einkauf/listStore";
+import { applyShopRule } from "@/lib/einkauf/shopRules";
+import { auchZeile, ladenReiter, nachSorten } from "@/lib/einkauf/sorten/ladenSeite";
+import { lernFrage, type LernFrage } from "@/lib/einkauf/sorten/lernen";
+import { nieWiederFragen } from "@/lib/einkauf/sorten/einrichten";
+import { useSortenEinordnen } from "@/lib/einkauf/sorten/einordnen";
+import { ladenHref } from "@/lib/einkauf/seite/karten";
 
 const lower = (s: string) => s.trim().toLowerCase();
 
@@ -93,6 +107,11 @@ export function LadenSeite() {
   const trips = useTrips();
   const started = useRef(false);
   const family = household;
+  // A-067: höchstens eine Lern-Frage je Besuch
+  const [frage, setFrage] = useState<LernFrage | null>(null);
+  const gefragt = useRef(false);
+  const offeneHier = (data?.list.items ?? []).filter((i) => !i.hidden && !i.checked && inLaden(i, shop)).map((i) => i.name);
+  useSortenEinordnen(offeneHier, Boolean(data?.settings.ladenPlan));
   useEffect(() => {
     if (cloudSync()) void refreshAccount();
   }, []);
@@ -157,6 +176,20 @@ export function LadenSeite() {
   const trip = active?.tripId ? trips.find((t) => t.id === active.tripId) : undefined;
   const name = shop || "Egal wo";
   const farbe = ladenFarbe(shop);
+  const plan = settings.ladenPlan;
+  const reiter = plan && shop ? ladenReiter(data.list.items.filter((i) => !i.hidden && !i.checked), meine?.myShops ?? []).filter((r) => lower(r.shop) !== lower(shop)) : [];
+
+  /** Abhaken; danach (nur mit Laden-Plan) einmal je Besuch die Lern-Frage */
+  const abhaken = (item: ListItem) => {
+    const war = item.checked;
+    tick(item);
+    if (war || !plan || !shop || gefragt.current) return;
+    const f = lernFrage(item, loadShoppingSettings(), todayIso);
+    if (f) {
+      gefragt.current = true;
+      setFrage(f);
+    }
+  };
 
   /** „Einkauf fertig“: Wagen → Im Haus (mit Baustein), Familie Bescheid, zurück zur Übersicht */
   const fertig = () => {
@@ -214,7 +247,7 @@ export function LadenSeite() {
         data-gleitet={gleitet.includes(item.key) ? "" : undefined}
         data-neu={neu !== undefined ? "" : undefined}
       >
-        <LadenZeile item={item} products={settings.products} neuVon={neu} onTick={() => tick(item)} onOpen={() => setFenster(item)} onLongPress={() => setMenu(item)} />
+        <LadenZeile item={item} products={settings.products} neuVon={neu} auch={auchZeile(item, shop) || undefined} onTick={() => abhaken(item)} onOpen={() => setFenster(item)} onLongPress={() => setMenu(item)} />
         {neu !== undefined && trip && item.von && !item.checked && (
           <div className="flex items-center pb-2 pl-16 pr-3">
             {answered(trip, item.von, item.name) ? (
@@ -232,11 +265,22 @@ export function LadenSeite() {
 
   return (
     <div className="mx-auto flex w-full max-w-lg flex-1 flex-col">
-      <PageHeader title={name} backHref="/einkaufsliste" tipp={{ seite: EINKAUF_LADEN_SEITE, text: einkaufLadenTipp(shop) }} />
+      <PageHeader title={name} subtitle={plan && shop ? `${sachenText(anzahl)} · sortiert wie im Laden` : undefined} backHref="/einkaufsliste" tipp={{ seite: EINKAUF_LADEN_SEITE, text: einkaufLadenTipp(shop) }} />
       <main className={PAGE_MAIN}>
         {/* Strich in Ladenfarbe unter dem Titel (Tafel 127/128) */}
         <span className="-mt-3 ml-1 block h-1.5 w-[72px] rounded-full" style={{ background: farbe.voll }} role="img" aria-label={`${name} · ${sachenText(anzahl)}`} data-laden-kopf data-anzahl={anzahl} />
         {active?.tripId && <p className="-mt-2 px-1 text-sm text-muted">Die Familie weiß Bescheid.</p>}
+        {reiter.length > 0 && (
+          <nav aria-label="Andere Läden" className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1" data-laden-reiter data-no-swipe>
+            {reiter.map((r) => (
+              <Link key={r.shop} href={ladenHref(r.shop)} replace className={`${chipClass(false)} min-h-11 shrink-0`} data-reiter={r.shop}>
+                <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: ladenFarbe(r.shop).voll }} aria-hidden />
+                {r.shop}
+                <span className="font-extrabold tabular-nums text-muted">{r.n}</span>
+              </Link>
+            ))}
+          </nav>
+        )}
 
         <WochenplanAngebot
           angebot={angebot}
@@ -253,7 +297,15 @@ export function LadenSeite() {
         />
 
         {hier.some((i) => !i.checked) && !tippOffen && <p className="-mb-1 px-1 text-[15px] text-muted" data-wagen-hinweis>Abhaken, was im Wagen liegt.</p>}
-        {hier.length > 0 ? (
+        {hier.length > 0 && plan && shop ? (
+          // A-067: nach Sorten im Laufweg
+          nachSorten(hier, settings.sortenKi).map((g) => (
+            <section key={g.sorte ?? "sonst"} aria-label={g.label} className="flex flex-col gap-1.5" data-sorten-gruppe={g.sorte ?? "sonst"}>
+              <h2 className={`${SECTION_TITLE} px-1 text-muted`}>{g.label}</h2>
+              <ul className="overflow-hidden rounded-card border border-line bg-surface shadow-card">{g.items.map(row)}</ul>
+            </section>
+          ))
+        ) : hier.length > 0 ? (
           <ul className="overflow-hidden rounded-card border border-line bg-surface shadow-card" aria-label={name}>
             {hier.map(row)}
           </ul>
@@ -322,6 +374,34 @@ export function LadenSeite() {
           <p className="-mt-2 px-1 text-[13px] text-muted" data-merken-hinweis>
             {merkenText(shop)}
           </p>
+        )}
+
+        {frage && (
+          <section className={`${CARD} flex flex-col gap-3 p-4`} aria-label="Frage" data-lern-frage>
+            <p className="text-[16px] font-bold leading-snug">{frage.text}</p>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  applyShopRule(frage.sache, frage.shop);
+                  setFrage(null);
+                }}
+                className={`${buttonClass("primary", "md")} flex-1`}
+              >
+                Ja
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  nieWiederFragen(frage.sache);
+                  setFrage(null);
+                }}
+                className={`${buttonClass("secondary", "md")} flex-1`}
+              >
+                Nein
+              </button>
+            </div>
+          </section>
         )}
 
         {(imWagen.length > 0 || active?.tripId) && (

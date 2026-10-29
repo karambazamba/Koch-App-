@@ -91,6 +91,10 @@ export const PRUEFSAETZE: PruefSatz[] = [
   S("Kaffee kaufen wir ab jetzt bei Edeka", ["set_shop_rule"], { laden: "Edeka" }),
   S("Tomaten nicht mehr bei Rewe", ["set_shop_rule"]),
   S("Milch egal wo", ["set_shop_rule"]),
+  // A-067: ganze Sorten
+  S("Getränke kaufe ich bei Edeka", ["set_shop_rule"], { laden: "Edeka" }),
+  S("Obst kaufe ich auf dem Markt und bei Rewe", ["set_shop_rule"]),
+  S("Drogeriesachen hol ich bei dm", ["set_shop_rule"], { laden: "dm" }),
   S("Was kauf ich wo?", []),
   S("Katzenfutter nicht vergessen", EINKAUF),
   S("Moin, Brötchen für morgen früh", EINKAUF),

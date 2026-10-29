@@ -25,10 +25,13 @@ export function ladenKarten(open: ListItem[], myShops: string[]): LadenKarte[] {
       if (i.anywhere) egal.push(i);
       continue;
     }
-    const k = lower(i.shop);
-    const karte = map.get(k) ?? { shop: i.shop.trim(), items: [], mine: false };
-    karte.items.push(i);
-    map.set(k, karte);
+    // A-067 Nachtrag: Sorte mit mehreren Läden – die Sache steht in jedem
+    for (const s of [i.shop, ...(i.auch ?? [])]) {
+      const k = lower(s);
+      const karte = map.get(k) ?? { shop: s.trim(), items: [], mine: false };
+      karte.items.push(i);
+      map.set(k, karte);
+    }
   }
   const mine = [...map.values()].filter((k) => k.mine);
   const rest = sortBy(

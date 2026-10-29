@@ -66,7 +66,7 @@ export const SHOPPING_TOOLS = {
     definition: {
       name: "laden_regel",
       description:
-        "Feste Laden-Regel für einen Artikel: 'Tomaten kaufe ich immer bei Rewe', 'Butter immer bei Lidl', 'Shampoo nur bei Rossmann' → laden setzen. 'Tomaten nicht mehr bei Rewe', 'Milch egal wo' → laden leer = Regel weg, Artikel bewusst egal wo. Gilt danach überall (Liste, Wochenplan, Rezepte). Antwort knapp: 'Merk ich mir. Tomaten → Rewe.'",
+        "Feste Laden-Regel für einen Artikel: 'Tomaten kaufe ich immer bei Rewe', 'Butter immer bei Lidl', 'Shampoo nur bei Rossmann' → laden setzen. 'Tomaten nicht mehr bei Rewe', 'Milch egal wo' → laden leer = Regel weg, Artikel bewusst egal wo. Für eine ganze Sorte (Obst, Getränke, Drogerie, Putzsachen, Tiefkühl, Fleisch, Vorrat, Babysachen): artikel = die Sorte, mehrere Läden mit 'und' ('Obst kaufe ich auf dem Markt und bei Rewe' → artikel 'Obst', laden 'Wochenmarkt und Rewe'). Gilt danach überall (Liste, Wochenplan, Rezepte). Antwort knapp: 'Merk ich mir. Tomaten → Rewe.'",
       input_schema: {
         type: "object",
         properties: {
@@ -97,7 +97,7 @@ export const SHOPPING_TOOLS = {
       const l = ctx.data.laeden ?? { regeln: {}, meine: [] };
       const byShop = rulesByShop(l.regeln);
       const lines = Object.entries(byShop).map(([shop, items]) => `${shop}: ${items.join(", ")}`);
-      return { content: [`Meine Läden: ${l.meine.length ? l.meine.join(", ") : "noch keine"}.`, lines.length ? `Feste Regeln: ${lines.join(" · ")}.` : "Noch keine festen Regeln."].join(" ") };
+      return { content: [`Meine Läden: ${l.meine.length ? l.meine.join(", ") : "noch keine"}.`, l.wasWo ? `Was wo: ${l.wasWo}.` : "", lines.length ? `Feste Regeln: ${lines.join(" · ")}.` : "Noch keine festen Regeln."].filter(Boolean).join(" ") };
     },
   },
 } satisfies Record<string, BegleitungTool>;

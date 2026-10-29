@@ -12,7 +12,72 @@ Wochenplan sind ein Angebot oben auf der Laden-Seite („Für deinen
 Wochenplan“, „Alle dazu“). Mia merkt sich beim Abhaken, wo es was gibt
 („Rewe · wie immer“, „Oft bei Rewe“). Gleiche Sachen im selben Laden stehen
 nur einmal da. Kennt Läden, feste Regeln und eure Produkte. Immer sichtbar
-(kein Baustein).
+(kein Baustein). Seit A-067 (Tafel 151) sagt man einmal, wo der Haushalt
+was kauft („Läden einrichten“, 3 Schritte) – danach legt Mia jede Sache
+selbst in den richtigen Laden, „Noch ohne Laden“ gibt es dann nicht mehr.
+
+## Läden einrichten (A-067, Tafel 151 + Nachtrag)
+
+- **Wann:** beim ersten Öffnen der Einkaufsliste (statt der früheren Frage
+  „In welchen Läden kaufst du ein?“) bzw. über „Sortieren ›“ auf der Kachel
+  und „Einmal sagen, was du wo holst ›“ unter „Noch ohne Laden“
+  (`/einkaufsliste/einrichten`). Oben ✕ und „Später“, nie Pflicht; ✕/Später =
+  `shopsAsked`, kommt nie wieder von selbst.
+- **Schritt 1** „Wo kaufst du ein?“: Chips (`EINRICHTEN_LAEDEN`), genutzte
+  Läden vorausgewählt, Feld „Eigener Laden“ nimmt auch einen Satz („Rewe,
+  Lidl und dm“, `laedenAusSatz`), „Weiter · 5 Läden“.
+- **Schritt 2** „Was holst du wo?“ (`einrichten/WasWo.tsx`, gleicher
+  Bildschirm unter „···“ → „Meine Läden & was wo“ =
+  `/einkaufsliste/einrichten?nur=was-wo`): „Das meiste bei [Laden ⌄]“ und die
+  Sorten mit Laden-Chip; je Sorte bis zu 3 Läden (Reihenfolge = Vorrang,
+  Anzeige „Wochenmarkt + Rewe“). Vorschläge `vorschlagPlan`: Drogerie/Putzen/
+  Baby → dm bzw. Rossmann, Getränke → Getränkemarkt, Obst & Gemüse →
+  Wochenmarkt, Brot → Bäcker, Vorrat/Tiefkühl → Discounter (nur gewählte),
+  Rest → Hauptladen. Satz-Feld („Fleisch hole ich beim Schlachter“) legt den
+  Laden bei Bedarf an. „Tier“ erscheint nur, wenn es dafür schon eine Regel gibt
+  (ein Haustier kennt das Profil nicht).
+- **Schritt 3** „Fertig!“: „22 Sachen sind schon einsortiert.“ (was gerade
+  ohne Laden war – die Zuordnung passiert beim Bauen der Liste, nichts wird
+  umgeschrieben), kurzes Beispiel mit echten Sachen (sonst „Milch, Zahnpasta
+  und Äpfel“), „Mia lernt dazu …“, „Zur Einkaufsliste“.
+- **Sorten** (`lib/einkauf/sorten/sorten.ts`): Obst & Gemüse · Brot &
+  Brötchen · Milch, Käse, Eier · Fleisch & Wurst · Vorrat · Tiefkühl ·
+  Getränke · Drogerie & Pflege · Putzen & Haushalt · Baby & Kind (+ Tier).
+  Zuerst die feste Wortliste (Nicht-Lebensmittel hier, Lebensmittel über die
+  Abteilungen aus `sections.ts`), sonst einmal die KI
+  (`/api/einkauf-sorten`, Haiku, Zugangscode + Tageslimit wie Mia, nur die
+  Namen; Ergebnis in `sortenKi`, je Sache nur einmal, `einordnen.ts`). Ohne
+  KI bleibt eine unbekannte Sache beim Hauptladen.
+- **Zuordnung** (`ladenHerkunft`): a) Ausnahme (feste Regel, selbst gewählt,
+  ähnlicher Name) → b) Regel der Sorte (alle ihre Läden: `shop` = erster,
+  `auch` = weitere) → c) Hauptladen. Gelerntes zählt mit Plan nicht mehr für
+  die Zuordnung, nur für die Lern-Frage. Ohne Plan alles wie bisher.
+- **Mehrere Läden je Sorte:** die Sache steht in allen (`ListItem.auch`,
+  `inLaden`), Karten, Kachel und Reiter zählen sie in jedem Laden mit; auf
+  der Laden-Seite darunter klein „auch Markt“; Abhaken in einem Laden =
+  überall erledigt (eine Sache, kein Duplikat).
+- **Eintragen:** Mias Ergebnis-Karte zeigt den Laden je Zeile („Wochenmarkt +
+  Rewe ⌄“); antippen = umlegen → mit Plan eine Ausnahme (`applyShopRule`),
+  darunter einmal „Falscher Laden? Antippen und umlegen, ich merk’s mir.“
+  (bis man einmal umgelegt hat, Hinweis `einkauf-umlegen`).
+- **Im Laden:** Laden-Seite mit Plan: „9 Sachen · sortiert wie im Laden“,
+  Gruppen nach Sorte im Laufweg (`LAUFWEG`: Obst & Gemüse zuerst, Tiefkühl
+  und Getränke zuletzt, Unbekanntes „Sonst noch“), oben Reiter für die
+  anderen Läden mit Anzahl. Der große Titel bleibt der Laden-Name („Bei
+  Kaufland einkaufen“ würde abgeschnitten).
+- **Mia lernt** (`sorten/lernen.ts`): zweimal hintereinander woanders
+  abgehakt → einmal „Butter holst du oft bei Lidl. Ab jetzt immer dort?“;
+  bei mehreren Läden zweimal im selben → „Bananen ab jetzt nur bei Rewe?“.
+  Ja = Ausnahme, Nein = nie wieder fragen (`learnAsked`); höchstens eine
+  Frage je Besuch der Laden-Seite.
+- **Mia-Sätze:** „Milch immer bei Rewe“ = Ausnahme; „Getränke kaufe ich bei
+  Edeka“, „Obst kaufe ich auf dem Markt und bei Rewe“ = Sorte
+  (`parseSorteRegel`, KI-Werkzeug `laden_regel` mit artikel = Sorte;
+  `applyShopRule` erkennt Sorten-Wörter, legt Läden an, mit Rückgängig).
+- **Speicher:** `ladenPlan` (`{ haupt, regeln: Sorte → Läden }`) und
+  `sortenKi` im Einkauf-Speicher (v8, optional, `migratePlan`), im Abgleich
+  in den Einstellungen des Haushalts (`einkauf-einstellungen`, Raum
+  Familie) – die Familie sieht dieselben Regeln.
 
 ## Wo im Code
 

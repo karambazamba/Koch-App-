@@ -1,8 +1,7 @@
 "use client";
 
-// Läden bewusst wählen (Tafel 88/91): die einmalige Frage „In welchen Läden
-// kaufst du ein?“ (Chips zum Ankreuzen, anderer Laden, Fertig oder Später),
-// das Fenster „Meine Läden“ (＋ in der Laden-Reihe: wählen, sortieren, anlegen,
+// Läden bewusst wählen (Tafel 88/91; die einmalige Frage ist seit A-067 die
+// Einrichtung in `einrichten/`): das Fenster „Meine Läden“ (＋ in der Laden-Reihe: wählen, sortieren, anlegen,
 // entfernen, feste Regeln „Immer hier“) und die Reihe „Kommt auf die Liste
 // für“ beim Hinzufügen. Keine Logos: ein Farbpunkt je Laden.
 
@@ -60,53 +59,6 @@ function ShopChip({ shop, on, onTap }: { shop: string; on: boolean; onTap: () =>
       {on ? <Check className="h-4 w-4 shrink-0" strokeWidth={2.75} aria-hidden /> : <ShopDot shop={shop} />}
       {shop}
     </button>
-  );
-}
-
-/**
- * Erster Besuch (Tafel 91): „In welchen Läden kaufst du ein?“ – Chips zum
- * Ankreuzen, darunter „Anderer Laden“ (erscheint sofort gewählt unter „Selbst
- * eingetragen“), „Fertig“ und leise „Später …“. Vorauswahl = Läden an Artikeln.
- */
-export function LadenFrage({ shops, preselected }: { shops: string[]; preselected: string[] }) {
-  const [picked, setPicked] = useState<string[]>(preselected);
-  const [own, setOwn] = useState<string[]>(() => [...shops, ...preselected].filter((s, i, all) => !isSuggestion(s) && all.findIndex((x) => lower(x) === lower(s)) === i));
-  const isOn = (s: string) => picked.some((p) => lower(p) === lower(s));
-  const toggle = (s: string) => setPicked((p) => (isOn(s) ? p.filter((x) => lower(x) !== lower(s)) : [...p, s]));
-  return (
-    <section className={`${CARD} flex flex-col gap-3 p-4`} aria-label="In welchen Läden kaufst du ein?" data-laden-frage>
-      <div>
-        <h2 className="text-lg font-bold">In welchen Läden kaufst du ein?</h2>
-        <p className="text-sm text-muted">Alle antippen, die passen. Ich sortier dann danach.</p>
-      </div>
-      <div className="flex flex-wrap gap-2">
-        {FRAGE_LAEDEN.map((s) => (
-          <ShopChip key={s} shop={s} on={isOn(s)} onTap={() => toggle(s)} />
-        ))}
-      </div>
-      <EigenerLaden
-        onAdd={(n) => {
-          if (!own.some((x) => lower(x) === lower(n)) && !isSuggestion(n)) setOwn((o) => [...o, n]);
-          setPicked((p) => (isOn(n) ? p : [...p, n]));
-        }}
-      />
-      {own.length > 0 && (
-        <div className="flex flex-col gap-1.5">
-          <p className="text-[13px] font-semibold text-muted">Selbst eingetragen</p>
-          <div className="flex flex-wrap gap-2">
-            {own.map((s) => (
-              <ShopChip key={s} shop={s} on={isOn(s)} onTap={() => toggle(s)} />
-            ))}
-          </div>
-        </div>
-      )}
-      <button type="button" onClick={() => chooseMyShops(picked)} className={`${buttonClass("primary", "lg")} w-full`}>
-        Fertig
-      </button>
-      <button type="button" onClick={laterShops} className="hit self-center px-2 text-center text-[13px] text-muted">
-        Später. Geht auch jederzeit über ＋ in der Laden-Reihe.
-      </button>
-    </section>
   );
 }
 

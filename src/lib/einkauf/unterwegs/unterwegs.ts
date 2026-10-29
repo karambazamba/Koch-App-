@@ -16,7 +16,7 @@ import { createLocalStore } from "@/lib/core/localStore";
 import { now, nowIso } from "@/lib/core/now";
 import { useExternalStore } from "@/lib/core/useExternalStore";
 import { stapleInterval } from "@/lib/einkauf/staples";
-import type { ListItem, Staple } from "@/lib/einkauf/listModel";
+import { inLaden, type ListItem, type Staple } from "@/lib/einkauf/listModel";
 
 /** Ein geteilter Einkauf */
 export type Trip = {
@@ -177,7 +177,7 @@ export function newDuringTrip(items: ListItem[], active: ActiveTrip | null, me: 
  */
 export function aufLadenSeite(item: ListItem, shop: string, active: ActiveTrip | null, me: string | null): boolean {
   const s = shop.trim().toLowerCase();
-  if (s && item.shop.trim().toLowerCase() === s) return true;
+  if (s && inLaden(item, s)) return true;
   if (!s || !active || !me || active.shop.trim().toLowerCase() !== s || item.shop.trim()) return false;
   return Boolean(item.von && item.von !== me && !active.known.includes(item.key));
 }

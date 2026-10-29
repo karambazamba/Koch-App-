@@ -6,6 +6,22 @@ ist inzwischen anders. Den aktuellen Stand je Bereich beschreibt
 `docs/bereiche/<bereich>.md`, die festen Regeln stehen in `CLAUDE.md`.
 Ältere Pfadangaben meinen die Orte vor dem Umzug (siehe CLAUDE.md, „Ordner“).
 
+## Läden einrichten, Mia verteilt automatisch (A-067, Tafel 151 + Nachtrag, v0.175.0)
+
+- Einmal sagen, wo der Haushalt was kauft: drei Schritte beim ersten Öffnen
+  der Einkaufsliste bzw. über „Sortieren ›“ (✕/„Später“, nie Pflicht),
+  später unter „···“ → „Meine Läden & was wo“.
+- 10 feste Sorten (Wortliste, sonst einmal die KI), Hauptladen, je Sorte bis
+  zu 3 Läden; Zuordnung Ausnahme → Sorte → Hauptladen, danach kein „ohne
+  Laden“ mehr. Eine Sache mehrerer Läden steht in allen („auch Markt“),
+  Abhaken in einem = überall.
+- Ergebnis-Karte: Laden antippen = umlegen (Ausnahme). Laden-Seite sortiert
+  wie im Laden mit Reitern. Lern-Frage nach zweimal woanders, Ja/Nein.
+- Mia-Sätze: „Milch immer bei Rewe“ (Ausnahme), „Getränke kaufe ich bei
+  Edeka“, „Obst kaufe ich auf dem Markt und bei Rewe“ (Sorte).
+- Die frühere Frage „In welchen Läden kaufst du ein?“ (`LadenFrage`) ist
+  durch Schritt 1 ersetzt.
+
 ## Demo-Startseite: einfach, zur Uhrzeit, mit Erklärung (A-066, Tafel 150, v0.174.0)
 
 - Beispiel-Inhalte neu: 1–3 Wörter, je Werktag/Samstag/Sonntag drei

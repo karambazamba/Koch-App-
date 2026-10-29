@@ -5,6 +5,8 @@
 // hat. Antippen = andere Läden als Chips; die Korrektur gilt sofort und wird
 // gemerkt (nächstes Mal gleich dort). Hat Mia zum ersten Mal selbst
 // gewählt, steht einmal darunter „Hab Rewe genommen, wie letztes Mal.“
+// A-067: mit Laden-Plan steht der Laden der Sorte da („Wochenmarkt + Rewe“);
+// Umlegen speichert eine Ausnahme für diese Sache.
 
 import { useEffect, useState } from "react";
 import { ChevronDown } from "lucide-react";
@@ -12,7 +14,7 @@ import { chipClass } from "@/components/ui/styles";
 import { ladenFarbe } from "@/components/einkauf/seite/LadenKarten";
 import { useShoppingSettings } from "@/lib/einkauf/listStore";
 import { useMeineLaeden } from "@/lib/einkauf/meineLaeden";
-import { ladenHerkunft, ladenKorrigieren } from "@/lib/einkauf/shopRules";
+import { applyShopRule, ladenHerkunft, ladenKorrigieren } from "@/lib/einkauf/shopRules";
 import { kartenLaden, kartenLadenText, selbstGewaehltText } from "@/lib/einkauf/merken/karte";
 import { hintSeen, markHintSeen } from "@/lib/core/hints";
 
@@ -44,13 +46,18 @@ export function ErgebnisLaden({ sache, gesagt, art, aus = false }: { sache: stri
       {auf ? (
         <div className="flex flex-wrap gap-1.5" role="group" aria-label="Anderer Laden">
           {andere.map((shop) => {
-            const jetzt = Boolean(laden && lower(shop) === lower(laden.shop));
+            const jetzt = Boolean(laden && lower(shop) === lower(laden.shop) && !laden.auch?.length);
             return (
             <button
               key={shop}
               type="button"
               onClick={() => {
-                if (!jetzt) ladenKorrigieren(sache, shop);
+                // A-067: mit Laden-Plan wird Umlegen eine Ausnahme (Sache → Laden), sonst wie bisher gelernt
+                if (!jetzt) {
+                  if (settings?.ladenPlan) applyShopRule(sache, shop);
+                  else ladenKorrigieren(sache, shop);
+                  markHintSeen("einkauf-umlegen");
+                }
                 setAuf(false);
               }}
               className={`${chipClass(jetzt)} min-h-9 py-1 text-[14px]`}

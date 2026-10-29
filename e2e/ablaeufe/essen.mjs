@@ -30,8 +30,11 @@ export const rezept = async (page, check) => {
 // „Zuletzt gekauft“ im „···“, lange drücken = „Wo kaufst du das?“ → Ändern
 export const einkauf = async (page, check) => {
   await family(page, "/einkaufsliste");
-  await page.locator("[data-laden-frage]").getByRole("button", { name: "Rewe" }).tap();
-  await page.locator("[data-laden-frage]").getByRole("button", { name: "Fertig" }).tap();
+  // Läden einrichten (A-067): Rewe → Weiter → Speichern → Zur Einkaufsliste
+  await page.locator("[data-einrichten]").getByRole("button", { name: "Rewe", exact: true }).tap();
+  await page.locator("[data-einrichten-weiter]").tap();
+  await page.locator("[data-einrichten-speichern]").tap();
+  await page.locator("[data-einrichten-fertig]").tap();
   await aussuchen(page, "Rewe");
   for (const n of ["Milch", "Brot", "Bananen"]) await page.locator(`[data-abschnitt="oft"] [data-kachel="${n}"]`).tap();
   check(/Rewe 3/.test(await page.locator("[data-aussuchen-leiste]").innerText()), "Aussuchen: „Rewe 3“");

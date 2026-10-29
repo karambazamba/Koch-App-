@@ -14,6 +14,8 @@ import { wocheZusammenfassen } from "@/lib/einkauf/zusammen/zusammen";
 import { newId, type Gelernt, type ManualItem, type ShoppingListStore, type Staple, type WeekList } from "@/lib/einkauf/listModel";
 import { addDays, todayIso } from "@/lib/core/now";
 import { packungAus } from "@/lib/einkauf/zusammen/packung";
+import { migratePlan } from "@/lib/einkauf/sorten/plan";
+import { isSorte, type SorteId } from "@/lib/einkauf/sorten/sorten";
 
 /** Früher "Immer da" – wird bei der Migration zu Stammartikeln (wöchentlich) */
 const DEFAULT_BASIC_NAMES = ["Brot", "Aufschnitt", "Käse", "Butter", "Milch", "Joghurt", "Obst"];
@@ -98,8 +100,13 @@ export function migrateStore(raw: unknown): ShoppingListStore | null {
   const v4 = raw as Partial<ShoppingListStore>;
   const v5 = (data.version as number) >= 5;
   const v6 = (data.version as number) >= 6;
+  // A-067: Laden-Plan und KI-Sorten (optional, ohne Versionssprung: fehlt = noch nicht eingerichtet)
+  const plan = migratePlan(v4.ladenPlan);
+  const sortenKi = sortenMap(v4.sortenKi);
   const next: ShoppingListStore = {
     version: 8,
+    ...(plan ? { ladenPlan: plan } : {}),
+    ...(Object.keys(sortenKi).length ? { sortenKi } : {}),
     myShops: v5 ? strings(v4.myShops) : [],
     shopsAsked: v5 && v4.shopsAsked === true,
     shopRules: v6 ? stringMap(v4.shopRules) : {},
@@ -136,6 +143,12 @@ function zusammenfassen(s: ShoppingListStore): ShoppingListStore {
   };
   const weeks = Object.fromEntries(Object.entries(s.weeks).map(([k, w]) => [k, { ...w, manual: wocheZusammenfassen(w.manual, laden) }]));
   return { ...s, weeks };
+}
+
+/** KI-Sorten lesen (nur bekannte Sorten, höchstens 500) */
+function sortenMap(v: unknown): Record<string, SorteId> {
+  if (!v || typeof v !== "object") return {};
+  return Object.fromEntries(Object.entries(v as Record<string, unknown>).filter((e): e is [string, SorteId] => isSorte(e[1]) && e[0].length <= 60).slice(-500));
 }
 
 /** Gelerntes lesen; `seit` = Datum für Einträge ohne Datum (v7 → v8), `null` = so lassen */

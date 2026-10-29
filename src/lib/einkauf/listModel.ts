@@ -2,6 +2,8 @@
 // zusammengesetzte Liste) und kleine gemeinsame Helfer.
 
 import type { Section } from "@/lib/einkauf/sections";
+import type { LadenPlan } from "@/lib/einkauf/sorten/plan";
+import type { SorteId } from "@/lib/einkauf/sorten/sorten";
 
 export type ManualItem = {
   id: string;
@@ -80,9 +82,13 @@ export type ShoppingListStore = {
    * schon auf der Liste stand, bleibt.
    */
   angebotAb: string;
+  /** A-067: „Was holst du wo?“ (Hauptladen, Sorte → Läden); fehlt = noch nicht eingerichtet (dann „ohne Laden“ wie bisher) */
+  ladenPlan?: LadenPlan;
+  /** A-067: Sorten, die die KI einmal eingeordnet hat (Sache klein → Sorte) */
+  sortenKi?: Record<string, SorteId>;
 };
 
-export type ShoppingSettings = Pick<ShoppingListStore, "products" | "shops" | "itemShops" | "staples"> & Partial<Pick<ShoppingListStore, "shopRules" | "alwaysList" | "learned" | "angebotAb">>;
+export type ShoppingSettings = Pick<ShoppingListStore, "products" | "shops" | "itemShops" | "staples"> & Partial<Pick<ShoppingListStore, "shopRules" | "alwaysList" | "learned" | "angebotAb" | "ladenPlan" | "sortenKi" | "learnAsked">>;
 
 export type ListItem = {
   key: string;
@@ -98,6 +104,8 @@ export type ListItem = {
   days: string[];
   /** Laden, falls gemerkt ("" = egal wo oder noch ohne Laden) */
   shop: string;
+  /** A-067 Nachtrag: dieselbe Sache steht auch in diesen Läden (Sorte mit mehreren Läden) – abhaken in einem = überall */
+  auch?: string[];
   /** Bewusst „Egal wo“ gewählt (sonst ist ein Artikel ohne Laden „noch ohne Laden“) */
   anywhere?: boolean;
   /** Nur für eine lockere Wochenend-Idee – optional, abwählbar */
@@ -139,3 +147,9 @@ export const newId = () =>
   typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : Math.random().toString(36).slice(2);
 
 export const lower = (s: string) => s.trim().toLowerCase();
+
+/** Steht die Sache in diesem Laden? (eigener Laden oder „auch“, A-067 Nachtrag) */
+export const inLaden = (item: Pick<ListItem, "shop" | "auch">, shop: string) => {
+  const s = lower(shop);
+  return Boolean(s) && (lower(item.shop) === s || Boolean(item.auch?.some((a) => lower(a) === s)));
+};

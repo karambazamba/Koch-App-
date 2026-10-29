@@ -35,9 +35,10 @@ export type TileRows = { rows: TileRow[]; rest: string | null; restZahl: number;
  * Sachen (stehen IMMER da, auch mit 0), bewusst „Egal wo“ zuletzt. Was noch
  * ohne Laden ist, zählt extra („6 ohne Laden · Sortieren ›“). Höchstens
  * `max` Zeilen (`kachelLaeden`), der Rest (nur Läden mit Sachen) als `rest`
- * bzw. `restZahl` („+2“ im Kopf) – also erst ab dem 4. Laden.
+ * bzw. `restZahl` („+2“ im Kopf) – also erst ab dem 4. Laden. Steht eine
+ * Sache in mehreren Läden (`auch`, A-067), zählt sie in jedem mit.
  */
-export function tileRows(items: { name: string; shop: string; anywhere?: boolean }[], myShops: string[], max = 3): TileRows {
+export function tileRows(items: { name: string; shop: string; anywhere?: boolean; auch?: string[] }[], myShops: string[], max = 3): TileRows {
   const map = new Map<string, { shop: string; names: string[] }>();
   for (const s of myShops) if (s.trim() && !map.has(s.trim().toLowerCase())) map.set(s.trim().toLowerCase(), { shop: s.trim(), names: [] });
   const egal: string[] = [];
@@ -48,10 +49,13 @@ export function tileRows(items: { name: string; shop: string; anywhere?: boolean
       (i.anywhere ? egal : ohne).push(i.name);
       continue;
     }
-    const key = shop.toLowerCase();
-    const g = map.get(key) ?? { shop, names: [] };
-    g.names.push(i.name);
-    map.set(key, g);
+    // A-067 Nachtrag: eine Sache mehrerer Läden zählt in jedem mit
+    for (const s of [shop, ...(i.auch ?? [])]) {
+      const key = s.trim().toLowerCase();
+      const g = map.get(key) ?? { shop: s.trim(), names: [] };
+      g.names.push(i.name);
+      map.set(key, g);
+    }
   }
   const mine = myShops.map((s) => s.trim().toLowerCase());
   const rank = (shop: string) => {

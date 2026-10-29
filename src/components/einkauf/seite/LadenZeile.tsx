@@ -4,7 +4,9 @@
 // Symbol und Name – sonst nichts; eine Menge nur, wenn man sie selbst gesagt
 // hat („2 Liter“). Wofür und die Rezeptmenge stehen erst im Fenster: Zeile
 // antippen = `SacheFenster`. Abgehakt = Häkchen orange, Zeile blasser (nie
-// durchgestrichen). Lange drücken = „Wo kaufst du das?“.
+// durchgestrichen). Lange drücken = „Wo kaufst du das?“. Steht die Sache
+// auch in anderen Läden (Sorte mit mehreren Läden, A-067), darunter klein
+// „auch Markt“ – abgehakt ist sie dann überall.
 
 import { useRef } from "react";
 import { Check } from "lucide-react";
@@ -13,7 +15,7 @@ import { ItemSymbol } from "@/components/einkauf/kacheln/ItemSymbol";
 import { symbolFor } from "@/lib/einkauf/kacheln/symbols";
 import { AddedBy } from "@/components/konten/AddedBy";
 
-export function LadenZeile({ item, products, neuVon, onTick, onOpen, onLongPress }: { item: ListItem; products: Record<string, string>; neuVon?: string; onTick: () => void; onOpen: () => void; onLongPress: () => void }) {
+export function LadenZeile({ item, products, neuVon, auch, onTick, onOpen, onLongPress }: { item: ListItem; products: Record<string, string>; neuVon?: string; /** „auch Markt“ */ auch?: string; onTick: () => void; onOpen: () => void; onLongPress: () => void }) {
   const press = useRef<{ x: number; y: number; timer: ReturnType<typeof setTimeout> | null; fired: boolean } | null>(null);
   const clear = () => {
     if (press.current?.timer) clearTimeout(press.current.timer);
@@ -63,7 +65,16 @@ export function LadenZeile({ item, products, neuVon, onTick, onOpen, onLongPress
         className={`flex min-h-11 min-w-0 flex-1 items-center gap-3 text-left ${item.checked ? "opacity-50" : ""}`}
         data-zeile-oeffnen
       >
-        <span className="min-w-0 flex-1 truncate text-[17px] font-semibold text-ink">{item.name}</span>
+        {auch ? (
+          <span className="flex min-w-0 flex-1 flex-col">
+            <span className="truncate text-[17px] font-semibold text-ink">{item.name}</span>
+            <span className="text-[13px] font-semibold text-muted" data-auch>
+              {auch}
+            </span>
+          </span>
+        ) : (
+          <span className="min-w-0 flex-1 truncate text-[17px] font-semibold text-ink">{item.name}</span>
+        )}
         {!item.checked && (neuVon !== undefined ? <span className="shrink-0 text-sm font-semibold text-warn-ink">{neuVon ? `Neu von ${neuVon}` : "Neu"} · gerade eben</span> : <AddedBy owner={item.von} />)}
         {item.amount && <span className="shrink-0 text-[15px] tabular-nums text-muted">{item.amount}</span>}
       </button>
