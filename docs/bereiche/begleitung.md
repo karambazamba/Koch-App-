@@ -735,11 +735,10 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
   (Beschreibung bei `notiz_anlegen`).
 - Ansagen laufen über denselben Weg der Stimme (`speak` mit `datei`, `tempo`,
   `laut`; Datei über `ansageAbspielen` im einen freigeschalteten Abspieler),
-  nie über ElevenLabs live. Die Dateien (Lolas Stimme) erzeugt EINMAL der
-  Server (`/api/durchatmen/ansagen-erzeugen`, Knopf „Ansagen erzeugen“ auf
-  „Für Entwickler“ mit dem Prüfstand-Geheimnis) in den öffentlichen Bucket
-  `durchatmen-ansagen`; ohne Dateien spricht das Handy. Details
-  `docs/bereiche/durchatmen.md`.
+  nie über ElevenLabs live und nie mit der Stimme des Handys (A-061,
+  `ersatz: false`): fehlt die Datei, gibt es nur Klang. Die Dateien erzeugt
+  der Server von selbst beim ersten Abruf bzw. nachts per Cron in den
+  öffentlichen Bucket `durchatmen-ansagen`. Details `docs/bereiche/durchatmen.md`.
 
 ### Bausteine im Gespräch
 

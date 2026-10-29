@@ -6,6 +6,26 @@ ist inzwischen anders. Den aktuellen Stand je Bereich beschreibt
 `docs/bereiche/<bereich>.md`, die festen Regeln stehen in `CLAUDE.md`.
 Ältere Pfadangaben meinen die Orte vor dem Umzug (siehe CLAUDE.md, „Ordner“).
 
+## Durchatmen verständlich, keine Roboterstimme (A-061, v0.164.0)
+
+- SOFORT-Fix von Felix (Tafel 146): Jede der 12 Übungen erklärt sich vorher
+  auf einem hellen Start-Bildschirm (Symbol, „AUGEN · 1 MIN“, Titel, 3
+  nummerierte Schritte, „Wofür?“, Stimme + Klang / Nur Klang / Still,
+  „Los“). Kein Sofort-Start mehr; erst nach „Los“ und 3 s dunkel (auch die
+  Handy-Pause). Neue Felder `vorher`, `wofuer`, `ende` in
+  `content/durchatmen/uebungen.json`.
+- Dunkel: Ring mit Symbol und Restzeit, darunter die Anweisung groß (26 px,
+  weich überblendet) und klein „Mia sagt dir, wenn die Minute um ist.“.
+  Ende hell mit Satz je Übung („Eine Minute nur für deine Augen.“).
+- Keine Roboterstimme: Durchatmen spricht nie mit der Stimme des Handys
+  (`speak` mit `ersatz: false`); ohne Datei nur Klang.
+- Mias Ansagen entstehen von selbst: `/audio/durchatmen/<id>.mp3`
+  (Weiterleitung auf `/api/durchatmen/ansage/[datei]`) liefert aus dem Bucket
+  oder erzeugt einmal (nur IDs aus `ansagen.json`, eine Erzeugung je Datei
+  gleichzeitig); nachts Vercel Cron für alle fehlenden. Knopf „Ansagen
+  erzeugen“, POST-Route und `scripts/ansagen-erzeugen.mjs` entfallen, unter
+  „Für Entwickler“ steht nur noch der Stand (`AnsagenStand`).
+
 ## Jetzt-Karte nur mit Nutzen für heute, Wochenende freitags (A-054, v0.163.0)
 
 - Auftrag A-054 (SOFORT, 29.10., ohne Tafel): Die Jetzt-Karte zeigt nur noch,

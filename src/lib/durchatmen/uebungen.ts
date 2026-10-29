@@ -28,6 +28,12 @@ export type Uebung = {
   schritte: Schritt[];
   /** Fokus: so viele Sekunden Atmen am Ende (der Rest ist das kurze Gespräch) */
   atmen?: number;
+  /** Start-Bildschirm (Tafel 146): genau 3 kurze Schritte, Du-Form */
+  vorher: string[];
+  /** „Wofür?“ – ein Satz, ohne Gesundheitsversprechen */
+  wofuer: string;
+  /** Satz unter „Gut gemacht.“ („Eine Minute nur für deine Augen.“) */
+  ende: string;
   /** IDs der Ansagen dieser Übung (höchstens 6) */
   ansagen: string[];
   animation: Animation;
@@ -62,11 +68,14 @@ export function restText(restMs: number): string {
   return `Noch ${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 }
 
-/** Ende: „Zwei Minuten nur für dich.“ – passend zur Dauer, ohne Zähler */
-export function endeSatz(sekunden: number): string {
-  if (sekunden < 60) return "Eine halbe Minute nur für dich.";
-  if (sekunden < 120) return "Eine Minute nur für dich.";
-  return "Zwei Minuten nur für dich.";
+/** Kopfzeile auf dem Start-Bildschirm: „AUGEN · 1 MIN“ */
+export const startZeile = (u: Uebung) => `${SORTEN.find((x) => x.id === u.sorte)!.label} · ${dauerText(u.dauer)}`.toUpperCase();
+
+/** „… sagt dir, wenn die Minute um ist.“ – passend zur gezählten Dauer */
+export function wennUm(sekunden: number): string {
+  if (sekunden < 60) return "die halbe Minute";
+  if (sekunden < 120) return "die Minute";
+  return "die zwei Minuten";
 }
 
 /** Lieblinge oben, sonst feste Reihenfolge (wie in der Datei) */

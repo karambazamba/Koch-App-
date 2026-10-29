@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "hinweis": "12 feste Übungen fürs Durchatmen (A-051, Tafel 138). Dauer in Sekunden. takt = Atem-Phasen (Sekunden, wiederholt bis zum Ende), schritte = Ansagen ab Sekunde. Texte der Ansagen stehen in ansagen.json.",
+  "hinweis": "12 feste Übungen fürs Durchatmen (A-051, Tafel 138). Dauer in Sekunden. takt = Atem-Phasen (Sekunden, wiederholt bis zum Ende), schritte = Ansagen ab Sekunde. Texte der Ansagen stehen in ansagen.json. vorher = 3 Schritte auf dem Start-Bildschirm, wofuer = ein Satz „Wofür?“, ende = Satz unter „Gut gemacht.“ (Tafel 146).",
   "uebungen": [
     {
       "id": "kaestchen",
@@ -10,14 +10,39 @@
       "kurz": "4 ein, 4 halten, 4 aus",
       "hilfe": "Folge dem Punkt. Jede Seite 4 Sekunden.",
       "takt": [
-        { "phase": "ein", "s": 4 },
-        { "phase": "halten", "s": 4 },
-        { "phase": "aus", "s": 4 },
-        { "phase": "halten", "s": 4 }
+        {
+          "phase": "ein",
+          "s": 4
+        },
+        {
+          "phase": "halten",
+          "s": 4
+        },
+        {
+          "phase": "aus",
+          "s": 4
+        },
+        {
+          "phase": "halten",
+          "s": 4
+        }
       ],
       "schritte": [],
-      "ansagen": ["start", "ein", "halten", "aus", "ende"],
-      "animation": "kaestchen"
+      "ansagen": [
+        "start",
+        "ein",
+        "halten",
+        "aus",
+        "ende"
+      ],
+      "animation": "kaestchen",
+      "vorher": [
+        "Setz dich bequem hin.",
+        "Folge dem Punkt: 4 ein, 4 halten, 4 aus, 4 halten.",
+        "Bleib einfach im Takt, bis der Gong kommt."
+      ],
+      "wofuer": "Bringt Ruhe in den Atem, wenn es gerade viel ist.",
+      "ende": "Zwei Minuten nur für dich."
     },
     {
       "id": "lang-aus",
@@ -27,12 +52,30 @@
       "kurz": "4 ein, 6 aus",
       "hilfe": "Folge dem Kreis. Aus dauert länger als ein.",
       "takt": [
-        { "phase": "ein", "s": 4 },
-        { "phase": "aus", "s": 6 }
+        {
+          "phase": "ein",
+          "s": 4
+        },
+        {
+          "phase": "aus",
+          "s": 6
+        }
       ],
       "schritte": [],
-      "ansagen": ["start", "ein", "aus", "ende"],
-      "animation": "kreis"
+      "ansagen": [
+        "start",
+        "ein",
+        "aus",
+        "ende"
+      ],
+      "animation": "kreis",
+      "vorher": [
+        "Setz dich bequem hin.",
+        "Atme 4 Sekunden ein.",
+        "Atme 6 Sekunden lang aus."
+      ],
+      "wofuer": "Langes Ausatmen hilft beim Runterkommen.",
+      "ende": "Eine Minute nur für dich."
     },
     {
       "id": "seufzer",
@@ -42,13 +85,35 @@
       "kurz": "2× kurz ein, 1× lang aus",
       "hilfe": "Zweimal kurz ein, einmal lang aus.",
       "takt": [
-        { "phase": "ein", "s": 2 },
-        { "phase": "nochmal-ein", "s": 1 },
-        { "phase": "lang-aus", "s": 7 }
+        {
+          "phase": "ein",
+          "s": 2
+        },
+        {
+          "phase": "nochmal-ein",
+          "s": 1
+        },
+        {
+          "phase": "lang-aus",
+          "s": 7
+        }
       ],
       "schritte": [],
-      "ansagen": ["start", "ein", "nochmal-ein", "lang-aus", "ende"],
-      "animation": "kreis"
+      "ansagen": [
+        "start",
+        "ein",
+        "nochmal-ein",
+        "lang-aus",
+        "ende"
+      ],
+      "animation": "kreis",
+      "vorher": [
+        "Atme kurz durch die Nase ein.",
+        "Gleich noch einmal kurz nachatmen.",
+        "Dann ganz lang durch den Mund aus."
+      ],
+      "wofuer": "Ein paar tiefe Seufzer lösen die Anspannung.",
+      "ende": "Eine halbe Minute nur für dich."
     },
     {
       "id": "handy-pause",
@@ -59,12 +124,33 @@
       "hilfe": "Aus dem Fenster, ans andere Ende vom Raum. Handy einfach hinlegen. Ich sag Bescheid.",
       "takt": [],
       "schritte": [
-        { "ab": 0, "ansage": "ferne" },
-        { "ab": 30, "ansage": "noch-bisschen" },
-        { "ab": 55, "ansage": "zurueck" }
+        {
+          "ab": 0,
+          "ansage": "ferne"
+        },
+        {
+          "ab": 30,
+          "ansage": "noch-bisschen"
+        },
+        {
+          "ab": 55,
+          "ansage": "zurueck"
+        }
       ],
-      "ansagen": ["ferne", "noch-bisschen", "zurueck", "ende"],
-      "animation": "ring"
+      "ansagen": [
+        "ferne",
+        "noch-bisschen",
+        "zurueck",
+        "ende"
+      ],
+      "animation": "ring",
+      "vorher": [
+        "Leg das Handy hin.",
+        "Schau aus dem Fenster, so weit weg wie es geht.",
+        "Atme ruhig. Ein Gong holt dich zurück."
+      ],
+      "wofuer": "Entspannt die Augen nach viel Bildschirm.",
+      "ende": "Eine Minute nur für deine Augen."
     },
     {
       "id": "augen-kreisen",
@@ -75,12 +161,34 @@
       "hilfe": "Kopf bleibt ruhig, nur die Augen wandern.",
       "takt": [],
       "schritte": [
-        { "ab": 0, "ansage": "kreis-rechts" },
-        { "ab": 20, "ansage": "kreis-links" },
-        { "ab": 40, "ansage": "blinzeln" }
+        {
+          "ab": 0,
+          "ansage": "kreis-rechts"
+        },
+        {
+          "ab": 20,
+          "ansage": "kreis-links"
+        },
+        {
+          "ab": 40,
+          "ansage": "blinzeln"
+        }
       ],
-      "ansagen": ["start", "kreis-rechts", "kreis-links", "blinzeln", "ende"],
-      "animation": "symbol"
+      "ansagen": [
+        "start",
+        "kreis-rechts",
+        "kreis-links",
+        "blinzeln",
+        "ende"
+      ],
+      "animation": "symbol",
+      "vorher": [
+        "Kopf bleibt ruhig.",
+        "Lass die Augen langsam im Kreis wandern.",
+        "Dann andersrum und kurz blinzeln."
+      ],
+      "wofuer": "Lockert die Augen nach langem Starren.",
+      "ende": "Eine Minute nur für deine Augen."
     },
     {
       "id": "haende-augen",
@@ -91,13 +199,38 @@
       "hilfe": "Nicht drücken, nur auflegen.",
       "takt": [],
       "schritte": [
-        { "ab": 0, "ansage": "haende-reiben" },
-        { "ab": 12, "ansage": "haende-auf" },
-        { "ab": 24, "ansage": "dunkel" },
-        { "ab": 50, "ansage": "augen-auf" }
+        {
+          "ab": 0,
+          "ansage": "haende-reiben"
+        },
+        {
+          "ab": 12,
+          "ansage": "haende-auf"
+        },
+        {
+          "ab": 24,
+          "ansage": "dunkel"
+        },
+        {
+          "ab": 50,
+          "ansage": "augen-auf"
+        }
       ],
-      "ansagen": ["haende-reiben", "haende-auf", "dunkel", "augen-auf", "ende"],
-      "animation": "symbol"
+      "ansagen": [
+        "haende-reiben",
+        "haende-auf",
+        "dunkel",
+        "augen-auf",
+        "ende"
+      ],
+      "animation": "symbol",
+      "vorher": [
+        "Reib die Hände warm.",
+        "Leg sie sanft über die Augen.",
+        "Ruh dich im Dunkeln aus."
+      ],
+      "wofuer": "Gibt den Augen eine kleine Pause vom Licht.",
+      "ende": "Eine Minute nur für deine Augen."
     },
     {
       "id": "schultern",
@@ -108,14 +241,43 @@
       "hilfe": "Langsam. Nichts muss knacken.",
       "takt": [],
       "schritte": [
-        { "ab": 0, "ansage": "schultern-hoch" },
-        { "ab": 8, "ansage": "fallen" },
-        { "ab": 16, "ansage": "kreisen-hinten" },
-        { "ab": 32, "ansage": "kreisen-vorn" },
-        { "ab": 44, "ansage": "nacken" }
+        {
+          "ab": 0,
+          "ansage": "schultern-hoch"
+        },
+        {
+          "ab": 8,
+          "ansage": "fallen"
+        },
+        {
+          "ab": 16,
+          "ansage": "kreisen-hinten"
+        },
+        {
+          "ab": 32,
+          "ansage": "kreisen-vorn"
+        },
+        {
+          "ab": 44,
+          "ansage": "nacken"
+        }
       ],
-      "ansagen": ["schultern-hoch", "fallen", "kreisen-hinten", "kreisen-vorn", "nacken", "ende"],
-      "animation": "symbol"
+      "ansagen": [
+        "schultern-hoch",
+        "fallen",
+        "kreisen-hinten",
+        "kreisen-vorn",
+        "nacken",
+        "ende"
+      ],
+      "animation": "symbol",
+      "vorher": [
+        "Zieh die Schultern hoch zu den Ohren.",
+        "Lass sie fallen und kreise sie langsam.",
+        "Neig den Kopf sanft zur Seite."
+      ],
+      "wofuer": "Lockert Nacken und Schultern nach langem Sitzen.",
+      "ende": "Eine Minute nur für deine Schultern."
     },
     {
       "id": "strecken",
@@ -126,14 +288,43 @@
       "hilfe": "Geht auch im Sitzen.",
       "takt": [],
       "schritte": [
-        { "ab": 0, "ansage": "aufstehen" },
-        { "ab": 8, "ansage": "arme-hoch" },
-        { "ab": 24, "ansage": "seite-links" },
-        { "ab": 36, "ansage": "seite-rechts" },
-        { "ab": 48, "ansage": "schuetteln" }
+        {
+          "ab": 0,
+          "ansage": "aufstehen"
+        },
+        {
+          "ab": 8,
+          "ansage": "arme-hoch"
+        },
+        {
+          "ab": 24,
+          "ansage": "seite-links"
+        },
+        {
+          "ab": 36,
+          "ansage": "seite-rechts"
+        },
+        {
+          "ab": 48,
+          "ansage": "schuetteln"
+        }
       ],
-      "ansagen": ["aufstehen", "arme-hoch", "seite-links", "seite-rechts", "schuetteln", "ende"],
-      "animation": "symbol"
+      "ansagen": [
+        "aufstehen",
+        "arme-hoch",
+        "seite-links",
+        "seite-rechts",
+        "schuetteln",
+        "ende"
+      ],
+      "animation": "symbol",
+      "vorher": [
+        "Steh auf, wenn’s geht.",
+        "Arme hoch, ganz lang machen.",
+        "Zur Seite neigen, dann locker schütteln."
+      ],
+      "wofuer": "Bringt Bewegung rein, wenn du lange gesessen hast.",
+      "ende": "Eine Minute nur für dich."
     },
     {
       "id": "fuenf-dinge",
@@ -144,12 +335,33 @@
       "hilfe": "Sehen, hören, fühlen. Einfach nur bemerken.",
       "takt": [],
       "schritte": [
-        { "ab": 0, "ansage": "sehen" },
-        { "ab": 20, "ansage": "hoeren" },
-        { "ab": 40, "ansage": "fuehlen" }
+        {
+          "ab": 0,
+          "ansage": "sehen"
+        },
+        {
+          "ab": 20,
+          "ansage": "hoeren"
+        },
+        {
+          "ab": 40,
+          "ansage": "fuehlen"
+        }
       ],
-      "ansagen": ["sehen", "hoeren", "fuehlen", "ende"],
-      "animation": "symbol"
+      "ansagen": [
+        "sehen",
+        "hoeren",
+        "fuehlen",
+        "ende"
+      ],
+      "animation": "symbol",
+      "vorher": [
+        "Schau dich um: fünf Dinge, die du siehst.",
+        "Hör hin: vier Dinge, die du hörst.",
+        "Spür nach: drei Dinge, die du fühlst."
+      ],
+      "wofuer": "Holt dich ins Jetzt, wenn die Gedanken rasen.",
+      "ende": "Eine Minute nur für dich."
     },
     {
       "id": "fuesse",
@@ -160,13 +372,38 @@
       "hilfe": "Im Sitzen oder Stehen.",
       "takt": [],
       "schritte": [
-        { "ab": 0, "ansage": "fuesse-boden" },
-        { "ab": 15, "ansage": "getragen" },
-        { "ab": 30, "ansage": "zehen" },
-        { "ab": 45, "ansage": "ruhig-atmen" }
+        {
+          "ab": 0,
+          "ansage": "fuesse-boden"
+        },
+        {
+          "ab": 15,
+          "ansage": "getragen"
+        },
+        {
+          "ab": 30,
+          "ansage": "zehen"
+        },
+        {
+          "ab": 45,
+          "ansage": "ruhig-atmen"
+        }
       ],
-      "ansagen": ["fuesse-boden", "getragen", "zehen", "ruhig-atmen", "ende"],
-      "animation": "symbol"
+      "ansagen": [
+        "fuesse-boden",
+        "getragen",
+        "zehen",
+        "ruhig-atmen",
+        "ende"
+      ],
+      "animation": "symbol",
+      "vorher": [
+        "Stell beide Füße fest auf den Boden.",
+        "Spür, wie der Boden dich trägt.",
+        "Beweg die Zehen und atme ruhig."
+      ],
+      "wofuer": "Bringt dich zurück in den Moment.",
+      "ende": "Eine Minute nur für dich."
     },
     {
       "id": "eine-sache",
@@ -176,13 +413,32 @@
       "kurz": "ich frag, was jetzt zählt",
       "hilfe": "Eine Sache. Die kommt ganz oben in die Aufgaben.",
       "takt": [
-        { "phase": "ein", "s": 4 },
-        { "phase": "aus", "s": 6 }
+        {
+          "phase": "ein",
+          "s": 4
+        },
+        {
+          "phase": "aus",
+          "s": 6
+        }
       ],
       "atmen": 60,
       "schritte": [],
-      "ansagen": ["eine-sache", "dann-los", "ein", "aus", "ende"],
-      "animation": "kreis"
+      "ansagen": [
+        "eine-sache",
+        "dann-los",
+        "ein",
+        "aus",
+        "ende"
+      ],
+      "animation": "kreis",
+      "vorher": [
+        "Sag mir die eine Sache, die jetzt zählt.",
+        "Ich setz sie ganz oben in die Aufgaben.",
+        "Dann eine Minute nur atmen."
+      ],
+      "wofuer": "Hilft, wenn alles gleichzeitig ruft.",
+      "ende": "Zwei Minuten nur für dich."
     },
     {
       "id": "kopf-leeren",
@@ -192,13 +448,32 @@
       "kurz": "alles raus, ich sortiere",
       "hilfe": "Aufgaben, Termine, Notizen. Ich sortiere.",
       "takt": [
-        { "phase": "ein", "s": 4 },
-        { "phase": "aus", "s": 6 }
+        {
+          "phase": "ein",
+          "s": 4
+        },
+        {
+          "phase": "aus",
+          "s": 6
+        }
       ],
       "atmen": 60,
       "schritte": [],
-      "ansagen": ["kopf-leeren", "ruhe", "ein", "aus", "ende"],
-      "animation": "kreis"
+      "ansagen": [
+        "kopf-leeren",
+        "ruhe",
+        "ein",
+        "aus",
+        "ende"
+      ],
+      "animation": "kreis",
+      "vorher": [
+        "Erzähl mir alles, was im Kopf rumschwirrt.",
+        "Ich sortiere in Aufgaben, Termine und Notizen.",
+        "Dann eine Minute Ruhe."
+      ],
+      "wofuer": "Was aufgeschrieben ist, muss der Kopf nicht halten.",
+      "ende": "Zwei Minuten nur für dich."
     }
   ]
 }

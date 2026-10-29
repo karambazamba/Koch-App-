@@ -10,6 +10,10 @@
     {
       "path": "/api/memos/aufraeumen",
       "schedule": "30 3 * * *"
+    },
+    {
+      "path": "/api/durchatmen/ansagen-erzeugen",
+      "schedule": "10 2 * * *"
     }
   ]
 }

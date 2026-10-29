@@ -4,7 +4,8 @@
 // wieder bei dir. Ganz ohne Muss.“, grüne Karte „Passt gerade“ mit EINER Übung
 // und „Los“ (nach Tageszeit, Lieblinge öfter), darunter Sorten-Chips und alle
 // Übungen (Symbol, Titel, Dauer · Kurz, Herz = Liebling, Lieblinge oben).
-// Antippen startet sofort, jede Übung beliebig oft. Paket A öffnet es vom
+// Antippen öffnet den Start-Bildschirm der Übung (erst erklären, dann „Los“,
+// A-061), jede Übung beliebig oft. Paket A öffnet es vom
 // Kreis auf der Startseite: `<DurchatmenFenster onClose={…} />` oder
 // `oeffneDurchatmen()` (lib/durchatmen/oeffnen).
 
@@ -38,7 +39,7 @@ export function SorteSymbol({ sorte, size = 40 }: { sorte: Sorte; size?: number 
   );
 }
 
-/** Im Tipp: Ton und Stimme freischalten (iPhone), dann los */
+/** Im Tipp: Ton und Stimme freischalten (iPhone), dann der Start-Bildschirm der Übung */
 export function losMit(id: string) {
   klangFreischalten();
   unlockSpeech();

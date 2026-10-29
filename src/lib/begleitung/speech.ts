@@ -285,8 +285,9 @@ type SpeakOptions = {
   anhaengen?: boolean;
   /** Erster Ton ist zu hören (Tempo: „erster Satz vorgelesen“) */
   beginnt?: () => void;
-  /** Vorab erzeugte Datei (Durchatmen-Ansagen); fehlt sie, spricht das Handy */
+  /** Vorab erzeugte Datei (Durchatmen-Ansagen); fehlt sie, spricht das Handy – außer mit `ersatz: false` (dann still) */
   datei?: string;
+  ersatz?: boolean;
   /** Handy-Stimme: Tempo-Faktor (1 = wie eingestellt) und Lautstärke 0–1 (Durchatmen: langsamer, leiser) */
   tempo?: number;
   laut?: number;
@@ -353,7 +354,7 @@ function sprich(clean: string, options: SpeakOptions, mine: number): Promise<voi
     const datei = options.datei;
     return ansageAbspielen(datei, options.laut ?? 1, anfang).then((wie) => {
       setTalking(false);
-      return wie === "fehler" ? handy(clean) : undefined;
+      return wie === "fehler" && options.ersatz !== false ? handy(clean) : undefined;
     });
   }
   // Probehören einer Handy-Stimme (`voice`) spricht immer mit dem Handy

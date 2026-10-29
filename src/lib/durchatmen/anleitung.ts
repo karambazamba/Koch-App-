@@ -2,41 +2,33 @@
 
 // Mia leitet an (A-051, Tafel 139): Was bei welchem Ereignis zu hören bzw. zu
 // spüren ist – je nach Art „Stimme + Klang“, „Nur Klang“ oder „Still“.
-// Stimme: feste Ansagen über den einen Weg der Sprachausgabe (`speak`, mit
-// vorab erzeugter Datei, sonst die Stimme des Handys – langsamer, leiser).
+// Stimme: feste Ansagen über den einen Weg der Sprachausgabe (`speak` mit
+// Datei, `ersatz: false`) – nur Mias Stimme, nie die Stimme des Handys (A-061).
 // Atem-Wörter in den ersten beiden Runden, mit „Mia zählt mit“ immer.
 // Klang: Atem-Ton, leises Klingen beim Wechsel, Gong am Ende. Vibration im
 // Takt, wo es geht. Nichts wird aufgenommen.
 
 import { speak, stopSpeaking } from "@/lib/begleitung/speech";
-import { AUDIO_LISTE, DATEI_LAUT, HANDY_LAUT, HANDY_TEMPO, ansageText, liesAudioListe, stimmeWeg, type AudioListe } from "@/lib/durchatmen/ansagen";
+import { DATEI_LAUT, ansageText, ansageUrl } from "@/lib/durchatmen/ansagen";
 import { atemPhase, gong, klingen, tonAus, vibrieren } from "@/lib/durchatmen/klang";
 import type { Ereignis } from "@/lib/durchatmen/ablauf";
 import type { Art } from "@/lib/durchatmen/store";
 import type { Uebung } from "@/lib/durchatmen/uebungen";
 
-let liste: AudioListe | null = null;
-let geladen: Promise<void> | null = null;
-
-/** Liste der erzeugten Ansagen einmal holen (fehlt sie: Handy-Stimme, kein Fehler) */
-export function audioListeLaden(): Promise<void> {
-  geladen ??= fetch(AUDIO_LISTE)
-    .then((r) => (r.ok ? r.json() : null))
-    .then((d) => {
-      liste = liesAudioListe(d);
-    })
-    .catch(() => {
-      liste = null;
-    });
-  return geladen;
-}
-
-/** Eine Ansage sprechen (`anhaengen` = nach dem, was gerade läuft) */
+/** Eine Ansage sprechen (`anhaengen` = nach dem, was gerade läuft) – NUR Mias Stimme; fehlt die Datei: still (es bleibt der Klang) */
 export function sage(id: string, anhaengen = false) {
   const text = ansageText(id);
-  if (!text) return;
-  const weg = stimmeWeg(liste, id);
-  speak(text, { id: "durchatmen", quelle: "handy", tempo: HANDY_TEMPO, laut: weg.art === "datei" ? DATEI_LAUT : HANDY_LAUT, anhaengen, ...(weg.art === "datei" ? { datei: weg.url } : {}) });
+  const url = ansageUrl(id);
+  if (!text || !url) return;
+  speak(text, { id: "durchatmen", datei: url, ersatz: false, laut: DATEI_LAUT, anhaengen });
+}
+
+/** Die Ansagen einer Übung schon vorab holen (Service-Worker merkt sie sich; beim ersten Mal erzeugt der Server sie) */
+export function ansagenVorholen(ids: readonly string[]) {
+  for (const id of new Set(ids)) {
+    const url = ansageUrl(id);
+    if (url) void fetch(url).catch(() => {});
+  }
 }
 
 /** Ereignis der Übung → Stimme, Klang, Vibration */

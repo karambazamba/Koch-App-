@@ -5,8 +5,8 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { Lauf, ereignisse, laufDauer, standBei, type Ereignis } from "@/lib/durchatmen/ablauf";
-import { ANSAGEN, AUDIO_LISTE, HANDY_LAUT, HANDY_TEMPO, ansagenDer, liesAudioListe, stimmeWeg } from "@/lib/durchatmen/ansagen";
-import { SORTEN, UEBUNGEN, dauerText, endeSatz, listenZeile, restText, sortiert, uebungVon } from "@/lib/durchatmen/uebungen";
+import { ANSAGEN, ansageIdAus, ansageUrl, ansagenDer, liesAudioListe, textHash } from "@/lib/durchatmen/ansagen";
+import { SORTEN, UEBUNGEN, dauerText, listenZeile, restText, sortiert, startZeile, uebungVon, wennUm } from "@/lib/durchatmen/uebungen";
 
 /** Übung mit einer künstlichen Uhr in 100-ms-Schritten durchlaufen lassen */
 function durchlaufen(id: string, schritt = 100) {
@@ -122,10 +122,11 @@ describe("Liste, Lieblinge, Ende", () => {
     expect(sortiert([], "augen").map((u) => u.id)).toEqual(["handy-pause", "augen-kreisen", "haende-augen"]);
   });
 
-  it("Ende ohne Zähler, ohne Serie, ohne Feuerwerk – nur Dauer passend", () => {
-    expect(endeSatz(30)).toBe("Eine halbe Minute nur für dich.");
-    expect(endeSatz(60)).toBe("Eine Minute nur für dich.");
-    expect(endeSatz(120)).toBe("Zwei Minuten nur für dich.");
+  it("Ende ohne Zähler, ohne Serie, ohne Feuerwerk – Satz je Übung (Tafel 146)", () => {
+    expect(uebungVon("handy-pause")!.ende).toBe("Eine Minute nur für deine Augen.");
+    expect(uebungVon("seufzer")!.ende).toBe("Eine halbe Minute nur für dich.");
+    expect(uebungVon("kaestchen")!.ende).toBe("Zwei Minuten nur für dich.");
+    for (const u of UEBUNGEN) expect(u.ende, u.id).toMatch(/^(Eine halbe Minute|Eine Minute|Zwei Minuten) nur für (dich|deine \w+)\.$/);
     const ende = readFileSync("src/components/durchatmen/UebungVollbild.tsx", "utf8").slice(readFileSync("src/components/durchatmen/UebungVollbild.tsx", "utf8").indexOf("function Ende("));
     expect(ende).toContain("Gut gemacht.");
     expect(ende).toContain("Noch eine");
@@ -152,33 +153,64 @@ describe("Ansagen und Stimme", () => {
     expect([ANSAGEN.ferne, ANSAGEN["noch-bisschen"], ANSAGEN.zurueck]).toEqual(["Schau so weit weg, wie es geht.", "Noch ein bisschen.", "Komm zurück."]);
   });
 
-  it("ohne Audiodateien wird die Handy-Stimme gewählt – langsamer und leiser", () => {
-    expect(stimmeWeg(null, "ein")).toEqual({ art: "handy", text: "Ein" });
-    // Leeres Manifest (noch nichts erzeugt) = Handy-Stimme
-    const liste = liesAudioListe({ version: 1, stimme: null, dateien: {} });
-    expect(liste).toBeNull();
-    expect(stimmeWeg(liste, "start").art).toBe("handy");
-    expect(AUDIO_LISTE).toBe("/audio/durchatmen/manifest.json");
-    expect(HANDY_TEMPO).toBeLessThan(1);
-    expect(HANDY_LAUT).toBeLessThan(1);
-  });
-
-  it("mit erzeugter Datei: die Datei; kaputte oder fremde Einträge zählen nicht", () => {
-    const liste = liesAudioListe({ version: 1, stimme: "abc", dateien: { ein: "ein.mp3", aus: "../geheim.mp3", quatsch: "q.mp3" } });
-    expect(stimmeWeg(liste, "ein")).toEqual({ art: "datei", url: "/audio/durchatmen/ein.mp3" });
-    expect(stimmeWeg(liste, "aus").art).toBe("handy");
-    expect(liste?.dateien).toEqual({ ein: "ein.mp3", aus: "../geheim.mp3" });
+  it("Adresse je Ansage mit Text-Hash; nur Sätze aus der Datei", () => {
+    expect(ansageUrl("ein")).toBe(`/audio/durchatmen/ein.mp3?t=${textHash("Ein")}`);
+    expect(ansageUrl("quatsch")).toBeNull();
+    expect(textHash("Ein")).not.toBe(textHash("Ein "));
+    expect(ansageIdAus("ferne.mp3")).toBe("ferne");
+    for (const boese of ["quatsch.mp3", "../ein.mp3", "ein.wav", "constructor.mp3", "toString.mp3", "ein"]) expect(ansageIdAus(boese), boese).toBeNull();
+    const liste = liesAudioListe({ version: 1, stimme: "abc", dateien: { ein: "ein-abc.mp3", aus: "../geheim.mp3", quatsch: "q.mp3" } });
+    expect(liste?.dateien).toEqual({ ein: "ein-abc.mp3" });
     expect(liesAudioListe("kaputt")).toBeNull();
   });
 
   it("Sprachausgabe nur über den einen Weg (speak), Klang erst nach einer Berührung", () => {
     const anleitung = readFileSync("src/lib/durchatmen/anleitung.ts", "utf8");
-    expect(anleitung).toMatch(/speak\(text, \{ id: "durchatmen", quelle: "handy"/);
+    expect(anleitung).toMatch(/speak\(text, \{ id: "durchatmen", datei: url, ersatz: false/);
+    expect(anleitung).not.toMatch(/quelle: "handy"|HANDY_/);
+    // speak: fehlt die Datei, spricht das Handy NUR ohne `ersatz: false`
+    expect(readFileSync("src/lib/begleitung/speech.ts", "utf8")).toContain('return wie === "fehler" && options.ersatz !== false ? handy(clean) : undefined;');
     expect(anleitung).not.toMatch(/speechSynthesis|new Audio\(/);
     const klang = readFileSync("src/lib/durchatmen/klang.ts", "utf8");
     expect(klang.match(/new AC\(\)/g)).toHaveLength(1);
     expect(klang).toMatch(/export function klangFreischalten/);
-    // Im Tipp freigeschaltet (Fenster: „Los“ und jede Zeile)
+    // Im Tipp freigeschaltet: „Los“ auf dem Start-Bildschirm (und schon im Fenster)
+    expect(readFileSync("src/components/durchatmen/UebungVollbild.tsx", "utf8")).toMatch(/klangFreischalten\(\);\s*unlockSpeech\(\);\s*setTeil\(fokus \? "gespraech" : "laeuft"\);/);
     expect(readFileSync("src/components/durchatmen/DurchatmenFenster.tsx", "utf8")).toMatch(/klangFreischalten\(\);\s*unlockSpeech\(\);\s*starteDurchatmen\(id\);/);
+  });
+});
+
+describe("Jede Übung erklärt sich vor dem Start (A-061, Tafel 146)", () => {
+  it.each(UEBUNGEN.map((u) => u.id))("%s: 3 kurze Schritte in Du-Form und „Wofür?“", (id) => {
+    const u = uebungVon(id)!;
+    expect(u.vorher).toHaveLength(3);
+    for (const s of u.vorher) {
+      expect(s.length, s).toBeLessThanOrEqual(60);
+      expect(s, s).toMatch(/[.!]$/);
+      expect(s, s).not.toMatch(/\b(Sie|Ihr|Ihnen)\b/);
+    }
+    expect(u.wofuer.length).toBeGreaterThan(10);
+    expect(u.wofuer.length).toBeLessThanOrEqual(70);
+    expect(`${u.vorher.join(" ")} ${u.wofuer}`).not.toMatch(/heilt|gesund|Stress weg|Blutdruck|Diagnose|garantiert|du musst|du solltest|Lola/i);
+  });
+
+  it("Handy-Pause wie auf der Tafel", () => {
+    const u = uebungVon("handy-pause")!;
+    expect(u.vorher).toEqual(["Leg das Handy hin.", "Schau aus dem Fenster, so weit weg wie es geht.", "Atme ruhig. Ein Gong holt dich zurück."]);
+    expect(u.wofuer).toBe("Entspannt die Augen nach viel Bildschirm.");
+    expect(startZeile(u)).toBe("AUGEN · 1 MIN");
+    expect(wennUm(60)).toBe("die Minute");
+    expect(wennUm(30)).toBe("die halbe Minute");
+  });
+
+  it("Start-Bildschirm zeigt Schritte, „Wofür?“, Anleitung und „Los“; dunkel die Anweisung groß unter dem Ring", () => {
+    const code = readFileSync("src/components/durchatmen/UebungVollbild.tsx", "utf8");
+    expect(code).toContain('useState<"start" | "gespraech" | "laeuft" | "ende">("start")');
+    const start = code.slice(code.indexOf("function Start("));
+    for (const t of ["u.vorher.map", "Wofür?", "u.wofuer", "<ArtWahl", "Los", "startZeile(u)"]) expect(start, t).toContain(t);
+    const dunkel = code.slice(code.indexOf("function Dunkel("), code.indexOf("function Start("));
+    expect(dunkel).toMatch(/<RestRing[\s\S]*text-\[26px\] font-extrabold[\s\S]*data-anweisung/);
+    expect(dunkel).toContain("motion-safe:animate-[pager-fade_0.8s_ease-out]");
+    expect(dunkel).toContain("Antippen zum Hellmachen");
   });
 });
