@@ -6,6 +6,19 @@ ist inzwischen anders. Den aktuellen Stand je Bereich beschreibt
 `docs/bereiche/<bereich>.md`, die festen Regeln stehen in `CLAUDE.md`.
 Ältere Pfadangaben meinen die Orte vor dem Umzug (siehe CLAUDE.md, „Ordner“).
 
+## Fenster: Schließen trifft nie ein neues Öffnen (v0.168.0)
+
+- Offener Punkt: Fenster mit ✕ schließen und binnen ~300 ms wieder öffnen →
+  ging gleich wieder zu. Ursache in `core/fensterVerlauf.ts`: Das eigene
+  Zurück (Eintrag des geschlossenen Fensters entfernen) kam als `popstate`
+  manchmal erst, nachdem das neue Fenster seinen Eintrag angelegt hatte
+  (Warten nach 1 s vorbei, oder der Weg „Auswahl geht selbst zurück“ ganz
+  ohne Warten), und das neue Fenster hielt es für „Zurück“.
+- Jetzt wird jedes eigene Zurück vorgemerkt (3 s Frist); dessen `popstate`
+  schließt kein Fenster. Auch der Weg „Auswahl geht selbst zurück“ läuft über
+  das Entfernen mit Warten. Tests: ✕ und wieder öffnen nach 0–600 ms,
+  spätes `popstate`, Auswahl mit eigenem Zurück.
+
 ## „Was los?“ (A-055, v0.167.0)
 
 - Auftrag A-055 (Tafel 142, Wortlaut `docs/auftraege/A-055-was-los.md`):

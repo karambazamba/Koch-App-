@@ -17,10 +17,17 @@
 // dessen `popstate` navigieren (A-059). Sonst kam beim Kaltstart das
 // verspätete Entfernen nach 300 ms der noch ladenden Navigation zuvor, das
 // `popstate` brach sie ab und man blieb beim ersten Tippen auf der Startseite.
+//
+// Grundregel: Das Schließen trifft nie ein neues Öffnen. Jedes eigene Zurück
+// (Eintrag eines geschlossenen Fensters entfernen) wird vorgemerkt; dessen
+// `popstate` schließt kein Fenster, auch wenn es später als erwartet kommt
+// oder das neue Fenster seinen Eintrag schon angelegt hat.
 
 const REMOVE_AFTER_MS = 300;
 /** Kommt nach dem eigenen Zurück kein `popstate` (kein Verlauf), trotzdem öffnen */
 const WAIT_MAX_MS = 1000;
+/** So lange gilt ein eigenes Zurück als „unterwegs“ (sein `popstate` schließt nichts) */
+const OWN_POP_MS = 3000;
 
 type Hist = Pick<History, "state" | "back" | "pushState" | "replaceState">;
 export type FensterWin = {
@@ -43,6 +50,10 @@ export function fensterVerlauf(win: FensterWin) {
   let lastNavAt = -1;
   /** Eigenes Zurück (Eintrag entfernen) unterwegs: neue Fenster warten auf dessen `popstate` */
   let removing: { waiting: Set<() => void>; timer: unknown } | null = null;
+  /** Eigene Zurück, deren `popstate` noch aussteht (Frist je Zurück) */
+  let ownPops: number[] = [];
+  /** Das gerade ausgelieferte `popstate` kommt vom eigenen Zurück */
+  let ownPop = false;
 
   const flush = () => {
     if (!removing) return;
@@ -52,7 +63,13 @@ export function fensterVerlauf(win: FensterWin) {
     for (const start of waiting) start();
   };
   // Vor den Fenstern angemeldet – läuft also vor deren eigenem `popstate`
-  win.addEventListener("popstate", flush);
+  win.addEventListener("popstate", () => {
+    const t = win.now();
+    ownPops = ownPops.filter((bis) => bis > t);
+    // Gilt für dieses eine `popstate` (die Fenster hören es gleich danach)
+    ownPop = ownPops.shift() !== undefined;
+    flush();
+  });
 
   const openIds = (): number[] => {
     const s = win.history.state as { sheets?: unknown } | null;
@@ -61,7 +78,8 @@ export function fensterVerlauf(win: FensterWin) {
 
   /** Eigenen Eintrag entfernen; bis das `popstate` da ist, warten neue Fenster */
   const removeEntry = () => {
-    removing = { waiting: new Set(), timer: win.setTimeout(flush, WAIT_MAX_MS) };
+    removing ??= { waiting: new Set(), timer: win.setTimeout(flush, WAIT_MAX_MS) };
+    ownPops.push(win.now() + OWN_POP_MS);
     win.history.back();
   };
 
@@ -102,7 +120,7 @@ export function fensterVerlauf(win: FensterWin) {
     const href = win.location.href;
     let closedByBack = false;
     const onPop = () => {
-      if (openIds().includes(id)) return;
+      if (ownPop || openIds().includes(id)) return;
       closedByBack = true;
       onClose();
     };
@@ -117,7 +135,7 @@ export function fensterVerlauf(win: FensterWin) {
       if (!isTop()) return;
       // Die Auswahl geht selbst eine Ebene zurück: erst dieses Fenster, dann die Seite
       if (win.now() - lastBackAt < 100) {
-        win.history.back();
+        removeEntry();
         return;
       }
       const closedAt = win.now();
