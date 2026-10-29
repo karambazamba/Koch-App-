@@ -15,7 +15,7 @@ export function NotizVorschau({ zeile, gross = false }: { zeile: Pick<NotizZeile
     <span className={`notiz-ausblenden min-w-0 flex-1 break-words ${gross ? "text-[14px] font-bold" : "text-[13.5px]"}`} data-ausblenden data-notiz-vorschau>
       {zeile.pinned && <Pin className="mr-1 inline h-3 w-3 -translate-y-px text-tile-accent" strokeWidth={2.25} aria-hidden />}
       <span className={`kachel-frei ${gross ? "" : "font-semibold"}`}>{v.titel}</span>
-      {v.rest && <span className={`kachel-frei text-muted ${gross ? "font-semibold" : ""}`}> · {v.rest}</span>}
+      {v.rest && <span className={`kachel-frei text-muted ${gross ? "font-semibold" : ""}`}>{" ·\u00a0"}{v.rest}</span>}
     </span>
   );
 }

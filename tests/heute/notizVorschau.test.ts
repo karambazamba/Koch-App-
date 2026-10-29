@@ -38,6 +38,8 @@ describe("Notizen-Vorschau (A-060)", () => {
     expect(vorschau).toMatch(/break-words/);
     expect(vorschau).toMatch(/data-ausblenden/);
     expect(vorschau).not.toMatch(/truncate|data-freitext/);
+    // „·“ hängt am Anfang statt allein am Zeilenende (sonst bliebe ein einsamer Punkt stehen)
+    expect(vorschau).toContain('{" ·\\u00a0"}');
   });
 
   it("leer: „Schnell notieren …“ in Grau (XS und S)", () => {
