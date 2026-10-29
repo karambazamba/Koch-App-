@@ -33,10 +33,16 @@ export function useSchriftEinpassen(box: RefObject<HTMLElement | null>, text: Re
     const b = box.current;
     const t = text.current;
     if (!b || !t) return;
+    const seite = b.closest("section");
     return beobachten(b, () => {
-      for (const px of stufen) {
-        t.style.fontSize = `${px}px`;
-        if (passt(b)) return;
+      // Erst mit dem vollen Hinweis unten; passt die Frage selbst in der
+      // kleinsten Stufe nicht, mit dem kurzen (`data-eng`, z. B. Schätz mal auf dem iPhone SE)
+      for (const eng of [false, true]) {
+        seite?.toggleAttribute("data-eng", eng);
+        for (const px of stufen) {
+          t.style.fontSize = `${px}px`;
+          if (passt(b)) return;
+        }
       }
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- `stufen` ist je Größe fest, `key` deckt den Text ab

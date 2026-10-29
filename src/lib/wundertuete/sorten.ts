@@ -50,6 +50,8 @@ export type SorteMeta = {
   tone: "sport" | "aufgaben" | "notizen" | "timer" | "essen" | "termine" | "pinnwand";
   /** Kurzer Hinweis unten links */
   hinweis: string;
+  /** Noch kürzer, wenn die Frage sonst auf ganz schmalen Handys nicht ganz passt (nur wo der Hinweis lang ist) */
+  hinweisKurz?: string;
   /** tags = 6–17 Uhr, abends = ab 17 Uhr (nur zu zweit/Familie), immer = am belegten Tag */
   zeit: "tags" | "abends" | "immer";
   /** Hat eine Rückseite (Antwort)? Ohne: Antippen = nächste Karte */
@@ -64,7 +66,7 @@ export const SORTEN: SorteMeta[] = [
   { id: "raetsel", name: "Rätselstunde", kurz: "Rätsel", symbol: "puzzle", farbe: "vanille", tone: "notizen", hinweis: "Kinder raten zuerst", zeit: "tags", rueckseite: true, quellePflicht: false },
   { id: "heute100", name: "Heute vor 100 Jahren", kurz: "Damals", symbol: "calendar", farbe: "sand", tone: "timer", hinweis: "Zum Staunen", zeit: "immer", rueckseite: true, quellePflicht: true },
   { id: "tischrunde", name: "Tischrunde", kurz: "Tischrunde", symbol: "message", farbe: "pfirsich", tone: "essen", hinweis: "Abends, zum Essen", zeit: "abends", rueckseite: false, quellePflicht: false },
-  { id: "schaetzmal", name: "Schätz mal!", kurz: "Schätz mal!", symbol: "scale", farbe: "lavendel", tone: "termine", hinweis: "Wer am nächsten dran ist, gewinnt", zeit: "abends", rueckseite: true, quellePflicht: true },
+  { id: "schaetzmal", name: "Schätz mal!", kurz: "Schätz mal!", symbol: "scale", farbe: "lavendel", tone: "termine", hinweis: "Wer am nächsten dran ist, gewinnt", hinweisKurz: "Am nächsten dran gewinnt", zeit: "abends", rueckseite: true, quellePflicht: true },
   { id: "werzuerst", name: "Wer zuerst", kurz: "Wer zuerst", symbol: "dice", farbe: "rose", tone: "pinnwand", hinweis: "Mini-Spiel, 1 Minute", zeit: "abends", rueckseite: false, quellePflicht: false },
 ];
 
@@ -74,6 +76,9 @@ export const sorteMeta = (id: Sorte): SorteMeta => SORTEN.find((s) => s.id === i
 
 /** Hinweis unten links: Angeberwissen abends (allein) nicht „Tagsüber“ */
 export const hinweisFuer = (id: Sorte, abends: boolean) => (id === "angeberwissen" && abends ? "Zum Weitererzählen" : sorteMeta(id).hinweis);
+
+/** Kurzform des Hinweises (gleich dem Hinweis, wo es keine gibt) */
+export const hinweisKurzFuer = (id: Sorte, abends: boolean) => sorteMeta(id).hinweisKurz ?? hinweisFuer(id, abends);
 
 /** Antwort in Teile: fett ist, was in **…** steht */
 export function antwortTeile(text: string): { text: string; fett: boolean }[] {

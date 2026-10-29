@@ -88,7 +88,10 @@ Wissen, Platt, Rätsel (Angeberwissen dann mit Hinweis „Zum Weitererzählen“
 - S und M: dieselbe Karte, M nur breiter mit größerer Frage (Stufen
   `FRAGE_STUFEN`/`ANTWORT_STUFEN`: S 17 → 12 px, M 21 → 14 px; Antwort
   S 14,5 → 11,5 px, M 17 → 13 px). Kopf: Name → Kurzform (Wissen, Platt,
-  Rätsel, Damals, Tischrunde, Schätz mal!, Wer zuerst) → nur Symbol. Keine
+  Rätsel, Damals, Tischrunde, Schätz mal!, Wer zuerst) → nur Symbol. Passt
+  die Frage selbst in der kleinsten Stufe nicht, kommt unten der kurze
+  Hinweis (`hinweisKurz`, `data-eng`; Schätz mal: „Am nächsten dran
+  gewinnt“). Beide Seiten liegen genau übereinander in der Kachel. Keine
   Farbwahl im Bearbeiten (die Farbe kommt mit der Sorte). XS gibt es nicht.
 - Wasserzeichen (A-036): Geschenk (`Gift`) nur auf der Vorderseite, leise
   (`frei`, die Frage steht ohne weißes Kärtchen), Hinweis mit `kachel-frei`;

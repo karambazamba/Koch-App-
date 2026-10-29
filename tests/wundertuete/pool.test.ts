@@ -4,7 +4,7 @@
 // für 3 Zeilen, genau EIN fettes Wort hinten, groß genug für Wochen.
 import { describe, expect, it } from "vitest";
 import { POOL, eintraegeDer, BEISPIEL_KARTE } from "@/lib/wundertuete/pool";
-import { SORTEN, SORTE_IDS, antwortTeile, ohneFett, sorteMeta, teilText } from "@/lib/wundertuete/sorten";
+import { SORTEN, SORTE_IDS, antwortTeile, hinweisKurzFuer, ohneFett, sorteMeta, teilText } from "@/lib/wundertuete/sorten";
 
 const STOP = new Set("aber also auch dann dass denn eine einem einen einer eines etwa euer eure eurem euren für habt hast hätte ihr immer kann man mehr mit nach nicht noch nur oder schon sehr sich sind über und viele vier fünf drei zwei eins wann warum was welche welcher welches wenn wer wie wieder wird würdet heute heißt dinge sachen nennt aufzählt findet zeigt etwas wort wörter los platt rund prozent jahre jahren kilometer meter stunden tage".split(" "));
 const worte = (t: string) => new Set(ohneFett(t).toLowerCase().replace(/[^a-zäöüß0-9]+/g, " ").split(" ").filter((w) => w.length >= 4 && !STOP.has(w)));
@@ -118,7 +118,10 @@ describe("Pool: Inhalt", () => {
     for (const s of SORTEN) {
       expect(`${s.name}|${s.kurz}|${s.hinweis}`).not.toMatch(/…|\.\.\./);
       expect(s.kurz.length).toBeLessThanOrEqual(s.name.length);
+      expect(hinweisKurzFuer(s.id, false).length).toBeLessThanOrEqual(s.hinweis.length);
     }
+    // Schätz mal auf dem iPhone SE (pruefen v0.156): langer Hinweis ließ der Frage zu wenig Platz
+    expect(hinweisKurzFuer("schaetzmal", false)).toBe("Am nächsten dran gewinnt");
     expect(SORTEN.find((s) => s.id === "platt")!.hinweis).toBe("„Plietsch“ = schlau");
   });
 

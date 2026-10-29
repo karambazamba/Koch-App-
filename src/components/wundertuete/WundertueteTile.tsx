@@ -28,7 +28,7 @@ import { lageAus } from "@/lib/wundertuete/lage";
 import type { Haushalt } from "@/lib/core/haushalt";
 import { useForecast } from "@/lib/wetter/client";
 import { BEISPIEL_KARTE, eintragVon } from "@/lib/wundertuete/pool";
-import { antwortTeile, hinweisFuer, sorteMeta, teilText, type Eintrag, type SorteMeta } from "@/lib/wundertuete/sorten";
+import { antwortTeile, hinweisFuer, hinweisKurzFuer, sorteMeta, teilText, type Eintrag, type SorteMeta } from "@/lib/wundertuete/sorten";
 
 const SYMBOL: Record<SorteMeta["symbol"], LucideIcon> = { lightbulb: Lightbulb, anchor: Anchor, puzzle: Puzzle, calendar: Calendar, message: MessageSquare, scale: Scale, dice: Dice5 };
 
@@ -147,7 +147,12 @@ export function WundertueteTile({ size = "S", today, minutes, haushalt, gericht,
           </Eingepasst>
           <span className="mt-1 flex shrink-0 items-end justify-between gap-2">
             <span className="min-w-0 text-[12px] font-bold leading-tight text-tile-accent">
-              <span className="kachel-frei">{hinweisFuer(karte.sorte, abends && lage.haushalt === "allein")}</span>
+              <span className="kachel-frei" data-hinweis="voll">
+                {hinweisFuer(karte.sorte, abends && lage.haushalt === "allein")}
+              </span>
+              <span className="kachel-frei" data-hinweis="kurz">
+                {hinweisKurzFuer(karte.sorte, abends && lage.haushalt === "allein")}
+              </span>
             </span>
             <Punkte an={demo ? 1 : Math.max(1, stand?.anzeigen ?? 1)} />
           </span>
