@@ -69,11 +69,12 @@ export function WeatherTile({
         <span className={`${LABEL} ${FREI[size]}`}>
           <span className="min-w-0 break-words">{tomorrowLabel(next.date)}</span>
         </span>
-        <span className={`relative mt-auto flex flex-col ${FREI[size]}`}>
+        {/* XS: der Satz steht unter der Szene (volle Breite, eine Zeile); auf ganz schmalen Geräten (Board < 320 px, iPhone SE 1) bricht schon „Morgen · Do“ um – dann lieber ohne Satz als überquellen */}
+        <span className={`relative mt-auto flex flex-col ${size === "XS" ? "" : FREI[size]}`}>
           <span className={`${TEMP[size]} font-extrabold tabular-nums leading-none`}>
             {round(next.max)}°{size !== "XS" && <span className="wx-soft text-[15px] font-semibold"> / {round(next.min)}°</span>}
           </span>
-          <span className="mt-1 text-[13px] font-semibold leading-snug" data-wetter-zeile>
+          <span className={`text-[13px] font-semibold leading-snug ${size === "XS" ? "mt-0.5 @max-[320px]:hidden" : "mt-1"}`} data-wetter-zeile>
             {satz}
           </span>
         </span>

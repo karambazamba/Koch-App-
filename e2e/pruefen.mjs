@@ -6,7 +6,8 @@
 // Tippflächen ≥ 44 px, Eingabefelder ≥ 16 px, keine Konsolen-Fehler, keine
 // 404, keine Platzhalter/englischen Reste/geraden Apostrophe im Text; auf der
 // Startseite das feste Raster (Tafel 118: jede Kachel genau XS/S/M groß, S
-// quadratisch, nichts quillt über die feste Fläche).
+// quadratisch – nur ganz schmal etwas höher, `grundZeile` –, nichts quillt
+// über die feste Fläche).
 // Nur Teile: `npm run pruefen -- --schnell` (nur 15 Pro hell, Browser).
 import { BASE, hello, launch, newPage, seedFamily, setDark, startServer } from "./lib.mjs";
 import { RECIPE_DATA } from "./ablaeufe/essen.mjs";
@@ -124,13 +125,22 @@ function raster() {
   if (!board) return out;
   const width = board.getBoundingClientRect().width;
   const s = (width - 8) / 2;
-  const want = { XS: [s, (s - 8) / 2], S: [s, s], M: [width, s], "S+S": [width, s] };
+  // Grund-Zeile wie `grundZeile` (lib/heute/raster.ts): mindestens 80 px – auf dem iPhone SE 1 (320 px) ist S darum 168 statt 140 hoch
+  const zeile = Math.max(80, (width - 24) / 4);
+  const h = 2 * zeile + 8;
+  const want = { XS: [s, zeile], S: [s, h], M: [width, h], "S+S": [width, h] };
+  // Wasserzeichen (A-036, Tafel 124 A) ragen absichtlich 30 px über den Rand und sind
+  // dort angeschnitten – sie zählen nicht als Inhalt, der überquillt (wie im Durchklick `raster`)
+  const marks = [...document.querySelectorAll(".kachel-wasserzeichen")];
+  for (const m of marks) m.style.display = "none";
   for (const el of board.querySelectorAll(":scope > [data-unit]")) {
     const r = el.getBoundingClientRect();
+    // gemessen werden die Kacheln, der Wetter-Himmel und die Bild-Fläche der Essen-Kachel (die schneidet selbst ab – ein Überquellen fiel sonst nicht auf)
     const [w, h] = want[el.dataset.groesse] ?? [r.width, r.height];
     if (Math.abs(r.width - w) > 1.5 || Math.abs(r.height - h) > 1.5) out.push(`Kachel nicht im Raster: ${el.dataset.unit} ${el.dataset.groesse} ${Math.round(r.width)}×${Math.round(r.height)} statt ${Math.round(w)}×${Math.round(h)}`);
-    for (const sec of el.querySelectorAll("section, a.wx-himmel")) if (!sec.closest("[role=dialog]") && sec.scrollHeight > sec.clientHeight + 2) out.push(`Kachel quillt über: ${el.dataset.unit} (${sec.getAttribute("aria-label") || sec.tagName})`);
+    for (const sec of el.querySelectorAll("section, a.wx-himmel, [data-essen-antippen]")) if (!sec.closest("[role=dialog]") && sec.scrollHeight > sec.clientHeight + 2) out.push(`Kachel quillt über: ${el.dataset.unit} (${sec.getAttribute("aria-label") || sec.tagName})`);
   }
+  for (const m of marks) m.style.display = "";
   return out;
 }
 

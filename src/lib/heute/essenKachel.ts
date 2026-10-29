@@ -172,6 +172,68 @@ export function titelZeilen(title: string, px: number, width: number): number | 
   return lines;
 }
 
+/** Zeilen eines Textes ohne `tracking-tight` (Unterzeilen, 12 px semibold – mit den Breiten von 800 gerechnet, also eher zu breit) */
+function textZeilen(text: string, px: number, width: number): number {
+  const w = (t: string) => [...t].reduce((sum, c) => sum + (ZEICHEN_EM[c] ?? 0.7) * px, 0);
+  let lines = 0;
+  let line = "";
+  for (const t of text.trim().split(/\s+/).filter(Boolean)) {
+    const next = line ? `${line} ${t}` : t;
+    if (line && w(next) <= width) {
+      line = next;
+      continue;
+    }
+    // neue Zeile; ein Wort breiter als die Zeile bricht der Browser selbst um
+    lines += Math.max(1, Math.ceil(w(t) / width));
+    line = w(t) > width ? "" : t;
+  }
+  return lines;
+}
+
+/**
+ * Platz für Statuszeile, Name und Unterzeilen in der kleinsten festen Fläche
+ * (S und M sind mindestens 168 px hoch, `grundZeile`): oben 44 px für „Was
+ * anderes?“, unten 50 px für die Pille „Wochenplan ›“.
+ */
+const TEXT_HOEHE = 168 - 44 - 50;
+const KOPF_H = 13;
+const UNTER_H = 15;
+const LUECKE = 2;
+
+/** Textbreite ab einem Board von 320 px (iPhone mini/SE 2 mit 375 px: S 167,5 breit) */
+const TEXT_BREITE_NORMAL = { S: 143, M: 319 } as const;
+
+/** Unterzeile der Bild-Kachel; `nur` = nur auf normal breiten bzw. nur auf ganz schmalen Geräten (Board unter 320 px) */
+export type Unterzeile = { text: string; nur?: "normal" | "schmal" };
+
+/** Welche der Zeilen passen bei dieser Textbreite (Reihenfolge der Versuche: alle, nur Vorrat, nur Zeit, keine) */
+function passen(zeilen: string[], title: string, size: "S" | "M", kopf: string, width: number): string[] {
+  const px = titelPx(title, size);
+  const titel = (titelZeilen(title, px, width) ?? 3) * px * 1.06;
+  // Statuszeile in Großbuchstaben mit `tracking-wider` (+0,05 em): grob 10 % breiter
+  const kopfZeilen = kopf ? textZeilen(kopf.toUpperCase(), 10.5 * 1.1, width) : 1;
+  const frei = TEXT_HOEHE - kopfZeilen * KOPF_H - LUECKE - titel;
+  const hoehe = (list: string[]) => list.reduce((sum, z) => sum + LUECKE + textZeilen(z, 12, width) * UNTER_H, 0);
+  const versuche = [zeilen, zeilen.slice(-1), zeilen.slice(0, 1), []];
+  return versuche.find((v) => hoehe(v) <= frei) ?? [];
+}
+
+/**
+ * Welche Unterzeilen passen unter den Namen, ohne dass die Kachel überquillt
+ * (Raster, A-045: lieber eine Zeile weniger als abgeschnitten). Gerechnet für
+ * die kleinste Höhe (168 px) mit der Breite des iPhone SE 1. (`schmal`, Board
+ * unter 320 px) und eines 375er-Geräts (`normal`); größere zeigen dieselben
+ * Zeilen. Passen nicht alle, bleibt lieber der Vorrat („auf die Liste: …“,
+ * „alles im Haus“) als die Zeit, sonst die Zeit, sonst keine.
+ */
+export function passendeUnterzeilen(zeilen: string[], title: string, size: "S" | "M", kopf = ""): Unterzeile[] {
+  const normal = passen(zeilen, title, size, kopf, TEXT_BREITE_NORMAL[size]);
+  const schmal = passen(zeilen, title, size, kopf, TITEL_BREITE[size]);
+  return zeilen
+    .filter((z) => normal.includes(z) || schmal.includes(z))
+    .map((text) => (normal.includes(text) && schmal.includes(text) ? { text } : { text, nur: normal.includes(text) ? "normal" : "schmal" }));
+}
+
 /**
  * Schriftgröße des Namens: S = größte, bei der er in höchstens 2 Zeilen passt
  * (sonst 3 Zeilen); M (gleich hoch wie S, aber doppelt breit) = möglichst

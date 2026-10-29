@@ -3692,3 +3692,29 @@ Fehler in `docs/aufraeumen-nachher.md`.
   `wochenplanAngebot`, `ladenMerken`, `einkaufTipps`
   (`e2e/ablaeufe/einkaufnamen.mjs`), „Im Wagen“ in `imWagen`, `einsortieren`,
   `einkauf`.
+
+## Prüfen-Fehler im Raster (v0.155.0)
+- `npm run pruefen` war seit dem festen Raster (v0.153) rot. Ursachen und
+  Abhilfe:
+- **„Kachel quillt über“ bei Termine, Aufgaben, Einkauf:** gemessen wurde das
+  Wasserzeichen (A-036) mit – es ragt absichtlich 30 px gedreht über den Rand
+  und zählt in `scrollHeight`. `pruefen` blendet es beim Messen aus wie der
+  Durchklick `raster` (Prüfung korrigiert, nicht abgeschwächt).
+- **Dafür neu gemessen: die Bild-Fläche der Essen-Kachel** (`[data-essen-
+  antippen]`, schneidet selbst ab und fiel deshalb nie auf). Sie quoll
+  wirklich über (zweizeiliger Name + „25 Min“ + „auf die Liste: Gyrosfleisch“,
+  auch „Pasta mit Tomaten & Burrata“ im Beispiel-Tag). Jetzt zeigt sie nur so
+  viele Unterzeilen, wie sicher in die kleinste Fläche passen
+  (`passendeUnterzeilen`, gerechnet für das SE 1 und 375er-Geräte, auf dem
+  SE 1 per `@max-[320px]` ggf. eine weniger; lieber Vorrat als Zeit).
+- **„Kleine Tippfläche ‚WLAN‘“:** die EINE Zeile in Notizen-XS (und Im Haus
+  XS) war 19 px hoch; jetzt 30 px wie jede ganz tippbare Listenzeile.
+- **iPhone SE 1 (320 px):** `pruefen` kannte die Mindest-Zeile (80 px,
+  `grundZeile`) nicht und meldete jede Kachel „nicht im Raster“ – jetzt wie
+  im Durchklick. Echt waren: Einkauf-Kopf „+2“ rutschte unter den Plus
+  (Symbol ganz schmal aus, „+N“ mit `ml-auto`), Wetter-XS „Morgen · Do“
+  quoll abends über (Satz unter der Szene in voller Breite, ganz schmal ohne
+  Satz).
+- Tests: `essenKachel.test.ts` (Unterzeilen je Breite); Durchklick
+  `rasterHoehen` (Zeilen ≥ 30 px, kein Knopf unter einem anderen, Essen-Fläche),
+  `standardJeHaushalt` (Beispiel-Tag auch auf 320 px), neu `wetterMorgenXS`.

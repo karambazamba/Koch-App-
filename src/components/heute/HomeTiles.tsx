@@ -55,8 +55,11 @@ import { leuchtSchluessel } from "@/lib/heute/aufleuchten";
 const HALF = `${TILE} flex h-full flex-col overflow-hidden p-3`;
 /** XS: Kopf oben, EINE Zeile unten */
 const XS_BOX = `${TILE} flex h-full flex-col justify-between overflow-hidden px-3 py-2.5`;
-/** XS: EINE Zeile; frei Eingegebenes darin kürzt sich selbst (`truncate` + `data-freitext`), alles andere ist so kurz, dass es passt (A-045) */
-const XS_LINE = "block min-w-0 overflow-hidden whitespace-nowrap text-[15px] font-bold leading-tight";
+/**
+ * XS: EINE Zeile; frei Eingegebenes darin kürzt sich selbst (`truncate` + `data-freitext`), alles andere ist so kurz, dass es passt (A-045).
+ * Die Zeile ist ganz tippbar (`data-zeile`) und darum mindestens 30 px hoch – 26 px Kopf + 30 px Zeile passen auch auf dem iPhone SE in XS.
+ */
+const XS_LINE = "flex min-h-[30px] min-w-0 items-center overflow-hidden whitespace-nowrap text-[15px] font-bold leading-tight";
 const HALF_LABEL = `flex min-w-0 items-center gap-1.5 ${TILE_LABEL}`;
 
 /**
@@ -207,19 +210,19 @@ function ShopRows({ rows, ohne, mine, products, demo = false }: TileRows & { min
   );
 }
 
-/** Kopf der Einkauf-Kachel „EINKAUF“ (26 px) – kurz, damit er auch halb breit nie abgeschnitten wird; „+N“ = weitere Läden; die übrige Fläche öffnet die ganze Liste */
+/** Kopf der Einkauf-Kachel „EINKAUF“ (26 px) – kurz, damit er auch halb breit nie abgeschnitten wird; „+N“ = weitere Läden, bleibt links vom Plus (`mr-8`); die übrige Fläche öffnet die ganze Liste */
 function ShoppingHead({ more }: { more: number }) {
   return (
     <div className="mr-8 flex h-[26px] items-center gap-2">
       <Link href="/einkaufsliste" className="hit flex h-[26px] items-center" aria-label="Einkaufsliste öffnen">
         <span className={HALF_LABEL}>
-          <ShoppingCart className="h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden />
+          {/* Ganz schmal (Board unter 320 px): ohne Symbol – sonst schiebt „+N“ sich unter den Plus-Knopf */}
+          <ShoppingCart className="h-3.5 w-3.5 shrink-0 @max-[320px]:hidden" strokeWidth={2} aria-hidden />
           <span className="whitespace-nowrap">Einkauf</span>
         </span>
       </Link>
-      <span className="flex-1" />
       {more > 0 && (
-        <Link href="/einkaufsliste" className="hit flex h-[26px] items-center text-[12.5px] font-bold text-tile-accent" data-weitere>
+        <Link href="/einkaufsliste" className="hit ml-auto flex h-[26px] shrink-0 items-center text-[12.5px] font-bold text-tile-accent" data-weitere>
           +{more}
         </Link>
       )}
@@ -321,12 +324,12 @@ export function NotesTile({ size = "XS", demo = false }: { size?: TileSize; demo
       <section className={XS_BOX} aria-label={showDemo ? "Notizen · Beispiel" : "Notizen"} data-notizen-groesse={size} data-groesse={size}>
         <KleinKopf icon={StickyNote} label="Notizen" href="/notizen" knopf={pen} />
         {top ? (
-          <Link href={href(top.id)} className={`${XS_LINE} flex items-center gap-1`} data-zeile data-notiz-zeile>
+          <Link href={href(top.id)} className={`${XS_LINE} gap-1`} data-zeile data-notiz-zeile>
             {top.pinned && <Pin className="h-3 w-3 shrink-0 text-tile-accent" strokeWidth={2.25} aria-hidden />}
             <span className="truncate" data-freitext>{top.title}</span>
           </Link>
         ) : (
-          <button type="button" onClick={() => openQuick({ kind: "notiz" })} className={`${XS_LINE} flex items-center gap-1 text-left text-muted`} data-zeile>
+          <button type="button" onClick={() => openQuick({ kind: "notiz" })} className={`${XS_LINE} gap-1 text-left text-muted`} data-zeile>
             <PenLine className="h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden />
             <span className="whitespace-nowrap">Schnell notieren.</span>
           </button>
@@ -387,7 +390,7 @@ export function PantryTile({ size = "XS", demo = false }: { size?: TileSize; dem
     return (
       <section className={XS_BOX} aria-label={showDemo ? "Im Haus · Beispiel" : "Im Haus"} data-groesse={size}>
         <KleinKopf icon={Refrigerator} label="Im Haus" href="/vorrat" />
-        <Link href="/vorrat" className={`block min-w-0 overflow-hidden text-[15px] font-bold leading-tight ${name ? "flex flex-wrap items-center gap-x-1.5" : "text-muted"}`} data-zeile>
+        <Link href="/vorrat" className={`flex min-h-[30px] min-w-0 items-center overflow-hidden text-[15px] font-bold leading-tight ${name ? "flex-wrap gap-x-1.5" : "text-muted"}`} data-zeile>
           {name ? (
             <>
               <span className="min-w-0 break-words">{name}</span>
