@@ -33,6 +33,7 @@ import { tipsShown, useTipStore } from "@/lib/essen/healthTips";
 import type { useWeekShoppingList } from "@/lib/einkauf/useWeekShoppingList";
 import { DEFAULT_SHOPPING_DAY, planningWeekStart, toIsoDate, weekStartFor } from "@/lib/essen/weekPlan";
 import { unlockTips } from "@/lib/tipps/client";
+import { wasLosFreischalten } from "@/lib/region/client";
 import { sofortErkennen, type Sofort } from "@/lib/begleitung/sofort/erkennen";
 import { SOFORT_OK } from "@/lib/begleitung/sofortOk";
 import { ohneFuellwoerter } from "@/lib/begleitung/fuellwoerter";
@@ -104,13 +105,14 @@ export function useAskAssistant({ data, today, ready, chat, setChat, setInput, s
       const kurz = shortDoneReply(result.reply, karten.length);
       result = { ...result, ops: [], reply: karten.length <= 1 && committed.notes.length ? `${kurz}\n${committed.notes.join(" ")}` : kurz };
     }
-    const tipsWhere = result.tips?.length ? unlockTips() : null;
+    const tipsWhere = result.tips?.length ? unlockTips() : result.waslos?.length ? wasLosFreischalten() : null;
     const turn: ChatTurnView = {
       role: "assistant",
       text: tipsWhere ? `${result.reply}\n${tipsWhere}` : result.reply,
       ...(result.mail ? { mail: result.mail, send: `${result.reply}\n\n${draftForHistory(result.mail)}` } : {}),
       ...(result.chips?.length ? { chips: result.chips } : {}),
       ...(result.tips?.length ? { tips: result.tips } : {}),
+      ...(result.waslos?.length ? { waslos: result.waslos } : {}),
       ...(done ? { undo: done, quick: true } : {}),
       ...(karten.length ? { ergebnisse: karten, send: `${result.reply} (${ergebnisSummary(karten)})` } : {}),
     };

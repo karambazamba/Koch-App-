@@ -14,7 +14,7 @@ import { createMockModel } from "@/lib/begleitung/mock";
 import { PRUEFSAETZE, type PruefSatz } from "@/lib/begleitung/pruefstand/saetze";
 import { bewerte, quote, type PruefErgebnis } from "@/lib/begleitung/pruefstand/bewerten";
 import { bewerteTon, TON_SAETZE, type TonSatz } from "@/lib/begleitung/pruefstand/ton";
-import { PRUEF_HEUTE, PRUEF_UHR, pruefHaushalt, pruefWetter } from "@/lib/begleitung/pruefstand/haushalt";
+import { PRUEF_HEUTE, PRUEF_UHR, pruefHaushalt, pruefVeranstaltungen, pruefWetter } from "@/lib/begleitung/pruefstand/haushalt";
 
 export const maxDuration = 300;
 
@@ -49,7 +49,7 @@ export async function POST(request: Request) {
     try {
       const reply = await runAssistant(
         // Je Satz die passende Ausgangslage, Wetter aus der festen Test-Vorhersage
-        { deviceId: "pruefstand", today: PRUEF_HEUTE, clock: PRUEF_UHR, messages: [{ role: "user", text: satz.text }], pending: [], data: pruefHaushalt(satz.lage), forecast: pruefWetter() },
+        { deviceId: "pruefstand", today: PRUEF_HEUTE, clock: PRUEF_UHR, messages: [{ role: "user", text: satz.text }], pending: [], data: pruefHaushalt(satz.lage), forecast: pruefWetter(), regionEvents: pruefVeranstaltungen() },
         create,
         mock ? "mock" : CHOICE,
       );

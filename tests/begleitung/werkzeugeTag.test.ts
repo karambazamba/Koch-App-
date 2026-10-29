@@ -153,11 +153,13 @@ describe("Tipps aus der Region", () => {
     bild_url: null, bild_lizenz: null, aktualisiert_am: "2026-10-01", km: 7.6, karamba: false, ...extra,
   });
 
-  it("nur angeboten, wenn eine Quelle läuft", () => {
-    vi.stubEnv("TIPS_SOURCE", "off");
-    expect(toolDefinitions().some((d) => d.name === "tipps_suchen")).toBe(false);
+  it("alte Tipps versteckt (A-055): tipps_suchen nie angeboten, dafür was_los (außer Not-Schalter aus)", () => {
     vi.stubEnv("TIPS_SOURCE", "demo");
-    expect(toolDefinitions().some((d) => d.name === "tipps_suchen")).toBe(true);
+    expect(toolDefinitions().some((d) => d.name === "tipps_suchen")).toBe(false);
+    expect(toolDefinitions().some((d) => d.name === "was_los")).toBe(true);
+    vi.stubEnv("REGION_TIPPS_QUELLE", "aus");
+    expect(toolDefinitions().some((d) => d.name === "was_los")).toBe(false);
+    vi.unstubAllEnvs();
   });
 
   it("antwortet nur aus Treffern und merkt sie als Karten", () => {

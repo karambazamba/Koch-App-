@@ -347,8 +347,8 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
   Ablehnungen nur für Modelle aus `FALLBACK_MODELS`. Systemanweisung in zwei
   Teilen: Identität + Arbeitsweise mit `cache_control` (Prompt-Caching),
   dahinter der Kontext je Anfrage (`contextText`) und ein offener Vorschlag
-  (`pendingSummary`). Wetter und Tipps aus der Region werden vorab geholt,
-  wenn die Frage danach klingt.
+  (`pendingSummary`). Wetter und „Was los?“-Veranstaltungen werden vorab
+  geholt, wenn die Frage danach klingt.
 - Streaming: NDJSON, eine Zeile je Ereignis – `text`, `round`, `done`
   (Antwort, Ops, Mail, Chips, Tipps, Verbrauch), `error`. Die App zeigt den
   Text Wort für Wort; nach `round` beginnt er neu.
@@ -365,7 +365,8 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
   Notizen/Pinnwand/Wetter (`noteTools.ts`), Startseite/Plan/Liste/Pause/
   `app_befehl`/Bausteine (`homeTools.ts`), Mails, Tag (Timer, Kochen, Sport,
   Jetzt-Karte – `dayTools.ts`), `assistent_anpassen` (`helperTools.ts`),
-  `tipps_suchen` (`tipTools.ts`, nur mit Quelle).
+  `was_los` (`wasLosTools.ts`, A-055, nur mit `REGION_TIPPS_QUELLE` ≠ aus;
+  das alte `tipps_suchen` ist mit der Tipps-Ebene versteckt).
 - Schreib-Werkzeuge ändern nichts, sie legen `ChangeOp`s an. Die App zeigt
   sie als Vorschau („Übernehmen“/„Ändern“, einzeln abwählbar); „Ändern“
   schickt den offenen Vorschlag als `pending` mit.

@@ -183,8 +183,8 @@ Aufgaben und Essen stehen nie im Kalender – alles zusammen zeigt „Dein Tag�
   Schloss bzw. Schild wie in den Listen; lange drücken auf einen Termin →
   „Für Familie / Nur ich / Arbeit“. Heute =
   Zahl in Orange mit feinem Ring, gewählter Tag = gefüllter oranger Kreis.
-  Mit Tipps aus der Region: Chip „Tipps“ und lila Punkt
-  (`components/tipps/CalendarTips`), nie als Termin.
+  Alte Tipps-Ebene (Chip „Tipps“, lila Punkt, `components/tipps/CalendarTips`)
+  seit A-055 versteckt; „Was los?“ trägt echte Familientermine ein.
 - Tag antippen → darunter der Tag (`DayPanel`, kein neuer Bildschirm): Kopf
   „Freitag, 30. Oktober“ + rechts „heute / morgen / in 7 Tagen“
   (`dayDistance`), Termine als ruhige Zeilen (Uhrzeit Blau, Titel, rechts der

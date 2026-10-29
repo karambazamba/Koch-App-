@@ -27,6 +27,8 @@ import { jetztCommand } from "@/lib/heute/jetztCommand";
 import { tipsMode } from "@/lib/tipps/server";
 import { tipQuestion } from "@/lib/tipps/question";
 import { durchatmenAusSatz } from "@/lib/durchatmen/erkennen";
+import { wasLosFrage } from "@/lib/region/frage";
+import { regionQuelle } from "@/lib/region/server";
 
 // --- Termine und Aufgaben (Testmodus: Satz-Erkennung ohne KI) --------------------
 
@@ -140,6 +142,8 @@ export function pinWeatherUses(latest: string, system: string): Anthropic.Beta.B
     return text(line === "leer" ? "Auf der Pinnwand steht gerade nichts. (Testmodus)" : `Auf der Pinnwand: ${line} (Testmodus)`);
   }
   const today0 = system.match(/^Heute: .*\((\d{4}-\d{2}-\d{2})\)/m)?.[1] ?? "";
+  const wasLosAsk = today0 && regionQuelle() !== "aus" ? wasLosFrage(latest, today0) : null;
+  if (wasLosAsk) return tools([{ name: "was_los", input: { von: wasLosAsk.von, bis: wasLosAsk.bis, filter: wasLosAsk.filter, ...(wasLosAsk.ort ? { ort: wasLosAsk.ort } : {}) } }]);
   const tipAsk = today0 && tipsMode() !== "off" ? tipQuestion(latest, today0) : null;
   if (tipAsk) return tools([{ name: "tipps_suchen", input: { von: tipAsk.von, bis: tipAsk.bis, filter: tipAsk.filters, ...(tipAsk.ort ? { ort: tipAsk.ort } : {}) } }]);
   if (/\b(wetter|schirm|regnet|regen)\b/i.test(latest) && /\?|\bwie\b|\bbrauch/i.test(latest)) {

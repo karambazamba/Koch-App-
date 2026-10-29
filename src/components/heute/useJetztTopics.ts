@@ -15,6 +15,9 @@ import { tomorrowLabel, type DayItem } from "@/lib/kalender/model";
 import { hiddenToday, useJetzt } from "@/lib/heute/jetztStore";
 import { isOutdoor, jetztTopics, type JetztInput, type JetztTermin } from "@/lib/heute/jetztTopics";
 import { wetterGrob, wochenendeZeit, type WochenendDaten } from "@/lib/heute/wochenende";
+import { wochenendTipps, wochentag } from "@/lib/region/model";
+import { useWasLosAn, useWasLosListe } from "@/lib/region/client";
+import { useHaushalt } from "@/lib/einstellungen/useHaushalt";
 import { anlassOf } from "@/lib/kalender/anlass";
 import type { HomeTileId } from "@/lib/core/homeLayout";
 import { useWeekShoppingList } from "@/lib/einkauf/useWeekShoppingList";
@@ -92,6 +95,10 @@ export function useJetztTopics(src: JetztSource) {
   const news = newsState && !src.demo ? newsForCard(newsState, src.nowMs, src.today) : null;
   const shopping = useWeekShoppingList("planning");
   const mails = useMails().items ?? [];
+  // „Was los?“ (A-055): höchstens 2 Veranstaltungen fürs Wochenende, nur mit Baustein und Quelle
+  const wasLos = useWasLosListe();
+  const wasLosAn = useWasLosAn();
+  const haushalt = useHaushalt();
   const mailTitle = src.demo ? null : mailThema(mails);
   const openItems = (shopping?.list.items ?? []).filter((i) => !i.checked && !i.hidden);
   const topShop = src.demoShop ? DEMO_SHOPS[0] : shopGroups(openItems, 1).find((g) => g.shop) ?? null;
@@ -139,6 +146,10 @@ export function useJetztTopics(src: JetztSource) {
           einkauf: openItems.length,
           einkaufGeplant: src.weekend.items.some((i) => i.date === sa && /einkauf/i.test(i.title)),
           solo: src.solo,
+          tipps:
+            wasLosAn && wasLos && wasLos.quelle !== "aus"
+              ? wochenendTipps(wasLos.events, haushalt, src.today, src.minutes).map(({ event, tag }) => ({ titel: event.titel, kurz: (["Fr", "Sa", "So"] as const)[Math.min(2, Math.max(0, wochentag(tag) - 4))] }))
+              : [],
         }
       : null;
   const input: JetztInput = {

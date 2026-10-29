@@ -7,6 +7,10 @@ import { capabilities } from "@/lib/begleitung/wishTools";
 import { fetchForecast } from "@/lib/wetter/server";
 import { tipsMode, tipsNear } from "@/lib/tipps/server";
 import { tipQuestion } from "@/lib/tipps/question";
+import { wasLosFrage, type WasLosLage } from "@/lib/region/frage";
+import { ladeRegion, regionQuelle } from "@/lib/region/server";
+import { KATEGORIEN, type Kategorie } from "@/lib/region/kategorien";
+import { STANDARD_UMKREIS, UMKREISE, orteImUmkreis, type Umkreis } from "@/lib/region/orte";
 
 const plusDays = (iso: string, n: number) => {
   const d = new Date(`${iso}T12:00:00Z`);
@@ -125,6 +129,7 @@ export function parseRequest(body: unknown): AssistantRequest {
     tagesablauf: b.data?.tagesablauf && typeof b.data.tagesablauf === "object" ? { jetzt: b.data.tagesablauf.jetzt !== false, feierabendAb: String(b.data.tagesablauf.feierabendAb ?? "20:00").slice(0, 5), morgenBis: String(b.data.tagesablauf.morgenBis ?? "10:00").slice(0, 5) } : undefined,
     me: typeof b.data?.me === "string" ? b.data.me.slice(0, 60) : null,
     laeden: sanitizeLaeden(b.data?.laeden),
+    wasLos: sanitizeWasLos(b.data?.wasLos),
     raumWorte: (Array.isArray(b.data?.raumWorte) ? b.data.raumWorte : [])
       .filter((w): w is { wort: string; raum: Room } => Boolean(w) && typeof w === "object" && typeof w.wort === "string" && w.wort.trim().length >= 2)
       .slice(0, 60)
@@ -233,6 +238,25 @@ function logUsage(model: string, u: Usage, upgraded: boolean) {
   console.info("Lotte Tokens", { modell: model, hochgeschaltet: upgraded, runden: u.rounds, ein: u.in, aus: u.out, cache_gelesen: u.read, cache_geschrieben: u.write, kosten_usd: micro === null ? "?" : (micro / 1_000_000).toFixed(5) });
 }
 
+/** Lose Wörter, bei denen „Was los?“ vorab geladen wird (die KI entscheidet, ob sie `was_los` braucht) */
+const WAS_LOS_WORT = /(?<![a-zäöüß])(los|veranstaltung\w*|unternehm\w*|ausflug\w*|events?|konzert\w*|museum|flohmarkt|markt|laterne\w*|kinderkino)(?![a-zäöüß])/i;
+
+/** „Was los?“ vom Gerät: Wohnort, Umkreis, ausgeschaltete Kategorien */
+function sanitizeWasLos(raw: unknown): AssistantData["wasLos"] {
+  if (!raw || typeof raw !== "object") return undefined;
+  const r = raw as { ort?: unknown; umkreis?: unknown; kategorienAus?: unknown };
+  const umkreis = UMKREISE.includes(r.umkreis as Umkreis) ? (r.umkreis as Umkreis) : STANDARD_UMKREIS;
+  const kategorienAus = (Array.isArray(r.kategorienAus) ? r.kategorienAus : []).filter((k): k is Kategorie => KATEGORIEN.includes(k as Kategorie));
+  return { ort: typeof r.ort === "string" ? r.ort.slice(0, 60) : "", umkreis, kategorienAus };
+}
+
+/** Umkreis für `was_los` (ohne eigene Angabe: Wetter-Ort, 15 km) */
+function lageFuer(data: AssistantData, heute: string, jetzt: number): WasLosLage {
+  const ort = data.wasLos?.ort || data.wetterOrt || "Eutin";
+  const umkreis = (UMKREISE.includes(data.wasLos?.umkreis as Umkreis) ? data.wasLos!.umkreis : STANDARD_UMKREIS) as Umkreis;
+  return { orte: orteImUmkreis(ort, umkreis), umkreis, kategorienAus: (data.wasLos?.kategorienAus ?? []) as Kategorie[], heute, jetzt };
+}
+
 /** Klingt nach Wetter? ("Wie wird das Wetter morgen?", "Brauch ich einen Schirm?") */
 const WEATHER_QUESTION = /\b(wetter|schirm|regn\w*|regen|sonnig|sonne|warm|kalt|grad|temperatur|frost|glatt|schnee|wind\w*|sturm|stürm\w*|böen|gewitter)\b/i;
 
@@ -255,6 +279,9 @@ export async function runAssistant(req: AssistantRequest, create: CreateMessage,
   // Abends (Startseite auf morgen): offene Aufgaben wandern mit – nach Uhr, „Feierabend ab“ und Terminen
   const minutesNow = req.clock ? Number(req.clock.slice(0, 2)) * 60 + Number(req.clock.slice(3, 5)) : null;
   const abends = minutesNow !== null ? abendsNachUhr({ entries: req.data.entries ?? [], heute: req.today, minutes: minutesNow, feierabendAb: req.data.tagesablauf?.feierabendAb }) : false;
+  // „Was los?“: Veranstaltungen vorab holen, wenn danach gefragt wird (1 Std. zwischengespeichert)
+  const regionEvents = req.regionEvents !== undefined ? req.regionEvents : regionQuelle() !== "aus" && (wasLosFrage(lastText, req.today) || WAS_LOS_WORT.test(lastText)) ? await ladeRegion(req.today).then((r) => r.events).catch(() => null) : undefined;
+  const wasLosLage = regionEvents !== undefined ? lageFuer(req.data, req.today, minutesNow ?? 0) : undefined;
   // Feierabend: Arbeitsaufgaben ruhen, Mia nennt sie nur auf Nachfrage (Tafel 103)
   const feierabend = minutesNow !== null ? feierabendNachUhr(minutesNow, req.data.tagesablauf?.feierabendAb) : false;
   const system: Anthropic.Beta.BetaTextBlockParam[] = [
@@ -269,7 +296,7 @@ export async function runAssistant(req: AssistantRequest, create: CreateMessage,
     // Arbeitskopie mit dem bisherigen Vorschlag (bei jedem Durchlauf frisch)
     const start = applyOps(req.data, req.pending);
     const numbers = req.pending.flatMap((op) => [op.id, op.type === "add_recipe" ? op.recipe.ref : ""].map((s) => Number(s.match(/(\d+)$/)?.[1] ?? 0)));
-    const ctx: ToolContext = { data: start.data, weeks, ops: [...req.pending], refs: start.refs, counter: Math.max(0, ...numbers), today: req.today, jetzt: berlinInstant(req.today, req.clock ?? berlinTime().clock), abends, feierabend, ...(forecast !== undefined ? { forecast } : {}), ...(regionTips !== undefined ? { regionTips } : {}) };
+    const ctx: ToolContext = { data: start.data, weeks, ops: [...req.pending], refs: start.refs, counter: Math.max(0, ...numbers), today: req.today, jetzt: berlinInstant(req.today, req.clock ?? berlinTime().clock), abends, feierabend, ...(forecast !== undefined ? { forecast } : {}), ...(regionTips !== undefined ? { regionTips } : {}), ...(regionEvents !== undefined ? { regionEvents, wasLosLage } : {}) };
     const messages: Anthropic.Beta.BetaMessageParam[] = req.messages.map((m) => ({ role: m.role, content: m.text }));
     if (messages[0].role !== "user") messages.shift();
     const usage: Usage = { in: 0, out: 0, write: 0, read: 0, rounds: 0 };
@@ -366,7 +393,7 @@ export async function runAssistant(req: AssistantRequest, create: CreateMessage,
   const { ctx, reply } = run;
   const costs = spent.map((s) => costMicro(s.model, s.usage));
   const micro = costs.every((c): c is number => c !== null) ? costs.reduce((a, b) => a + b, 0) : null;
-  const extras = { ...(ctx.wishes?.length ? { wishes: ctx.wishes } : {}), ...(ctx.mail ? { mail: ctx.mail } : {}), ...(ctx.chips?.length ? { chips: ctx.chips } : {}), ...(ctx.tipCards?.length ? { tips: ctx.tipCards } : {}) };
+  const extras = { ...(ctx.wishes?.length ? { wishes: ctx.wishes } : {}), ...(ctx.mail ? { mail: ctx.mail } : {}), ...(ctx.chips?.length ? { chips: ctx.chips } : {}), ...(ctx.tipCards?.length ? { tips: ctx.tipCards } : {}), ...(ctx.wasLosCards?.length ? { waslos: ctx.wasLosCards } : {}) };
   return {
     reply: reply || (ctx.mail ? "Hier mein Vorschlag:" : "Steht unten als Vorschlag."),
     ops: compactOps(ctx.ops),

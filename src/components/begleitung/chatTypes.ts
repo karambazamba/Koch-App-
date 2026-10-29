@@ -1,5 +1,6 @@
 // Typen des Chats mit der Begleitung (Verlauf, Vorschlag, Spontan-Modus)
 
+import type { WasLosKarte } from "@/lib/region/model";
 import type { ParsedLeftover } from "@/lib/essen/leftovers/parser";
 import type { ChangeOp } from "@/lib/begleitung/ops";
 import type { Room } from "@/lib/core/entries";
@@ -56,6 +57,8 @@ export type ChatTurnView = ChatTurn & {
   mail?: MailDraft;
   /** Tipps aus der Region als Karten (bis zu 3) */
   tips?: TipView[];
+  /** „Was los?“: Veranstaltungen als Karten (bis zu 3, mit „In den Kalender“) */
+  waslos?: WasLosKarte[];
   /** Kochtipp: EIN Gericht als Karte (Personen änderbar) */
   /** Kochidee: drei Vorschläge (beim Öffnen) bzw. das Ergebnis zum Durchwischen */
   /** Rezept-Link: Karte mit Zutaten, „auf die Liste“, „In den Wochenplan“ */

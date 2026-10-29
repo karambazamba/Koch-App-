@@ -204,6 +204,12 @@ export const TIPS: Cmp<{ beginn: string; km?: number; titel: string; karamba?: b
   byName((t) => t.titel),
 ];
 
+/** „Was los?“ (A-055): ganztags zuerst, dann Beginn, dann Titel */
+export const WAS_LOS: Cmp<{ ganztags: boolean; beginn: string | null; titel: string }>[] = [first((e) => e.ganztags), asc((e) => e.beginn), byName((e) => e.titel)];
+
+/** „Was los?“ Wochenend-Tipps: Punkte (Kinder, draußen) → Tag → wie WAS_LOS */
+export const WAS_LOS_TIPPS: Cmp<{ punkte: number; tag: string; e: { ganztags: boolean; beginn: string | null; titel: string } }>[] = [descNum((x) => x.punkte), asc((x) => x.tag), ...WAS_LOS.map((r): Cmp<{ e: { ganztags: boolean; beginn: string | null; titel: string } }> => (a, b) => r(a.e, b.e))];
+
 // --- Startseite ------------------------------------------------------------------
 
 /** Kachel-Auswahl: „Neu“ oben, sonst Standard-Reihenfolge (springt beim Antippen nicht) */

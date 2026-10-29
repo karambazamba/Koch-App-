@@ -4,7 +4,7 @@ import { RechtLinks } from "@/components/datenschutz/RechtstextView";
 import { plural } from "@/lib/core/text";
 import Link from "next/link";
 import { useMailStyle } from "@/lib/begleitung/mailSettings";
-import { Bell, Blocks, HandCoins, MapPin, BookOpen, CalendarDays, CalendarPlus, ChefHat, ChevronRight, Clock, CloudSun, Database, Dumbbell, Forward, LayoutGrid, Mail, Refrigerator, Salad, ShieldCheck, Wind } from "lucide-react";
+import { Bell, Blocks, HandCoins, Flag, MapPin, BookOpen, CalendarDays, CalendarPlus, ChefHat, ChevronRight, Clock, CloudSun, Database, Dumbbell, Forward, LayoutGrid, Mail, Refrigerator, Salad, ShieldCheck, Wind } from "lucide-react";
 import { ARTEN, useDurchatmen } from "@/lib/durchatmen/store";
 import { BegleitungAvatar } from "@/components/begleitung/BegleitungAvatar";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -27,7 +27,8 @@ import { DarstellungGroup } from "@/components/einstellungen/settings/Begleitung
 import { useFamilyRegion } from "@/lib/spendentopf/store";
 import { POT_TEXTS } from "@/lib/spendentopf/model";
 import { PERSONS, sortBy } from "@/lib/core/sort";
-import { useTipPlace, useTipSettings, useTipsOn } from "@/lib/tipps/client";
+import { useWasLosAn, useWasLosDaten, useWasLosEinstellungen, useWasLosOrt } from "@/lib/region/client";
+import { wohnortName } from "@/lib/region/orte";
 
 const count = plural;
 
@@ -71,9 +72,10 @@ export function FamilyOverview({ profile }: { profile: HouseholdProfile }) {
   const notify = notifyStatusLabel(useNotifyPermission());
   const sport = useSport();
   const potRegion = useFamilyRegion().region;
-  const tipsOn = useTipsOn();
-  const tipPlace = useTipPlace();
-  const tipSettings = useTipSettings();
+  const wasLosAn = useWasLosAn();
+  const wasLosQuelle = useWasLosDaten()?.quelle;
+  const wasLosOrt = useWasLosOrt();
+  const wasLos = useWasLosEinstellungen();
   const essen = planOn || kochstilOn || unlockedRecipes || unlockedPantry;
 
   return (
@@ -125,9 +127,9 @@ export function FamilyOverview({ profile }: { profile: HouseholdProfile }) {
               Übungen, Anleitung, leises Angebot
             </Row>
           )}
-          {tipsOn && (
-            <Row href="/profil/regiontipps" icon={MapPin} title="Tipps aus der Region" value={`${tipPlace} + ${tipSettings.km} km`}>
-              Ort, Umkreis, im Kalender zeigen
+          {wasLosAn && wasLosQuelle && wasLosQuelle !== "aus" && (
+            <Row href="/profil/regiontipps" icon={Flag} title="Was los?" value={`${wohnortName(wasLosOrt)} + ${wasLos.umkreis} km`}>
+              Veranstaltungen, Umkreis, Kategorien
             </Row>
           )}
           {kalenderOn && (

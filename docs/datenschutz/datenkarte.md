@@ -1,4 +1,4 @@
-# Datenkarte (Stand v0.98)
+# Datenkarte (Stand v0.167)
 
 Jede Datenart: wo sie liegt, wozu, wie lange, wer sie sieht, Rechtsgrundlage
 (ENTWURF – vor Veröffentlichung juristisch prüfen lassen).
@@ -32,6 +32,9 @@ berechtigtes Interesse.
 
 | Wundertüte und Rätsel (`wasgibts.wundertuete` v2, `wasgibts.raetsel` v1, A-052): IDs der gesehenen Karten und Rätsel (nie doppelt), Witze und Rätsel, die die Begleitung nachgelegt hat (Text + ID), aktuelle Karte, wie oft dieses Gerät heute nachgelegt hat | Gerät (in „Daten sichern“); mit Konto Server (`entries`, Typen `wundertuete-gesehen`, `wundertuete-karte`, `raetsel-gesehen`, `raetsel-karte`; aktuelle Karte und Zähler nur Gerät) | keine Karte zweimal, auch nicht für zwei Personen im Haushalt | bis gelöscht (App-Daten bzw. Konto/Haushalt verlassen); gesehen bleibt gesehen | Familie (Raum „Familie“, RLS nur der eigene Haushalt); an die KI geht beim Nachlegen nur die Bitte „Witze“ bzw. „Rätsel“, nie gesehene Karten oder Angaben über die Familie (Ähnlichkeit prüft das Gerät) | lit. b |
 | Offline Gesagtes (`wasgibts.lotte.nachholen`) | Gerät | später nachholen | bis gesendet | nur Gerät | lit. b |
+| „Was los?“ – Veranstaltungen (`region_events`, A-055): nur ID, Titel, Datum, Uhrzeit, Ort als Text, Link zur Detailseite, selbst abgeleitete Kategorien; keine Beschreibungen, keine Bilder, keine Personendaten | Server (Supabase, öffentlich lesbar: anon/authenticated nur SELECT, schreiben nur der Server); in der App nur im Arbeitsspeicher | Veranstaltungen in der Umgebung zeigen, Mia antwortet daraus | heute bis +14 Tage; Abgelaufenes löscht der tägliche Lauf | alle (öffentliche Angaben des Kreises Ostholstein); vom Gerät geht nichts an den Kreis | lit. f (öffentlich zugängliche Angaben) |
+| „Was los?“ – letzter Lauf (`region_status`): Zeitpunkt, Anzahl Treffer, Kurzwort | Server (öffentlich lesbar) | „Für Entwickler“: „Quelle liefert nichts“ | eine Zeile, wird täglich überschrieben | alle | lit. f |
+| „Was los?“ – Einstellungen (`wasgibts.regiontipps` v2): Umkreis 5/15/30 km, ausgeschaltete Kategorien, eigener Wohnort (optional), eingetragene Veranstaltungen (ID → Termin-ID); alte Tipps-Felder bleiben | Gerät (in „Daten sichern“) | Umkreis und Auswahl; Wohnort und Umkreis gehen als Kontext an die KI, wenn Mia gefragt wird | bis gelöscht | nur Gerät | lit. b |
 | Kalender-Links (Abos) | nur Gerät (`wasgibts.kalenderabos`); Abruf über `/api/kalender/abo` | fremde Termine anzeigen | bis entfernt | nur Gerät; der Link geht pro Abruf durch unseren Server, wird nicht gespeichert oder protokolliert | lit. b |
 | Profil, Namen, Allergien, Vorlieben | Gerät (`familienkueche.haushaltsprofil`) | Vorschläge passend zur Familie | bis gelöscht | nur Gerät; Ausschnitte gehen bei KI-Anfragen an Anthropic | lit. b; Allergien = Gesundheitsdaten → Art. 9 Abs. 2 lit. a (Einwilligung) – **bitte prüfen** |
 | Wetter-Ort | Gerät | Wetter | bis geändert | Ortsname geht an Bright Sky/Open-Meteo; bei „Meinen Standort verwenden“ gerundete Koordinaten (≈1 km) an Nominatim | lit. b |

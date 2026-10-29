@@ -638,8 +638,8 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
 - Standard (`STANDARD_KREISE`): Sport (Laufschuh bzw. Symbol der nächsten
   Sportart; Ring = Wochenziel, Stücke füllen sich, geschafft grün; im
   Beispiel-Tag 2 von 3) · Pause (Wind, öffnet Durchatmen über
-  `oeffneDurchatmen`) · Was los? (Fahne; ausgeblendet, solange
-  `wasLosVerfuegbar()` nichts hat – A-055 bindet Quelle und Fenster an) ·
+  `oeffneDurchatmen`) · Was los? (Fahne; nur mit `useWasLosSichtbar()` aus
+  A-055 – Quelle an, Baustein an, etwas in 14 Tagen –, öffnet `WasLosFenster`) ·
   Rätsel (Puzzle, `RaetselFenster`, KEIN Schild „neu“) · Timer (Stoppuhr,
   `TimerFenster`).
 - Läuft ein Timer: Restzeit des kürzesten groß im Kreis (orange), oranger

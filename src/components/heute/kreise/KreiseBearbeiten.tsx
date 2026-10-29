@@ -5,13 +5,15 @@
 // oben/unten“ für Screenreader und Tastatur). Hinweis „Höchstens 5 Kreise“.
 // Steht an der Stelle der Reihe. Einschalten schaltet den Baustein mit ein
 // (Sport, Durchatmen); Ausschalten blendet nur aus, nichts wird gelöscht.
-// „Was los?“ erscheint erst, wenn es eine Quelle gibt (A-055).
+// „Was los?“ erscheint, wenn die Quelle an ist (A-055); einschalten schaltet
+// den Baustein „Was los?“ mit ein.
 
 import { useState, type PointerEvent as ReactPointerEvent } from "react";
 import { ChevronDown, ChevronUp, Flag, GripVertical, Puzzle, SportShoe, Timer as TimerIcon, Wind, type LucideIcon } from "lucide-react";
 import { setFeature, useBausteine } from "@/lib/core/features";
 import { saveKreise, useKreise } from "@/lib/core/homeLayout";
-import { MAX_KREISE, STANDARD_KREISE, aendereKreise, kreisMeta, ordneKreise, wasLosVerfuegbar, type Kreis, type KreisId } from "@/lib/heute/kreise";
+import { MAX_KREISE, STANDARD_KREISE, aendereKreise, kreisMeta, ordneKreise, type Kreis, type KreisId } from "@/lib/heute/kreise";
+import { setWasLos, useWasLosAn, useWasLosDaten } from "@/lib/region/client";
 import { buzz } from "@/components/heute/actions";
 import { SECTION_TITLE } from "@/components/ui/styles";
 
@@ -24,12 +26,15 @@ export function KreiseBearbeiten() {
   const kreise = useKreise() ?? STANDARD_KREISE;
   const bausteine = useBausteine();
   const [zug, setZug] = useState<{ id: KreisId; start: number; dy: number } | null>(null);
-  const zeigbar = kreise.filter((k) => k.id !== "waslos" || wasLosVerfuegbar());
-  const istAn = (k: Kreis) => k.an && (!BAUSTEIN[k.id] || Boolean(bausteine?.includes(BAUSTEIN[k.id]!)));
+  const wasLosQuelle = useWasLosDaten()?.quelle;
+  const wasLosAn = useWasLosAn();
+  const zeigbar = kreise.filter((k) => k.id !== "waslos" || (wasLosQuelle !== undefined && wasLosQuelle !== "aus"));
+  const istAn = (k: Kreis) => k.an && (k.id === "waslos" ? Boolean(wasLosAn) : !BAUSTEIN[k.id] || Boolean(bausteine?.includes(BAUSTEIN[k.id]!)));
 
   const schalte = (k: Kreis, an: boolean) => {
     const b = BAUSTEIN[k.id];
     if (an && b) setFeature(b, true);
+    if (an && k.id === "waslos") setWasLos(true);
     saveKreise(aendereKreise(kreise, { kreis: k.id, aktion: an ? "an" : "aus" }));
     buzz();
   };

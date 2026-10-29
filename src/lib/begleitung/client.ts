@@ -4,6 +4,7 @@
 // Sprachausgabe. Geändert wird erst beim Übernehmen – über dieselben reinen
 // Funktionen, mit denen auch die Vorschau rechnet.
 
+import { setWasLos, wasLosAnJetzt, wasLosKontext } from "@/lib/region/client";
 import { resolveGiving } from "@/lib/kalender/abgeben/model";
 import { accountCache } from "@/lib/konten/cache";
 import { readRaw, writeRaw } from "@/lib/core/localStore";
@@ -181,7 +182,7 @@ function trimmed(data: AssistantData, currentWeekStart: string, pantry: Assistan
     // Einkaufslisten dieser und der nächsten Wochen (Lotte kann sie lesen, leeren, Einträge entfernen)
     shopping: pick(data.shopping),
     home: data.home,
-    features: BAUSTEINE.filter((b) => featureOn(b.feature)).map((b) => b.feature),
+    features: [...BAUSTEINE.filter((b) => featureOn(b.feature)).map((b) => b.feature), ...(wasLosAnJetzt() ? ["regiontipps" as Feature] : [])],
     mail: loadMailStyle(),
     // Sprachnachrichten nur als „[Sprachnachricht 0:12]“ – den Inhalt kennt Mia nicht
     pinnwand: [
@@ -195,6 +196,7 @@ function trimmed(data: AssistantData, currentWeekStart: string, pantry: Assistan
     laeden: shopRulesForMia(),
     // Gelernte Räume (A-034): Stichworte aus eigenen Korrekturen
     raumWorte: gelernteRaeume(),
+    wasLos: wasLosKontext(),
     tippOrt: tipContext().ort,
     tippKm: tipContext().km,
     ...dayData(data),
@@ -380,7 +382,7 @@ export async function askAssistant(
           tempoModell(event.zeit?.token);
           tempoMarke("fertig");
         }
-        return { reply: tidyMiaText(event.reply), ops: event.ops, mail: event.mail, chips: event.chips, tips: event.tips };
+        return { reply: tidyMiaText(event.reply), ops: event.ops, mail: event.mail, chips: event.chips, tips: event.tips, waslos: event.waslos };
       } else if (event.t === "error") {
         if (event.error === "zugangscode") {
           forgetAccessCode();
@@ -542,7 +544,8 @@ export function commitOps(current: AssistantData, ops: ChangeOp[], selected: Set
   const switched: { feature: Feature; on: boolean }[] = [];
   for (const op of chosen) {
     if (op.type !== "set_feature" || !bausteinOf(op.feature as Feature)) continue;
-    if (setFeature(op.feature as Feature, op.on)) {
+    // „Was los?“ hat einen Standard je Wohnort: aus bleibt aus (setWasLos)
+    if (op.feature === "regiontipps" ? setWasLos(op.on) : setFeature(op.feature as Feature, op.on)) {
       switched.push({ feature: op.feature as Feature, on: op.on });
       const b = bausteinOf(op.feature as Feature)!;
       notes.push(op.on ? b.where : `${b.name} ist aus. Die Daten bleiben.`);

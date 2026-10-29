@@ -1,6 +1,8 @@
 // Wochenende planen (A-054): nur freitags von 12 bis 20 Uhr fragt die
 // Jetzt-Karte „Wochenende planen?“ – mit 2–3 Vorschlägen aus den eigenen
-// Daten (nie Tipps aus der Region), darunter „Mit Mia planen“ (Bühne mit
+// Daten und höchstens 2 Veranstaltungen aus „Was los?“ (A-055,
+// `wochenendTipps`; antippen fragt Mia, sie zeigt die Karte mit „In den
+// Kalender“), darunter „Mit Mia planen“ (Bühne mit
 // dem Wochenende als Thema) und „Später“ (für heute weg). Zeile 2 nennt, was
 // schon steht („Sa 10:00 Volleyball steht schon.“). Ohne Druck: kein „du
 // solltest“, keine Zähler. Rein.
@@ -27,16 +29,18 @@ export type WochenendDaten = {
   einkaufGeplant: boolean;
   /** Allein im Haushalt („was ich“ statt „was wir“) */
   solo?: boolean;
+  /** „Was los?“ (A-055): höchstens 2 Veranstaltungen fürs Wochenende (`wochenendTipps`), Tag kurz */
+  tipps?: { titel: string; kurz: "Fr" | Kurz }[];
 };
 
 /** Was ein Vorschlag tut: Mia fragen, die Essen-Seite (7 Tage) öffnen oder still eine Aufgabe anlegen */
 type WochenendZiel = { art: "fragen"; text: string } | { art: "essen" } | { art: "aufgabe"; title: string; date: string };
-export type WochenendChip = { id: "wetter" | "essen" | "einkauf"; label: string; ziel: WochenendZiel };
+export type WochenendChip = { id: "wetter" | "essen" | "einkauf" | `waslos-${number}`; label: string; ziel: WochenendZiel };
 
 /** Satz an Mia für „Mit Mia planen“ – die Bühne öffnet mit dem Wochenende als Thema */
 export const WOCHENENDE_FRAGE = "Lass uns das Wochenende planen.";
 
-const LANG: Record<Kurz, string> = { Sa: "Samstag", So: "Sonntag" };
+const LANG: Record<"Fr" | Kurz, string> = { Fr: "Freitag", Sa: "Samstag", So: "Sonntag" };
 const clock = (t: string) => t.slice(0, 5).replace(/^0(\d)/, "$1");
 
 /** Grobes Wetter eines Tages: sonnig (kein Regen, viel Sonne), nass (Regnerisch/Gewitter/Schnee), sonst nichts */
@@ -50,7 +54,7 @@ export function wetterGrob(d: { text: string; wet: number; sun: number } | undef
 /** Ist gerade Zeit für die Wochenende-Karte? Nur freitags 12–20 Uhr */
 export const wochenendeZeit = (today: string, minutes: number) => weekdayIndex(today) === 4 && minutes >= WOCHENENDE_AB && minutes < WOCHENENDE_BIS;
 
-/** Die 2–3 Vorschläge, in dieser Reihenfolge: Wetter, Essen, Einkauf */
+/** Die 2–3 Vorschläge, in dieser Reihenfolge: Wetter, „Was los?“ (höchstens 2), Essen, Einkauf */
 export function wochenendChips(d: WochenendDaten): WochenendChip[] {
   const out: WochenendChip[] = [];
   const wir = d.solo ? "ich" : "wir";
@@ -59,6 +63,8 @@ export function wochenendChips(d: WochenendDaten): WochenendChip[] {
   const nass = d.tage.find((t) => t.wetter === "nass");
   if (sonne) out.push({ id: "wetter", label: `${sonne.kurz} sonnig: raus?`, ziel: { art: "fragen", text: `${LANG[sonne.kurz]} soll’s sonnig werden. Hast du eine Idee, was ${wir} draußen ${machen}?` } });
   else if (nass) out.push({ id: "wetter", label: `${nass.kurz} Regen: was für drinnen?`, ziel: { art: "fragen", text: `${LANG[nass.kurz]} soll’s regnen. Hast du eine Idee, was ${wir} drinnen ${machen}?` } });
+  // „Was los?“: Veranstaltung als Chip, Mia antwortet mit der Karte (Quelle, „In den Kalender“)
+  (d.tipps ?? []).slice(0, 2).forEach((t, i) => out.push({ id: `waslos-${i}`, label: `${t.kurz} ${t.titel}`, ziel: { art: "fragen", text: `Was ist am ${LANG[t.kurz]} los? Erzähl mir von „${t.titel}“.` } }));
   const frei = d.tage.filter((t) => !t.essen).map((t) => t.kurz);
   if (frei.length) out.push({ id: "essen", label: `Wochenplan ${frei.join("/")} füllen`, ziel: { art: "essen" } });
   const sa = d.tage.find((t) => t.kurz === "Sa");

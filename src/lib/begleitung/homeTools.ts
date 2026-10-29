@@ -13,7 +13,10 @@ import type { BegleitungTool } from "@/lib/begleitung/registry";
 import { dateForDay, nextId, propose, type ToolContext, type ToolResult } from "@/lib/begleitung/tools";
 import { PLAN_TOOLS } from "@/lib/begleitung/planTools";
 import { findDate } from "@/lib/kalender/parse";
-import { BAUSTEINE } from "@/lib/core/features";
+import { BAUSTEINE, TIPS_BAUSTEIN } from "@/lib/core/features";
+
+/** Was Mia schalten kann: alle Bausteine und „Was los?“ (A-055, volle Kontrolle) */
+const SCHALTBAR = [...BAUSTEINE, TIPS_BAUSTEIN];
 import { KACHEL_FARBEN, farbWaehlbar, farbeAusWort } from "@/lib/heute/kachelFarben";
 import { KREIS_AKTIONEN, KREIS_IDS, type KreisAktion, type KreisId } from "@/lib/heute/kreise";
 
@@ -53,14 +56,14 @@ const bausteinTool = (on: boolean): BegleitungTool => ({
       : "Schaltet einen Baustein aus ('Ich brauche die Tipps nicht'). Daten bleiben erhalten.",
     input_schema: {
       type: "object",
-      properties: { baustein: { type: "string", enum: BAUSTEINE.map((b) => b.feature), description: BAUSTEINE.map((b) => `${b.feature} = ${b.name}`).join(", ") } },
+      properties: { baustein: { type: "string", enum: SCHALTBAR.map((b) => b.feature), description: SCHALTBAR.map((b) => `${b.feature} = ${b.name}`).join(", ") } },
       required: ["baustein"],
       additionalProperties: false,
     },
   },
   run: (ctx, raw) => {
     const feature = str((raw as Input | null)?.baustein);
-    const b = BAUSTEINE.find((x) => x.feature === feature);
+    const b = SCHALTBAR.find((x) => x.feature === feature);
     if (!b) return fail("baustein angeben.");
     // Launch 1.0: „später“-Bausteine nie einschalten → „Kommt bald.“
     const later = on ? spaeter(ctx, b.feature) : null;

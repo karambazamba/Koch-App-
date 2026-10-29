@@ -53,6 +53,8 @@ export type AssistantData = {
   pinnwand?: { author: string; text: string; at: string }[];
   /** Wetter-Ort (für wetter_abfragen) */
   wetterOrt?: string;
+  /** „Was los?“: Wohnort, Umkreis, ausgeschaltete Kategorien (für was_los) */
+  wasLos?: { ort: string; umkreis: number; kategorienAus: string[] };
   /** Tipps aus der Region: Ort und Umkreis (für tipps_suchen) */
   tippOrt?: string;
   tippKm?: number;

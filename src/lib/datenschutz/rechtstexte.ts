@@ -7,7 +7,7 @@
 import { APP_NAME } from "@/lib/core/app";
 
 /** Stand der Texte – bei wesentlicher Änderung erhöhen (dann wird einmal neu gefragt, 23b) */
-export const RECHTSTEXTE_STAND = { version: 1, datum: "28. Oktober 2026" };
+export const RECHTSTEXTE_STAND = { version: 1, datum: "29. Oktober 2026" };
 
 export const BETREIBER = {
   name: "[Verantwortlicher]",
@@ -75,6 +75,7 @@ export const DATENSCHUTZ: Abschnitt[] = [
     absaetze: [
       "Vercel Inc. (Hosting, Server-Funktionen in Frankfurt), Supabase Inc. (Konten, Datenbank, Sprachnachrichten und Pinnwand-Fotos; Region " + BETREIBER.supabaseRegion + "), Anthropic PBC (KI), ElevenLabs (Sprachausgabe und Spracherkennung), Resend (Empfang von „Mails an " + APP_NAME + "“). Mit allen besteht ein Vertrag zur Auftragsverarbeitung [bitte bestätigen]. Übermittlung in die USA auf Grundlage des EU-US Data Privacy Framework bzw. von Standardvertragsklauseln [je Anbieter bitte prüfen].",
       "Wetter: Bright Sky (Daten des Deutschen Wetterdienstes) und Open-Meteo bekommen nur den Ortsnamen. Bei „Meinen Standort verwenden“ gehen auf etwa einen Kilometer gerundete Koordinaten an OpenStreetMap Nominatim; gespeichert wird nur der Ortsname.",
+      "„Was los?“: Veranstaltungsangaben: Kreis Ostholstein, ohne Gewähr. Unser Server holt den öffentlichen Veranstaltungskalender des Kreises einmal am Tag allgemein ab, nicht pro Person. Von dir geht nichts an den Kreis; die App lädt die Liste nur von unserem Server. Übernommen werden nur Titel, Datum, Uhrzeit, Ort und Link.",
       "Kalender-Links: Der Link bleibt auf deinem Gerät. Zum Abrufen geht er über unseren Server zum Kalender-Anbieter, wird dabei aber weder gespeichert noch protokolliert.",
       "Ohne Sprach-Anbieter nutzen Spracheingabe und Vorlesen die Funktionen deines Browsers. Bei Chrome und Android kann der Ton an Google gehen, bei Safari und iOS an Apple. Erinnerungen (Push) laufen über die Push-Dienste von Apple, Google oder Mozilla.",
     ],
@@ -107,6 +108,7 @@ export const IMPRESSUM: Abschnitt[] = [
 export const NUTZUNGSBEDINGUNGEN: Abschnitt[] = [
   { titel: "Kostenlos", absaetze: [`${APP_NAME} ist kostenlos. Der Spendentopf ist freiwillig, Zahlungen laufen nie über die App.`] },
   { titel: "Eine KI hilft mit", absaetze: [`${APP_NAME} ist eine KI. Antworten und Vorschläge können Fehler enthalten. Bitte prüfe Wichtiges selbst, besonders Termine, Allergien und Gesundheitsfragen. Wir übernehmen keine Gewähr für KI-Antworten.`] },
+  { titel: "Veranstaltungen („Was los?“)", absaetze: ["Veranstaltungsangaben: Kreis Ostholstein, ohne Gewähr. Ob eine Veranstaltung stattfindet, steht verbindlich nur beim Veranstalter."] },
   { titel: "Faire Nutzung", absaetze: ["Bitte nutze die App nur für deinen Alltag und den deiner Familie. Für die KI gilt ein Tageslimit. Missbrauch (zum Beispiel automatisierte Anfragen) kann zur Sperre führen."] },
   { titel: "Familie und Einladungen", absaetze: ["Wer eine Familie anlegt oder einlädt, entscheidet, wer dazugehört. Erwachsene können einladen, Einladungen zurückziehen und die Familie verlassen. Was ihr unter „Familie“ teilt, sehen alle Mitglieder; „Ich“ und „Arbeit“ nur du."] },
   { titel: "Kündigen und löschen", absaetze: ["Du kannst jederzeit aufhören: Konto löschen in den Einstellungen unter „Daten & App“. Ohne Konto löschst du alles, indem du die App bzw. die Website-Daten im Browser entfernst."] },

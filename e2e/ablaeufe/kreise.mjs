@@ -1,10 +1,11 @@
 // Mini-Kreise oben (A-050, Tafel 143 + Nachtrag „kein Schild“) und ihre
 // Fenster (Tafel 137/2–4), mit echten Touch-Gesten:
-// `kreiseOben`: Familie-Beispiel auf iPhone SE, 15 Pro, Pixel 7 – 4 Kreise à
-// 64 px gleich verteilt, Wörter ganz, keine Schilder/Zahlen; Wischen über die
+// `kreiseOben`: Familie-Beispiel auf iPhone SE, 15 Pro, Pixel 7 – 5 Kreise à
+// 56 px (mit „Was los?“, A-055: Eutin + Testdaten) gleich verteilt, Wörter ganz, keine Schilder/Zahlen; Wischen über die
 // Reihe wechselt die Seite. `kreisFenster`: Sport plant „Sa 10:00 Volleyball“
 // (Termin im Raum „Ich“), Timer startet mit einem Tipp und steht dann mit
-// Restzeit vorn, Pause öffnet Durchatmen, Rätsel das Rätsel-Fenster – man bleibt
+// Restzeit vorn, Pause öffnet Durchatmen, Rätsel das Rätsel-Fenster, Was los? „Was ist los
+// in Eutin?“ – man bleibt
 // auf der Startseite. `kreiseBearbeiten`: an/aus und Reihenfolge in „Kreise
 // oben“, gespeichert, nichts gelöscht. `kreiseMigration`:
 // Startseite v9 mit Sport/Timer XS und Im Haus → Kreise, Im Haus weg und unter
@@ -47,10 +48,11 @@ export const kreiseOben = async (page, check, device) => {
       await p.waitForTimeout(800);
       const m = await p.evaluate(messen);
       const wo = `${geraet}`;
-      check(m && m.map((k) => k.id).join() === "sport,pause,raetsel,timer", `${wo}: Kreise Sport · Pause · Rätsel · Timer (${m?.map((k) => k.id).join(", ")})`);
-      check(m?.every((k) => k.groesse === 64 && k.hoch === 64), `${wo}: 4 Kreise à 64 px (${m?.map((k) => k.groesse).join("/")})`);
+      // „Was los?“ (A-055) steht da: Wohnort Eutin, Testdaten im Testserver
+      check(m && m.map((k) => k.id).join() === "sport,pause,waslos,raetsel,timer", `${wo}: Kreise Sport · Pause · Was los? · Rätsel · Timer (${m?.map((k) => k.id).join(", ")})`);
+      check(m?.every((k) => k.groesse === 56 && k.hoch === 56), `${wo}: 5 Kreise à 56 px (${m?.map((k) => k.groesse).join("/")})`);
       check(m?.every((k) => k.wortGanz), `${wo}: jedes Wort ganz`);
-      check(m?.every((k) => ["Sport", "Pause", "Rätsel", "Timer"].includes(k.text)), `${wo}: unter jedem Kreis genau EIN Wort, kein Schild, keine Zahl (${m?.map((k) => `„${k.text}“`).join(" ")})`);
+      check(m?.every((k) => ["Sport", "Pause", "Was los?", "Rätsel", "Timer"].includes(k.text)), `${wo}: unter jedem Kreis genau EIN Wort, kein Schild, keine Zahl (${m?.map((k) => `„${k.text}“`).join(" ")})`);
       check(m && Math.abs(m[0].links - m.at(-1).rechts) <= 3 && m[0].links >= 12 && m[0].links <= 18, `${wo}: gleich verteilt über die ganze Breite (Rand ${m?.[0].links}/${m?.at(-1).rechts} px)`);
       check((await p.locator("[data-sport-ring]").count()) === 1, `${wo}: nur Sport hat einen Ring`);
       // Nicht wischbar: Wischen über die Reihe wechselt die Seite
@@ -118,6 +120,13 @@ export const kreisFenster = async (page, check) => {
   check(await raetsel.getByText("Kinder raten zuerst").isVisible(), "Rätsel: öffnet das Rätsel-Fenster");
   await page.keyboard.press("Escape");
   await raetsel.waitFor({ state: "hidden" });
+  // Was los? (A-055): öffnet „Was ist los in Eutin?“
+  await reihe(page).locator('[data-kreis="waslos"]').click();
+  const waslos = page.locator("[role=dialog]:has([data-was-los-fenster])");
+  await waslos.waitFor({ timeout: 6000 });
+  check(await waslos.getByRole("heading", { name: "Was ist los in Eutin?" }).isVisible(), "Was los?: öffnet das Fenster");
+  await page.keyboard.press("Escape");
+  await waslos.waitFor({ state: "hidden" });
   check(/Heute/.test(await page.getByRole("tab", { selected: true }).innerText()), "nach allen Fenstern: noch auf der Startseite");
 };
 
@@ -138,7 +147,7 @@ export const kreiseBearbeiten = async (page, check) => {
   await reihe(page).waitFor();
   await page.waitForTimeout(400);
   let ids = (await page.evaluate(messen)).map((k) => k.id);
-  check(ids.join() === "pause,sport,timer", `Bearbeiten: Rätsel aus, Sport eins weiter (${ids.join(", ")})`);
+  check(ids.join() === "pause,sport,waslos,timer", `Bearbeiten: Rätsel aus, Sport eins weiter (${ids.join(", ")})`);
   const kreise = (await store(page, "wasgibts.startseite"))?.kreise ?? [];
   check(kreise.find((k) => k.id === "raetsel")?.an === false, "Bearbeiten: gespeichert (Rätsel aus, nicht gelöscht)");
   // Wieder an (wie „Hol das Rätsel wieder nach oben“)

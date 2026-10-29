@@ -23,7 +23,7 @@ const FEATURES = {
   wochenendIdeen: "Wochenend-Ideen",
   kochstil: "Kochstil & Vorlieben (Plan/spontan, Das mögt ihr, Nie wieder …)",
   modi: "Wie oft sich die Assistentin meldet, Pause",
-  regiontipps: "Tipps aus der Region (Veranstaltungen in der Nähe) – nur sichtbar, wenn eine Quelle läuft",
+  regiontipps: "„Was los?“ (früher Tipps aus der Region): Veranstaltungen in der Umgebung – Standard an für Wohnorte in Ostholstein",
   kalender: "Kalender übernehmen: Termine aus Apple- oder Google-Kalender (Datei oder Kalender-Link)",
   mails: "Mails weiterleiten: aus weitergeleiteten Mails werden Vorschläge (nur mit Konto)",
   sport: "Sport (/sport, Kachel, Wochenziel)",
@@ -63,30 +63,34 @@ export const BAUSTEINE: Baustein[] = [
  * „Mehr Funktionen“ oder „＋ Kachel“, Mia schaltet sie nicht frei. Wer einen
  * schon nutzt, behält ihn (`launchUebernahme`). Daten bleiben immer.
  */
-export const LAUNCH_AUS: Feature[] = ["regiontipps", "mails", "spendentopf"];
+export const LAUNCH_AUS: Feature[] = ["mails", "spendentopf"];
 
 /** Darf der Baustein gezeigt bzw. angeboten werden? (nicht für 1.0 ausgeblendet oder schon an) */
 export const launchSichtbar = (feature: Feature, on: Feature[]) => !LAUNCH_AUS.includes(feature) || on.includes(feature);
 
 /**
- * Tipps aus der Region: eigener Baustein, nur in „Mehr Funktionen“ zu sehen,
- * wenn auf dem Server eine Quelle läuft (TIPS_SOURCE ≠ off) – deshalb nicht in
- * BAUSTEINE (die Lotte immer kennt).
+ * „Was los?“ (A-055, früher „Tipps aus der Region“, interner Schlüssel
+ * bleibt `regiontipps`): eigener Baustein, nur in „Mehr Funktionen“ zu sehen,
+ * wenn auf dem Server die Quelle an ist (REGION_TIPPS_QUELLE ≠ aus) – deshalb
+ * nicht in BAUSTEINE. Standard an für Wohnorte in Ostholstein
+ * (`region/client.ts` `wasLosAn`), sonst aus.
  */
 export const TIPS_BAUSTEIN: Baustein = {
   feature: "regiontipps",
-  name: "Tipps aus der Region",
-  text: "Veranstaltungen in eurer Nähe – aus dem Tourismus-Kalender Schleswig-Holstein.",
-  where: "Die Tipps stehen jetzt als Kachel auf Heute und im Kalender.",
-  icon: "map",
+  name: "Was los?",
+  text: "Veranstaltungen in der Umgebung – aus dem Kalender des Kreises Ostholstein.",
+  where: "„Was los?“ findest du in den Einstellungen.",
+  icon: "flag",
 };
 
-export const bausteinOf = (feature: Feature) => BAUSTEINE.find((b) => b.feature === feature);
+export const bausteinOf = (feature: Feature) => BAUSTEINE.find((b) => b.feature === feature) ?? (feature === TIPS_BAUSTEIN.feature ? TIPS_BAUSTEIN : undefined);
 
 /** Dauerhaft eingeschaltet – hier freischalten, was immer gebraucht wird */
 const ENABLED: Partial<Record<Feature, true>> = {};
 
 /**
+ * v8: `aus` = Bausteine, die jemand selbst ausgeschaltet hat (für Bausteine mit
+ * Standard je Lage, z. B. „Was los?“ an in Ostholstein – einmal aus bleibt aus).
  * v7: Durchatmen (A-051) ist für alle an – beim Update einmal eingeschaltet
  * (von Felix gewollte Ausnahme vom Launch-Stopp, danach selbst abschaltbar).
  * v6: Pinnwand ist ein Baustein (Kühlschranktür) – wer sie hatte, behält sie
@@ -97,7 +101,7 @@ const ENABLED: Partial<Record<Feature, true>> = {};
  * eingeschaltete Bausteine + `launch` (Übernahme für 1.0 erledigt). v2 ohne
  * `launch`, v1 hatte `legacy` und `unlocked`.
  */
-type FeatureStore = { version: 7; on: Feature[]; launch: boolean; imHaus: boolean };
+type FeatureStore = { version: 8; on: Feature[]; launch: boolean; imHaus: boolean; aus: Feature[] };
 
 /**
  * Standard für neue Nutzer: Notizen, Pinnwand, Im Haus (Bereich unter Essen;
@@ -153,16 +157,18 @@ function migrate(raw: unknown): FeatureStore | null {
   const atem = (on: Feature[]) => [...new Set([...on, ...DURCHATMEN_ON])];
   const keep = (on: Feature[]) => atem([...on, ...PINNWAND_ON]);
   const imHaus = (d as { imHaus?: unknown }).imHaus === true;
-  if (d.version === 7) return { version: 7, on: list, launch, imHaus };
-  if (d.version === 6) return { version: 7, on: atem(list), launch, imHaus };
-  if (d.version === 5) return { version: 7, on: keep(list), launch, imHaus };
-  if (d.version === 4) return { version: 7, on: keep(list), launch, imHaus: false };
-  if (d.version === 3 || d.version === 2) return { version: 7, on: keep([...list, ...NOTIZEN_ON]), launch: d.version === 3 && launch, imHaus: false };
+  const aus = (Array.isArray((d as { aus?: unknown }).aus) ? (d as { aus: unknown[] }).aus : []).filter(isFeature);
+  if (d.version === 8) return { version: 8, on: list, launch, imHaus, aus };
+  if (d.version === 7) return { version: 8, on: list, launch, imHaus, aus: [] };
+  if (d.version === 6) return { version: 8, on: atem(list), launch, imHaus, aus: [] };
+  if (d.version === 5) return { version: 8, on: keep(list), launch, imHaus, aus: [] };
+  if (d.version === 4) return { version: 8, on: keep(list), launch, imHaus: false, aus: [] };
+  if (d.version === 3 || d.version === 2) return { version: 8, on: keep([...list, ...NOTIZEN_ON]), launch: d.version === 3 && launch, imHaus: false, aus: [] };
   if (d.version !== 1) return null;
   // Alter Test-Schalter: wird zurückgesetzt; was genutzt wurde, wird als Baustein übernommen
   const unlocked = (Array.isArray(d.unlocked) ? d.unlocked : []).filter(isFeature);
   const used = d.legacy === true && typeof localStorage !== "undefined" ? usedFeatures() : [];
-  return { version: 7, on: [...new Set([...unlocked, ...used, ...NOTIZEN_ON, ...PINNWAND_ON, ...DURCHATMEN_ON])], launch: false, imHaus: false };
+  return { version: 8, on: [...new Set([...unlocked, ...used, ...NOTIZEN_ON, ...PINNWAND_ON, ...DURCHATMEN_ON])], launch: false, imHaus: false, aus: [] };
 }
 
 const store = createLocalStore("wasgibts.funktionen", migrate);
@@ -182,10 +188,24 @@ export function featureOn(feature: Feature): boolean {
 /** Baustein an- oder ausschalten; liefert true, wenn sich etwas geändert hat */
 export function setFeature(feature: Feature, on: boolean): boolean {
   const list = onList();
-  if (list.includes(feature) === on) return false;
   const s = store.load();
-  store.save({ version: 7, on: on ? [...list, feature] : list.filter((f) => f !== feature), launch: s?.launch ?? false, imHaus: s?.imHaus ?? false });
-  return true;
+  const aus = s?.aus ?? [];
+  // Selbst ausgeschaltet merken (auch wenn er nur durch einen Standard an war)
+  const ausNeu = on ? aus.filter((f) => f !== feature) : [...new Set([...aus, feature])];
+  const geaendert = list.includes(feature) !== on;
+  if (!geaendert && ausNeu.length === aus.length) return false;
+  store.save({ version: 8, on: on ? [...new Set([...list, feature])] : list.filter((f) => f !== feature), launch: s?.launch ?? false, imHaus: s?.imHaus ?? false, aus: ausNeu });
+  // true nur, wenn sich „an/aus“ geändert hat (das Merken von „selbst aus“ allein zählt nicht)
+  return geaendert;
+}
+
+/** Selbst ausgeschaltet? (Bausteine mit Standard je Lage bleiben dann aus) */
+export const featureAus = (feature: Feature) => (store.load()?.aus ?? []).includes(feature);
+
+/** Selbst ausgeschaltete Bausteine (`undefined` = lädt) */
+export function useBausteineAus(): Feature[] | undefined {
+  const data = useExternalStore(store.subscribe, store.load, () => undefined);
+  return data === undefined ? undefined : (data?.aus ?? []);
 }
 
 /**
@@ -234,7 +254,7 @@ function imHausUebernahme() {
     const tiles = loadHomeTiles();
     if (tiles.some((t) => t.id === "vorrat" && t.visible)) saveHomeTiles(tiles.map((t) => (t.id === "vorrat" ? { ...t, visible: false } : t)));
   }
-  store.save({ version: 7, on: [...new Set([...on, "vorrat" as Feature])], launch: s?.launch ?? false, imHaus: true });
+  store.save({ version: 8, on: [...new Set([...on, "vorrat" as Feature])], launch: s?.launch ?? false, imHaus: true, aus: s?.aus ?? [] });
 }
 
 function launchSchnitt(read: (key: StorageKey) => string | null) {
@@ -256,5 +276,5 @@ function launchSchnitt(read: (key: StorageKey) => string | null) {
   if (shown("spendentopf")) used.push("spendentopf");
   // Ohne gespeicherte Bausteine, aber mit eigener Startseite: bestehender Nutzer – die Wundertüte bleibt aus
   const on = s?.on ?? (home ? DEFAULT_ON.filter((f) => !NUR_NEU.includes(f)) : DEFAULT_ON);
-  store.save({ version: 7, on: [...new Set([...on, ...used])], launch: true, imHaus: s?.imHaus ?? false });
+  store.save({ version: 8, on: [...new Set([...on, ...used])], launch: true, imHaus: s?.imHaus ?? false, aus: s?.aus ?? [] });
 }

@@ -18,7 +18,6 @@ import {
   sichtbareKreise,
   sportRing,
   timerImKreis,
-  wasLosVerfuegbar,
   type KreisLage,
 } from "@/lib/heute/kreise";
 import { DEFAULT_HOME, defaultHome, hatNeueStandardOrdnung, migrateHome, neueStandardOrdnung, sanitizeHome, zuKreisen, type HomeTile } from "@/lib/core/homeLayout";
@@ -51,7 +50,6 @@ describe("Reihe (Tafel 143)", () => {
   });
 
   it("nur Kreise für eingeschaltete Bausteine; „Was los?“ ohne Quelle/Einträge ausgeblendet", () => {
-    expect(wasLosVerfuegbar()).toBe(false);
     expect(sichtbareKreise(STANDARD_KREISE, OHNE_WASLOS)).toEqual(["sport", "pause", "raetsel", "timer"]);
     expect(sichtbareKreise(STANDARD_KREISE, { ...OHNE_WASLOS, sport: false, pause: false })).toEqual(["raetsel", "timer"]);
   });

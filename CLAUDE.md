@@ -33,9 +33,10 @@ Die frühere Lieblingsfarbe ist „Meine Farbe im Kalender“ (Profil
   Auswahl), Sport (Baustein, nur Wochen zählen, Kreis oben), Wochenplan (Baustein),
   Wetter, Timer (Kreis oben), Familie teilen per E-Mail-Code, Datenschutz,
   Mias Wundertüte (Baustein, neu an als S; `docs/bereiche/wundertuete.md`),
-  Durchatmen (Baustein an, 12 Übungen, nie Pflicht; `docs/bereiche/durchatmen.md`).
+  Durchatmen (Baustein an, 12 Übungen, nie Pflicht; `docs/bereiche/durchatmen.md`),
+  „Was los?“ (Veranstaltungen Kreis Ostholstein, an bei Wohnort dort; `tipps`).
 - Ausgeblendet (Baustein aus, nicht gelöscht, Daten bleiben; wer ihn nutzt,
-  behält ihn): Mails an Mia, Tipps aus der Region, Spendentopf (ein Satz unter
+  behält ihn): Mails an Mia, Spendentopf (ein Satz unter
   „Über Mia“ bleibt), Apple/Google-Anmeldung (nur E-Mail-Code), ElevenLabs
   (aus ohne Schlüssel). `LAUNCH_AUS` in `core/features.ts`, `LAUNCH_NUR_EMAIL`
   in `konten/oauth.ts`; Mia schaltet nichts davon frei.
@@ -236,10 +237,9 @@ Die frühere Lieblingsfarbe ist „Meine Farbe im Kalender“ (Profil
 - Jeder behobene Fehler bekommt einen Test. Dateien möglichst unter 600 Zeilen.
 
 ## Feste Regeln einzelner Bereiche
-Stehen jeweils oben in `docs/bereiche/<bereich>.md`: Tipps aus der Region
-und Name „KARAMBA Eis“ (`tipps`), Spendentopf, Wetter, Beispiel-Tag
-(`heute`), Pinnwand, Konten (Supabase), Mails an Mia, Mia denkt mit und
-Mias Stimme (`begleitung`), Bilder der Gerichte (`essen`), Durchatmen. Vor Änderungen dort lesen.
+Oben in `docs/bereiche/<bereich>.md`: „Was los?“ und „KARAMBA Eis“ (`tipps`),
+Spendentopf, Wetter, Beispiel-Tag (`heute`), Pinnwand, Konten, Mails an Mia,
+Mia denkt mit, Mias Stimme (`begleitung`), Gerichte-Bilder (`essen`), Durchatmen. Vorher lesen.
 
 ## Datenschutz
 - So wenig Daten wie möglich, so lange wie nötig, nie verkauft, keine Tracker,

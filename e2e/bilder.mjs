@@ -6,6 +6,7 @@
 import { mkdirSync } from "node:fs";
 import { BASE, DEVICES, FAKE_MIC, FAKE_VOICES, TAFEL_123, halten, hello, launch, miaTippen, newPage, seedFamily, setDark, startServer, tippenFeld } from "./lib.mjs";
 import { RECIPE_DATA } from "./ablaeufe/essen.mjs";
+import { WAS_LOS } from "./ablaeufe/waslos.mjs";
 
 /** Warten, bis Netz ruhig und alle Bilder (auch live gezeichnete Gerichte) fertig sind */
 async function settle(page) {
@@ -28,7 +29,7 @@ const PAGES = [
   ["wetter", "/wetter"],
   ["marke", "/brand"],
   ["spendentopf", "/spendentopf"],
-  ["tipps", "/tipps"],
+  ["waslos-einstellungen", "/profil/regiontipps"],
   ["einstellungen", "/profil"],
   ["begleitung", "/profil/kuechenhelfer"],
 ];
@@ -147,6 +148,9 @@ const pinnwand123 = async (page, fenster = false) => {
   }
 };
 const SCENES = [
+  ["waslos-heute", (page) => WAS_LOS.oeffnen(page)],
+  ["waslos-2wochen", (page) => WAS_LOS.oeffnen(page, "2 Wochen")],
+  ["waslos-detail", async (page) => (await WAS_LOS.oeffnen(page, "2 Wochen"), await page.locator('[data-waslos-zeile="demo-nachtwaechter"] button').first().click(), await page.waitForTimeout(700))],
   ["pinnwand-tafel123", (page) => pinnwand123(page)],
   ["pinnwand-fenster", (page) => pinnwand123(page, true)],
   ["zugangscode", codeScreen],

@@ -16,13 +16,16 @@ select pruefe(not exists (
   select string_agg(c.relname, ', ') from pg_class c join pg_namespace n on n.oid = c.relnamespace
   where n.nspname = 'public' and c.relkind = 'r' and not c.relrowsecurity), ''));
 
--- 2) anon hat an keiner Tabelle Rechte
+-- 2) anon hat an keiner Tabelle Rechte – einzige Ausnahme: „Was los?“
+--    (region_events, region_status) nur lesen, öffentliche Veranstaltungen (Abschnitt 8)
 select pruefe(not exists (
   select 1 from information_schema.role_table_grants
   where table_schema = 'public' and grantee = 'anon'
+    and not (table_name in ('region_events', 'region_status') and privilege_type = 'SELECT')
 ), 'anon darf an keiner Tabelle etwas: ' || coalesce((
-  select string_agg(distinct table_name, ', ') from information_schema.role_table_grants
-  where table_schema = 'public' and grantee = 'anon'), ''));
+  select string_agg(distinct table_name || ' ' || privilege_type, ', ') from information_schema.role_table_grants
+  where table_schema = 'public' and grantee = 'anon'
+    and not (table_name in ('region_events', 'region_status') and privilege_type = 'SELECT')), ''));
 
 -- 3) Tabellen, die angemeldete Personen lesen dürfen, haben auch eine Regel (sonst wäre RLS offen gedacht, aber zu)
 select pruefe(not exists (
@@ -253,4 +256,46 @@ select set_config('request.jwt.claim.sub', 'd4444444-0000-0000-0000-000000000003
 select public.create_household('Familie Fremd 2', 'Fremd');
 select pruefe((select count(*) from public.entries where typ like 'wundertuete-%' or typ like 'raetsel-%') = 0, 'fremder Haushalt sieht keine Wundertüte- oder Rätsel-Zeilen');
 
+reset role;
+
+-- 8) „Was los?“ (A-055): Veranstaltungen lesen alle (auch ohne Konto), schreiben
+--    nur der Server (service role); kein Personenbezug in der Tabelle.
+create or replace function erwarte_fehler_region(stmt text, was text) returns void language plpgsql as $$
+begin
+  begin
+    execute stmt;
+  exception when insufficient_privilege then return;
+  end;
+  raise exception 'KEIN FEHLER, obwohl erwartet: %', was;
+end $$;
+grant execute on function erwarte_fehler_region(text, text) to anon, authenticated;
+
+set role service_role;
+insert into public.region_events (id, titel, datum, letzter_tag, beginn, ort, gemeinde, link, kategorien)
+  values ('kreisoh-1', 'Nachtwächter-Rundgang', '2026-10-31', '2026-10-31', '17:00', 'Markt 19, Eutin', 'Eutin', 'https://www.kreis-oh.de/x', '{draussen,kultur}');
+insert into public.region_status (id, treffer, grund) values (1, 1, 'ok') on conflict (id) do update set treffer = excluded.treffer;
+select pruefe((select count(*) from public.region_events where id = 'kreisoh-1') = 1, 'Server schreibt region_events');
+reset role;
+
+set role anon;
+select pruefe((select titel from public.region_events where id = 'kreisoh-1') = 'Nachtwächter-Rundgang', 'ohne Konto: Veranstaltungen lesbar');
+select pruefe((select treffer from public.region_status where id = 1) = 1, 'ohne Konto: Status lesbar');
+select erwarte_fehler_region($$insert into public.region_events (id, titel, datum, letzter_tag) values ('kreisoh-2', 'Fremd', '2026-11-01', '2026-11-01')$$, 'anon schreibt nicht');
+select erwarte_fehler_region($$update public.region_events set titel = 'weg' where id = 'kreisoh-1'$$, 'anon ändert nicht');
+select erwarte_fehler_region($$delete from public.region_events where id = 'kreisoh-1'$$, 'anon löscht nicht');
+select erwarte_fehler_region($$update public.region_status set treffer = 99$$, 'anon ändert den Status nicht');
+reset role;
+
+set role authenticated;
+select set_config('request.jwt.claim.sub', 'd1111111-0000-0000-0000-000000000001', false);
+select pruefe((select count(*) from public.region_events where id = 'kreisoh-1') = 1, 'angemeldet: Veranstaltungen lesbar');
+select erwarte_fehler_region($$insert into public.region_events (id, titel, datum, letzter_tag) values ('kreisoh-3', 'Fremd', '2026-11-01', '2026-11-01')$$, 'angemeldet schreibt nicht');
+select erwarte_fehler_region($$delete from public.region_events$$, 'angemeldet löscht nicht');
+reset role;
+
+-- Ungültiges lehnt die Tabelle selbst ab (auch für den Server)
+set role service_role;
+select erwarte_fehler($$insert into public.region_events (id, titel, datum, letzter_tag, link) values ('kreisoh-4', 'X', '2026-11-01', '2026-11-01', 'javascript:alert(1)')$$, 'check constraint', 'nur https-Links');
+select erwarte_fehler($$insert into public.region_events (id, titel, datum, letzter_tag, kategorien) values ('kreisoh-5', 'X', '2026-11-01', '2026-11-01', '{werbung}')$$, 'check constraint', 'nur bekannte Kategorien');
+delete from public.region_events where id = 'kreisoh-1';
 reset role;

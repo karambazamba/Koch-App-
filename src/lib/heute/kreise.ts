@@ -156,15 +156,6 @@ export function ringBoegen(stuecke: number, luecke = 10): { von: number; bis: nu
   return Array.from({ length: stuecke }, (_, n) => ({ von: n * teil + luecke / 2, bis: (n + 1) * teil - luecke / 2 }));
 }
 
-/**
- * „Was los?“ (A-055, Tafel 142 – kommt nach A-050): hat der Kreis etwas zu
- * zeigen (Quelle an und ein Eintrag in den nächsten 14 Tagen)? Bis A-055
- * die Quelle anbindet: nie – der Kreis bleibt ausgeblendet.
- */
-export function wasLosVerfuegbar(): boolean {
-  return false;
-}
-
 /** Timer-Kreis, solange einer läuft: Restzeit des kürzesten („7:42“), Anteil für den Ring (1 = gerade gestartet), Name */
 export function timerImKreis(timers: readonly Timer[], nowMs: number): { rest: string; anteil: number; name: string; leftMs: number } | null {
   const laufend = timers.filter((t) => isRunning(t, nowMs)).sort((a, b) => leftMs(a, nowMs) - leftMs(b, nowMs));

@@ -15,7 +15,8 @@ Gleiche Bereichsnamen in `src/lib/<bereich>` (Logik, rein wo möglich),
 | `wetter` | Wetter-Server, Kachel, Seite |
 | `sport` | Trainings, Wochenziel |
 | `timer` | Timer, Stoppuhr |
-| `tipps` | Tipps aus der Region |
+| `tipps` | alte Tipps aus der Region (versteckt seit A-055, `tipps/alt.ts`) |
+| `region` | „Was los?“: Veranstaltungen Kreis Ostholstein (Orte, Kategorien, Zeiten, Kreis-Abruf `region/kreisOh/`, Fenster) |
 | `spendentopf` | Spendentopf |
 | `durchatmen` | Durchatmen: 12 Übungen (`content/durchatmen/`), Fenster, Vollbild, Stimme und Klang, leises Angebot |
 
