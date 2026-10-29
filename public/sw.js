@@ -3,7 +3,7 @@
 // CACHE_VERSION bei jeder Auslieferung erhöhen. Eine neue Version wartet, bis
 // man den Hinweis "Neue Version da" antippt (Nachricht "SKIP_WAITING") – nie
 // ein Zwangs-Neuladen mitten im Tippen. Beim allerersten Mal sofort aktiv.
-const CACHE_VERSION = "v212";
+const CACHE_VERSION = "v213";
 // Interner Name (alter Arbeitsname) bleibt, damit alte Caches sauber aufgeräumt werden.
 const CACHE_NAME = `familienkueche-${CACHE_VERSION}`;
 
@@ -82,29 +82,16 @@ const PRECACHE_URLS = [
   "/demo/gericht.webp",
 ];
 
-// Durchatmen (A-051): einmal auf dem Server erzeugte Ansagen (Bucket
-// „durchatmen-ansagen“, über /audio/durchatmen/ mit manifest.json) – sobald es
-// Dateien gibt, werden sie gemerkt (offline).
-// Fehlt etwas, passiert nichts: die App spricht dann mit der Stimme des Handys.
+// Durchatmen (A-051, A-061): Mias Ansagen (/audio/durchatmen/<id>.mp3?t=…) –
+// beim ersten Abspielen gemerkt (offline). Fehlt eine, passiert nichts: dann
+// gibt es nur Klang.
 const AUDIO_ORDNER = "/audio/durchatmen/";
-async function ansagenMerken(cache) {
-  try {
-    const r = await fetch(`${AUDIO_ORDNER}manifest.json`, { cache: "no-store" });
-    if (!r.ok) return;
-    await cache.put(`${AUDIO_ORDNER}manifest.json`, r.clone());
-    const liste = await r.json();
-    const dateien = Object.values((liste && liste.dateien) || {}).filter((d) => typeof d === "string" && /^[a-z0-9-]+\.(mp3|m4a|ogg|wav)$/.test(d));
-    await Promise.all(dateien.map((d) => cache.add(AUDIO_ORDNER + d).catch(() => {})));
-  } catch {
-    // keine Ansagen – kein Fehler
-  }
-}
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches
       .open(CACHE_NAME)
-      .then((cache) => cache.addAll(PRECACHE_URLS).then(() => ansagenMerken(cache)))
+      .then((cache) => cache.addAll(PRECACHE_URLS))
       .then(() => {
         if (!self.registration.active) return self.skipWaiting();
       }),

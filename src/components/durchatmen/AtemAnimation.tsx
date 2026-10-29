@@ -5,11 +5,10 @@
 // Ankommen, Augen). Nur transform/opacity; `prefers-reduced-motion` = kein
 // Wandern, kein Wachsen – nur Überblenden.
 
-import { Eye } from "lucide-react";
 import type { Stand } from "@/lib/durchatmen/ablauf";
 import { ansageText } from "@/lib/durchatmen/ansagen";
-import type { Uebung } from "@/lib/durchatmen/uebungen";
-import { SorteSymbol } from "@/components/durchatmen/DurchatmenFenster";
+import type { Sorte, Uebung } from "@/lib/durchatmen/uebungen";
+import { SORTE_STIL, SorteSymbol } from "@/components/durchatmen/DurchatmenFenster";
 
 const EASE = "cubic-bezier(.16,1,.3,1)";
 
@@ -76,20 +75,21 @@ export function AtemKreis({ stand, still, dunkel = false, klein = false }: { sta
   );
 }
 
-/** Ring-Countdown mit Auge (Handy-Pause) */
-export function AugenRing({ stand }: { stand: Stand }) {
+/** Ring-Countdown mit Symbol der Sorte und Restzeit (Handy-Pause hell, alle im Dunkeln, Tafel 146) */
+export function RestRing({ stand, sorte = "augen", klein = false }: { stand: Stand; sorte?: Sorte; klein?: boolean }) {
   const r = 84;
   const umfang = 2 * Math.PI * r;
   const sek = Math.ceil(stand.rest / 1000);
+  const Icon = SORTE_STIL[sorte].icon;
   return (
-    <div className="relative flex h-[min(56vw,220px)] w-[min(56vw,220px)] items-center justify-center text-atem-dunkel-ink" data-animation="ring">
+    <div className={`relative flex items-center justify-center text-atem-dunkel-ink ${klein ? "h-[min(44vw,176px)] w-[min(44vw,176px)]" : "h-[min(56vw,220px)] w-[min(56vw,220px)]"}`} data-animation="ring">
       <svg viewBox="0 0 200 200" className="absolute inset-0 h-full w-full -rotate-90" aria-hidden>
         <circle cx="100" cy="100" r={r} fill="none" stroke="var(--app-atem-dunkel-soft)" strokeWidth="8" />
         <circle cx="100" cy="100" r={r} fill="none" stroke="currentColor" strokeWidth="8" strokeLinecap="round" strokeDasharray={umfang} strokeDashoffset={umfang * stand.anteil} />
       </svg>
       <span className="relative flex flex-col items-center gap-1">
-        <Eye className="h-8 w-8" strokeWidth={1.8} aria-hidden />
-        <span className="text-[30px] font-extrabold tabular-nums">{`${Math.floor(sek / 60)}:${String(sek % 60).padStart(2, "0")}`}</span>
+        <Icon className="h-8 w-8" strokeWidth={1.8} aria-hidden />
+        <span className="text-[30px] font-extrabold tabular-nums" data-restzeit>{`${Math.floor(sek / 60)}:${String(sek % 60).padStart(2, "0")}`}</span>
       </span>
     </div>
   );

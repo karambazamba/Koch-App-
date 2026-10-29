@@ -7,7 +7,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Lauf, standBei, type Stand } from "@/lib/durchatmen/ablauf";
-import { anleiten, anleitungStill, audioListeLaden } from "@/lib/durchatmen/anleitung";
+import { anleiten, anleitungStill } from "@/lib/durchatmen/anleitung";
 import { tonAus } from "@/lib/durchatmen/klang";
 import { stopSpeaking } from "@/lib/begleitung/speech";
 import { laufUhr } from "@/lib/durchatmen/uhr";
@@ -39,7 +39,6 @@ export function useUebungLauf(u: Uebung, o: { aktiv: boolean; art: Art; zaehlen:
 
   useEffect(() => {
     if (!o.aktiv) return;
-    void audioListeLaden();
     let erstes = true;
     const l = new Lauf(u, laufUhr(), (e) => {
       const { art, zaehlen } = optionen.current;
@@ -57,8 +56,8 @@ export function useUebungLauf(u: Uebung, o: { aktiv: boolean; art: Art; zaehlen:
         setTimeout(() => optionen.current.onEnde(), 900);
       }
     }, TICK_MS);
-    // Handy weglegen: nach 3 s dunkel, Handy-Pause sofort
-    const dunkelTimer = setTimeout(() => setDunkel(true), u.id === "handy-pause" ? 0 : DUNKEL_NACH_MS);
+    // Handy weglegen: nach „Los“ und 3 s dunkel (A-061, auch die Handy-Pause)
+    const dunkelTimer = setTimeout(() => setDunkel(true), DUNKEL_NACH_MS);
     return () => {
       clearInterval(tick);
       clearTimeout(dunkelTimer);
