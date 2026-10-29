@@ -151,9 +151,9 @@ export function WeekPlanView() {
               { label: "Vorlage speichern", icon: Save, onClick: () => setSheet({ type: "save" }), disabled: readOnly || week.planned === 0 },
               { label: "Vorlage laden", icon: FolderOpen, onClick: () => setSheet({ type: "load" }), disabled: readOnly },
               { label: "Frühere Wochen", icon: History, onClick: () => changeWeek(-1) },
-              { label: "Feste Tage & Vorlieben", icon: ClipboardList, onClick: () => router.push(`/woche/check?woche=${weekStart}`) },
+              { label: "Feste Tage & Vorlieben", icon: ClipboardList, href: `/woche/check?woche=${weekStart}` },
               { label: "Plan teilen", icon: Share2, onClick: () => void share() },
-              { label: "Unsere Rezepte", icon: BookOpen, onClick: () => router.push("/kochbuch") },
+              { label: "Unsere Rezepte", icon: BookOpen, href: "/kochbuch" },
             ]}
           />
         }

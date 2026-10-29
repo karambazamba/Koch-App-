@@ -486,7 +486,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
                 <MoreMenu
                   title="Startseite"
                   items={[
-                    { label: "Einstellungen", icon: Settings, onClick: () => router.push("/profil") },
+                    { label: "Einstellungen", icon: Settings, href: "/profil" },
                     { label: "Startseite bearbeiten", icon: PenLine, onClick: editing.open },
                   ]}
                 />

@@ -226,8 +226,11 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
   Notiz (eine Zeile), S und M = bis 3 Zeilen „Titel · Anfang“, Rest „+n“,
   Angeheftete zuerst; leer überall derselbe Text „Schnell notieren …“
   (A-048/Tafel 140, wie auf der Notizen-Seite; in XS 13 px, ohne Stift im Text – der Stift ist nur der Knopf oben rechts);
-  Listen als „x von y erledigt“. Zeile = diese Notiz, Stift = Schnelleingabe
-  „Neue Notiz“.
+  Listen als „x von y erledigt“. Antippen der ganzen Kachel (Zeile, Leertext,
+  freie Fläche) öffnet in allen Größen immer die Notizen-Seite, leer wie voll;
+  nur der Stift öffnet die Schnelleingabe „Neue Notiz“ (A-059, Tafel 144).
+  Leere Notizen-Seite: „Noch keine Notizen. Tipp aufs Plus oder sag Mia:
+  „Notiz: …““ (`NOTIZEN_LEER`).
 - Nichts abgeschnitten (A-045/A-046, Tafel 133/134): kein sichtbarer Text in
   einer Kachel endet auf „…“ oder wird weggeschnitten – Texte brechen um
   bzw. sind so kurz, dass sie in die feste Fläche des Rasters passen; was
@@ -510,6 +513,23 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
 - Wechsel ab 25 % Breite oder
   > 0,35 px/ms, sonst zurückfedern; Gummiband am Rand. Nicht in Feldern,
   Fenstern und `[data-no-swipe]`.
+- Nur klare Seitenwische (A-059, `heute/seitenWisch.ts`, rein): Start nicht in
+  den untersten 48 px + Safe-Area unten (dort schließt man auf dem iPhone die
+  App) und nicht am linken Rand (`RAND_PX`, Zurück), |dx| ≥ 2 · |dy|,
+  mindestens 60 px. `touchcancel` federt immer zurück. Geht die App binnen
+  500 ms nach einem Wisch-Wechsel in den Hintergrund (`visibilitychange`),
+  wird der Wechsel zurückgenommen (läuft die Animation noch: gar nicht erst
+  gewechselt). Die Heimkehr-Regel (> 5 Min → Startseite) bleibt. Tests
+  `seitenWisch.test.ts`, Durchklick `kaputt.mjs` `wischenNurKlar`.
+- Menü „•••“ (`ui/MoreMenu`): Zeilen, die zu einer anderen Seite führen,
+  haben `href`; erst schließt das Fenster samt Verlaufseintrag, nach dessen
+  `popstate` geht es weiter (`nachDemFenster`, `core/fensterVerlauf.ts`
+  `danach`). Vorher kam beim Kaltstart das verspätete Entfernen des
+  Menü-Eintrags (300 ms) der noch ladenden Seite zuvor und brach sie ab
+  (A-059). Durchklick `menueErstesTippen` (gedrosselt, Browser und als App).
+- Unten frei: Die Seite hat unten `FAB_CLEARANCE` (Leiste + herausragende
+  Mia + Luft) – nach unten gescrollt liegt keine Kachel unter Leiste oder
+  Mia-Knopf (Durchklick `untenFrei`, auch mit umgedrehter Wundertüte).
 - Verlauf: Heute → Kalender/Essen ein Eintrag, Kalender ↔ Essen ersetzt; Zurück
   führt immer zu Heute. `?seite=woche` gilt weiter als Kalender.
 

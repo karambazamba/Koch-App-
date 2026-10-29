@@ -26,7 +26,7 @@ export function appOrigin(origin: string): string {
 }
 
 /** Versionsnummer (wie in package.json) – in den Einstellungen unter "Daten & App" */
-export const APP_VERSION = "0.161.0";
+export const APP_VERSION = "0.162.0";
 
 /** Tag der Auslieferung (beim Bauen gesetzt, next.config.ts) */
 const APP_BUILD_DATE = process.env.BUILD_DATE ?? "";

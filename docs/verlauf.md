@@ -6,6 +6,32 @@ ist inzwischen anders. Den aktuellen Stand je Bereich beschreibt
 `docs/bereiche/<bereich>.md`, die festen Regeln stehen in `CLAUDE.md`.
 Ältere Pfadangaben meinen die Orte vor dem Umzug (siehe CLAUDE.md, „Ordner“).
 
+## Kaputt: Notizen-Kachel, Wundertüte zum Umdrehen, ••• beim ersten Tippen, Wischen nur klar (A-059, v0.162.0)
+
+- Sammel-Auftrag 29.10. mittags, Block A + D (Wortlaut
+  `docs/auftraege/A-059-sammel-mittags.md`, Tafel 144 und 145).
+- Notizen-Kachel: Antippen der ganzen Kachel (Zeile, Leertext, Fläche) öffnet
+  in allen Größen immer die Notizen-Seite, nur der Stift legt an. Leere Seite:
+  „Noch keine Notizen. Tipp aufs Plus oder sag Mia: „Notiz: …““. Ursache:
+  der Leertext war ein Knopf für die Schnelleingabe, Zeilen führten zur Notiz.
+- Wundertüte (Tafel 145 ersetzt „Lösung im weißen Feld / Antippen für mehr“
+  aus Tafel 144): Kachel vorn nur die Frage, Antippen dreht die Karte um
+  (0,6 s), hinten die Lösung im weißen Feld und „Mehr ›“ zur Seite. Seite und
+  Rätsel-Fenster: Lösung nach jeder neuen Karte verdeckt, „Noch eine“ bzw.
+  „Noch eins“ vorher hell. Keine Silbentrennung mehr („De-ern“; Ursache
+  `hyphens-auto`), Frage vorn möglichst in 2 Zeilen, Schrift immer in voller
+  Farbe, Filter Alles · Witze · Platt · Wissen (umbrechen statt abschneiden).
+- Menü „•••“ → „Einstellungen“ beim ersten Tippen: Das Menü-Fenster nahm 300 ms
+  nach dem Schließen seinen Verlaufseintrag per `history.back()` weg. Lud die
+  Zielseite länger (Kaltstart), kam dieses Zurück vor dem `pushState` der
+  Navigation und brach sie ab. Jetzt: Zeilen mit `href`, erst Eintrag weg,
+  nach dem `popstate` navigieren (`fensterVerlauf.danach`, `nachDemFenster`).
+- Wischen: Seitenwechsel nur bei klarer Geste (nicht unten, nicht am linken
+  Rand, |dx| ≥ 2 · |dy|, ≥ 60 px), `touchcancel` wechselt nie, Hintergrund
+  binnen 500 ms nach dem Wisch nimmt den Wechsel zurück. Ursache: der Wisch
+  vom unteren Rand zum Schließen der App kam als schräger Seitenwisch an
+  (Richtung ab 1,2:1, beim Abbrechen wie Loslassen gewertet).
+
 ## Eingebaute Rezepte liefern ihre Zutaten (A-057, v0.161.0)
 
 - Auftrag A-057 (Kleinkram von Felix), betrifft A-040/A-046: Die

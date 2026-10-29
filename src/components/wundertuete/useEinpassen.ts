@@ -2,7 +2,8 @@
 
 // Nichts abgeschnitten (A-045) in der Wundertüte: Frage und Antwort stehen
 // in einer festen Fläche (Raster, Tafel 118). Statt „…“ oder Abschneiden
-// wird die Schrift Stufe für Stufe kleiner, bis der Text ganz hineinpasst.
+// wird die Schrift Stufe für Stufe kleiner, bis der Text ganz hineinpasst;
+// die Frage vorn möglichst in höchstens 2 Zeilen (A-059).
 // Der Kopf nimmt die Kurzform der Sorte, wenn der Name nicht in die Zeile
 // passt, und zeigt nur das Symbol, wenn auch die nicht passt. Gemessen wird vor dem Zeichnen und wieder, wenn sich die Fläche
 // ändert (Drehen, Schrift geladen).
@@ -34,27 +35,44 @@ function beobachten(box: HTMLElement, messen: () => void) {
 }
 
 /**
- * Größte Schrift aus `stufen` (px), bei der der Inhalt von `box` ganz zu
- * sehen ist; passt keine, bleibt die kleinste. `text` = Auslöser fürs Neu-Messen.
+ * Ein Versuch beim Einpassen: vorher die Karte vorbereiten (z. B. kurzer Satz
+ * unten, `data-eng`), und ob die Frage dabei höchstens `zeilen` Zeilen haben
+ * darf (A-059: lieber kleiner als drei Zeilen).
  */
-export function useSchriftEinpassen(box: RefObject<HTMLElement | null>, text: RefObject<HTMLElement | null>, stufen: readonly number[], key: string) {
+export type Versuch = { vorbereiten?: (karte: Element | null) => void; zeilen?: number };
+
+/** Erst mit dem vollen Satz unten, dann mit der Kurzform (`data-eng`, z. B. auf dem iPhone SE) */
+export const SATZ_KURZ: Versuch[] = [{ vorbereiten: (k) => k?.toggleAttribute("data-eng", false) }, { vorbereiten: (k) => k?.toggleAttribute("data-eng", true) }];
+
+/** Zeilen eines Textes (Höhe durch Zeilenhöhe) */
+function zeilenVon(el: HTMLElement | null): number {
+  if (!el || !el.offsetParent) return 0;
+  const lh = parseFloat(getComputedStyle(el).lineHeight);
+  return lh > 0 ? Math.round(el.getBoundingClientRect().height / lh) : 0;
+}
+
+/**
+ * Größte Schrift aus `stufen` (px), bei der der Inhalt von `box` ganz zu
+ * sehen ist; Versuch für Versuch (`versuche`), passt keine, bleibt die
+ * kleinste im letzten Versuch. `key` = Auslöser fürs Neu-Messen.
+ */
+export function useSchriftEinpassen(box: RefObject<HTMLElement | null>, text: RefObject<HTMLElement | null>, stufen: readonly number[], key: string, versuche: Versuch[] = SATZ_KURZ) {
   useLayoutEffect(() => {
     const b = box.current;
     const t = text.current;
     if (!b || !t) return;
-    const seite = b.closest("section");
+    const karte = b.closest("section");
     return beobachten(b, () => {
-      // Erst mit dem vollen Satz unten; passt der Text selbst in der kleinsten
-      // Stufe nicht, mit der Kurzform (`data-eng`, z. B. auf dem iPhone SE)
-      for (const eng of [false, true]) {
-        seite?.toggleAttribute("data-eng", eng);
+      const frage = t.querySelector<HTMLElement>("[data-frage]");
+      for (const v of versuche) {
+        v.vorbereiten?.(karte);
         for (const px of stufen) {
           t.style.fontSize = `${px}px`;
-          if (passt(b)) return;
+          if (passt(b) && (!v.zeilen || zeilenVon(frage) <= v.zeilen)) return;
         }
       }
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- `stufen` ist je Größe fest, `key` deckt den Text ab
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `stufen` und `versuche` sind je Seite fest, `key` deckt den Text ab
   }, [box, text, key]);
 }
 

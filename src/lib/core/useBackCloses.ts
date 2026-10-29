@@ -38,3 +38,9 @@ export function useBackCloses(onClose: () => void) {
   });
   useEffect(() => verlauf?.oeffne(() => closeRef.current()), []);
 }
+
+/** Nach dem Schließen eines Fensters weiter (Seite wechseln): erst dessen Verlaufseintrag weg, dann `weiter` (A-059) */
+export function nachDemFenster(weiter: () => void) {
+  if (verlauf) verlauf.danach(weiter);
+  else weiter();
+}
