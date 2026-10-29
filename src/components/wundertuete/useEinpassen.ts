@@ -44,8 +44,8 @@ export function useSchriftEinpassen(box: RefObject<HTMLElement | null>, text: Re
     if (!b || !t) return;
     const seite = b.closest("section");
     return beobachten(b, () => {
-      // Erst mit dem vollen Hinweis unten; passt die Frage selbst in der
-      // kleinsten Stufe nicht, mit dem kurzen (`data-eng`, z. B. Schätz mal auf dem iPhone SE)
+      // Erst mit dem vollen Satz unten; passt der Text selbst in der kleinsten
+      // Stufe nicht, mit der Kurzform (`data-eng`, z. B. auf dem iPhone SE)
       for (const eng of [false, true]) {
         seite?.toggleAttribute("data-eng", eng);
         for (const px of stufen) {

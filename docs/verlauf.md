@@ -6,6 +6,38 @@ ist inzwischen anders. Den aktuellen Stand je Bereich beschreibt
 `docs/bereiche/<bereich>.md`, die festen Regeln stehen in `CLAUDE.md`.
 Ältere Pfadangaben meinen die Orte vor dem Umzug (siehe CLAUDE.md, „Ordner“).
 
+## Rätsel und Wundertüte: Noch eine, nie doppelt (A-052, v0.160.0)
+
+- Paket C des Gesamtauftrags vom 29.10. (Wortlaut
+  `docs/auftraege/A-050-minikreise-durchatmen.md`, Teil 5 und 6, Tafel 137
+  Bild 4 und Tafel 140). Ersetzt A-049 („eine Karte pro Tag“, nie gemergt;
+  übernommen sind feste IDs in Paketen, „gesehen“ im Haushalt, Ähnlichkeit,
+  Route mit Guard, `alltagsModell()`).
+- Rätsel ziehen aus: eigener Bereich `lib/raetsel` mit Fenster
+  (`components/raetsel/RaetselFenster.tsx`): „Kinder raten zuerst“, Frage
+  27 px, Lösung erst nach Antippen im gestrichelten Kasten, „Noch eins ›“.
+  Paket `content/raetsel/paket-001.json` mit 91 Rätseln (55 alte + 36 neue).
+  Den Mini-Kreis bindet Paket A an; bis dahin Test-Öffner in „Für Entwickler“.
+- Wundertüte nur noch Witze (32 neue), Plattdeutsch (90), Angeberwissen
+  (180, Schätz mal dazu): `content/wundertuete/paket-001.json`. Kachel ohne
+  Punkte und ohne Drehen: Titel je Sorte („Platt för Plietsche“ mit Anker,
+  sonst „Wundertüte“ mit Geschenk), kleine Sorte, groß Wort/Witz/Frage,
+  darunter Pointe bzw. „Antippen für die Lösung“; Antippen öffnet die neue
+  Seite `/wundertuete` (Lösung groß, Filter, „Noch eine ›“, „Nie doppelt.
+  Mia legt immer neue nach.“). Tischrunde, Schätz mal (als Sorte), Wer
+  zuerst, Heute vor 100 Jahren entfallen.
+- Nie doppelt (`wundertuete/vorrat.ts`, für beide Bereiche): gesehene IDs,
+  ältestes Paket zuerst, Sorten anteilig gemischt; Mias Nachschub per KI nur
+  für Witze und Rätsel (`/api/nachschub`, 20 im Voraus, Ähnlichkeitsabgleich,
+  höchstens 6 Anfragen am Tag je Gerät); ohne Vorrat „… kommen bald.“.
+- Speicher `wasgibts.wundertuete` v2 (Migration v1: alles Gezeigte gesehen)
+  und neu `wasgibts.raetsel` v1 (übernimmt die in der Wundertüte gezeigten
+  Rätsel); im Haushalt geteilt über `entries` (Übersetzer `wundertuete`,
+  `raetsel`), keine neue Tabelle.
+- Für Entwickler: Vorrat je Sorte, unter 50 Platt bzw. Angeberwissen „Paket
+  nötig (n übrig)“.
+- Datenschutz: Datenkarte, Anbieter (Anthropic), Datenschutzerklärung.
+
 ## Durchatmen + Mia leitet an (A-051, v0.159.0)
 
 - Paket B des Gesamtauftrags vom 29.10. (A-050 bis A-053, Tafel 138/139):

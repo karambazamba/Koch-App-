@@ -8,7 +8,7 @@ import { weatherKind, type Forecast } from "@/lib/wetter/forecast";
 import type { Lage } from "@/lib/wundertuete/auswahl";
 
 /** Wetter heute für den Anlass: Regen, Schnee, Sonne oder nichts Besonderes */
-export function wetterHeute(forecast: Forecast | null | undefined, heute: string): Lage["wetter"] {
+function wetterHeute(forecast: Forecast | null | undefined, heute: string): Lage["wetter"] {
   if (!forecast) return null;
   if (forecast.current.raining) return "regen";
   const day = forecast.days.find((d) => d.date === heute);

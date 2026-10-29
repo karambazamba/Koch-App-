@@ -19,6 +19,7 @@ import { MicLogList } from "@/components/einstellungen/settings/MicLogSection";
 import { PruefstandLauf } from "@/components/einstellungen/settings/PruefstandLauf";
 import { TempoSection } from "@/components/einstellungen/settings/TempoSection";
 import { AnsagenErzeugen } from "@/components/durchatmen/AnsagenErzeugen";
+import { WundertueteNachschub } from "@/components/wundertuete/WundertueteNachschub";
 
 export function AdminView() {
   // Erst im Browser (beim Vorrendern gibt es kein „heute“ und keinen Speicher)
@@ -49,6 +50,7 @@ export function AdminView() {
           </div>
         </section>
         <TempoSection />
+        <WundertueteNachschub />
         <div className={`${CARD} overflow-hidden`}>
           <MicLogList as="section" />
         </div>

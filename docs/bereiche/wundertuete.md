@@ -1,173 +1,202 @@
-# Mias Wundertüte
+# Mias Wundertüte und Rätsel
 
-## Feste Regeln (A-022, Tafel 116)
+## Feste Regeln (A-022, Tafel 116; neu mit A-052, Tafel 137/140)
 
-- Eine Kachel, die jeden Tag anders heißt: sieben Sorten mit eigenem Kopf
-  (lucide-Symbol + Name in Großbuchstaben), Farbe aus der Kachel-Palette
-  (Tafel 108, über `data-tone` der Sorte) und Hinweis unten links.
-- **Geprüft statt erfunden:** alle Inhalte vorab geschrieben, Fakten, Zahlen,
-  Jahrestage und Platt-Bedeutungen mit Quelle im Datensatz (`quelle`, nie
-  angezeigt). Keine KI-Fakten; Mia liest nur Karten aus dem Pool vor. Im
-  Zweifel weglassen.
+- **Wundertüte = Witze, Plattdeutsch, Angeberwissen.** Rätsel sind seit
+  A-052 ein eigener Bereich (Mini-Kreis „Rätsel“ mit Fenster, siehe unten).
+  Tischrunde, Schätz mal, Wer zuerst und Heute vor 100 Jahren gibt es nicht
+  mehr (Schätz-mal-Fakten wurden Angeberwissen, IDs `sm-…` blieben).
+- **Nie doppelt:** jede Karte hat eine feste ID; was der Haushalt gesehen
+  hat, kommt nie wieder (mit Konto im Haushalt geteilt, sonst auf dem
+  Gerät). „Noch eine ›“ bzw. „Noch eins ›“ geht beliebig oft. Immer zuerst
+  Ungesehenes aus dem ältesten Paket.
+- **Geprüft statt erfunden:** Plattdeutsch und Angeberwissen NUR aus
+  geprüften Paketen, Fakten und Platt-Bedeutungen mit Quelle im Datensatz
+  (`quelle`, nie angezeigt). Witze und Rätsel darf Mia per KI nachlegen
+  (Haiku über `begleitung/guard.ts`, 20 im Voraus, Ähnlichkeitsabgleich),
+  nie Fakten oder Platt. Ohne KI und ohne Vorrat: „Neue Witze kommen bald.“
+  bzw. „Neue Rätsel kommen bald.“, niemals eine Wiederholung.
 - Kindgerecht, Mia-Ton (trocken, norddeutsch, nie albern), keine
   Gesundheitsratschläge, keine Politik/Religion, nichts über Körper/Gewicht,
   keine Stereotype, kein Emoji, kein Gedankenstrich, typografischer Apostroph.
-- Nie Punkte zum Sammeln, Streaks oder Zähler. Die drei Punkte unten rechts
-  zeigen nur, wie oft diese Karte schon da war (1–3), dann kommt die nächste.
+- Keine Punkte, keine Zähler, keine Streaks.
 - Baustein `wundertuete` (`core/features.ts`): für **neue Nutzer an** als
-  S-Kachel direkt hinter Essen + Einkauf (`ersteStartseite`); bestehende
-  Nutzer bekommen sie nie von selbst (Anordnung ändert sich nie von selbst),
-  in der Kachel-Auswahl steht sie mit „NEU“, in „Mehr Funktionen“ zum
-  Einschalten. Von Felix gewollte Ausnahme vom Feature-Stopp für 1.0.
+  S-Kachel (`ersteStartseite`); bestehende Nutzer bekommen sie nie von selbst,
+  in der Kachel-Auswahl steht sie mit „NEU“. Von Felix gewollte Ausnahme vom
+  Feature-Stopp für 1.0.
 - **Nichts abgeschnitten (A-045):** kein sichtbarer Text endet auf „…“ oder
-  wird weggeschnitten. Frage und Antwort stehen in fester Fläche (Raster
-  XS · S · M, Tafel 118), die Schrift wird Stufe für Stufe kleiner, bis alles
-  ganz zu sehen ist (`useEinpassen`); der Kopf nimmt die Kurzform der Sorte
-  (`kurz`) und auf ganz schmalen Handys hinten neben „Teilen“ nur das
-  Symbol. Darum heißt die Sorte „Wer zuerst“ ohne „…“ (die Karte beginnt mit
-  „… fünf rote Dinge“). Durchklick `wundertueteAlle` prüft jede Karte.
+  wird weggeschnitten. Der Text steht in fester Fläche, die Schrift wird
+  Stufe für Stufe kleiner, bis alles ganz zu sehen ist (`useEinpassen`); der
+  Kopf nimmt die Kurzform („Platt“), auf ganz schmalen Handys nur das
+  Symbol. Durchklick `wundertueteAlle` prüft jede Karte.
 
-Kurz: Die Wundertüte versüßt den Tag. Tagsüber Angeberwissen, Platt und
-Rätsel, ab 17 Uhr (zu zweit/Familie) Tischrunde, Schätz mal und Wer zuerst.
+Kurz: Die Wundertüte versüßt den Tag mit einem Witz, einem plattdeutschen
+Wort oder Angeberwissen; die Rätsel sind für die Kinder am Tisch.
 
-## Sorten
+## Sorten der Wundertüte
 
-| Sorte | ID | Farbe (Tokens) | Symbol | Wann | Rückseite | Quelle |
-|---|---|---|---|---|---|---|
-| Angeberwissen | `angeberwissen` | Flieder (`sport`) | Lightbulb | tagsüber | ja | Pflicht |
-| Platt för Plietsche | `platt` | Mint (`aufgaben`) | Anchor | tagsüber | ja | Pflicht |
-| Rätselstunde | `raetsel` | Vanille (`notizen`) | Puzzle | tagsüber | ja | – |
-| Heute vor 100 Jahren | `heute100` | Sand (`timer`) | Calendar | nur am belegten Tag | ja | Pflicht |
-| Tischrunde | `tischrunde` | Pfirsich (`essen`) | MessageSquare | ab 17 Uhr | nein | – |
-| Schätz mal! | `schaetzmal` | Lavendel (`termine`) | Scale | ab 17 Uhr | ja | Pflicht |
-| Wer zuerst | `werzuerst` | Rosé (`pinnwand`) | Dice5 | ab 17 Uhr | nein | – |
-
-Pfirsich ist kein wählbarer Ton der Palette, aber die feste Essen-Fläche
-(`--app-tile-essen`) – so bleibt alles in den Tokens. Allein: abends weiter
-Wissen, Platt, Rätsel (Angeberwissen dann mit Hinweis „Zum Weitererzählen“).
+| Sorte | ID | Kachel-Titel | Kleine Sorte | Farbe (Tokens) | Symbol/Wasserzeichen | Unten | Quelle | KI |
+|---|---|---|---|---|---|---|---|---|
+| Witze | `witz` | Wundertüte | WITZ | Vanille (`notizen`) | Geschenk | Pointe gleich darunter | – | ja |
+| Plattdeutsch | `platt` | Platt för Plietsche | – | Mint (`aufgaben`) | Anker | „Antippen für die Lösung“ | Pflicht | nein |
+| Angeberwissen | `angeberwissen` | Wundertüte | ANGEBERWISSEN | Flieder (`sport`) | Geschenk | „Antippen für die Lösung“ | Pflicht | nein |
 
 ## Wo im Code
 
-- Daten je Sorte: `src/lib/wundertuete/data/*.ts` (feste IDs `aw-`, `pl-`,
-  `ra-`, `h1-`, `ti-`, `sm-`, `wz-` + dreistellige Nummer), gebündelt in
-  `pool.ts` (`POOL`, `eintragVon`, `eintraegeDer`, `BEISPIEL_KARTE`).
-- Sorten, Typen, Fett/Teilen: `sorten.ts` (`SORTEN`, `antwortTeile`,
-  `teilText`, `wundertueteName`).
-- Wechsel (rein): `auswahl.ts` (`erlaubteSorten`, `passt`, `naechste`,
-  `anzeigen`, `karteGilt`, `tippAktion`, `migrateWt`); Lage aus Wetter,
-  Gericht, Feiertag: `lage.ts`; Speicher: `store.ts`.
-- Kachel: `src/components/wundertuete/WundertueteTile.tsx` (Einpassen der
-  Schrift und des Kopfs: `useEinpassen.ts`), CSS `.wt-karte`,
-  `.wt-dreh`, `.wt-neu` in `globals.css`.
-- Mia: Werkzeug `wundertuete_karte` (`src/lib/begleitung/wundertueteTools.ts`),
-  Prüfstand-Sätze in `pruefstand/saetze.ts`.
+- Inhalte: `content/wundertuete/paket-001.json` … (je bis zu 500 Karten,
+  `{ paket, eintraege: [{ id, sorte, vorne, hinten, quelle?, anlass? }] }`)
+  und `content/raetsel/paket-001.json` … (je bis zu 500,
+  `{ id, frage, loesung }`), eingebunden in `src/lib/wundertuete/pakete.ts`
+  bzw. `src/lib/raetsel/pakete.ts` (Import über `@/content/…`, Alias in
+  `tsconfig.json` und `vitest.config.ts`).
+- Gemeinsam „nie doppelt“ (rein): `src/lib/wundertuete/vorrat.ts`
+  (`poolAus`, `ungesehen`, `ziehe`, `merke`, `brauchtNachschub`,
+  `nachlegen`, `VORRAT_ZIEL` 20, `KI_JE_TAG` 6), Ähnlichkeit `aehnlich.ts`
+  (normalisieren + Trigramm-Jaccard, Schwelle 0,4), Nachschub im Speicher
+  `nachschub.ts`, Browser `kiHolen.ts` (erst per `import()`), Server
+  `kiKarte.ts` (Prompt, strukturierte Antwort, `pruefeKiKarte`, Mock) und
+  Route `src/app/api/nachschub/route.ts`.
+- Wundertüte: `sorten.ts` (`SORTEN`, `FILTER`, `ANTIPPEN`, `KOMMT_BALD`,
+  `teilText`), `pool.ts` (`WT_POOL`, `BEISPIEL_KARTE` = „Kiek mol an“),
+  `auswahl.ts` (`passt`, `naechste`, `tageskarte`, `uebrigAusPaketen`,
+  `PAKET_NOETIG_AB` 50, `migrateWt`), `lage.ts`, `store.ts` (`useWundertuete`,
+  `wtZeigen`, `wtNoch`).
+- Rätsel: `src/lib/raetsel/auswahl.ts` (`RT_POOL`, `naechstesRaetsel`,
+  `oeffnen`, `loesen`, `hatUngesehenes` (nur intern),
+  `raetselStart`, `migrateRaetsel`), `store.ts` (`useRaetsel`,
+  `raetselOeffnen`, `raetselLoesen`, `raetselNoch`).
+- Oberfläche: Kachel `src/components/wundertuete/WundertueteTile.tsx`, Seite
+  `WundertueteSeite.tsx` (`/wundertuete`), Rätsel-Fenster
+  `src/components/raetsel/RaetselFenster.tsx`, Entwickler-Zeilen
+  `WundertueteNachschub.tsx` (in „Für Entwickler“, dort auch der Test-Öffner
+  des Rätsel-Fensters). CSS `.wt-karte`, `.wt-neu` in `globals.css`.
+- Abgleich: Übersetzer `wundertuete` und `raetsel` (`vorratAdapter`) in
+  `src/lib/konten/sync/docs.ts`.
+- Mia: Werkzeug `wundertuete_karte` (`src/lib/begleitung/wundertueteTools.ts`,
+  Sorten witz, platt, angeberwissen, raetsel), Prüfstand-Sätze in
+  `pruefstand/saetze.ts`.
 
-## Verhalten
+## Verhalten Wundertüte
 
-- Antippen dreht die Karte (0,8 s, nur transform; reduced-motion =
-  Überblenden), nochmal antippen = nächste Karte. Tischrunde und Wer zuerst
-  haben keine Rückseite: Antippen = nächste. Rückseite: weiß mit farbigem
-  Rand, Antwort mit EINEM fetten Wort (`**…**`), „Nochmal tippen = Neues“,
-  oben rechts Teilen („Wusstest du? …“ + „Von <Name>“ über das Teilen-Menü,
-  sonst Kopieren).
-- Nicht angetippt: nach 3 Anzeigen (Öffnungen mit sichtbarer Kachel,
-  höchstens eine je halbe Stunde) von selbst die nächste.
-- Nie zweimal dieselbe Sorte hintereinander. Die Sorte wird nach dem gewählt,
-  was in ihr noch übrig ist, so sind alle Sorten etwa gleichzeitig durch.
-- Passendes zuerst: ein Eintrag mit `anlass` (Wetter Regen/Schnee/Sonne,
-  Jahreszeit, Wochentag, Gericht des Tages, Feiertag) kommt NUR, wenn er
-  passt, und dann vor allem anderen; „Schietwedder“ nur an Regentagen.
-  Heute vor 100 Jahren: nur am Tag (`tag` „MM-TT“, `jahr` + 100) und dann zuerst.
-- Gilt die aktuelle Karte nicht mehr (17 Uhr, Haushalt gewechselt, Anlass
-  vorbei), kommt beim nächsten Anzeigen die passende nächste.
-- Beispiel-Tag: feste Karte Angeberwissen (Regentropfen), nie gespeichert;
-  „Beispiel“ nur für VoiceOver (sichtbar steht das eine leise Schild an der
-  Pinnwand, Tafel 119; allein gar keins). Das erste „nochmal tippen“ leert
-  das Beispiel. Die Wundertüte hält den Beispiel-Tag nie allein am Laufen: haben alle
-  anderen Kacheln Eigenes, ist er vorbei (`demoTiles`, `NUR_MIT`).
-- S und M: dieselbe Karte, M nur breiter mit größerer Frage (Stufen
-  `FRAGE_STUFEN`/`ANTWORT_STUFEN`: S 17 → 12 px, M 21 → 14 px; Antwort
-  S 14,5 → 11,5 px, M 17 → 13 px). Kopf: Name → Kurzform (Wissen, Platt,
-  Rätsel, Damals, Tischrunde, Schätz mal!, Wer zuerst) → nur Symbol. Passt
-  die Frage selbst in der kleinsten Stufe nicht, kommt unten der kurze
-  Hinweis (`hinweisKurz`, `data-eng`; Schätz mal: „Am nächsten dran
-  gewinnt“). Beide Seiten liegen genau übereinander in der Kachel. Keine
-  Farbwahl im Bearbeiten (die Farbe kommt mit der Sorte). XS gibt es nicht.
-- Wasserzeichen (A-036): Geschenk (`Gift`) nur auf der Vorderseite, leise
-  (`frei`, die Frage steht ohne weißes Kärtchen), Hinweis mit `kachel-frei`;
-  die weiße Rückseite bleibt ohne.
+- **Kachel (S/M):** Kopf je Sorte, kleine Sorte, groß Wort/Frage/Witz; beim
+  Witz die Pointe darunter, bei Platt und Wissen unten „Antippen für die
+  Lösung“. An einem neuen Tag kommt von selbst die nächste Karte (gilt ab
+  dann als gesehen). Antippen öffnet die Seite. Alles gesehen: „Neue
+  Wundertüte kommt bald.“
+- **Seite /wundertuete:** dieselbe Karte groß, bei Platt und Wissen die
+  Lösung bzw. Bedeutung im gestrichelten Kasten („Heißt“, „Lösung“) – die
+  Kachel lügt nicht, beim Witz die Pointe. Filter Alles · Witze ·
+  Plattdeutsch · Angeberwissen, großer Knopf „Noch eine ›“ (beliebig oft),
+  „Nie doppelt. <Name> legt immer neue nach.“, Teilen oben rechts.
+- **Auswahl** (fest statt Zufall: gleicher Stand = gleiche Karte auf jedem
+  Gerät): 1. eine Karte mit passendem Anlass (Wetter, Jahreszeit,
+  Wochentag, Gericht, Feiertag; „Schietwedder“ nur an Regentagen), 2. sonst
+  das älteste Paket mit Ungesehenem (Mias Witze danach); nie dieselbe Sorte
+  wie eben, sonst die Sorte, von der anteilig am meisten übrig ist (so
+  mischen sich die Sorten im Verhältnis des Pakets).
+- **Nachschub:** Sind weniger als 20 ungesehene Witze da, legt Mia im
+  Hintergrund nach (`/api/nachschub`, je Anfrage bis zu 5, höchstens 6
+  Anfragen am Tag je Gerät, Guard: KI-Einwilligung, Zugangscode,
+  Tageslimit; Modell `alltagsModell()` aus `begleitung/modellwahl.ts`).
+  Jeder Text durch `tidyMiaText()`, streng geprüft (höchstens zwei Sätze,
+  Längen, Emoji, heikle Themen), Ähnliches zu Bekanntem fällt weg; kommt
+  nichts Brauchbares, genau ein zweiter Versuch.
+- **Paket nötig:** unter 50 ungesehenen Platt- bzw. Angeberwissen-Karten
+  zeigt „Für Entwickler“ „Plattdeutsch: Paket nötig (n übrig)“ bzw.
+  „Angeberwissen: …“ (Monatsauftrag A-039).
+- Beispiel-Tag: feste Karte „Was heißt ‚Kiek mol an‘?“, nie gespeichert;
+  „Beispiel“ nur für VoiceOver. Antippen leert das Beispiel und öffnet die Seite.
+
+## Rätsel (eigener Bereich, A-052)
+
+- Mini-Kreis „Rätsel“ auf der Startseite (baut Paket A, A-050), ohne Schild
+  „neu“ und ohne Zahl (Nachtrag von Felix: kein Kreis bekommt ein Schild;
+  `hatUngesehenes` bleibt nur intern). Bis dahin
+  öffnet „Für Entwickler“ → „Rätsel-Fenster öffnen“ das Fenster.
+- **Fenster** (`ui/Sheet`, Tafel 137 Bild 4): rundes Symbol, „Rätsel“,
+  „Kinder raten zuerst“, ✕; Frage groß (27 px); erst Antippen zeigt die
+  Lösung im gestrichelten Kasten („LÖSUNG“); großer Knopf „Noch eins ›“
+  (beliebig oft); „Antippen zeigt die Lösung · nie doppelt“. Ein noch
+  ungelöstes Rätsel bleibt beim nächsten Öffnen stehen, ein gelöstes macht
+  Platz für das nächste. Kein Zähler, keine Punkte.
+- Paket 001: die 55 Rätsel der alten Wundertüte (IDs `ra-001` bis `ra-055`)
+  und 36 neue, geprüfte (`ra-056` bis `ra-091`) = **91 Rätsel**; den Rest
+  legt Mia per KI nach (20 im Voraus).
+- Erster Start: Rätsel, die die alte Wundertüte schon gezeigt hat, gelten als
+  gesehen (`raetselStart`).
 
 ## Daten und Speicher
 
 | Schlüssel | Version | Inhalt | Sicherung |
 |---|---|---|---|
-| `wasgibts.wundertuete` | v1 | `{ karte, anzeigen (1–3), zuletzt (ms), gezeigt: { <sorte>: id[] } }` | ja |
+| `wasgibts.wundertuete` | v2 | `{ aktuell: { id, tag } \| null, gesehen: id[], eigene: Witz[], ki?: { tag, n } }` | ja |
+| `wasgibts.raetsel` | v1 | `{ aktuell: { id, geloest } \| null, gesehen: id[], eigene: Rätsel[], ki?: { tag, n } }` | ja |
 
-- `migrateWt`: unbekannte IDs und Sorten fallen still weg, alles andere
-  bleibt. Gezeigtes erst wieder, wenn alle Einträge der Sorte durch sind
-  (dann neu gemischt, die letzte Karte nie sofort).
+- `migrateWt`: v1 (`karte`, `anzeigen`, `zuletzt`, `gezeigt` je Sorte) → v2:
+  alles Gezeigte (auch Rätsel, Tischrunde …) und die damalige Karte zählen
+  als gesehen. Unbekannte IDs in `gesehen` bleiben (neueres Paket eines
+  anderen Geräts), eigene Karten nur als Witz. Alte Sicherung:
+  `tests/fixtures/sicherung-v0.156-wundertuete.json`.
+- Mit Konto: je gesehene Karte ein Eintrag (`wt:g:<id>` Typ
+  `wundertuete-gesehen`, `rt:g:<id>` Typ `raetsel-gesehen`), je von Mia
+  nachgelegte Karte einer (`wt:k:…`/`rt:k:…`, Typ `…-karte`), Raum Familie in
+  der bestehenden Tabelle `entries` (RLS: nur der eigene Haushalt; keine neue
+  Tabelle, keine Migration). `aktuell` und `ki` bleiben auf dem Gerät.
 
-## Zählung je Sorte (Stand A-022)
+## Zählung (Stand A-052)
 
-| Sorte | Einträge | Ziel laut Auftrag |
-|---|---|---|
-| Angeberwissen | 145 | ~365 |
-| Platt för Plietsche | 90 | ~100 |
-| Rätselstunde | 55 | ~80 |
-| Heute vor 100 Jahren | 14 (Tage 1926) | jeder sicher belegte Tag |
-| Tischrunde | 80 | ~100 |
-| Schätz mal! | 35 | ~60 |
-| Wer zuerst | 40 | ~40 |
+| Sorte | Einträge |
+|---|---|
+| Angeberwissen | 180 (145 `aw-` + 35 `sm-`) |
+| Plattdeutsch | 90 |
+| Witze | 32 (+ Mias Nachschub) |
+| Rätsel | 91 (+ Mias Nachschub) |
 
-Tagsüber reichen die Karten für über 200 Karten am Stück ohne Wiederholung,
-abends für über 100 (Test `tests/wundertuete/wechsel.test.ts`), bei drei
-bis fünf Karten am Tag also mehrere Wochen.
+Wundertüte: 302 Karten in Paket 001, Rätsel: 91 in Paket 001.
 
-## Nachfüllen („Wundertüte nachfüllen“, kleiner Monats-Auftrag)
+## Nachfüllen (Monats-Auftrag A-039)
 
-- Rund 60 neue Einträge im Monat, vor allem Angeberwissen, Rätsel und Schätz
-  mal, bis die Ziel-Zahlen oben erreicht sind; danach nach Bedarf.
-- Neue IDs immer hinten anhängen (nächste freie Nummer), nie eine ID ändern
-  oder neu vergeben (sie stehen in gespeicherten Ständen).
-- Jede Zahl und jeden Fakt beim Schreiben gegen die Quelle prüfen und die
-  Quelle ins Feld `quelle` schreiben (seriös: Behörden, Museen, Fachlexika,
-  Fachzeitschriften). Im Zweifel weglassen. Platt nur mit echter Bedeutung
-  aus einem Wörterbuch.
-- Vorne höchstens 64 Zeichen, hinten 1–2 Sätze mit genau einem
-  `**fetten**` Wort. Danach Durchklick `wundertueteAlle` (jede Karte vorne
-  und hinten, S und M, auch iPhone SE): passt eine Karte selbst in der
-  kleinsten Stufe nicht, den Text kürzen.
-- Heute vor 100 Jahren: jedes Jahr die Tage des Jahres vor 100 Jahren
-  ergänzen (nur Kindgerechtes, keine Politik, Kriege, Religion, Unglücke).
-- Nach dem Nachfüllen: `npm test` (Dubletten- und Ton-Prüfung in
-  `tests/wundertuete/pool.test.ts`) und die Zählung oben aktualisieren.
-- Falls je die KI Vorschläge liefern soll: nur serverseitig über den Guard
-  (`begleitung/guard.ts`), Ergebnis von Hand gegen Quellen prüfen, dann als
-  Datendatei einchecken. Die App braucht dafür nie die KI.
+- Platt und Angeberwissen (und gern Witze/Rätsel) als neues Paket hinten
+  anlegen (`paket-002.json` …, höchstens 500, das bisherige letzte darf
+  aufgefüllt werden), dazu EINE Zeile in `pakete.ts`. Spätestens fällig,
+  wenn „Für Entwickler“ „Paket nötig“ zeigt.
+- Neue IDs hinten anhängen (nächste freie Nummer), nie eine ID ändern,
+  löschen oder neu vergeben.
+- Jede Zahl und jeden Fakt gegen die Quelle prüfen und ins Feld `quelle`
+  schreiben (Behörden, Museen, Fachlexika). Platt nur mit echter Bedeutung
+  aus einem Wörterbuch (Sass, INS, Duden „norddeutsch“); ein Beispielsatz
+  nur, wenn er aus einer Quelle stammt.
+- Vorne höchstens 64 Zeichen (Rätsel 70, Witze 80), Lösung 1–2 Sätze mit
+  genau einem `**fetten**` Wort, Witze mit Pointe ohne Fett. Danach `npm
+  test` (`pool.test.ts`, `pakete.test.ts`) und Durchklick `wundertueteAlle`.
 
 ## Begleitung
 
-- „Erzähl mir was Unnützes“, „Angeberwissen“, „Gib uns eine Tischfrage“,
-  „Rätsel!“ → `wundertuete_karte`: Frage, dann Antwort als eigener Satz;
-  Rätsel und Schätzfrage erst die Frage mit Knopf „Lösung“, die Lösung kommt
-  über die vorgelesene Frage. Mia ändert dabei nichts.
+- „Erzähl mir was Unnützes“, „Angeberwissen“, „Erzähl mal einen Witz“,
+  „Rätsel!“, „Was heißt Schietwedder auf Hochdeutsch?“ →
+  `wundertuete_karte`: Frage, dann Antwort; Witz mit Pointe; Rätsel erst die
+  Frage mit Knopf „Lösung“. Mia ändert dabei nichts und merkt nichts als
+  gesehen.
 
 ## Tests
 
-- `tests/wundertuete/pool.test.ts`: IDs, Dubletten (normalisiert und
-  Stichwort-Überschneidung), Quelle Pflicht, Ton, Längen, Fettes, Zählung,
-  Teilen, Beispiel-Karte.
-- `tests/wundertuete/wechsel.test.ts`: Sortenwechsel, keine Wiederholung,
-  3 Anzeigen, Antippen, Tageszeit und Haushalt, Regen/Gericht/100 Jahre,
-  Wetter aus der Vorhersage, Speicher.
-- `tests/wundertuete/baustein.test.ts`: neu an / bestehend aus, erste
-  Startseite, Migration, Haushaltswechsel, S/M, Farbwahl, Beispiel-Tag,
-  Oberfläche (Tokens, reduced-motion), Werkzeug, Prüfstand.
-- Durchklick `e2e/ablaeufe/wundertuete.mjs`: `wundertuete` (neu/bestehend,
-  Antippen, S/M, reduced-motion, Schlicht, Dunkel) und `wundertueteAlle`
-  (alle 459 Karten vorne/hinten in S und M ganz, auf dem iPhone SE mit);
-  dazu die Kachel in `nichtsAbgeschnitten` (`abgeschnitten.mjs`).
-- Fakten nachgeprüft beim Rebase auf v0.155 (Oktober 2026): Hamburgs
-  Brücken vorsichtig („rund 2.500, je nachdem, was man mitzählt“, mehr als
-  in Venedig oder Amsterdam, nicht „zusammen“), 500 g Spaghetti „je nach
-  Dicke grob 500“.
+- `tests/wundertuete/pool.test.ts`: IDs, Dubletten (Wundertüte und Rätsel),
+  Quelle, Ton, Längen, Fettes, Sorten, Kachel-Texte, Teilen, Beispiel.
+- `tests/wundertuete/pakete.test.ts`: Pakete lückenlos, je höchstens 500,
+  alle eingebunden, IDs stabil.
+- `tests/wundertuete/nieDoppelt.test.ts`: 1.000× „Noch eine ›“ und 1.000×
+  „Noch eins ›“ ohne Wiederholung (Mock-KI), KI nur Witze/Rätsel, Filter,
+  Paket 2 nahtlos, „kommt bald“, Karte des Tages, Rätsel-Fenster, Paket
+  nötig, Migration.
+- `tests/wundertuete/nachschub.test.ts`: Ähnlichkeit, Nachlegen (zweiter
+  Versuch, gescheitert), ohne KI, Zähler, Route (Mock, 503, Guard, Modell,
+  Protokoll), nur Witze und Rätsel.
+- `tests/wundertuete/haushalt.test.ts`: zwei Handys im Haushalt teilen
+  „gesehen“ (Wundertüte und Rätsel), Mias Karten kommen an, alte Sicherung.
+- `tests/wundertuete/baustein.test.ts`: Baustein, Anordnung, Oberfläche, Mia.
+- `tests/konten/abgleich.test.ts` (Übersetzer verlustfrei),
+  `tests/datenbank/sicherheit.test.sql` Abschnitt 8.
+- Durchklick `e2e/ablaeufe/wundertuete.mjs`: `wundertuete` (Beispiel,
+  Kachel, Seite, „Noch eine“, Filter, Mock-Witze, „kommt bald“,
+  Rätsel-Fenster, S/M, Schlicht, Dunkel) und `wundertueteAlle` (jede Karte
+  und die Mock-Witze in S und M ganz, iPhone SE mit).

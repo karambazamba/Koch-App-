@@ -225,3 +225,32 @@ reset role;
 select pruefe((select count(*) from storage.objects where bucket_id = 'durchatmen-ansagen' and name in ('manifest.json', 'ein-0-abc12345.mp3')) = 2, 'niemand außer dem Server ändert oder löscht Ansagen');
 -- Andere Buckets bleiben zu: die Lese-Regel gilt nur für diesen Bucket
 select pruefe((select count(*) from pg_policies where schemaname = 'storage' and policyname = 'durchatmen_ansagen_lesen' and qual like '%durchatmen-ansagen%') = 1, 'Lese-Regel nur für durchatmen-ansagen');
+
+-- 8) Wundertüte und Rätsel (A-052): „gesehen“ teilt der Haushalt über `entries`
+--    (keine neue Tabelle, Typen `wundertuete-gesehen`/`-karte`,
+--    `raetsel-gesehen`/`-karte`, Raum Familie).
+--    Alle im eigenen Haushalt sehen es, ein fremder Haushalt nie.
+insert into auth.users (id, email) values
+  ('d4444444-0000-0000-0000-000000000001', 'wt-felix@example.com'),
+  ('d4444444-0000-0000-0000-000000000002', 'wt-lisa@example.com'),
+  ('d4444444-0000-0000-0000-000000000003', 'wt-fremd@example.com');
+
+set role authenticated;
+select set_config('request.jwt.claim.sub', 'd4444444-0000-0000-0000-000000000001', false);
+select public.create_household('Familie Tüte', 'Felix');
+select public.create_invite_link('erwachsener') as tokw \gset
+select pruefe((public.sync_entries('[
+  {"id":"wt:g:aw-001","typ":"wundertuete-gesehen","raum":"familie","geaendert":"2026-11-02T07:00:00Z","data":{"id":"aw-001"}},
+  {"id":"rt:g:ra-001","typ":"raetsel-gesehen","raum":"familie","geaendert":"2026-11-02T07:00:00Z","data":{"id":"ra-001"}},
+  {"id":"wt:k:ki-abc-0001","typ":"wundertuete-karte","raum":"familie","geaendert":"2026-11-02T07:00:00Z","data":{"id":"ki-abc-0001","sorte":"witz","vorne":"Ein Witz."}}
+]') ->> 'ok')::int = 3, 'Felix teilt Gesehenes (Wundertüte, Rätsel) und Mias eigene Karte');
+
+select set_config('request.jwt.claim.sub', 'd4444444-0000-0000-0000-000000000002', false);
+select public.join_by_link(:'tokw', 'Lisa');
+select pruefe((select count(*) from public.entries where id like 'wt:%' or id like 'rt:%') = 3, 'Lisa sieht, was der Haushalt schon gesehen hat (auch Rätsel)');
+
+select set_config('request.jwt.claim.sub', 'd4444444-0000-0000-0000-000000000003', false);
+select public.create_household('Familie Fremd 2', 'Fremd');
+select pruefe((select count(*) from public.entries where typ like 'wundertuete-%' or typ like 'raetsel-%') = 0, 'fremder Haushalt sieht keine Wundertüte- oder Rätsel-Zeilen');
+
+reset role;

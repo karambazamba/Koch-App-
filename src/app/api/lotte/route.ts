@@ -8,7 +8,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { connection } from "next/server";
 import { AssistantInputError, parseRequest, runAssistant, type CreateMessage } from "@/lib/begleitung/engine";
-import type { ModelChoice } from "@/lib/begleitung/modellwahl";
+import { alltagsModell, type ModelChoice } from "@/lib/begleitung/modellwahl";
 import { aiSetup, checkAccess, clientIp, takeDailySlot } from "@/lib/begleitung/guard";
 import { createMockModel } from "@/lib/begleitung/mock";
 import { ACCESS_HEADER, LIMITS, type AssistantErrorCode, type AssistantStatus, type StreamEvent } from "@/lib/begleitung/protocol";
@@ -25,7 +25,7 @@ export const maxDuration = 60;
  * LOTTE_MODEL legt ein festes Modell fest; LOTTE_SMALL_MODEL/LOTTE_LARGE_MODEL ändern die beiden.
  */
 const FIXED = process.env.LOTTE_MODEL || process.env.KUECHENHELFER_MODEL;
-const CHOICE: ModelChoice = FIXED || { small: process.env.LOTTE_SMALL_MODEL || "claude-haiku-5-5", large: process.env.LOTTE_LARGE_MODEL || "claude-sonnet-5-5" };
+const CHOICE: ModelChoice = FIXED || { small: alltagsModell(), large: process.env.LOTTE_LARGE_MODEL || "claude-sonnet-5-5" };
 
 const fail = (code: AssistantErrorCode, status: number) => Response.json({ error: code }, { status });
 
