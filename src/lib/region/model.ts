@@ -217,6 +217,6 @@ export function wochenendTipps(events: RegionEvent[], haushalt: Haushalt, heute:
 export function quellenHinweis(quelle: RegionQuelle | undefined, status: { treffer: number; grund: string } | null): string | null {
   if (quelle !== "kreisoh") return null;
   if (status && status.treffer > 0) return null;
-  const warum = !status ? "noch kein Lauf" : status.grund === "wartet" ? "Parser wartet auf echte Beispielseiten" : status.grund === "robots" ? "robots.txt verbietet den Abruf" : status.grund === "fehler" ? "Seite nicht erreichbar" : "0 Treffer";
+  const warum = !status ? "noch kein Lauf" : status.grund === "wartet" ? "Parser wartet auf echte Beispielseiten" : status.grund === "laeuft" ? "erster Abruf läuft" : status.grund === "robots" ? "robots.txt verbietet den Abruf" : status.grund === "fehler" ? "Seite nicht erreichbar" : "0 Treffer";
   return `Was los?: Quelle liefert nichts (${warum})`;
 }

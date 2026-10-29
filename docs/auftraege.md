@@ -8,8 +8,8 @@ Status: offen · in Arbeit · fertig vX.Y · zurückgestellt (Grund)
 
 ## Stand 29.10. abends (nach Sortier-Auftrag)
 
-- **Fertig:** v0.157 Mia hört von Anfang an (A-056) · v0.158 Startseite kompakter (A-048) · v0.159 Durchatmen (A-051) · v0.160 Rätsel + Wundertüte (A-052) · v0.161 Eingebaute Rezepte liefern Zutaten (A-057) · v0.162 Kaputt-Fixes: Notizen-Kachel, Wundertüte zum Umdrehen, Menü erstes Tippen, Wischen unten (A-059) · v0.163 Jetzt-Karte nur mit Nutzen (A-054) · v0.164 Durchatmen ohne Roboterstimme (A-061) · v0.165 Notizen-Vorschau + Mia-Zubehör (A-060/A-058) · v0.166 Startseite neu mit Mini-Kreisen (A-050) · v0.167 „Was los?“ (A-055, Parser wartet).
-- **Zurückgestellt:** A-053 volle Prüfung (auf Zuruf) · Parser „Was los?“ (wartet, bis `www.kreis-oh.de` aus der Arbeitsumgebung erreichbar ist; bis dahin bleibt der Kreis ausgeblendet) · A-039 Wundertüte nachfüllen (monatlich).
+- **Fertig:** v0.157 Mia hört von Anfang an (A-056) · v0.158 Startseite kompakter (A-048) · v0.159 Durchatmen (A-051) · v0.160 Rätsel + Wundertüte (A-052) · v0.161 Eingebaute Rezepte liefern Zutaten (A-057) · v0.162 Kaputt-Fixes: Notizen-Kachel, Wundertüte zum Umdrehen, Menü erstes Tippen, Wischen unten (A-059) · v0.163 Jetzt-Karte nur mit Nutzen (A-054) · v0.164 Durchatmen ohne Roboterstimme (A-061) · v0.165 Notizen-Vorschau + Mia-Zubehör (A-060/A-058) · v0.166 Startseite neu mit Mini-Kreisen (A-050) · v0.167 „Was los?“ (A-055) · v0.168 Fenster: Schließen trifft nie ein neues Öffnen · v0.169 „Was los?“ Parser an echten Seiten, Kreis erscheint.
+- **Zurückgestellt:** A-053 volle Prüfung (auf Zuruf) · A-039 Wundertüte nachfüllen (monatlich).
 - **Kleine offene Punkte:** `tests/core/abfragen.test.ts` einmal uhrzeitabhängig rot · alte App-Stände kennen den Raum „Ich“ nicht.
 - **5 Dinge zum Ausprobieren:**
   1. Mia antippen und sofort lossprechen: „Milch, Eier und Butter auf die Liste“ → drei Sachen.
@@ -38,7 +38,7 @@ Bei Widersprüchen gilt der neuere Auftrag. Gemergt wird in dieser Reihenfolge, 
 | P6 | Ergebnis-Karten | A-037 (Tafel 126) | fertig v0.151 |
 | P7 | Sport-Seite | A-044 Stempelkarte (Tafel 132) | fertig v0.153 |
 | P8 | Durchatmen, Rätsel, Wundertüte | A-051 Durchatmen + Stimme/Klang (Tafel 138/139), A-052 Rätsel + Wundertüte | A-051 fertig v0.159; A-052 fertig v0.160 |
-| P9 | Was los? | A-055 (Tafel 142) | fertig v0.167, Parser wartet (www.kreis-oh.de aus der Arbeitsumgebung nicht erreichbar; Beispielseiten unter tests/fixtures/kreis-oh/ fehlen) |
+| P9 | Was los? | A-055 (Tafel 142) | fertig v0.167, Parser v0.169 (je Gemeinde, echte Seiten in tests/fixtures/kreis-oh/) |
 | P10 | Volle Prüfung | A-053 | zurückgestellt (später, auf Zuruf) |
 
 Ersetzt und nicht mehr gebaut: Essen-Kachel Tafel 121/122/133 → Tafel 134 (Rezeptseite/Kochmodus aus 122 bleiben); Sport Tafel 129/130/131 → Tafel 132 + Mini-Kreis Sport; Startseite Tafel 136 und Teil 1–2 von Tafel 137 → Tafel 143 (Fenster aus 137 bleiben); A-049 → A-052; „Tipps aus der Region“ → „Was los?“ (A-055); Füllsätze der Jetzt-Karte → A-054.
@@ -196,7 +196,7 @@ Ersetzt und nicht mehr gebaut: Essen-Kachel Tafel 121/122/133 → Tafel 134 (Rez
 | A-052 | Rätsel als eigener Bereich + Wundertüte (Witze, „Platt för Plietsche“, Angeberwissen), „Noch eine ›“, nie doppelt im Haushalt, KI-Nachschub nur Witze/Rätsel | `tafel-137.png` (Bild 4), `tafel-140.png` | fertig v0.160 (Rätsel-Paket 001: 91 Rätsel; Mini-Kreis bindet das Fenster an) |
 | A-053 | Gesamtauftrag Teil 7: Tests gesamt + volle Prüfung | – | zurückgestellt (später, auf Zuruf) |
 | A-054 | SOFORT: Jetzt-Karte nur mit Nutzen für heute (Rangliste, keine Füllsätze, sonst ausblenden), Wochenende planen nur freitags 12–20 Uhr | – | fertig v0.163 |
-| A-055 | „Was los?“ – Veranstaltungen Kreis Ostholstein (Tabelle region_events, Cron 5:00, Fenster Heute · Wochenende · 2 Wochen, Kalender/Pinnwand, Quelle sichtbar; ersetzt „Tipps aus der Region“) | `tafel-142.png` | fertig v0.167, Parser wartet (Wortlaut `docs/auftraege/A-055-was-los.md`). Parser wartet auf Freigabe von www.kreis-oh.de in der Netz-Regel der Arbeitsumgebung bzw. auf gespeicherte Beispielseiten unter tests/fixtures/kreis-oh/; bis dahin liefert der Kreis nichts, „Was los?: Quelle liefert nichts“ in „Für Entwickler“, Mini-Kreis bleibt aus. Kreis oben über `useWasLosSichtbar`, Freitags-Karte über `wochenendTipps` |
+| A-055 | „Was los?“ – Veranstaltungen Kreis Ostholstein (Tabelle region_events, Cron 5:00, Fenster Heute · Wochenende · 2 Wochen, Kalender/Pinnwand, Quelle sichtbar; ersetzt „Tipps aus der Region“) | `tafel-142.png` | fertig v0.167 (Wortlaut `docs/auftraege/A-055-was-los.md`), Parser fertig v0.169: an echten Seiten (tests/fixtures/kreis-oh/), Abfrage je Gemeinde mit Zeitraum (Probelauf 29.10.: 35 Anfragen, 45 s, 203 Veranstaltungen), ISO-8859-15, erster Lauf gleich nach der Auslieferung (`ersterLauf`), danach täglich 5:00. Kreis oben über `useWasLosSichtbar`, Freitags-Karte über `wochenendTipps` |
 | A-056 | SOFORT (Vorrang): „Mia hört von Anfang an und versteht mehrere Sachen“ – Mikro sofort beim Antippen mit Ringpuffer (≥ 5 s), Schlüssel vorgewärmt, Ring erst bei echtem Ton, Zeiten im Mikro-Protokoll; Sofort-Weg nur bei genau EINER Sache, Füllwörter weg, Aufzählungen getrennt (KI und Regel-Notlösung), ein Rückgängig für alle; „Nur für dich. Tippen zum Ändern.“; ≥ 30 Prüfstand-Sätze (Wortlaut `docs/auftraege/A-056-mia-hoert-sofort.md`) | – | fertig v0.157 |
 | A-057 | Kleinkram von Felix: Die eingebauten Rezepte („k:…“) liefern der Einkaufsliste ihre Zutaten – Wochenplan-Angebot „Für deinen Wochenplan“ und „Nehmen“ (Namen, Mengen nur als Hinweis, Grundsachen blass/ausgenommen, „im Haus“ nicht, gleiche Zutat aus zwei Gerichten = eine Zeile mit „wofür“; `einkauf/angebot/rezeptZutaten.ts`) | – | fertig v0.162 |
 

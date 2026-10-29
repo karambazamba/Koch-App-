@@ -4,7 +4,7 @@
 // öffentliche Liste 1 Std. zwischengespeichert, Routen.
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { at } from "../helpers";
-import { aktualisiereRegion, ladeRegion, regionQuelle, type RegionSpeicher, type RegionStatus } from "@/lib/region/server";
+import { aktualisiereRegion, ersterLauf, ladeRegion, nochNieGelaufen, regionQuelle, type RegionSpeicher, type RegionStatus } from "@/lib/region/server";
 import { gesperrteIds } from "@/lib/region/sperrliste";
 import { sanitizeEvent, type RegionEvent } from "@/lib/region/model";
 
@@ -84,12 +84,14 @@ describe("Täglicher Lauf", () => {
     expect(await sp.leseStatus()).toMatchObject({ grund: "fehler" });
   });
 
-  it("solange der Parser wartet: kein Abruf, Status „wartet“", async () => {
+  it("Parser bereit: der Lauf fragt den Kreis (offline → „fehler“, alte Daten bleiben)", async () => {
     const sp = speicher();
-    const holen = vi.fn();
+    const holen = vi.fn(async () => {
+      throw new Error("offline");
+    });
     const r = await aktualisiereRegion({ quelle: "kreisoh", heute: HEUTE, speicher: sp, holen });
-    expect(r).toMatchObject({ treffer: 0, grund: "wartet" });
-    expect(holen).not.toHaveBeenCalled();
+    expect(r).toMatchObject({ treffer: 0, grund: "fehler" });
+    expect(holen).toHaveBeenCalledOnce();
   });
 
   it("aus: nichts holen, nichts schreiben; Beispieldaten werden nie gespeichert; ohne Speicher nichts", async () => {
@@ -119,6 +121,36 @@ describe("Liste für die App", () => {
     await ladeRegion("2026-10-22", { quelle: "kreisoh", speicher: sp, jetzt: t0 + 61 * 60_000 });
     expect(sp.gelesen).toBe(2);
     expect(await ladeRegion("2026-10-23", { quelle: "kreisoh", speicher: null })).toEqual({ quelle: "kreisoh", events: [], status: null });
+  });
+});
+
+describe("Erster Lauf nach der Auslieferung", () => {
+  it("nur wenn noch nie echt gelaufen (kein Status oder „wartet“), schreibt zuerst „laeuft“, dann einmal", async () => {
+    expect(nochNieGelaufen(null)).toBe(true);
+    expect(nochNieGelaufen({ lauf: "x", treffer: 0, grund: "wartet" })).toBe(true);
+    expect(nochNieGelaufen({ lauf: "x", treffer: 0, grund: "leer" })).toBe(false);
+    const sp = speicher();
+    await sp.schreibeStatus({ lauf: "x", treffer: 0, grund: "wartet" });
+    const stati: string[] = [];
+    const schreibe = sp.schreibeStatus;
+    sp.schreibeStatus = async (x) => (stati.push(x.grund), schreibe(x));
+    const holen = vi.fn(async () => {
+      throw new Error("offline");
+    });
+    expect(await ersterLauf(HEUTE, { quelle: "kreisoh", speicher: sp, holen })).toBe(true);
+    expect(stati).toEqual(["laeuft", "fehler"]);
+    expect(holen).toHaveBeenCalledOnce();
+    // Danach nie wieder von selbst (der Cron um 5 Uhr übernimmt)
+    expect(await ersterLauf(HEUTE, { quelle: "kreisoh", speicher: sp, holen })).toBe(false);
+    expect(holen).toHaveBeenCalledOnce();
+  });
+
+  it("nicht bei Beispieldaten, aus oder ohne Speicher", async () => {
+    const holen = vi.fn();
+    expect(await ersterLauf(HEUTE, { quelle: "demo", speicher: speicher(), holen })).toBe(false);
+    expect(await ersterLauf(HEUTE, { quelle: "aus", speicher: speicher(), holen })).toBe(false);
+    expect(await ersterLauf(HEUTE, { quelle: "kreisoh", speicher: null, holen })).toBe(false);
+    expect(holen).not.toHaveBeenCalled();
   });
 });
 

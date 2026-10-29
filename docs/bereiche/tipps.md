@@ -27,30 +27,36 @@ wenn `useWasLosSichtbar()` true ist, und öffnet `WasLosFenster`.
 
 ## Stand des Parsers (WICHTIG)
 
-- Parser wartet auf Freigabe von www.kreis-oh.de in der Netz-Regel der
-  Arbeitsumgebung bzw. auf gespeicherte Beispielseiten unter
-  `tests/fixtures/kreis-oh/` (Liste `ofs_1=0` und `ofs_1=25`, 2–3
-  Detailseiten, robots.txt). Felix hat die Domains am 29.10. freigegeben;
-  bis zum Ende von A-055 wirkte die Freigabe in der Arbeitsumgebung noch
-  nicht (Proxy 403).
-- Bis dahin: `parseListe` und `parseDetail` (`region/kreisOh/parser.ts`)
-  liefern sicher NICHTS, `PARSER_BEREIT = false` → der Lauf ruft den Kreis
-  gar nicht erst ab (Status „wartet“). Folge: 0 Treffer → vorhandene Daten
-  bleiben bis zu ihrem Ablauf, „Für Entwickler“ zeigt „Was los?: Quelle
-  liefert nichts (Parser wartet auf echte Beispielseiten)“, der Kreis bleibt
-  ausgeblendet (`wasLosSichtbar` = false). Nutzer sehen nie etwas Kaputtes.
-- Schon fertig und getestet (unabhängig vom HTML): ID aus `FID=3906.<id>.1`
-  (`idAusLink`), Blättern über `ofs_1` (25 je Seite, höchstens 12 Seiten,
-  Schluss nach dem Zeitraum), robots.txt (`kreisOh/robots.ts`), 1 Anfrage pro
+- Parser fertig (v0.169.0), gebaut an echten Seiten vom 29.10.2026 in
+  `tests/fixtures/kreis-oh/` (Liste `liste-0/25`, Gemeinde Eutin erste und
+  letzte Seite, Detailseite, robots.txt). `PARSER_BEREIT = true`.
+- Die Liste nennt keinen Ort. Deshalb fragt `holeKreisOh` je Gemeinde ab
+  (Suchformular `ort=247.<n>`, Liste der Gemeinden aus `<select name="ort">`
+  der ersten Seite) mit Zeitraum `dat_tv`/`dat_tb` (heute bis +14 Tage): die
+  Gemeinde ist dann der Ort, ohne jede Detailseite zu holen. Probelauf
+  29.10.: 35 Anfragen, 45 s, 203 Veranstaltungen (= alle des Kreises im
+  Zeitraum). „Kreis Ostholstein“ = kreisweit (Ort „Ostholstein“, Gemeinde
+  leer → erst ab 30 km). Detailseite nur, wenn das Datum in der Liste
+  unlesbar ist (höchstens 10). Höchstens 70 Seiten bzw. 95 s je Lauf.
+- Die Seiten sind ISO-8859-15 kodiert: `kreisHolen` liest Bytes und
+  dekodiert nach Kopfzeile bzw. `<meta charset>` (`dekodiere`).
+- Erster Lauf: Steht der Status noch auf „wartet“ (oder fehlt), holt
+  `/api/region` den Abruf einmal nach der Antwort nach (`after`,
+  `ersterLauf`, Status zuerst „laeuft“) – der Kreis erscheint also nach der
+  Auslieferung beim ersten Öffnen der App, nicht erst um 5 Uhr. Bis dahin
+  nur 60 s zwischengespeichert.
+- Außerdem: ID aus `FID=3906.<id>.1`
+  (`idAusLink`), Blättern über `ofs_1` (25 je Seite, Schluss ohne nächste Seite), robots.txt (`kreisOh/robots.ts`), 1 Anfrage pro
   Sekunde bzw. Crawl-delay, User-Agent „Mia-App (mia.karamba-eis.de)“,
-  Detailseite nur bei fehlender Uhrzeit/Ort (höchstens 60), Datum/Uhrzeit
+  Datum/Uhrzeit
   (`region/zeit.ts`), Ort (`region/orte.ts`), Kategorie
   (`region/kategorien.ts`).
-- Noch zu klären an echten Seiten: der Ort-Filter des Formulars (falls
-  nutzbar, in `listenUrl` einbauen; sonst bleibt die Ort-Erkennung aus dem
-  Text), wo „weiter“ steht, ob die Liste Uhrzeit und Ort schon enthält.
-- Danach: Fixtures speichern, `parseListe`/`parseDetail` daran bauen,
-  `PARSER_BEREIT = true`, Tests mit den Fixtures, einmal live gegenprüfen.
+- Geklärt an echten Seiten: Ort-Filter nutzbar (`ort=247.<n>`, in
+  `listenUrl`), „weiter“ = Link nach `pn_active`, die Liste hat Uhrzeit,
+  aber keinen Ort.
+- Ändert der Kreis sein HTML: neue Seiten nach `tests/fixtures/kreis-oh/`,
+  Parser anpassen. Bis dahin liefert der Lauf 0 Treffer → alte Daten
+  bleiben, „Für Entwickler“ meldet „Quelle liefert nichts“.
 
 ## Wo im Code
 
@@ -62,10 +68,10 @@ wenn `useWasLosSichtbar()` true ist, und öffnet `WasLosFenster`.
   (`wasLosFrage`, `wasLosTreffer`), `sperrliste.ts`, `demo.ts`
   (Beispieldaten, nur Testbetrieb). Sortierregeln `WAS_LOS`, `WAS_LOS_TIPPS`
   in `core/sort.ts`.
-- Kreis: `src/lib/region/kreisOh/` – `parser.ts` (wartet), `abruf.ts`
+- Kreis: `src/lib/region/kreisOh/` – `parser.ts` (`parseListe`, `parseDetail`, `parseGemeinden`, `dekodiere`), `abruf.ts`
   (`holeKreisOh`, `zuEvent`, `listenUrl`, `kreisHolen`), `robots.ts`.
 - Server: `src/lib/region/server.ts` (`regionQuelle`, `supabaseSpeicher`,
-  `aktualisiereRegion`, `ladeRegion`). Routen `src/app/api/region/route.ts`
+  `aktualisiereRegion`, `ladeRegion`, `ersterLauf`). Routen `src/app/api/region/route.ts`
   (öffentlich, `Cache-Control: public, max-age=3600`) und
   `src/app/api/region/aktualisieren/route.ts` (Cron, `CRON_SECRET`).
 - App: `src/lib/region/client.ts` (`useWasLosDaten`, `useWasLosListe`,
@@ -86,7 +92,7 @@ wenn `useWasLosSichtbar()` true ist, und öffnet `WasLosFenster`.
 | Wo | Schlüssel/Tabelle | Inhalt |
 |---|---|---|
 | Server | `region_events` | id (`kreisoh-<FID>`), titel, datum, bis_datum, letzter_tag, beginn, ende, ganztags, ort, gemeinde, link, kategorien, aktualisiert |
-| Server | `region_status` | eine Zeile: lauf, treffer, grund (ok/leer/fehler/robots/wartet) |
+| Server | `region_status` | eine Zeile: lauf, treffer, grund (ok/leer/fehler/robots/wartet/laeuft) |
 | Gerät | `wasgibts.regiontipps` v2 | neu: `umkreis` (5/15/30, Standard 15; aus v1: ≤5 → 5, ≤20 → 15, sonst 30), `kategorienAus`; `ort` = Wohnort; `uebernommen` = Veranstaltung → Termin; alte Felder bleiben |
 | Gerät | `wasgibts.funktionen` v8 | neu: `aus` = selbst ausgeschaltete Bausteine (damit „Was los?“ in Ostholstein aus bleibt) |
 
@@ -171,8 +177,9 @@ Schlüssel nur in der Cron-Route). Die Tabelle hat keinen Personenbezug.
   ganztags, „10:00 – 12:00 Uhr“, „ganztägig“).
 - `tests/region/model.test.ts` – Reiter, Wochenende, Umkreis, Sichtbarkeit,
   Wochenend-Tipps, Zettel, Termin, Hinweis.
-- `tests/region/kreisOh.test.ts` – Parser leer, ID, Blättern, robots.txt,
-  Höflichkeit, Fehler.
+- `tests/region/kreisOh.test.ts` – Parser an echten Seiten (Umlaute,
+  25 Einträge, mehrtägig, letzte Seite, Gemeinden, Detail), ID, Adresse,
+  Abruf je Gemeinde, Zeitgrenze, robots.txt, Höflichkeit, Fehler.
 - `tests/region/server.test.ts` – Schalter, Lauf (schreibt/löscht, 0 Treffer
   → alte Daten bleiben), Liste 1 Std., Routen, vercel.json.
 - `tests/region/client.test.ts` – Baustein, Einstellungen v2, Laden,
