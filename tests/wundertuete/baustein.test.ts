@@ -108,6 +108,8 @@ describe("Kachel: Oberfläche", () => {
     expect(code).not.toMatch(/line-clamp|truncate/);
     expect(code).toContain("useSchriftEinpassen");
     expect(code).toContain('data-name="kurz"');
+    // Fehler beim Rebase auf v0.155 gefunden: `TILE` (relative) schlug `absolute`, die Rückseite lag unter der Kachel
+    expect(code).toMatch(/TILE\.replace\(\/\(\^\| \)relative/);
   });
 
   it("Farben nur über Tokens (data-tone der Sorte, hell/dunkel und Schlicht kommen mit), kein Emoji", () => {
@@ -122,6 +124,7 @@ describe("Kachel: Oberfläche", () => {
     const reduced = css.slice(css.indexOf(".wt-neu {"));
     expect(reduced).toMatch(/@media \(prefers-reduced-motion: reduce\) \{\s*\.wt-dreh, \.wt-karte\[data-seite="hinten"\] \.wt-dreh \{ transform: none; transition: none; \}/);
     expect(reduced).toMatch(/opacity: 0;/);
+    expect(css).toMatch(/\.wt-karte\[data-seite="hinten"\] \.wt-vorne, \.wt-karte\[data-seite="vorne"\] \.wt-hinten \{ visibility: hidden; \}/);
   });
 
   it("Rückseite: „Nochmal tippen = Neues“ und Teilen; Kopf mit Symbol und Sorte", () => {

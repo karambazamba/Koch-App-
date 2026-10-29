@@ -115,7 +115,10 @@ export function WundertueteTile({ size = "S", today, minutes, haushalt, gericht,
       if ((error as Error)?.name !== "AbortError") showToast({ text: "Teilen hat grad nicht geklappt.", seconds: 3, small: true });
     }
   };
-  const box = `${TILE} absolute inset-0 flex flex-col overflow-hidden p-3`;
+  // Beide Seiten liegen genau übereinander in der Kachel-Fläche: `TILE` bringt
+  // `relative` mit, das hier `absolute` schlagen würde (dann rutschte die
+  // Rückseite unter die Vorderseite, aus der Kachel heraus) – daher ohne.
+  const box = `${TILE.replace(/(^| )relative(?= |$)/, " ").trim()} absolute inset-0 flex flex-col overflow-hidden p-3`;
   const label = `${meta.name}${demo ? " · Beispiel" : ""}: ${karte.vorne}`;
   return (
     <div

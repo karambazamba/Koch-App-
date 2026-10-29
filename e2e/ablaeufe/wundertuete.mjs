@@ -52,6 +52,9 @@ export const wundertuete = async (page, check) => {
 
   // Antippen: umdrehen bzw. nächste Karte, andere Sorte
   await layout(page, [["wundertuete", "S"], ["termine", "M"]]);
+  // Vorder- und Rückseite liegen genau übereinander in der Kachel (nie darunter)
+  const lagen = await karte(page).evaluate((el) => [el, ...el.querySelectorAll("section")].map((n) => { const r = n.getBoundingClientRect(); return [Math.round(r.top), Math.round(r.bottom), Math.round(r.left), Math.round(r.right)].join(); }));
+  check(new Set(lagen).size === 1, `beide Seiten genau in der Kachel (${lagen.join(" | ")})`);
   const vorher = await info(page);
   check(Boolean(vorher.sorte) && !vorher.over, `Karte „${vorher.sorte}“ vorne, nichts quillt über`);
   await karte(page).click();
