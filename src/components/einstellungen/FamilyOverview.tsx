@@ -4,7 +4,8 @@ import { RechtLinks } from "@/components/datenschutz/RechtstextView";
 import { plural } from "@/lib/core/text";
 import Link from "next/link";
 import { useMailStyle } from "@/lib/begleitung/mailSettings";
-import { Bell, Blocks, HandCoins, MapPin, BookOpen, CalendarDays, CalendarPlus, ChefHat, ChevronRight, Clock, CloudSun, Database, Dumbbell, Forward, LayoutGrid, Mail, Refrigerator, Salad, ShieldCheck } from "lucide-react";
+import { Bell, Blocks, HandCoins, MapPin, BookOpen, CalendarDays, CalendarPlus, ChefHat, ChevronRight, Clock, CloudSun, Database, Dumbbell, Forward, LayoutGrid, Mail, Refrigerator, Salad, ShieldCheck, Wind } from "lucide-react";
+import { ARTEN, useDurchatmen } from "@/lib/durchatmen/store";
 import { BegleitungAvatar } from "@/components/begleitung/BegleitungAvatar";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { PersonAvatar } from "@/components/ui/PersonAvatar";
@@ -64,6 +65,8 @@ export function FamilyOverview({ profile }: { profile: HouseholdProfile }) {
   const mailsOn = useFeature("mails");
   const sportOn = useFeature("sport");
   const potOn = useFeature("spendentopf");
+  const atemOn = useFeature("durchatmen");
+  const atem = useDurchatmen();
   const jetzt = useJetzt();
   const notify = notifyStatusLabel(useNotifyPermission());
   const sport = useSport();
@@ -115,6 +118,11 @@ export function FamilyOverview({ profile }: { profile: HouseholdProfile }) {
           {sportOn && home?.find((t) => t.id === "sport")?.visible && (
             <Row href="/sport" icon={Dumbbell} title="Sport" value={sport ? (sport.goal === null ? "Ohne Ziel" : `${sport.goal}× pro Woche`) : undefined}>
               Wochenziel, Trainings, Packliste
+            </Row>
+          )}
+          {atemOn && (
+            <Row href="/profil/durchatmen" icon={Wind} title="Durchatmen" value={ARTEN.find((a) => a.value === (atem?.art ?? "stimme"))?.label}>
+              Übungen, Anleitung, leises Angebot
             </Row>
           )}
           {tipsOn && (

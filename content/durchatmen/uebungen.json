@@ -1,0 +1,204 @@
+{
+  "version": 1,
+  "hinweis": "12 feste Übungen fürs Durchatmen (A-051, Tafel 138). Dauer in Sekunden. takt = Atem-Phasen (Sekunden, wiederholt bis zum Ende), schritte = Ansagen ab Sekunde. Texte der Ansagen stehen in ansagen.json.",
+  "uebungen": [
+    {
+      "id": "kaestchen",
+      "titel": "Kästchen-Atmen",
+      "sorte": "atmen",
+      "dauer": 120,
+      "kurz": "4 ein, 4 halten, 4 aus",
+      "hilfe": "Folge dem Punkt. Jede Seite 4 Sekunden.",
+      "takt": [
+        { "phase": "ein", "s": 4 },
+        { "phase": "halten", "s": 4 },
+        { "phase": "aus", "s": 4 },
+        { "phase": "halten", "s": 4 }
+      ],
+      "schritte": [],
+      "ansagen": ["start", "ein", "halten", "aus", "ende"],
+      "animation": "kaestchen"
+    },
+    {
+      "id": "lang-aus",
+      "titel": "Lang ausatmen",
+      "sorte": "atmen",
+      "dauer": 60,
+      "kurz": "4 ein, 6 aus",
+      "hilfe": "Folge dem Kreis. Aus dauert länger als ein.",
+      "takt": [
+        { "phase": "ein", "s": 4 },
+        { "phase": "aus", "s": 6 }
+      ],
+      "schritte": [],
+      "ansagen": ["start", "ein", "aus", "ende"],
+      "animation": "kreis"
+    },
+    {
+      "id": "seufzer",
+      "titel": "Seufzer",
+      "sorte": "atmen",
+      "dauer": 30,
+      "kurz": "2× kurz ein, 1× lang aus",
+      "hilfe": "Zweimal kurz ein, einmal lang aus.",
+      "takt": [
+        { "phase": "ein", "s": 2 },
+        { "phase": "nochmal-ein", "s": 1 },
+        { "phase": "lang-aus", "s": 7 }
+      ],
+      "schritte": [],
+      "ansagen": ["start", "ein", "nochmal-ein", "lang-aus", "ende"],
+      "animation": "kreis"
+    },
+    {
+      "id": "handy-pause",
+      "titel": "Handy-Pause",
+      "sorte": "augen",
+      "dauer": 60,
+      "kurz": "in die Ferne schauen",
+      "hilfe": "Aus dem Fenster, ans andere Ende vom Raum. Handy einfach hinlegen. Ich sag Bescheid.",
+      "takt": [],
+      "schritte": [
+        { "ab": 0, "ansage": "ferne" },
+        { "ab": 30, "ansage": "noch-bisschen" },
+        { "ab": 55, "ansage": "zurueck" }
+      ],
+      "ansagen": ["ferne", "noch-bisschen", "zurueck", "ende"],
+      "animation": "ring"
+    },
+    {
+      "id": "augen-kreisen",
+      "titel": "Augen kreisen",
+      "sorte": "augen",
+      "dauer": 60,
+      "kurz": "langsam, ohne Druck",
+      "hilfe": "Kopf bleibt ruhig, nur die Augen wandern.",
+      "takt": [],
+      "schritte": [
+        { "ab": 0, "ansage": "kreis-rechts" },
+        { "ab": 20, "ansage": "kreis-links" },
+        { "ab": 40, "ansage": "blinzeln" }
+      ],
+      "ansagen": ["start", "kreis-rechts", "kreis-links", "blinzeln", "ende"],
+      "animation": "symbol"
+    },
+    {
+      "id": "haende-augen",
+      "titel": "Hände auf die Augen",
+      "sorte": "augen",
+      "dauer": 60,
+      "kurz": "warm und dunkel",
+      "hilfe": "Nicht drücken, nur auflegen.",
+      "takt": [],
+      "schritte": [
+        { "ab": 0, "ansage": "haende-reiben" },
+        { "ab": 12, "ansage": "haende-auf" },
+        { "ab": 24, "ansage": "dunkel" },
+        { "ab": 50, "ansage": "augen-auf" }
+      ],
+      "ansagen": ["haende-reiben", "haende-auf", "dunkel", "augen-auf", "ende"],
+      "animation": "symbol"
+    },
+    {
+      "id": "schultern",
+      "titel": "Schultern lockern",
+      "sorte": "koerper",
+      "dauer": 60,
+      "kurz": "hoch, fallen, kreisen",
+      "hilfe": "Langsam. Nichts muss knacken.",
+      "takt": [],
+      "schritte": [
+        { "ab": 0, "ansage": "schultern-hoch" },
+        { "ab": 8, "ansage": "fallen" },
+        { "ab": 16, "ansage": "kreisen-hinten" },
+        { "ab": 32, "ansage": "kreisen-vorn" },
+        { "ab": 44, "ansage": "nacken" }
+      ],
+      "ansagen": ["schultern-hoch", "fallen", "kreisen-hinten", "kreisen-vorn", "nacken", "ende"],
+      "animation": "symbol"
+    },
+    {
+      "id": "strecken",
+      "titel": "Kurz strecken",
+      "sorte": "koerper",
+      "dauer": 60,
+      "kurz": "einmal lang machen",
+      "hilfe": "Geht auch im Sitzen.",
+      "takt": [],
+      "schritte": [
+        { "ab": 0, "ansage": "aufstehen" },
+        { "ab": 8, "ansage": "arme-hoch" },
+        { "ab": 24, "ansage": "seite-links" },
+        { "ab": 36, "ansage": "seite-rechts" },
+        { "ab": 48, "ansage": "schuetteln" }
+      ],
+      "ansagen": ["aufstehen", "arme-hoch", "seite-links", "seite-rechts", "schuetteln", "ende"],
+      "animation": "symbol"
+    },
+    {
+      "id": "fuenf-dinge",
+      "titel": "5 Dinge sehen",
+      "sorte": "ankommen",
+      "dauer": 60,
+      "kurz": "zurück ins Jetzt",
+      "hilfe": "Sehen, hören, fühlen. Einfach nur bemerken.",
+      "takt": [],
+      "schritte": [
+        { "ab": 0, "ansage": "sehen" },
+        { "ab": 20, "ansage": "hoeren" },
+        { "ab": 40, "ansage": "fuehlen" }
+      ],
+      "ansagen": ["sehen", "hoeren", "fuehlen", "ende"],
+      "animation": "symbol"
+    },
+    {
+      "id": "fuesse",
+      "titel": "Füße spüren",
+      "sorte": "ankommen",
+      "dauer": 60,
+      "kurz": "Boden unter den Füßen",
+      "hilfe": "Im Sitzen oder Stehen.",
+      "takt": [],
+      "schritte": [
+        { "ab": 0, "ansage": "fuesse-boden" },
+        { "ab": 15, "ansage": "getragen" },
+        { "ab": 30, "ansage": "zehen" },
+        { "ab": 45, "ansage": "ruhig-atmen" }
+      ],
+      "ansagen": ["fuesse-boden", "getragen", "zehen", "ruhig-atmen", "ende"],
+      "animation": "symbol"
+    },
+    {
+      "id": "eine-sache",
+      "titel": "Eine Sache",
+      "sorte": "fokus",
+      "dauer": 120,
+      "kurz": "ich frag, was jetzt zählt",
+      "hilfe": "Eine Sache. Die kommt ganz oben in die Aufgaben.",
+      "takt": [
+        { "phase": "ein", "s": 4 },
+        { "phase": "aus", "s": 6 }
+      ],
+      "atmen": 60,
+      "schritte": [],
+      "ansagen": ["eine-sache", "dann-los", "ein", "aus", "ende"],
+      "animation": "kreis"
+    },
+    {
+      "id": "kopf-leeren",
+      "titel": "Kopf leeren",
+      "sorte": "fokus",
+      "dauer": 120,
+      "kurz": "alles raus, ich sortiere",
+      "hilfe": "Aufgaben, Termine, Notizen. Ich sortiere.",
+      "takt": [
+        { "phase": "ein", "s": 4 },
+        { "phase": "aus", "s": 6 }
+      ],
+      "atmen": 60,
+      "schritte": [],
+      "ansagen": ["kopf-leeren", "ruhe", "ein", "aus", "ende"],
+      "animation": "kreis"
+    }
+  ]
+}

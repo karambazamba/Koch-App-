@@ -1,5 +1,7 @@
 "use client";
 
+import { DurchatmenHost } from "@/components/durchatmen/DurchatmenHost";
+import { onDurchatmenStart } from "@/lib/durchatmen/oeffnen";
 import { useNotes } from "@/lib/notizen";
 import { usePathname } from "next/navigation";
 import { Suspense, useEffect, useRef, useState } from "react";
@@ -201,6 +203,9 @@ export function KitchenHelper() {
     [],
   );
 
+  // Durchatmen startet (Mia: „Handy-Pause“ …): die Bühne tritt zur Seite, die Übung übernimmt
+  useEffect(() => onDurchatmenStart(() => setOpen(false)), []);
+
   // "Rückgängig" verschwindet nach UNDO_SECONDS
   useEffect(() => {
     if (!undo) return;
@@ -302,6 +307,8 @@ export function KitchenHelper() {
       )}
 
       {weekCheck && data && <WochencheckSheet data={data} onClose={() => setWeekCheck(false)} />}
+      {/* Durchatmen (A-051): Fenster und Übung, erst bei Bedarf geladen */}
+      <DurchatmenHost data={data} />
 
       {(undo || undone) && (
         <div

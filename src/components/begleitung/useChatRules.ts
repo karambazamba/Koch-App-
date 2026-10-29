@@ -45,6 +45,8 @@ import { mehrereRule } from "@/components/begleitung/mehrereRule";
 import { ohneFuellwoerter } from "@/lib/begleitung/fuellwoerter";
 import { openHelper } from "@/lib/begleitung/open";
 import { isWeekCheckRequest } from "@/lib/kalender/wochencheck";
+import { durchatmenAusSatz } from "@/lib/durchatmen/erkennen";
+import { starteDurchatmen } from "@/lib/durchatmen/oeffnen";
 import { isKochtippRequest } from "@/lib/essen/kochtipp/start";
 import { daySummary, isDayQuestion, openDeinTag } from "@/lib/heute/deinTag";
 import { itemsForDay, weekdayIndex } from "@/lib/kalender/model";
@@ -195,6 +197,14 @@ export function useChatRules({ ruleCtx, chat, setGuided, startSpontan, pantry, s
       setInput("");
       onClose();
       openHelper("wochencheck");
+      return true;
+    }
+    // „Handy-Pause“, „Ich brauch kurz Ruhe“, „Kopf leeren“ … → Übung startet gleich (A-051)
+    const atem = durchatmenAusSatz(t);
+    if (atem) {
+      setInput("");
+      unlockFeature("durchatmen");
+      starteDurchatmen(atem);
       return true;
     }
     // „Kochtipp“, „Was soll ich kochen?“ → Kochtipp mit drei Schnellantworten

@@ -105,6 +105,11 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
   `abendThema.ts` + `abendDaten.ts` (Tafel 98), `jetztStore.ts`
   (Speicher), `jetztCommand.ts` (Satz an/aus); Oberfläche
   `src/components/heute/JetztCard.tsx`, Daten `useJetztTopics.ts`.
+  Leises Angebot „Kurz durchatmen?“ (A-051): eigenes Thema `durchatmen`
+  (Punkte 30, sanft, nie nachts) aus `durchatmen/angebot.ts`
+  (`durchatmenAngebot`, `durchatmenThema`; höchstens 2× am Tag, nach drei
+  Terminen am Stück oder im Nachmittagstief, abschaltbar), Antippen öffnet
+  das Fenster (`oeffneDurchatmen`). Nie als Mitteilung.
 - „Dein Tag“: `src/lib/heute/deinTag.ts` (Symbole, Zeilen, Übersicht,
   Öffnen), `src/components/heute/DeinTag.tsx`; Mia-Knopf beim Scrollen
   `src/lib/begleitung/knopfScroll.ts`.

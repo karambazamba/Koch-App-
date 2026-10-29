@@ -12,6 +12,7 @@
     "icons": "node scripts/generate-icons.mjs",
     "brand": "node scripts/generate-brand.mjs",
     "gerichte-bilder": "node scripts/generate-dish-images.mjs",
+    "ansagen": "node scripts/ansagen-erzeugen.mjs",
     "test": "TZ=Europe/Berlin vitest run",
     "test:abdeckung": "TZ=Europe/Berlin vitest run --coverage",
     "test:datenbank": "node scripts/datenbank-test.mjs",

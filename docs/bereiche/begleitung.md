@@ -723,6 +723,20 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
   Antworten erkennt `recognizer.ts` – mit KI über `/api/kennenlernen`
   (Modell `MODEL`, änderbar per `KENNENLERNEN_MODEL`), sonst Regeln.
 
+### Durchatmen (A-051, v0.159.0)
+
+- „Ich brauch kurz Ruhe“, „Atemübung“, „Handy-Pause“, „Kopf leeren“, „Was
+  ist jetzt wichtig?“ → `app_befehl` mit dem Satz (Beschreibung in
+  `homeTools.ts`, Testmodus `mockAlltag.ts`) bzw. Sofort-Weg;
+  `runInstantOps` erkennt ihn (`durchatmen/erkennen.ts`), schaltet den
+  Baustein bei Bedarf frei (sagt, wo er steht) und startet die Übung
+  (`starteDurchatmen`), der KitchenHelper schließt die Bühne. Ohne KI:
+  `useChatRules`. „[Kopf leeren] …“ sortiert Mia in einer Antwort
+  (Beschreibung bei `notiz_anlegen`).
+- Ansagen laufen über denselben Weg der Stimme (`speak` mit `datei`, `tempo`,
+  `laut`; Datei über `ansageAbspielen` im einen freigeschalteten Abspieler),
+  nie über ElevenLabs live. Details `docs/bereiche/durchatmen.md`.
+
 ### Bausteine im Gespräch
 
 - Mit KI: `baustein_an`/`baustein_aus` (Op `set_feature`, Vorschau). Ohne
@@ -965,7 +979,9 @@ Sachen sofort eine Reaktion.
   ohne Uhrzeit wie „Tim antworten“, „Rechnung bezahlen“, „… kündigen“;
   „Erinner mich …“, mit Uhrzeit dann mit Erinnerung; „Lisa soll …“ → KI),
   Notiz („merk dir“, „notier“, „schreib auf“), Pinnwand („Pinnwand:“, „an
-  alle:“, „sag Lisa, …“ ohne Auftrag), Timer mit Dauer. Nie raten: Fragen,
+  alle:“, „sag Lisa, …“ ohne Auftrag), Timer mit Dauer, Durchatmen
+  („Handy-Pause“, „Atemübung“, „Kopf leeren“, „Ich brauch kurz Ruhe“, keine
+  Fragen; Op `app_command` „Durchatmen: <id>“, startet die Übung, A-051). Nie raten: Fragen,
   Änderungen, Verneinung, Regeln („immer“, „nur“), Planen/Kochen, mehrere
   Lesarten → `null`. Ausdrücklich Angesagtes (Timer/Notiz/Pinnwand) geht vor.
   Ausführung wie sichere Ops (`commitOps`, `runInstantOps`): Bestätigung aus
@@ -976,7 +992,7 @@ Sachen sofort eine Reaktion.
   die App ihres zurück und zeigt die Lesart der KI an derselben Stelle.
   Nicht bei offenem Vorschlag, nicht ohne KI (dann wie bisher die Regeln).
   „Was steht heute an?“ war schon lokal (`isDayQuestion`).
-  Prüfstand `pruefstand/sofort.ts` (74 Kurzsätze, Ziel ≥ 98 %, heute 100 %)
+  Prüfstand `pruefstand/sofort.ts` (93 Kurzsätze, Ziel ≥ 98 %, heute 100 %)
   und Gegenprobe: alles, was aus dem großen Prüfstand lokal erledigt wird,
   muss dort richtig sein (`tests/begleitung/sofortPruefstand.test.ts`).
 - **Modellwahl vor dem Aufruf** (`modellwahl.ts`, siehe oben). Haiku mit

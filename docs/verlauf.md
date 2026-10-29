@@ -72,6 +72,25 @@ ist inzwischen anders. Den aktuellen Stand je Bereich beschreibt
   (erstes Wort in den ersten 500 ms bleibt, Gegenprobe ohne Vorlauf),
   `mehrereSachen.test.ts`; Durchklick `hoertSofort`, `ohrLivePufferUebernimmt`.
 
+## Durchatmen + Mia leitet an (A-051, v0.159.0)
+
+- Paket B des Gesamtauftrags vom 29.10. (A-050 bis A-053, Tafel 138/139):
+  Baustein `durchatmen`, Standard an (Bausteine v7: beim Update einmal an),
+  von Felix gewollte Ausnahme vom Launch-Stopp.
+- 12 feste Übungen (`content/durchatmen/`), Fenster „Durchatmen“ mit
+  „Passt gerade“ (Tageszeit, Lieblinge öfter), Sorten, Herz; Vollbild je
+  Sorte, nach 3 s dunkel (Handy-Pause sofort), Antippen = hell, Ende ohne
+  Zähler. „Eine Sache“ legt eine Aufgabe ganz oben an, „Kopf leeren“
+  sortiert (KI zuerst, sonst Regel-Weg).
+- Stimme und Klang: Art „Stimme + Klang“ / „Nur Klang“ / „Still“ pro Gerät
+  (`wasgibts.durchatmen` v1), Ansagen über `speak` (Datei oder Handy-Stimme
+  langsamer und leiser), Skript `npm run ansagen` (ElevenLabs nur beim
+  Erzeugen; der Schlüssel liegt nur in Vercel, deshalb noch keine Dateien),
+  Web-Audio-Klang, Wake Lock, Vibration, Stumm-Schalter-Hinweis einmal.
+- Jetzt-Karte: Thema `durchatmen` (höchstens 2× am Tag, nie nachts, nie
+  Push), Mia: `app_befehl` + Sofort-Weg, 5 + 12 Prüfstand-Sätze. Einstieg
+  bis zum Kreis (A-050): Einstellungen → Durchatmen.
+
 ## Mias Wundertüte (A-022, v0.156.0)
 
 - Auftrag A-022 (Tafel 116, Wortlaut `docs/auftraege/A-022-wundertuete.md`),

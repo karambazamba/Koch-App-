@@ -122,6 +122,20 @@ export const SOFORT_SAETZE: SofortSatz[] = [
   S("Timer eine Stunde", "timer"),
   S("Timer stoppen", null),
   S("Wie lange läuft der Timer noch?", null),
+  // Durchatmen (A-051): eindeutige Kurzbefehle starten die Übung
+  S("Handy-Pause", "durchatmen", { name: "handy-pause" }),
+  S("Mach mal ne Handy-Pause", "durchatmen", { name: "handy-pause" }),
+  S("Atemübung", "durchatmen", { name: "lang-aus" }),
+  S("Ich brauch kurz Ruhe", "durchatmen", { name: "lang-aus" }),
+  S("Kopf leeren", "durchatmen", { name: "kopf-leeren" }),
+  S("Kästchen-Atmen", "durchatmen", { name: "kaestchen" }),
+  S("Kurz durchatmen", "durchatmen", { name: "vorschlag" }),
+  S("Bin total gestresst", "durchatmen", { name: "lang-aus" }),
+  // Durchatmen, aber unklar → KI
+  S("Was ist jetzt wichtig?", null), // Frage → die KI (app_befehl)
+  S("Lass mich in Ruhe", null),
+  S("Wir machen Pause bis Sonntag", null),
+  S("Atemübung nicht jetzt", null),
   // Alles andere: KI
   S("Plan mir die Woche", null),
   S("Was koche ich heute?", null),

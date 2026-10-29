@@ -8,7 +8,7 @@
 import { setAvatarFlag } from "@/lib/core/avatarState";
 import { tidyMiaText } from "@/lib/begleitung/tidy";
 import { cleanForSpeech, speechChunks } from "@/lib/begleitung/vorlesText";
-import { audioFreischalten, mitMiasStimme, serverStimmeStoppen } from "@/lib/begleitung/stimmeClient";
+import { ansageAbspielen, audioFreischalten, mitMiasStimme, serverStimmeStoppen } from "@/lib/begleitung/stimmeClient";
 import { useEffect, useState } from "react";
 import { createLocalStore, readRaw, writeRaw } from "@/lib/core/localStore";
 import type { HelperVoice } from "@/lib/einstellungen/profile";
@@ -285,6 +285,11 @@ type SpeakOptions = {
   anhaengen?: boolean;
   /** Erster Ton ist zu hören (Tempo: „erster Satz vorgelesen“) */
   beginnt?: () => void;
+  /** Vorab erzeugte Datei (Durchatmen-Ansagen); fehlt sie, spricht das Handy */
+  datei?: string;
+  /** Handy-Stimme: Tempo-Faktor (1 = wie eingestellt) und Lautstärke 0–1 (Durchatmen: langsamer, leiser) */
+  tempo?: number;
+  laut?: number;
 };
 
 /** Was noch vorgelesen wird: Stücke nacheinander, gemeinsam eine Kennung */
@@ -343,6 +348,14 @@ function sprich(clean: string, options: SpeakOptions, mine: number): Promise<voi
       if (currentVoices().length) say(chunks, options, mine, anfang, resolve);
       else whenVoicesReady(() => (mine === token ? say(chunks, options, mine, anfang, resolve) : resolve()));
     });
+  // Feste Ansage als Datei (Durchatmen): über denselben Abspieler, fehlt sie → Handy
+  if (options.datei) {
+    const datei = options.datei;
+    return ansageAbspielen(datei, options.laut ?? 1, anfang).then((wie) => {
+      setTalking(false);
+      return wie === "fehler" ? handy(clean) : undefined;
+    });
+  }
   // Probehören einer Handy-Stimme (`voice`) spricht immer mit dem Handy
   const quelle = options.quelle ?? (options.voice === undefined ? loadSpeechSettings().quelle : "handy");
   if (quelle === "handy") return handy(clean);
@@ -370,17 +383,18 @@ function whenVoicesReady(run: () => void) {
   setTimeout(go, 800);
 }
 
-function say(chunks: string[], options: { id?: string; gender?: HelperVoice; voice?: string }, mine: number, anfang: () => void, done: () => void) {
+function say(chunks: string[], options: { id?: string; gender?: HelperVoice; voice?: string; tempo?: number; laut?: number }, mine: number, anfang: () => void, done: () => void) {
   const settings = loadSpeechSettings();
   // `voice` (Probehören): genau diese Stimme, "" = automatisch
   const chosen = options.voice === undefined ? settings : { ...settings, voice: options.voice };
   const voice = chooseVoice(currentVoices(), chosen, options.gender ?? "weiblich");
-  const rate = SPEECH_RATES.find((r) => r.value === settings.rate)?.rate ?? 1;
+  const rate = (SPEECH_RATES.find((r) => r.value === settings.rate)?.rate ?? 1) * (options.tempo ?? 1);
   try {
     chunks.forEach((chunk, i) => {
       const u = new SpeechSynthesisUtterance(chunk);
       u.lang = voice?.lang ?? "de-DE";
       u.rate = rate;
+      if (options.laut !== undefined) u.volume = options.laut;
       try {
         if (voice) u.voice = voice;
       } catch {

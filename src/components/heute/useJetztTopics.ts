@@ -28,6 +28,11 @@ import { newsForCard } from "@/lib/konten/wer";
 import { markFamilyNewsShown, useFamilyNews } from "@/lib/konten/neuigkeiten";
 import { useMails } from "@/lib/mails/konto";
 import { mailThema } from "@/lib/mails/vorschlag";
+import { useFeature } from "@/lib/core/features";
+import { now } from "@/lib/core/now";
+import { durchatmenAngebot } from "@/lib/durchatmen/angebot";
+import { angebotGezeigt, useDurchatmen } from "@/lib/durchatmen/store";
+import { kreisText, vorschlag } from "@/lib/durchatmen/vorschlag";
 
 export type JetztSource = {
   today: string;
@@ -121,6 +126,20 @@ export function useJetztTopics(src: JetztSource) {
   // Regen morgen früh (7–9 Uhr) – nur mit Plan zählt er (abendThema.ts)
   const tomorrowRain = Boolean(forecast?.hours.some((h) => h.date === tomorrowIso && h.hour >= 7 && h.hour <= 9 && isRainy(h)));
   const region = src.regionTips ? jetztTip(src.regionTips, { today: src.today, minutes: src.minutes, rainy: todayDay ? todayDay.wet > 0 : null, kids: src.kids, hiddenWeekend: src.regionHidden }) : null;
+  // Durchatmen (A-051): leises Angebot, höchstens 2× am Tag, nie nachts, abschaltbar
+  const atemAn = useFeature("durchatmen");
+  const atem = useDurchatmen();
+  const minuten = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
+  const atemAnlass =
+    atemAn && atem && !src.demo
+      ? durchatmenAngebot({
+          heute: src.today,
+          minuten: src.minutes,
+          an: atem.angebot,
+          gezeigt: atem.angebote,
+          termine: src.todayAll.filter((i) => i.entry.typ === "termin" && i.time && i.date === src.today).map((i) => ({ start: minuten(i.time!), ende: i.end ? minuten(i.end) : null })),
+        })
+      : null;
   const input: JetztInput = {
     minutes: src.minutes,
     today: src.today,
@@ -165,6 +184,7 @@ export function useJetztTopics(src: JetztSource) {
     kidsWay: src.kidsWay ?? null,
     tomorrowRain,
     tomorrowDish: src.demo ? null : (src.tomorrowDish ?? null),
+    durchatmen: atemAnlass ? { anlass: atemAnlass, detail: kreisText(vorschlag(now(), atem?.lieblinge ?? [])).join(" · ") } : null,
     weights: state.weights,
     hidden: hiddenToday(state, src.today),
   };
@@ -174,5 +194,10 @@ export function useJetztTopics(src: JetztSource) {
   useEffect(() => {
     if (shownNews) markFamilyNewsShown(shownNews, src.today);
   }, [shownNews, src.today]);
+  // Angebot stand in der Karte → Anlass für heute merken (höchstens 2 am Tag)
+  const atemGezeigt = atemAnlass && topics.some((t) => t.kind === "durchatmen") ? atemAnlass : null;
+  useEffect(() => {
+    if (atemGezeigt) angebotGezeigt(atemGezeigt, src.today);
+  }, [atemGezeigt, src.today]);
   return { on: state.on, topics, shop: input.shop };
 }

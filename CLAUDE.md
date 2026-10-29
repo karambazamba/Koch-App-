@@ -24,7 +24,7 @@ Die frühere Lieblingsfarbe ist „Meine Farbe im Kalender“ (Profil
 
 ## Launch „Mia 1.0“
 - **Bis zum Launch keine neuen Funktionen.** Nur Aufräumen, Fehler,
-  Einheitlichkeit. Einzige Ausnahme (von Felix gewollt): Mias Wundertüte.
+  Einheitlichkeit. Ausnahmen (von Felix gewollt): Mias Wundertüte, Durchatmen.
 - Drin: Mia (sprechen, tippen, erledigen), Startseite, Termine (inkl.
   Kalender mitbringen per Link), Aufgaben, Einkauf, Essen (heute, Ideen,
   Rezept, Kochmodus, Wochenkarte), Pinnwand als Kühlschranktür (allein aus),
@@ -32,7 +32,8 @@ Die frühere Lieblingsfarbe ist „Meine Farbe im Kalender“ (Profil
   Bereich unter Essen mit „Was koch ich daraus?“, Kachel S/M nur über die
   Auswahl), Sport (Baustein, nur Wochen zählen), Wochenplan (Baustein),
   Wetter, Timer (Baustein), Familie teilen per E-Mail-Code, Datenschutz,
-  Mias Wundertüte (Baustein, neu an als S; `docs/bereiche/wundertuete.md`).
+  Mias Wundertüte (Baustein, neu an als S; `docs/bereiche/wundertuete.md`),
+  Durchatmen (Baustein an, 12 Übungen, nie Pflicht; `docs/bereiche/durchatmen.md`).
 - Ausgeblendet (Baustein aus, nicht gelöscht, Daten bleiben; wer ihn nutzt,
   behält ihn): Mails an Mia, Tipps aus der Region, Spendentopf (ein Satz unter
   „Über Mia“ bleibt), Apple/Google-Anmeldung (nur E-Mail-Code), ElevenLabs
@@ -236,7 +237,7 @@ Die frühere Lieblingsfarbe ist „Meine Farbe im Kalender“ (Profil
 Stehen jeweils oben in `docs/bereiche/<bereich>.md`: Tipps aus der Region
 und Name „KARAMBA Eis“ (`tipps`), Spendentopf, Wetter, Beispiel-Tag
 (`heute`), Pinnwand, Konten (Supabase), Mails an Mia, Mia denkt mit und
-Mias Stimme (`begleitung`), Bilder der Gerichte (`essen`). Vor Änderungen dort lesen.
+Mias Stimme (`begleitung`), Bilder der Gerichte (`essen`), Durchatmen. Vor Änderungen dort lesen.
 
 ## Datenschutz
 - So wenig Daten wie möglich, so lange wie nötig, nie verkauft, keine Tracker,

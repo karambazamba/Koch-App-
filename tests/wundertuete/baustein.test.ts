@@ -40,7 +40,8 @@ describe("Baustein: neu an, bestehend unverändert", () => {
     const f = await import("@/lib/core/features");
     f.launchUebernahme();
     expect(f.featureOn("wundertuete")).toBe(false);
-    expect(JSON.parse(w.localStorage.getItem("wasgibts.funktionen")!).on).toEqual(on);
+    // Durchatmen kommt mit v7 für alle dazu (A-051), sonst bleibt alles
+    expect(JSON.parse(w.localStorage.getItem("wasgibts.funktionen")!).on).toEqual([...on, "durchatmen"]);
   });
 
   it("bestehender Nutzer ohne gespeicherte Bausteine, aber mit eigener Startseite: aus", async () => {
