@@ -6,6 +6,16 @@ ist inzwischen anders. Den aktuellen Stand je Bereich beschreibt
 `docs/bereiche/<bereich>.md`, die festen Regeln stehen in `CLAUDE.md`.
 Ältere Pfadangaben meinen die Orte vor dem Umzug (siehe CLAUDE.md, „Ordner“).
 
+## Pinnwand flach, Termine ohne „…“ (Tafel 147 B, v0.170.0)
+
+- Pinnwand-Kachel und -Seite ohne inneren Korkrahmen: feine Kork-Punkte über
+  die ganze Fläche (`.korkpunkte`, ersetzt `.korkrahmen`, Token
+  `--app-kork-rand` entfällt), Ecken wie alle Kacheln, Zettel und Pins bleiben.
+- Termin-Zeile der Startseite nie mit „…“: Ort nach Komma bzw. „ · “ klein in
+  der zweiten Zeile (`titelUndOrt`), sonst bricht der Titel um; die Zeile
+  wächst mit (mind. 30 px). Passt es nicht in die Kachel, steht eine Zeile
+  weniger da (zählt bei „+N“), abgeschnitten wird nie.
+
 ## „Was los?“: Parser an echten Seiten, Kreis erscheint (v0.169.0)
 
 - www.kreis-oh.de war freigegeben: echte Seiten nach

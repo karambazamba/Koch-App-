@@ -15,7 +15,7 @@
 import { GanztagMarke, zeitSpalte } from "@/components/kalender/GanztagMarke";
 import { TaskFrom } from "@/components/kalender/abgeben/TaskFrom";
 import Link from "next/link";
-import { useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { Bell, Check, Plus } from "lucide-react";
 import { reminderFor } from "@/lib/heute/mitteilungen/erinnerungen";
 import { TILE, TILE_INNER, TILE_LABEL } from "@/components/ui/styles";
@@ -24,7 +24,7 @@ import { clockLabel } from "@/lib/kalender/answers";
 import { isNeu, isUrgent, setDone, type DayItem } from "@/lib/kalender/model";
 import { arbeitMorgenText } from "@/lib/kalender/aufgaben";
 import { NeuSchild, RaumSchild } from "@/components/kalender/AufgabeSchild";
-import type { TerminRow, TerminState } from "@/lib/heute/termineKachel";
+import { termineDiePassen, titelUndOrt, ZEICHEN_JE_ZEILE, ZEICHEN_PX, type TerminRow, type TerminState } from "@/lib/heute/termineKachel";
 import { UrgentMark } from "@/components/kalender/UrgentMark";
 import type { TileSize } from "@/lib/core/homeLayout";
 import { LEAVE_MS, act, buzz, readOnlyDone } from "@/components/heute/actions";
@@ -136,21 +136,47 @@ const LIST = `${TILE_INNER} flex flex-col divide-y divide-line overflow-hidden`;
 
 const STATE_LABEL: Record<Exclude<TerminState, null | "naechster">, string> = { laeuft: "läuft", gleich: "gleich" };
 
-/** Termin-Zeile (30 px): Strich in Raumfarbe, Uhrzeit (feste Breite), Titel einzeilig, rechts „läuft“/„gleich“ */
+/**
+ * Termin-Zeile (mind. 30 px): Strich in Raumfarbe, Uhrzeit (feste Breite),
+ * Titel nie mit „…“ gekürzt (Tafel 147): bricht lieber um, ein Ort nach Komma
+ * steht klein in der zweiten Zeile; rechts „läuft“/„gleich“.
+ */
 function TerminLine({ row, entering, onOpen, spalte, half }: { row: TerminRow; entering?: React.CSSProperties; onOpen: () => void; spalte: string; half: boolean }) {
   const { item, state } = row;
   const next = state === "gleich" || state === "naechster";
+  const { titel, ort } = titelUndOrt(withoutEmoji(item.title));
   return (
     <li className={next ? "bg-accent-soft/60" : undefined} style={entering} data-item={item.key} data-state={state ?? undefined} data-zeile data-leuchte={leuchtSchluessel("eintrag", item.entry.id)}>
-      <button type="button" onClick={onOpen} className="flex h-[30px] w-full items-center gap-2 pl-2.5 pr-3 text-left" aria-label={`${item.time ? clockLabel(item.time) : "ganztägig"} ${item.title}${state === "laeuft" ? " – läuft" : state === "gleich" ? " – gleich" : ""} – Möglichkeiten`}>
+      <button type="button" onClick={onOpen} className="flex min-h-[30px] w-full items-center gap-2 py-[5px] pl-2.5 pr-3 text-left" aria-label={`${item.time ? clockLabel(item.time) : "ganztägig"} ${item.title}${state === "laeuft" ? " – läuft" : state === "gleich" ? " – gleich" : ""} – Möglichkeiten`}>
         <span className={`h-3.5 w-[3px] shrink-0 rounded-full ${roomBarProps(item).className}`} style={roomBarProps(item).style} aria-hidden />
         <span className={`${spalte} shrink-0 whitespace-nowrap text-[13.5px] font-extrabold tabular-nums text-tile-accent`}>{item.time ? clockLabel(item.time) : <GanztagMarke title={item.title} label={item.label} kurz={half} />}</span>
-        <span className={`min-w-0 flex-1 truncate text-[13.5px] leading-tight ${next ? "font-bold" : "font-semibold"}`} data-freitext>{withoutEmoji(item.title)}</span>
+        <span className="flex min-w-0 flex-1 flex-col" data-freitext>
+          <span className={`text-[13.5px] leading-tight break-words ${next ? "font-bold" : "font-semibold"}`}>{titel}</span>
+          {ort && <span className="text-[11.5px] font-semibold leading-tight text-muted break-words">{ort}</span>}
+        </span>
         {reminderFor(item) && <Bell className="h-[13px] w-[13px] shrink-0 text-muted" strokeWidth={2.25} aria-label="mit Erinnerung" />}
         {(state === "laeuft" || state === "gleich") && <span className={`shrink-0 text-[11px] font-bold ${state === "gleich" ? "text-accent-strong" : "text-muted"}`}>{STATE_LABEL[state]}</span>}
       </button>
     </li>
   );
+}
+
+/** Zeichen pro Zeile in der Titelspalte – gemessen an der echten Breite (Gerät, halbe/ganze Kachel) */
+function useZeichenJeZeile(ref: React.RefObject<HTMLElement | null>, start: number): number {
+  const [je, setJe] = useState(start);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const messen = () => {
+      const w = el.querySelector<HTMLElement>("[data-freitext]")?.clientWidth;
+      if (w) setJe(Math.max(4, Math.floor(w / ZEICHEN_PX)));
+    };
+    messen();
+    const ro = new ResizeObserver(messen);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [ref]);
+  return je;
 }
 
 /**
@@ -159,7 +185,10 @@ function TerminLine({ row, entering, onOpen, spalte, half }: { row: TerminRow; e
  */
 export function TermineSection({ rows, label, href, today, size = "M", half = false, demo }: { rows: TerminRow[]; label?: string | null; href: string; today?: string; size?: TileSize; half?: boolean; demo?: DemoProps }) {
   const { setMenu, before, overlays } = useSection();
-  const shown = rows.slice(0, ROW_COUNT[size]);
+  // Umgebrochene Titel brauchen Platz: passt es nicht, eine Zeile weniger (zählt bei „+N“), nie abgeschnitten
+  const liste = useRef<HTMLUListElement>(null);
+  const je = useZeichenJeZeile(liste, half ? ZEICHEN_JE_ZEILE.halb : ZEICHEN_JE_ZEILE.ganz);
+  const shown = rows.slice(0, termineDiePassen(rows.map((r) => withoutEmoji(r.item.title)), ROW_COUNT[size], je));
   const plus = <QuickButton icon={Plus} label="Neuer Termin" onClick={() => neuEintragen("termin", today)} />;
   const rest = rows.length - shown.length;
   // „Ganztägig“ passt ohne Umbruch: Spalte breiter, sobald ein ganztägiger Termin dabei ist (halbe Kachel: nur Symbol)
@@ -171,7 +200,7 @@ export function TermineSection({ rows, label, href, today, size = "M", half = fa
         <KachelWasserzeichen kachel="termine" size={size} frei={rows.length === 0} />
         <TileHead title={demo?.label ?? label ?? "Termine"} more={rest} moreLabel={half ? "" : undefined} href={href} action={plus} />
         {rows.length ? (
-          <ul className={LIST}>
+          <ul ref={liste} className={LIST}>
             {shown.map((row) => (
               <TerminLine key={row.item.key} row={row} spalte={spalte} half={half} entering={entersAnim(before, row.item.key)} onOpen={() => (demo ? demo.onOpen(row.item) : setMenu(row.item))} />
             ))}

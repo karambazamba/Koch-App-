@@ -28,7 +28,7 @@ describe("Pinnwand aufgeräumt (Tafel 123 A)", () => {
 
   it("Wand so hoch wie der Inhalt: keine Mindesthöhe, kein innerer Scrollbereich", () => {
     const view = read("src/components/pinnwand/PinboardView.tsx");
-    expect(view.match(/<div className="korkrahmen ([^"]*)"/)![1]).not.toMatch(/min-h|overflow|max-h/);
+    expect(view.match(/<div className="korkpunkte ([^"]*)"/)![1]).not.toMatch(/min-h|overflow|max-h/);
     expect(view).not.toMatch(/min-h-\[300px\]/);
   });
 
