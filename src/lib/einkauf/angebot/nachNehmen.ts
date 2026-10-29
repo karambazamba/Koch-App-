@@ -53,6 +53,20 @@ function zutatenNachNehmen(data: Daten, titel: string, date: string, needs: read
   };
 }
 
+/**
+ * Jetzt-Karte „Auf die Liste: Eier“ (A-054): genau diese Zutaten des Gerichts
+ * von heute still auf die Liste – über dasselbe Angebot wie nach „Nehmen“
+ * (mit „für Pad Thai“ im Zeilen-Fenster). Liefert, wie viele draufkamen.
+ */
+export function zutatenDraufsetzen(data: Daten, titel: string, date: string, namen: readonly string[]): number {
+  const { weekStart, eintraege } = zutatenNachNehmen(data, titel, date, namen);
+  // Kennt weder Plan noch Vorschau die Namen (anders geschrieben): genau das, was auf dem Knopf stand
+  const tag = new Date(`${date}T12:00:00`);
+  const liste = eintraege.length ? eintraege : namen.map((name) => ({ name, amount: "", section: sectionFor(name), day: weekdayName(tag), dish: titel }));
+  liste.forEach((e) => addManualItem(weekStart, e));
+  return liste.length;
+}
+
 /** Nach „Nehmen“: Zutaten anbieten – „Alle dazu“ setzt sie wie auf der Laden-Seite drauf */
 export function zutatenAnbieten(data: Daten, titel: string, date: string, needs: readonly string[] | null = null): boolean {
   const { weekStart, eintraege } = zutatenNachNehmen(data, titel, date, needs);

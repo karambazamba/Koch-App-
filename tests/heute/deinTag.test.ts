@@ -1,5 +1,5 @@
 // Weniger Mia + „Dein Tag“ (Tafel 66 B, 67, 68): Themen-Symbol statt Gesicht
-// (je Thema genau eins), Jetzt-Karte ohne Knopf, höchstens 3 Themen, Antippen
+// (je Thema genau eins), Jetzt-Karte ohne Knopf, höchstens 2 Themen (A-054), Antippen
 // öffnet „Dein Tag“ mit dem Thema hervorgehoben, Abschnitte in fester
 // Reihenfolge, Termine nach Uhrzeit mit „Jetzt“-Linie, Arbeit nur für den
 // Besitzer, Mia fasst den Tag in 2 Sätzen zusammen, Mia-Knopf macht Platz.
@@ -15,28 +15,25 @@ const day = (entries: Parameters<typeof itemsForDay>[0]) => itemsForDay(entries,
 
 describe("Themen-Symbol statt Mias Gesicht", () => {
   it.each<[JetztKind, string]>([
-    ["wetter", "Umbrella"],
-    ["gleich", "CalendarDays"],
-    ["vorbereiten", "ListChecks"],
-    ["packliste", "ListChecks"],
-    ["aufgabe", "ListChecks"],
-    ["einkauf", "ShoppingCart"],
-    ["kochstart", "CookingPot"],
+    ["gleich", "Clock"],
+    ["wetter", "CloudRain"],
+    ["essen", "CookingPot"],
+    ["vorlauf", "CookingPot"],
     ["kochen", "CookingPot"],
-    ["ideen", "CookingPot"],
-    ["pinnwand", "MessageCircle"],
-    ["absprache", "MessageCircle"],
-    ["timer", "Timer"],
     ["geburtstag", "Gift"],
     ["jahrestag", "Heart"],
-    ["morgenwetter", "Umbrella"],
-    ["frueh", "AlarmClock"],
-    ["vorlauf", "CookingPot"],
-    ["abend", "Sparkles"],
-    ["tipp", "Sparkles"],
-    ["ruhig", "Sparkles"],
+    ["timer", "Timer"],
+    ["erinnerung", "Bell"],
+    ["wochenende", "CalendarDays"],
+    ["morgen", "Sunrise"],
+    ["tipp", "Lightbulb"],
   ])("%s → %s", (kind, icon) => {
     expect(topicIcon(kind)).toBe(icon);
+  });
+
+  it("A-054: nie ein Glitzer-Symbol in der Jetzt-Karte", () => {
+    expect(readFileSync("src/components/heute/JetztCard.tsx", "utf8")).not.toMatch(/Sparkles/);
+    expect(readFileSync("src/lib/heute/deinTag.ts", "utf8")).not.toMatch(/Sparkles/);
   });
 
   it("Jetzt-Karte: kein BegleitungAvatar, kein eigener Knopf, 46-px-Kreis, nie mitten im Wort", () => {
@@ -45,8 +42,10 @@ describe("Themen-Symbol statt Mias Gesicht", () => {
     expect(src).not.toMatch(/topic\.button|onDone/);
     expect(src).toMatch(/h-\[46px\] w-\[46px\][^"]*rounded-full bg-surface text-accent/);
     expect(src).toMatch(/Dein Tag öffnen/);
-    expect(src.match(/<button/g)).toHaveLength(1);
-    // Wischen 1 → 3 und nicht weiter
+    // Die Karte ist EINE Fläche; dazu nur der Knopf in Zeile 2 („Auf die Liste: Eier“) und die drei der Wochenende-Karte
+    expect(src.match(/<button/g)).toHaveLength(5);
+    expect(src).not.toMatch(/line-clamp|truncate|…/);
+    // Wischen 1 → 2 und nicht weiter
     expect(src).toMatch(/if \(to < 0 \|\| to >= shown\.length\) return;/);
   });
 
@@ -63,26 +62,25 @@ describe("Themen-Symbol statt Mias Gesicht", () => {
   });
 });
 
-describe("Höchstens 3 Themen, nichts doppelt zu den Kacheln", () => {
-  it("Termin ohne Tipp steht nur in der Kachel; mit Ort/Notiz darf er auf die Karte", () => {
-    const plain = jetztTopics(jetztInput(9 * 60 + 50, { upcoming: [jetztTermin("Zahnarzt", "10:00")] }));
-    expect(plain.some((t) => t.kind === "gleich")).toBe(false);
-    const withTip = jetztTopics(jetztInput(9 * 60 + 50, { upcoming: [jetztTermin("Zahnarzt", "10:00", { place: "Praxis Lindenstraße" })] }));
-    expect(withTip.some((t) => t.kind === "gleich")).toBe(true);
+describe("Höchstens 2 Themen (A-054)", () => {
+  it("Gleich-Hinweis auch mit Termine-Kachel: unter 60 Min, mit Ort die Losgehzeit", () => {
+    const plain = jetztTopics(jetztInput(9 * 60 + 20, { upcoming: [jetztTermin("Zahnarzt", "10:00")] }));
+    expect(plain[0]).toMatchObject({ kind: "gleich", title: "Gleich 10:00 Zahnarzt.", detail: "" });
+    const withPlace = jetztTopics(jetztInput(9 * 60 + 20, { upcoming: [jetztTermin("Zahnarzt", "10:00", { place: "Praxis Lindenstraße" })] }));
+    expect(withPlace[0]).toMatchObject({ title: "Gleich 10:00 Zahnarzt.", detail: "Losgehen um 9:45." });
   });
 
-  it("die Karte zeigt nie mehr als 3", () => {
+  it("die Karte zeigt nie mehr als 2", () => {
     const src = readFileSync("src/components/heute/JetztCard.tsx", "utf8");
-    expect(src).toMatch(/const MAX_TOPICS = 3;/);
+    expect(src).toMatch(/const MAX_TOPICS = 2;/);
   });
 });
 
 describe("Wohin ein Thema auf „Dein Tag“ gehört", () => {
   it("Abschnitt und Eintrag aus der Themen-ID", () => {
     expect(topicSpot({ id: "gleich:abc@2026-10-21", kind: "gleich" })).toEqual({ section: "termine", key: "abc@2026-10-21" });
-    expect(topicSpot({ id: "kochstart:2026-10-21", kind: "kochstart" })).toEqual({ section: "essen", key: null });
-    expect(topicSpot({ id: "pinnwand:n1", kind: "pinnwand" })).toEqual({ section: "pinnwand", key: "n1" });
-    expect(topicSpot({ id: "aufgabe:k1", kind: "aufgabe" })).toEqual({ section: "aufgaben", key: "k1" });
+    expect(topicSpot({ id: "essen:2026-10-21:Eier", kind: "essen" })).toEqual({ section: "essen", key: null });
+    expect(topicSpot({ id: "erinnerung:k1", kind: "erinnerung" })).toEqual({ section: "aufgaben", key: "k1" });
     expect(topicSpot({ id: "tipp", kind: "tipp" })).toBeNull();
   });
 

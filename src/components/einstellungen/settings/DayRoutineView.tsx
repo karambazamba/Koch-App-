@@ -37,9 +37,9 @@ export function DayRoutineView() {
       <main className={PAGE_MAIN}>
         <PreviewBanner />
         <ul className={CARD_LIST}>
-          <SwitchRow icon={Sparkles} title="Jetzt-Karte anzeigen" hint="Oben auf Heute: das Wichtigste für den Moment – die Kacheln bleiben, wo sie sind" checked={jetzt.on} onChange={(on) => setJetztOn(on)} />
+          <SwitchRow icon={Sparkles} title="Jetzt-Karte anzeigen" hint="Oben auf Heute: nur, was du heute brauchst. Ist nichts dran, bleibt sie weg." checked={jetzt.on} onChange={(on) => setJetztOn(on)} />
           <li className="flex items-center gap-3 px-4 py-3">
-            <span className="flex-1 text-[15px] text-muted">Ausgeblendete Themen und Gelerntes</span>
+            <span className="flex-1 text-[15px] text-muted">Heute weggelegte Themen</span>
             <button
               type="button"
               disabled={!anyHidden}

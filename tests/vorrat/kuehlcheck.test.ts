@@ -4,14 +4,14 @@
 // Baustein und Sachen im Haus, einmal pro Woche. Seite: antippen = weg,
 // „Fertig · 3 weg“ räumt genau die markierten weg (aufgebraucht), Rückgängig,
 // „Heute nicht“ ändert nichts.
+import { readFileSync } from "node:fs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { placeFor } from "@/lib/vorrat/haltbar";
 import type { PantryItem } from "@/lib/vorrat/pantry";
-import { checkSachen, fertigText, kuehlCheckFaellig, kuehlCheckWoche, kuehlThema, migrateKuehlCheck, sonntagVon, wegUmschalten, KUEHLCHECK_TITEL, KUEHLCHECK_DETAIL } from "@/lib/vorrat/kuehlcheck";
+import { checkSachen, fertigText, kuehlCheckFaellig, kuehlCheckWoche, migrateKuehlCheck, sonntagVon, wegUmschalten, KUEHLCHECK_TITEL, KUEHLCHECK_DETAIL, KUEHLCHECK_HREF } from "@/lib/vorrat/kuehlcheck";
 import { heutigeKarte, type DenktKarte, type Umfeld } from "@/lib/mia/denktmit/auswahl";
 import { EMPTY_DENKT, type DenktState } from "@/lib/mia/denktmit/store";
-import { jetztTopics, TITLE_MAX } from "@/lib/heute/jetztTopics";
-import { topicIcon } from "@/lib/heute/deinTag";
+import { jetztTopics } from "@/lib/heute/jetztTopics";
 import { bereichVon } from "@/lib/core/leiste";
 import { pageLabel } from "@/lib/core/pageLabel";
 import { STORAGE } from "@/lib/core/storage";
@@ -82,37 +82,24 @@ describe("Wann der Check kommt", () => {
     expect(heutigeKarte([andere], state({ level: "gespraechig", tage: { [SO]: [`kuehlcheck:${SO}`] } }), umfeld())?.key).toBe("waesche:x");
   });
 
-  it("zählt erst, wenn er in der Jetzt-Karte steht (hinweisGezaehlt)", async () => {
+  it("zählt als der eine Hinweis des Tages (hinweisGezaehlt)", async () => {
     const { hinweisGezaehlt, loadDenkt } = await import("@/lib/mia/denktmit/store");
     hinweisGezaehlt(`kuehlcheck:${SO}`, SO);
     expect(heutigeKarte([{ art: "mitdenken", key: "b", satz: "b" } as DenktKarte], loadDenkt(), umfeld())).toBeNull();
   });
 });
 
-describe("In der Jetzt-Karte", () => {
-  const input = (minutes: number, extra = {}) => jetztInput(minutes, { today: SO, tomorrow: { label: "Morgen · Mo", date: "2026-11-02", items: [] }, calm: true, ...extra });
-
-  it("„Kurzer Kühlschrank-Check?“ · „20 Sekunden.“ öffnet die Seite, mit Kühlschrank-Symbol", () => {
-    const t = jetztTopics(input(H17 + 30, { kuehlCheck: SO, upcoming: [{ key: "x", title: "Kino", time: "20:00", date: SO }] })).find((x) => x.kind === "kuehlcheck");
-    expect(t).toMatchObject({ title: "Kurzer Kühlschrank-Check?", detail: "20 Sekunden.", target: { href: "/vorrat/check" }, button: "Öffnen" });
-    expect(t!.title.length).toBeLessThanOrEqual(TITLE_MAX);
-    expect(topicIcon("kuehlcheck")).toBe("Refrigerator");
-  });
-
-  it("abends (nichts kommt mehr): steht vor „Morgen ist ruhig.“", () => {
-    const topics = jetztTopics(input(19 * 60 + 30, { kuehlCheck: SO, evening: true }));
-    expect(topics.map((t) => t.kind)).toEqual(["kuehlcheck"]);
-    expect(jetztTopics(input(19 * 60 + 30, { evening: true }))[0].kind).toBe("abend");
-  });
-
-  it("nachts nie, ohne Woche nie", () => {
-    expect(jetztTopics(input(22 * 60 + 5, { kuehlCheck: SO })).some((t) => t.kind === "kuehlcheck")).toBe(false);
-    expect(jetztTopics(input(H17 + 30, { upcoming: [{ key: "x", title: "Kino", time: "20:00", date: SO }] })).some((t) => t.kind === "kuehlcheck")).toBe(false);
+describe("Unter der Jetzt-Karte (A-054)", () => {
+  it("steht nicht mehr in der Jetzt-Karte, sondern als Karte von „Mia denkt mit“ mit „Los geht’s“ / „Heute nicht“", () => {
+    expect(jetztTopics(jetztInput(H17 + 30, { today: SO, tomorrow: { label: "Morgen · Mo", date: "2026-11-02", items: [] }, calm: true }))).toEqual([]);
+    const src = readFileSync("src/components/begleitung/denktmit/useMiaDenkt.ts", "utf8");
+    expect(src).toMatch(/label: "Los geht’s", onClick: \(\) => router\.push\(KUEHLCHECK_HREF\)/);
+    expect(src).toMatch(/label: "Heute nicht", onClick: \(\) => kuehlCheckErledigt\(k\.woche\)/);
+    expect(KUEHLCHECK_HREF).toBe("/vorrat/check");
   });
 
   it("Text ohne Druck, ohne Emoji", () => {
     expect(`${KUEHLCHECK_TITEL} ${KUEHLCHECK_DETAIL}`).not.toMatch(/fehlt|offen|überfällig|musst|solltest|vergiss/i);
-    expect(kuehlThema(SO).id).toBe(`kuehlcheck:${SO}`);
   });
 });
 

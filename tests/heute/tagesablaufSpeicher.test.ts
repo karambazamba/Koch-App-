@@ -89,15 +89,6 @@ describe("Jetzt-Karte: an/aus, Ausblenden, Interesse", () => {
     expect(j.loadJetzt().on).toBe(true);
   });
 
-  it("Antippen +1, Weiterwischen −0,5, begrenzt auf ±6", async () => {
-    const j = await load(jetzt);
-    j.noteJetztTap("wetter");
-    j.noteJetztSkip("wetter");
-    expect(j.loadJetzt().weights.wetter).toBe(0.5);
-    for (let i = 0; i < 10; i++) j.noteJetztTap("kochstart");
-    expect(j.loadJetzt().weights.kochstart).toBe(6);
-  });
-
   it("„Erledigt“ legt ein Thema nur heute weg – ohne weniger Interesse", async () => {
     const j = await load(jetzt);
     j.doneJetztTopic("erinnerung:e1", "2026-10-21");
@@ -116,7 +107,6 @@ describe("Jetzt-Karte: an/aus, Ausblenden, Interesse", () => {
     const j = await load(jetzt);
     j.setJetztOn(false);
     j.doneJetztTopic("x", "2026-10-21");
-    j.noteJetztTap("tipp");
     j.resetJetztTopics();
     expect(j.loadJetzt()).toEqual({ version: 1, on: false, day: "", hidden: [], weights: {} });
   });

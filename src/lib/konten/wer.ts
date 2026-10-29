@@ -24,13 +24,13 @@ export type FamilyNews = { id: string; title: string; detail: string; at: string
 /** Neuigkeiten bleiben 6 Std. frisch – danach erzählt die Kachel es ohnehin */
 export const NEWS_FRESH_MS = 6 * 3_600_000;
 
-const clip = (s: string, n: number) => (s.length > n ? `${s.slice(0, n - 1).trimEnd()}…` : s);
 const isObj = (v: unknown): v is Record<string, unknown> => Boolean(v) && typeof v === "object" && !Array.isArray(v);
 
 /**
  * Was beim Abgleich neu von anderen kam (nur Neues – Änderungen nicht):
  * Einkauf, Termine und „unterwegs“ („Lisa ist gleich bei REWE“). Aufgaben
  * haben ihr eigenes „von …“ (Abgeben), die Pinnwand ihr eigenes Thema.
+ * Titel nie mit „…“ gekürzt – die Jetzt-Karte bricht um (A-054).
  */
 export function newsFromDocs(docs: CloudDoc[], knownBefore: (id: string) => boolean, members: Member[], me: string | null): FamilyNews[] {
   const news: FamilyNews[] = [];
@@ -40,14 +40,14 @@ export function newsFromDocs(docs: CloudDoc[], knownBefore: (id: string) => bool
     if (!who) continue;
     const data = isObj(d.data) ? d.data : {};
     if (d.typ === "einkauf" && isObj(data.item) && typeof data.item.name === "string" && data.item.name.trim()) {
-      news.push({ id: d.id, title: clip(`${data.item.name.trim()} steht auf der Liste`, 32), detail: `Hat ${who.name} gerade gesetzt.`, at: d.geaendert, href: "/einkaufsliste" });
+      news.push({ id: d.id, title: `${data.item.name.trim()} steht auf der Liste`, detail: `Hat ${who.name} gerade gesetzt.`, at: d.geaendert, href: "/einkaufsliste" });
     } else if (d.typ === "termin" && d.raum === "familie") {
       const entry = isObj(data.data) ? data.data : {};
       const title = typeof entry.title === "string" ? entry.title.trim() : "";
       const date = typeof entry.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(entry.date) ? entry.date : null;
-      if (title) news.push({ id: d.id, title: clip(`Neu: ${title}`, 32), detail: `Hat ${who.name} eingetragen.`, at: d.geaendert, href: date ? `/tag?datum=${date}` : "/" });
+      if (title) news.push({ id: d.id, title: `Neu: ${title}`, detail: `Hat ${who.name} eingetragen.`, at: d.geaendert, href: date ? `/tag?datum=${date}` : "/" });
     } else if (d.typ === "unterwegs" && typeof data.shop === "string" && data.shop.trim() && typeof data.end !== "string") {
-      news.push({ id: d.id, title: clip(`${who.name} ist gleich bei ${data.shop.trim()}`, 32), detail: "Braucht ihr noch was?", at: d.geaendert, href: "/einkaufsliste" });
+      news.push({ id: d.id, title: `${who.name} ist gleich bei ${data.shop.trim()}`, detail: "Braucht ihr noch was?", at: d.geaendert, href: "/einkaufsliste" });
     }
   }
   return news;

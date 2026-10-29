@@ -4,8 +4,8 @@ import { abendsNachUhr, aufgabenFuerTag, aufgabenTag, aufgabenUebersicht, aufMor
 import { showAnswer } from "@/lib/kalender/answers";
 import { calendarChat } from "@/lib/kalender/chat";
 import { calendarContext } from "@/lib/begleitung/calendarTools";
-import { isAbend } from "@/lib/heute/abendThema";
-import { aufgabe, at, jetztInput, termin } from "../helpers";
+import { abendLage } from "@/lib/heute/abendThema";
+import { aufgabe, at, termin } from "../helpers";
 
 // Di 27.10.2026, 21:11 (Screenshot): zehn Aufgaben von heute offen
 const HEUTE = "2026-10-27";
@@ -105,9 +105,9 @@ describe("Wann die Startseite auf morgen steht", () => {
     expect(aufMorgen({ minutes: 3 * 60, feierabend: true, nochTermin: false })).toBe(false);
   });
 
-  it("die Jetzt-Karte nutzt dieselbe Regel, nachts (ab 22 Uhr) aber nicht", () => {
-    expect(isAbend(jetztInput(21 * 60, { evening: true }))).toBe(true);
-    expect(isAbend(jetztInput(23 * 60, { evening: true }))).toBe(false);
+  it("die Startseite rechnet die Lage aus dem, was sie hat (abendLage)", () => {
+    expect(aufMorgen(abendLage({ minutes: 21 * 60, evening: true, cookingStep: null, dish: null, upcoming: [] }))).toBe(true);
+    expect(aufMorgen(abendLage({ minutes: 21 * 60, evening: true, cookingStep: null, dish: null, upcoming: [{ time: "21:30" }] }))).toBe(false);
   });
 
   it("nach Uhr (Aufgaben-Seite, Mia): Feierabend-Einstellung, Termine und Essen von heute", () => {

@@ -1,14 +1,15 @@
-// Jetzt-Karte (`wasgibts.jetzt` v1): an/aus (Standard an), die heute mit ✕
-// ausgeblendeten Themen und das Interesse je Thema-Art – lokal und langsam
-// gelernt: Antippen +1, Weiterwischen −0,5 (begrenzt auf ±6); „Erledigt“ legt
-// ein Thema für heute weg.
-// `weekOff`: Woche (Montag), in der „Kurzer Wochencheck?“ nicht mehr kommt.
+// Jetzt-Karte (`wasgibts.jetzt` v1): an/aus (Standard an) und die heute
+// weggelegten Themen („Erledigt“, „Auf die Liste“, „Später“). Seit A-054
+// gilt eine feste Rangliste – das früher gelernte Interesse je Thema-Art
+// (`weights`) wird nicht mehr gelernt, nur noch gelesen (alte Sicherungen).
+// `weekOff`: früher die Woche ohne „Kurzer Wochencheck?“ – seit A-054 steht
+// der Wochencheck nicht mehr in der Karte (Mia: „Wochencheck“); das Feld wird
+// nur noch gelesen, damit alte Daten und Sicherungen gültig bleiben.
 
 import { createLocalStore } from "@/lib/core/localStore";
 import { useExternalStore } from "@/lib/core/useExternalStore";
-import type { JetztKind } from "@/lib/heute/jetztTopics";
 
-export type JetztState = { version: 1; on: boolean; day: string; hidden: string[]; weights: Partial<Record<JetztKind, number>>; weekOff?: string };
+export type JetztState = { version: 1; on: boolean; day: string; hidden: string[]; weights: Partial<Record<string, number>>; weekOff?: string };
 
 const EMPTY: JetztState = { version: 1, on: true, day: "", hidden: [], weights: {} };
 const LIMIT = 6;
@@ -18,7 +19,7 @@ const store = createLocalStore("wasgibts.jetzt", (raw: unknown): JetztState | nu
   const d = raw as JetztState;
   const weights: JetztState["weights"] = {};
   if (d.weights && typeof d.weights === "object")
-    for (const [k, v] of Object.entries(d.weights)) if (typeof v === "number" && Number.isFinite(v)) weights[k as JetztKind] = Math.max(-LIMIT, Math.min(LIMIT, v));
+    for (const [k, v] of Object.entries(d.weights)) if (typeof v === "number" && Number.isFinite(v)) weights[k] = Math.max(-LIMIT, Math.min(LIMIT, v));
   return {
     version: 1,
     on: d.on !== false,
@@ -44,21 +45,7 @@ export function setJetztOn(on: boolean): () => void {
   return () => store.save({ ...loadJetzt(), on: before.on });
 }
 
-const learn = (s: JetztState, kind: JetztKind, delta: number): JetztState["weights"] => ({ ...s.weights, [kind]: Math.max(-LIMIT, Math.min(LIMIT, (s.weights[kind] ?? 0) + delta)) });
-
-/** Thema angetippt (mehr Interesse) */
-export function noteJetztTap(kind: JetztKind) {
-  const s = loadJetzt();
-  store.save({ ...s, weights: learn(s, kind, 1) });
-}
-
-/** Weitergewischt (etwas weniger Interesse) */
-export function noteJetztSkip(kind: JetztKind) {
-  const s = loadJetzt();
-  store.save({ ...s, weights: learn(s, kind, -0.5) });
-}
-
-/** „Erledigt“ (Knopf auf der Karte): Thema für heute weg – ohne weniger Interesse */
+/** „Erledigt“, „Auf die Liste“ oder „Später“: Thema für heute weg */
 export function doneJetztTopic(id: string, today: string) {
   const s = loadJetzt();
   const hidden = s.day === today ? s.hidden : [];
@@ -68,11 +55,4 @@ export function doneJetztTopic(id: string, today: string) {
 /** "Ausgeblendete Themen zurücksetzen": nichts mehr ausgeblendet, Interesse von vorn */
 export function resetJetztTopics() {
   store.save({ ...loadJetzt(), day: "", hidden: [], weights: {} });
-}
-
-/** Wochencheck angetippt oder ✕: diese Woche nicht mehr anbieten; gibt das Zurücknehmen zurück */
-export function weekCheckDone(week: string): () => void {
-  const before = loadJetzt();
-  store.save({ ...before, weekOff: week });
-  return () => store.save({ ...loadJetzt(), weekOff: before.weekOff });
 }

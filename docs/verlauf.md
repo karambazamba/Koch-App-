@@ -6,6 +6,34 @@ ist inzwischen anders. Den aktuellen Stand je Bereich beschreibt
 `docs/bereiche/<bereich>.md`, die festen Regeln stehen in `CLAUDE.md`.
 Ältere Pfadangaben meinen die Orte vor dem Umzug (siehe CLAUDE.md, „Ordner“).
 
+## Jetzt-Karte nur mit Nutzen für heute, Wochenende freitags (A-054, v0.163.0)
+
+- Auftrag A-054 (SOFORT, 29.10., ohne Tafel): Die Jetzt-Karte zeigt nur noch,
+  was man heute braucht und die Kacheln nicht zeigen – EIN Thema, höchstens
+  zwei, aus einer festen Rangliste (`JETZT_RANG`, `jetztThemen` in
+  `lib/heute/jetztTopics.ts`): Erinnerung, Gleich (< 60 Min, Notiz bzw.
+  „Losgehen um …“ mit festem Vorlauf 15 Min bei Terminen mit Ort), Wetter mit
+  Folge, Essen mit Folge (Knopf „Auf die Liste: Eier“ über das
+  Wochenplan-Angebot), Geburtstag/Jahrestag aus dem Kalender, Neu vom
+  Haushalt, Timer/Kochmodus/Pause, Wochenende, abends ab 18 Uhr „Morgen · Fr:
+  8:00 Laufen“, leise „Kurz durchatmen?“ (A-051, Rang 70), ganz hinten
+  selbst eingeschaltete Bausteine. Nichts dran =
+  keine Karte.
+- Weg: Spruch des Tages samt Satz-Pool (`mia/denktmit/sprueche.ts`, rund 200
+  Sätze, u. a. „Donnerstag. Das Wochenende winkt schon.“), „Alles ruhig. Ich
+  sag Bescheid.“, „Morgen ist ruhig.“/„Für morgen ist alles sortiert.“ ·
+  „Schönen Abend.“, „Moin!“-Morgengruß, Morgen-Info (`morgenInfo`), „Genießt
+  die Zeit“, gelerntes Interesse, Wochencheck- und Kühlschrank-Check-Thema
+  (der Check ist jetzt eine Karte von „Mia denkt mit“), Heimweg-Einkauf,
+  Kochstart, Absprache, Aufgaben/Ideen, Pinnwand-Neu, Überschneidung/Packen.
+- Neu: „Wochenende planen?“ nur freitags 12–20 Uhr (`lib/heute/wochenende.ts`)
+  mit Chips aus eigenen Daten, „Mit Mia planen“ und „Später“.
+- Karte bricht um statt „…“ (auch `stormForPlan` und die Neuigkeiten aus dem
+  Haushalt kürzen nicht mehr), Symbole Uhr/Wolke/Topf/Geschenk statt Glitzer.
+- Tests: `tests/heute/jetztThemen.test.ts` neu (Rangliste mit `now()`),
+  `jetztMorgens`/`abends` entfallen; Durchklick `jetztKarte` neu (SE/15
+  Pro/Pixel 7).
+
 ## Kaputt: Notizen-Kachel, Wundertüte zum Umdrehen, ••• beim ersten Tippen, Wischen nur klar (A-059, v0.162.0)
 
 - Sammel-Auftrag 29.10. mittags, Block A + D (Wortlaut

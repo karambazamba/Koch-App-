@@ -1,12 +1,11 @@
 // Mias Routinen (Tafel 81/82, Punkt 2) – rein, Zeit und Einträge von außen:
-// - Morgens (6–10 Uhr) eine kurze Info im Mia-Ton: „Moin! Fußball 15,
-//   Zahnarzt 16“ + Wetter nur mit Planbezug.
 // - Überschneidungen (auch knappe Fahrtzeit) zweier Termine mit Personen →
 //   eine Frage mit genau 2 Knöpfen („Ich fahre“ / „Lisa fragen“), kein Rot.
 // - Abends (17–20 Uhr), wenn morgen früh etwas mit Notiz ansteht: „Morgen
 //   früh: Kita-Ausflug.“ → „Soll ich’s auf die Packliste setzen?“ („Ja,
 //   bitte“ / „Hab ich schon“).
-// Jede Frage nur einmal (beantwortet = weg).
+// Jede Frage nur einmal (beantwortet = weg). Die Fragen stehen in „Dein Tag“;
+// die Jetzt-Karte zeigt seit A-054 nur noch ihre feste Rangliste.
 
 export type RoutineTermin = { key: string; title: string; time: string | null; end: string | null; who: string[]; note?: string; work?: boolean };
 
@@ -14,16 +13,6 @@ const toMin = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
 /** „15“ bzw. „15:30“ */
 const short = (t: string) => (t.endsWith(":00") ? String(Number(t.slice(0, 2))) : t.replace(/^0/, ""));
 const clip = (s: string, n = 32) => (s.length > n ? `${s.slice(0, n - 1).trimEnd()}…` : s);
-
-/** Morgen-Info (6–10 Uhr) – nur mit Terminen mit Uhrzeit */
-export function morgenInfo(termine: RoutineTermin[], minutes: number, regen: { time: string; title: string } | null): { title: string; detail: string } | null {
-  if (minutes < 6 * 60 || minutes >= 10 * 60) return null;
-  const timed = termine.filter((t) => t.time && !t.work).sort((a, b) => a.time!.localeCompare(b.time!));
-  if (!timed.length) return null;
-  const list = timed.slice(0, 2).map((t) => `${t.title} ${short(t.time!)}`).join(", ");
-  const detail = regen ? `Ab ${Number(regen.time.slice(0, 2))} Uhr Regen. Regenjacke für ${regen.title}?` : timed.length > 2 ? `Danach noch ${timed.slice(2).map((t) => t.title).join(", ")}.` : "Rest vom Tag ist ruhig.";
-  return { title: clip(`Moin! ${list}`), detail: clip(detail, 80) };
-}
 
 export type Ueberschneidung = { key: string; first: RoutineTermin; second: RoutineTermin; title: string; detail: string };
 

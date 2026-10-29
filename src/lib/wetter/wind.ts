@@ -149,7 +149,7 @@ export function stormForPlan(hours: ForecastHour[], today: string, nowHour: numb
     if (!hit || !stormy(hit)) continue;
     const first = day.find((h) => h.hour <= at && stormy(h))!;
     const word = STURM_WORT[windLevel(Math.max(...day.filter((h) => h.hour >= first.hour && h.hour <= at).map((h) => h.wind!)))]!;
-    const ask = STURM_FRAGEN.find(([re]) => re.test(p.title))?.[1] ?? `${p.title.length > 24 ? `${p.title.slice(0, 23)}…` : p.title} lieber drinnen?`;
+    const ask = STURM_FRAGEN.find(([re]) => re.test(p.title))?.[1] ?? `${p.title.trim()} lieber drinnen?`; // nie mit „…“ gekürzt – die Jetzt-Karte bricht um (A-054)
     return { key: p.key, title: p.title, time: p.time, head: `${word} ab ${first.hour} Uhr`, detail: ask };
   }
   return null;

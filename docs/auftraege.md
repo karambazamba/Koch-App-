@@ -18,7 +18,7 @@ Bei Widersprüchen gilt der neuere Auftrag. Gemergt wird in dieser Reihenfolge, 
 
 | Paket | Inhalt | Aufträge | Stand |
 |---|---|---|---|
-| P1 | Sofort-Fixes | A-056 Mia hört von Anfang an + mehrere Sachen (Vorrang), A-045/A-046 Essen-Kachel final (Tafel 134), A-048 Startseite kompakter + Höhe nach Anzahl (Tafel 135), A-043 Erledigte 12 h, A-042 Familie verbinden, A-038 Vorschau vor „Nehmen“, A-054 Jetzt-Karte nur Nützliches | A-056 fertig v0.157 (Vorrang), A-048 fertig v0.158; A-054 in Arbeit, rückt eine Version nach |
+| P1 | Sofort-Fixes | A-056 Mia hört von Anfang an + mehrere Sachen (Vorrang), A-045/A-046 Essen-Kachel final (Tafel 134), A-048 Startseite kompakter + Höhe nach Anzahl (Tafel 135), A-043 Erledigte 12 h, A-042 Familie verbinden, A-038 Vorschau vor „Nehmen“, A-054 Jetzt-Karte nur Nützliches | A-056 fertig v0.157 (Vorrang), A-048 fertig v0.158; A-054 fertig v0.163 |
 | P2 | Gebaut, wartet | A-020/A-034 Räume, A-024 Pinnwand abhaken, A-028 Pinnwand Teil 1 + 2, A-029/A-036 Wasserzeichen | fertig (v0.145–v0.153) |
 | P3 | Einkauf | A-040/A-041 (Tafel 127/128), Einkauf M Läden nebeneinander (Tafel 140, mit P4) | A-040/A-041 fertig v0.154, Einkauf M kommt mit P4 |
 | P4 | Startseite neu | A-050: Mini-Kreise final (Tafel 143, keine Schilder), Fenster Sport/Timer/Rätsel (Tafel 137), Beispiel-Startseite (Tafel 140), Korkrahmen (Tafel 141), Einkauf M, Im Haus von der Startseite | startet nach A-048, Ziel v0.159 |
@@ -56,7 +56,7 @@ Ersetzt und nicht mehr gebaut: Essen-Kachel Tafel 121/122/133 → Tafel 134 (Rez
   - A-032 Im-Haus-/Essen-Kachel: Entscheidung liegt bei Felix
   - Text/Tafel nie angekommen: Auftragstext A-040 (nach Tafel 127 gebaut), Bilder 1/2 zu A-042, Tafeln 129/130 (durch 132 ersetzt)
 - **Offen, klein (notiert, nicht gebaut):**
-  - Die Jetzt-Karte kürzt noch mit „…“ („Neu auf der Pinnwand · …“).
+  - ~~Die Jetzt-Karte kürzt noch mit „…“ („Neu auf der Pinnwand · …“).~~ Erledigt mit A-054 (v0.163): nie mehr „…“, die Karte bricht um (Test lange Titel + Durchklick iPhone SE).
   - ~~Eingebaute Rezepte (Wok-Nudeln usw.) liefern der Einkaufsliste keine Plan-Zutaten; „Nehmen“ nimmt ersatzweise die Vorschau.~~ Erledigt mit A-057 (v0.161).
   - `tests/core/abfragen.test.ts` war einmal um 00:41 UTC rot, später wieder grün (hängt wohl an der Uhrzeit).
   - Alte App-Stände kennen den Raum „Ich“ nicht. Prüfen, dass sie nichts falsch hochladen.
@@ -183,9 +183,11 @@ Ersetzt und nicht mehr gebaut: Essen-Kachel Tafel 121/122/133 → Tafel 134 (Rez
 | A-051 | Durchatmen (12 Übungen, Vorschlag nach Tageszeit, Lieblinge, kein Zähler) + Mia leitet an (Stimme + Klang / Nur Klang / Still, Bildschirm dunkel, Wake Lock) | `tafel-138.png`, `tafel-139.png` | fertig v0.159 (Lola-Ansagen: einmal auf dem Server erzeugen – Für Entwickler → „Ansagen erzeugen“ → Bucket `durchatmen-ansagen`; bis dahin Handy-Stimme; `docs/bereiche/durchatmen.md`) |
 | A-052 | Rätsel als eigener Bereich + Wundertüte (Witze, „Platt för Plietsche“, Angeberwissen), „Noch eine ›“, nie doppelt im Haushalt, KI-Nachschub nur Witze/Rätsel | `tafel-137.png` (Bild 4), `tafel-140.png` | fertig v0.160 (Rätsel-Paket 001: 91 Rätsel; Mini-Kreis bindet das Fenster an) |
 | A-053 | Gesamtauftrag Teil 7: Tests gesamt + volle Prüfung | – | am Ende |
-| A-054 | SOFORT: Jetzt-Karte nur mit Nutzen für heute (Rangliste, keine Füllsätze, sonst ausblenden), Wochenende planen nur freitags 12–20 Uhr | – | in Arbeit (Ziel v0.158) |
+| A-054 | SOFORT: Jetzt-Karte nur mit Nutzen für heute (Rangliste, keine Füllsätze, sonst ausblenden), Wochenende planen nur freitags 12–20 Uhr | – | fertig v0.163 |
 | A-055 | „Was los?“ – Veranstaltungen Kreis Ostholstein (Tabelle region_events, Cron 5:00, Fenster Heute · Wochenende · 2 Wochen, Kalender/Pinnwand, Quelle sichtbar; ersetzt „Tipps aus der Region“) | `tafel-142.png` | in Arbeit (Ziel v0.162; Parser wartet auf Freigabe von www.kreis-oh.de) |
 | A-056 | SOFORT (Vorrang): „Mia hört von Anfang an und versteht mehrere Sachen“ – Mikro sofort beim Antippen mit Ringpuffer (≥ 5 s), Schlüssel vorgewärmt, Ring erst bei echtem Ton, Zeiten im Mikro-Protokoll; Sofort-Weg nur bei genau EINER Sache, Füllwörter weg, Aufzählungen getrennt (KI und Regel-Notlösung), ein Rückgängig für alle; „Nur für dich. Tippen zum Ändern.“; ≥ 30 Prüfstand-Sätze (Wortlaut `docs/auftraege/A-056-mia-hoert-sofort.md`) | – | fertig v0.157 |
+| A-057 | Kleinkram von Felix: Die eingebauten Rezepte („k:…“) liefern der Einkaufsliste ihre Zutaten – Wochenplan-Angebot „Für deinen Wochenplan“ und „Nehmen“ (Namen, Mengen nur als Hinweis, Grundsachen blass/ausgenommen, „im Haus“ nicht, gleiche Zutat aus zwei Gerichten = eine Zeile mit „wofür“; `einkauf/angebot/rezeptZutaten.ts`) | – | fertig v0.162 |
+
 | A-057 | Kleinkram von Felix: Die eingebauten Rezepte („k:…“) liefern der Einkaufsliste ihre Zutaten – Wochenplan-Angebot „Für deinen Wochenplan“ und „Nehmen“ (Namen, Mengen nur als Hinweis, Grundsachen blass/ausgenommen, „im Haus“ nicht, gleiche Zutat aus zwei Gerichten = eine Zeile mit „wofür“; `einkauf/angebot/rezeptZutaten.ts`) | – | fertig v0.161 |
 | A-059 | Kaputt (Sammel-Auftrag 29.10. mittags, Block A + D): Notizen-Kachel öffnet immer die Notizen-Seite (Stift = neue Notiz), Wundertüte ohne Silbentrennung und frei vom Mia-Knopf, Lösung erst nach Antippen (Punkt 8, Tafel 145: Kachel dreht sich um, Seite über „Mehr ›“, Seite und Rätsel verdeckt, Filter Alles · Witze · Platt · Wissen), ••• → Einstellungen beim ersten Tippen, Wischen nur klar waagerecht und nicht vom unteren Rand (Wortlaut `docs/auftraege/A-059-sammel-mittags.md`) | `tafel-144.png`, `tafel-145.png` | fertig v0.162 |
 | A-060 | Notizen-Vorschau 2 Zeilen weich + Mia-Zubehör (Sammel-Auftrag 29.10. mittags, Block B; enthält A-058 Mia-Zubehör) | `tafel-144.png` | in Arbeit (anderer Helfer) |

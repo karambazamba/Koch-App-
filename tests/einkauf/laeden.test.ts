@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { knownShop, shopModeRequest } from "@/lib/einkauf/shopMode";
-import { jetztTopics, type JetztInput } from "@/lib/heute/jetztTopics";
+import { jetztTopics } from "@/lib/heute/jetztTopics";
 import { jetztInput } from "../helpers";
 
 const SHOPS = ["Aldi", "Lidl", "Edeka", "Rewe", "Rossmann", "dm", "Wochenmarkt", "Bäcker", "Hofladen"];
@@ -26,13 +26,10 @@ describe("„Ich bin bei REWE“ erkennen (ohne KI)", () => {
   });
 });
 
-describe("Jetzt-Karte „Auf dem Heimweg?“ öffnet die Laden-Seite (unterwegs)", () => {
-  it("echte Liste → /einkaufsliste/laden?name=…&unterwegs=1, Beispiel-Tag → Einkaufsliste", () => {
-    const shop = { shop: "REWE", names: ["Milch", "Brot", "Butter"] };
-    const find = (x: JetztInput) => jetztTopics(x).find((t) => t.kind === "einkauf");
-    const real = find(jetztInput(16 * 60 + 40, { shop, demo: false }));
-    expect(real?.target).toEqual({ href: "/einkaufsliste/laden?name=REWE&unterwegs=1" });
-    const demo = find(jetztInput(16 * 60 + 40, { shop, demo: true }));
-    expect(demo?.target).toEqual({ href: "/einkaufsliste" });
+describe("Jetzt-Karte (A-054): kein „Auf dem Heimweg?“ mehr", () => {
+  it("die Einkaufsliste allein füllt die Karte nicht – nur Zutaten fürs Gericht von heute", () => {
+    expect(jetztTopics(jetztInput(16 * 60 + 40))).toEqual([]);
+    const dish = { name: "Pad Thai", clock: "18:30", minutes: 30, ready: false, missing: ["Eier"], liste: ["Eier"] };
+    expect(jetztTopics(jetztInput(16 * 60 + 40, { dish }))[0]?.aktion?.label).toBe("Auf die Liste: Eier");
   });
 });

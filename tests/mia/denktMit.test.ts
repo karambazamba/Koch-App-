@@ -1,21 +1,21 @@
 // Mia denkt mit (Tafel 90): höchstens ein Hinweis am Tag, Nachtruhe, Muster
 // nach 3×, Nein = nie wieder, Regler-Stufen, Vorstellen („Alles klar“ = nie
-// wieder; alte „Später“-Daten zählen weiter), erster Besuch, Spruch (30 Tage,
-// nur ohne Karte), Ton.
+// wieder; alte „Später“-Daten zählen weiter), erster Besuch, Ton. Seit A-054
+// kein Spruch des Tages mehr (die Jetzt-Karte zeigt nur, was man heute braucht).
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { darf, nachtruhe, type Lage } from "@/lib/mia/denktmit/regeln";
-import { heutigeKarte, spruchHeute, type DenktKarte, type Umfeld } from "@/lib/mia/denktmit/auswahl";
+import { heutigeKarte, type DenktKarte, type Umfeld } from "@/lib/mia/denktmit/auswahl";
 import { findeEssenMuster, findeMuster, ritualTag, serieAus, titelKern } from "@/lib/mia/denktmit/muster";
 import { mitdenkTipps, type MitdenkLage } from "@/lib/mia/denktmit/mitdenken";
 import { ersterBesuch, naechsteVorstellung } from "@/lib/mia/denktmit/vorstellen";
-import { alleSprueche, anlaesse, pickSpruch } from "@/lib/mia/denktmit/sprueche";
 import { EMPTY_DENKT, migrateDenkt, type DenktState } from "@/lib/mia/denktmit/store";
 import { merkListe } from "@/lib/mia/denktmit/merken";
 import { VORSTELLEN } from "@/lib/mia/denktmit/seiten";
-import { jetztTopics, spruchZeilen, TITLE_MAX } from "@/lib/heute/jetztTopics";
+import { jetztTopics } from "@/lib/heute/jetztTopics";
 import { tidyMiaText } from "@/lib/begleitung/tidy";
 import { STORAGE } from "@/lib/core/storage";
-import { at, fakeWindow, termin } from "../helpers";
+import { at, fakeWindow, jetztInput, termin } from "../helpers";
+import { existsSync } from "node:fs";
 
 const lage = (o: Partial<Lage> = {}): Lage => ({ hour: 10, pause: false, ruhe: false, level: "normal", heute: 0, demo: false, ...o });
 const umfeld = (o: Partial<Umfeld> = {}): Umfeld => ({ today: "2026-10-23", hour: 10, pause: false, ruhe: false, demo: false, ...o });
@@ -30,7 +30,7 @@ beforeEach(() => {
 describe("Regeln", () => {
   it("Nachtruhe 22–7 Uhr, Pause und Ruhe: nichts", () => {
     expect([nachtruhe(21), nachtruhe(22), nachtruhe(6), nachtruhe(7)]).toEqual([false, true, true, false]);
-    for (const art of ["vorstellen", "muster", "mitdenken", "spruch"] as const) {
+    for (const art of ["vorstellen", "muster", "mitdenken"] as const) {
       expect(darf(art, lage({ hour: 23 }))).toBe(false);
       expect(darf(art, lage({ pause: true }))).toBe(false);
       expect(darf(art, lage({ ruhe: true }))).toBe(false);
@@ -40,16 +40,15 @@ describe("Regeln", () => {
   it("Regler: Ruhig nur Muster, Normal 1, Gesprächig 2 am Tag", () => {
     expect(darf("muster", lage({ level: "ruhig" }))).toBe(true);
     expect(darf("vorstellen", lage({ level: "ruhig" }))).toBe(false);
-    expect(darf("spruch", lage({ level: "ruhig" }))).toBe(false);
     expect(darf("mitdenken", lage({ heute: 1 }))).toBe(false);
     expect(darf("mitdenken", lage({ level: "gespraechig", heute: 1 }))).toBe(true);
     expect(darf("mitdenken", lage({ level: "gespraechig", heute: 2 }))).toBe(false);
   });
 
-  it("Beispiel-Tag: nur der Spruch", () => {
+  it("Beispiel-Tag: nichts Ungefragtes", () => {
     expect(darf("vorstellen", lage({ demo: true }))).toBe(false);
     expect(darf("muster", lage({ demo: true }))).toBe(false);
-    expect(darf("spruch", lage({ demo: true }))).toBe(true);
+    expect(darf("mitdenken", lage({ demo: true }))).toBe(false);
   });
 
   it("höchstens EINE Karte am Tag; was schon steht, bleibt bis zur Antwort", () => {
@@ -148,49 +147,18 @@ describe("Vorstellen und erster Besuch", () => {
   });
 });
 
-describe("Spruch des Tages", () => {
-  it("rund 200 Sprüche, alle im Ton: tidyMiaText ändert nichts, keine Druck-Wörter, keine Gedankenstriche, auf 2 Zeilen", () => {
-    const all = alleSprueche();
-    expect(all.length).toBeGreaterThanOrEqual(190);
-    expect(new Set(all).size).toBe(all.length);
-    const druck = /(?<![a-zäöüß])(fehlt|offen|überfällig|verpasst|du musst|du solltest|vergiss nicht|alles da|geschafft hast)(?![a-zäöüß])/i;
-    for (const s of all) {
-      expect(tidyMiaText(s), s).toBe(s);
-      expect(s, s).not.toMatch(druck);
-      expect(s, s).not.toMatch(/ – | - /);
-      const [a, b] = spruchZeilen(s);
-      expect(a.length, s).toBeLessThanOrEqual(TITLE_MAX);
-      expect(`${a} ${b}`.trim()).toBe(s);
-    }
-    // Ohne Texte über Druck, Körper, Gewicht
-    for (const s of VORSTELLEN.flatMap((v) => [v.kachel, v.seite])) expect(tidyMiaText(s), s).toBe(s);
+describe("Kein Spruch des Tages mehr (A-054)", () => {
+  it("Vorstellen-Texte im Ton: tidyMiaText ändert nichts", () => {
+    for (const t of VORSTELLEN.flatMap((v) => [v.kachel, v.seite])) expect(tidyMiaText(t), t).toBe(t);
   });
 
-  it("nicht derselbe innerhalb von 30 Tagen, stabil über den Tag", () => {
-    const a = anlaesse({ weekday: 4, month: 10 });
-    const first = pickSpruch(a, [], "2026-10-23")!;
-    expect(pickSpruch(a, [], "2026-10-23")).toBe(first);
-    expect(pickSpruch(a, [{ text: first, date: "2026-10-01" }], "2026-10-23")).not.toBe(first);
-    // Nach 30 Tagen darf er wieder
-    const later = pickSpruch(a, [{ text: first, date: "2026-09-01" }], "2026-10-23");
-    expect(later).toBe(first);
+  it("den Satz-Pool gibt es nicht mehr; die Jetzt-Karte bleibt ohne Thema leer", () => {
+    expect(existsSync("src/lib/mia/denktmit/sprueche.ts")).toBe(false);
+    expect(jetztTopics(jetztInput(600, { today: "2026-10-23", tomorrow: { label: "Morgen · Sa", date: "2026-10-24", items: [] } }))).toEqual([]);
   });
 
-  it("nur ohne Karte heute, nachts und in der Ruhe keiner, im Beispiel-Tag ja", () => {
-    const a = anlaesse({ weekday: 4, month: 10 });
-    expect(spruchHeute(state(), umfeld(), a)).toBeTruthy();
-    expect(spruchHeute(state({ tage: { "2026-10-23": ["x"] } }), umfeld(), a)).toBeNull();
-    expect(spruchHeute(state(), umfeld({ hour: 22 }), a)).toBeNull();
-    expect(spruchHeute(state(), umfeld({ ruhe: true }), a)).toBeNull();
-    expect(spruchHeute(state({ level: "ruhig" }), umfeld(), a)).toBeNull();
-    expect(spruchHeute(state(), umfeld({ demo: true }), a)).toBeTruthy();
-  });
-
-  it("Jetzt-Karte: Spruch nur statt „Alles ruhig“", () => {
-    const base = { minutes: 600, today: "2026-10-23", calm: false, upcoming: [], tomorrow: { label: "Morgen · Sa", date: "2026-10-24", items: [] }, urgent: [], dueToday: [], pin: null, planWeather: null, dish: null, birthdays: [], sport: null, shop: null, timer: null, cookingStep: null, reminder: null, pause: null, dinnerFree: false, leisure: null, tip: null, region: null, kids: false, weekCheck: null, demo: false, tiles: [], weights: {}, hidden: [] };
-    const [t] = jetztTopics({ ...base, spruch: "Freitag. Feierabend in Sicht." });
-    expect(t.kind).toBe("spruch");
-    expect(jetztTopics({ ...base, spruch: "Freitag.", reminder: { key: "r", text: "Zahnarzt" } })[0].kind).not.toBe("spruch");
+  it("alte gespeicherte Sprüche bleiben lesbar (Sicherungen)", () => {
+    expect(migrateDenkt({ ...EMPTY_DENKT, sprueche: [{ text: "Freitag.", date: "2026-10-01" }] })?.sprueche).toEqual([{ text: "Freitag.", date: "2026-10-01" }]);
   });
 });
 
