@@ -123,10 +123,10 @@ describe("freier Text ohne Kärtchen → 9 % (data-art=frei), weiße Liste → v
     const html = renderToStaticMarkup(createElement(NotesTile, { size: "S" }));
     expect(zeichen(html)).toContain('data-kachel="notizen"');
     expect(zeichen(html)).toContain('data-art="frei"');
-    // XS (A-048): kleines Wasserzeichen, die Zeile lässt ihm rechts Platz und stellt sich frei
+    // XS (A-048): kleines Wasserzeichen; die Vorschau (A-060, 2 Zeilen, weich ausgeblendet) stellt sich je Zeile frei
     const xs = renderToStaticMarkup(createElement(NotesTile, { size: "XS" }));
     expect(zeichen(xs)).toContain('data-groesse="XS"');
-    expect(xs).toMatch(/pr-7[^"]*" data-zeile="true" data-notiz-zeile="true">[\s\S]*?<span class="kachel-frei truncate" data-freitext="true">/);
+    expect(xs).toMatch(/data-zeile="true" data-notiz-zeile="true"><span class="notiz-ausblenden[^"]*" data-ausblenden="true" data-notiz-vorschau="true"><span class="kachel-frei /);
   });
 
   // A-048/Tafel 140: leer überall „Schnell notieren …“ (XS früher „Schnell notieren.“ mit Stift, S/M „Schnell was aufschreiben.“)

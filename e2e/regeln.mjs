@@ -42,7 +42,8 @@ export function miaKnopfUeberText() {
  * nicht über einen Rahmen hinaus, der ihn wegschneidet (overflow hidden/clip,
  * text-overflow: ellipsis, line-clamp). Ausnahme: frei eingegebener Text
  * (Notiz, Aufgabe, Termin, Zettel, Timer-Name), markiert mit `data-freitext`.
- * Liefert je Fund „Kachel: Text (Grund)“.
+ * Weich ausgeblendete Vorschau (`data-ausblenden`, A-060) darf unten in ihren
+ * Verlauf laufen, aber nur mit Maske und nie seitlich. Liefert je Fund „Kachel: Text (Grund)“.
  */
 export function abgeschnitteneTexte(sel = "[data-unit]") {
   const out = [];
@@ -62,8 +63,23 @@ export function abgeschnitteneTexte(sel = "[data-unit]") {
       if (!r.width || !r.height) continue;
       // A-048: Platzhalter, die absichtlich auf „ …“ enden („Schnell notieren …“), sind markiert – nur sie dürfen das; abgeschnitten werden dürfen auch sie nicht
       if (/(…|\.\.\.)$/.test(text) && !el.closest("[data-platzhalter-text]")) out.push(`${name}: „${text}“ (endet auf …)`);
+      // A-060: Weich ausgeblendete Vorschau (`data-ausblenden`, Notizen-Kachel) darf unten in
+      // ihren Verlauf laufen – nur wenn wirklich eine Maske dran ist, nie seitlich; ab dort
+      // zählt nur der sichtbare Teil (darüberliegende Kacheln schneiden sonst „echt“ ab).
+      const sicht = { top: r.top, bottom: r.bottom, left: r.left, right: r.right };
       for (let a = el; a && a !== tile.parentElement; a = a.parentElement) {
         const s = getComputedStyle(a);
+        if (a.hasAttribute("data-ausblenden")) {
+          const maske = [s.maskImage, s.webkitMaskImage].some((m) => m && m !== "none");
+          const b = a.getBoundingClientRect();
+          if (!maske) out.push(`${name}: „${text}“ (ausblenden ohne Verlauf)`);
+          else if (sicht.right > b.right + 1 || sicht.left < b.left - 1) out.push(`${name}: „${text}“ (seitlich abgeschnitten)`);
+          else {
+            sicht.bottom = Math.min(sicht.bottom, b.bottom);
+            continue;
+          }
+          break;
+        }
         const clamp = s.webkitLineClamp && s.webkitLineClamp !== "none";
         const ellipsis = s.textOverflow === "ellipsis";
         const cutX = ellipsis || ["hidden", "clip"].includes(s.overflowX);
@@ -72,11 +88,11 @@ export function abgeschnitteneTexte(sel = "[data-unit]") {
         const b = a.getBoundingClientRect();
         const left = parseFloat(s.borderLeftWidth) || 0;
         const right = parseFloat(s.borderRightWidth) || 0;
-        if (cutX && (r.right > b.right - right + 1 || r.left < b.left + left - 1)) {
+        if (cutX && (sicht.right > b.right - right + 1 || sicht.left < b.left + left - 1)) {
           out.push(`${name}: „${text}“ (seitlich abgeschnitten)`);
           break;
         }
-        if (cutY && (r.bottom > b.bottom + 1 || r.top < b.top - 1)) {
+        if (cutY && (sicht.bottom > b.bottom + 1 || sicht.top < b.top - 1)) {
           out.push(`${name}: „${text}“ (unten abgeschnitten)`);
           break;
         }

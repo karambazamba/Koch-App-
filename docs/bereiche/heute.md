@@ -229,8 +229,13 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
 - Raster siehe „Festes Raster“. Startseite v6 (`lonelySToM`): eine einzelne
   S, die bisher breit war, wird einmal M.
 - Notizen-Kachel (`heute/notizenKachel.ts`): XS = neueste bzw. angeheftete
-  Notiz (eine Zeile), S und M = bis 3 Zeilen „Titel · Anfang“, Rest „+n“,
-  Angeheftete zuerst; leer überall derselbe Text „Schnell notieren …“
+  Notiz in bis zu 2 Zeilen, S und M = bis 3 Zeilen „Titel · Anfang“ (die
+  erste ebenso in bis zu 2 Zeilen), Rest „+n“, Angeheftete zuerst. Vorschau
+  (A-060, Tafel 144, `notizen/NotizVorschau.tsx`, `notizVorschau`): Umbruch
+  nur an Wortgrenzen, die zweite Zeile läuft weich aus (Maske
+  `.notiz-ausblenden`, blendet in genau die Kachelfarbe aus – Farbig und
+  Schlicht, hell und dunkel), nie „…“; ein auf 80 Zeichen gekürzter Titel
+  zeigt gleich den vollen Anfang. Markiert mit `data-ausblenden`; leer überall derselbe Text „Schnell notieren …“
   (A-048/Tafel 140, wie auf der Notizen-Seite; in XS 13 px, ohne Stift im Text – der Stift ist nur der Knopf oben rechts);
   Listen als „x von y erledigt“. Antippen der ganzen Kachel (Zeile, Leertext,
   freie Fläche) öffnet in allen Größen immer die Notizen-Seite, leer wie voll;
@@ -246,7 +251,11 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
   endet („Schnell notieren …“, A-048 – bei Konflikten gilt der neuere
   Auftrag), ist mit `data-platzhalter-text` markiert und nur vom „…“
   ausgenommen (`abgeschnitteneTexte`, damit `nichtsAbgeschnitten`; `pruefen`
-  prüft „…“ nicht); abgeschnitten werden darf auch er nicht. Im Haus: Name vor Schild, Schild
+  prüft „…“ nicht); abgeschnitten werden darf auch er nicht. Weich
+  ausgeblendete Vorschau (`data-ausblenden`, A-060) darf unten in ihren
+  Verlauf laufen – nur mit Maske (sonst „ausblenden ohne Verlauf“), nie
+  seitlich, und darüber zählt nur der sichtbare Teil (Gegenproben im
+  Durchklick `notizVorschau`). Im Haus: Name vor Schild, Schild
   10,5 px. Essen-Kachel siehe `essen.md` („Essen-Kachel final“). Prüfung:
   Durchklick `nichtsAbgeschnitten` (Beispiel-Tag und Familie, iPhone SE/15
   Pro/Pixel 7, jede Kachel in XS/S/M, `abgeschnitteneTexte` in

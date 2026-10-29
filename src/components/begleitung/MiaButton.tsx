@@ -21,7 +21,7 @@ import { micState } from "@/lib/core/mic";
 import { vorlaufJetzt } from "@/lib/begleitung/ohrMikro";
 import { ohrWeg } from "@/lib/begleitung/ohrWeg";
 import { BegleitungAvatar } from "@/components/begleitung/BegleitungAvatar";
-import { useMiaLook, useMiaMoment } from "@/components/begleitung/useMiaLook";
+import { miaMomentPruefen, useMiaLook, useMiaMoment } from "@/components/begleitung/useMiaLook";
 
 const LONG_MS = 450;
 /** Seiten, auf denen ein Knopf über der Leiste schwebt (Im Haus, Tafel 102) */
@@ -55,7 +55,7 @@ export function MiaButton({ name, links = false }: { name: string; links?: boole
   const hint = useHintSeen("mia-knopf") === false && !erster.ruhig && !ueberLeiste;
   const press = useRef<{ timer: ReturnType<typeof setTimeout>; long: boolean } | null>(null);
   const look = useMiaLook();
-  const moment = useMiaMoment();
+  const moment = useMiaMoment(true);
   // Früh wissen, ob Mia über den Server hört und spricht (nur mit KI-Einwilligung) – sonst nähme das erste Zuhören den Browser
   useEffect(() => {
     // Danach den Einmal-Schlüssel vorwärmen (nur mit Live-Ohr) – und beim Zurückkommen in die App
@@ -113,6 +113,8 @@ export function MiaButton({ name, links = false }: { name: string; links?: boole
           const weg = s ? ohrWeg({ buehne: true, live: Boolean(s.live), browser: erkennung, aufnahme: s.hoeren }) : "browser";
           if (m.granted && !m.block && (weg === "live" || weg === "aufnahme")) vorlaufJetzt();
           openHelper();
+          // Herbstwind: Blätter wehen auf der Bühne an Mia vorbei (höchstens alle 5 Min)
+          miaMomentPruefen("antippen");
         }}
         aria-label={`Sag ${name}, was ansteht … (${name} holen)`}
         className={`mia-knopf flex items-center justify-center rounded-full select-none ${erster.zwinkern ? "mia-zwinkern-einmal" : ""}`}
@@ -120,8 +122,7 @@ export function MiaButton({ name, links = false }: { name: string; links?: boole
         data-mia-knopf
         data-moment={moment ?? undefined}
       >
-        {moment === "blatt" && <span className="mia-blatt" aria-hidden />}
-        <BegleitungAvatar size={MIA_PX} groesse="gross" zubehoer={look.zubehoer} stimmung={look.verschlafen ? "verschlafen" : look.ruhig ? "ruhig" : undefined} />
+        <BegleitungAvatar size={MIA_PX} groesse="gross" zubehoer={look.zubehoer} blaetter={moment === "blaetter" || moment === "sturm"} stimmung={look.verschlafen ? "verschlafen" : look.ruhig ? "ruhig" : undefined} />
       </button>
     </div>
   );

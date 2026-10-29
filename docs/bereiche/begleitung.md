@@ -814,26 +814,47 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
   Datum/Uhrzeit/Wetter/Familie als Parameter) – EIN Zubehör, Rangfolge
   Familien-Geburtstag (Partyhut) > Anlass (Halloween Kürbis, 1.–24.12. Mütze,
   Silvester 23:55–1:00 Konfetti und wach, Ostern Ei) > Kochen (Timer läuft:
-  Kochmütze) > Wetter (Schirm bei Regen jetzt/nächste Stunde, hat Vorrang;
-  jetzt sonnig und tagsüber zwischen Sonnenauf- und -untergang
-  (`sunTimes`/`isNight` aus `wetter/view.ts`): ab 18 °C Sonnenbrille, darunter
-  die kleine Sonne, beides ganzjährig, nachts nie) > Jahreszeit (Schal
-  Dez–Feb). Nachts 22–6 schläft Mia, 6–8 verschlafen, ab 19 Uhr ruhiger.
+  Kochmütze) > Wetter (Schirm bei Regen jetzt/nächste Stunde, hat Vorrang,
+  danach wieder Sonne; sonniger Tag und tagsüber zwischen Sonnenauf- und
+  -untergang (`sunTimes`/`isNight` aus `wetter/view.ts`): ab 18 °C
+  Sonnenbrille, darunter die kleine Sonne, beides ganzjährig, nachts nie) >
+  Jahreszeit (Schal Dez–Feb).
+- Sonniger Tag (A-058): eine Stunde ist sonnig bei Wettercode ≤ 2 oder
+  mindestens 30 Sonnenminuten (`sonnigeStunde`, Feld `sun` der Bright-Sky-
+  bzw. Open-Meteo-Stunden). Ist mindestens die Hälfte der hellen Stunden des
+  Tages sonnig (Mitte der Stunde zwischen Sonnenauf- und -untergang,
+  vergangene laut Daten, der Rest laut Vorhersage; `sonnigerTag`), trägt Mia
+  die Sonne bzw. Sonnenbrille den ganzen hellen Tag, kein Springen je Stunde.
+  Die Entscheidung fällt einmal am Tag und steht in `wasgibts.miazubehoer`
+  v1 (`mia/zubehoerSpeicher.ts`, pro Gerät, nicht in der Sicherung), damit
+  Mia beim Neuladen gleich aussieht. Nachts 22–6 schläft Mia, 6–8 verschlafen, ab 19 Uhr ruhiger.
   Gezeichnet in `MiaZubehoer.tsx`, angewendet über `useMiaLook` am Knopf.
   Die Sonne (A-033: Kreis mit kurzen Strahlen, Gelb `--app-sonne`) liegt halb
   hinter Mia oben rechts, am Knopf und als einziges Zubehör auch auf der
   Bühne. Das eckige Logo (`BrandMark`) trägt nie Zubehör (Test).
-- Kurze Momente (`miaMoment`, nur sichtbare Seite, nie Dauerschleife): Sturm
-  (Böen ≥ 60 km/h jetzt) einmal wackeln, höchstens alle 30 Min; Sonne: die
-  Strahlen drehen sich am Knopf einmal sehr langsam (8 s), höchstens 1×/h;
-  Herbst (Sep–Nov) ein fallendes Blatt, höchstens 1×/h. Reduzierte Bewegung
-  = still.
+- Kurze Momente (`miaMoment`, nur sichtbare Seite, nie Dauerschleife,
+  Abstände je Gerät in `wasgibts.miazubehoer`): Sturm (Böen ≥ 60 km/h jetzt)
+  einmal wackeln, höchstens alle 30 Min; Sonne: die Strahlen drehen sich am
+  Knopf einmal sehr langsam (8 s), höchstens 1×/h.
+- Herbstblätter nur bei Wind (A-058): Sep–Nov bei Wind ≥ 25 km/h oder Böen
+  ≥ 35 km/h in der aktuellen Stunde wehen 7 Blätter (Orange, Rot, Gelb,
+  Braun, verschieden groß; `MiaBlaetter` in `MiaZubehoer.tsx`) von links an
+  Mia vorbei und wirbeln kurz um sie herum (je Blatt 2,2 s, versetzt, ganzer
+  Moment unter 3 s, nur transform/opacity, `cubic-bezier(.16,1,.3,1)`); Mia
+  kneift dabei kurz die Augen zu („> <“, `data-kneifen` am
+  `BegleitungAvatar`). Beim Öffnen bzw. Zurückkommen höchstens alle 30 Min
+  am Knopf, beim Antippen von Mia höchstens alle 5 Min auf der Bühne
+  (`miaMomentPruefen("antippen")`). Sturm im Herbst = Wackeln und Blätter
+  zusammen. Nicht nachts (Mia schläft), nicht außerhalb Sep–Nov, nicht bei
+  reduzierter Bewegung (dann still). Das einzelne fallende Blatt ohne Wind
+  gibt es nicht mehr. Die Blätter sind ein Moment, kein Zubehör – es bleibt
+  bei EINEM Zubehör.
 - Bühne: „Danke“ → Herzchen-Augen und Herzen, Lob → Freudensprung
   (`src/lib/mia/reaktion.ts`), höchstens 1× je Gespräch und 3× am Tag.
   Nachts begrüßt Mia mit „Moin … äh, Nacht! Was liegt an?“ (Varianten).
 - Knopf: 16 px Rand, 24 px über der Unterkante/Safe Area; Einstellungen →
   Mia → „Knopf links“ (Linkshänder, `wasgibts.miaknopf`).
-- Tests: `tests/mia/familienmanagerin.test.ts`.
+- Tests: `tests/mia/familienmanagerin.test.ts`, `tests/mia/zubehoer.test.ts` (A-058).
 
 ## Mia – die Familienmanagerin, Routinen (seit v0.83)
 
