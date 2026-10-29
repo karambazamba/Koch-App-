@@ -142,9 +142,13 @@ export function hatEintraege14Tage(events: RegionEvent[], heute: string, jetzt =
   return nachTagen(events, "zwei", heute, jetzt).length > 0;
 }
 
-/** Ist „Was los?“ zu sehen? Quelle an, Baustein an, etwas in 14 Tagen */
-export function wasLosSichtbar(o: { quelle: RegionQuelle | undefined; baustein: boolean; events: RegionEvent[]; heute: string; jetzt?: number }): boolean {
-  return Boolean(o.quelle && o.quelle !== "aus" && o.baustein && hatEintraege14Tage(o.events, o.heute, o.jetzt ?? 0));
+/**
+ * Ist der Kreis „Was los?“ zu sehen? Quelle an und Baustein an – immer, auch
+ * ohne Einträge (A-063: dann sagt das Fenster „Gerade nichts in deiner Nähe“,
+ * statt den Kreis still zu verstecken).
+ */
+export function wasLosSichtbar(o: { quelle: RegionQuelle | undefined; baustein: boolean }): boolean {
+  return Boolean(o.quelle && o.quelle !== "aus" && o.baustein);
 }
 
 /** Nur Orte im Umkreis (unbekannte Gemeinde: erst bei 30 km) und nur gewünschte Kategorien */

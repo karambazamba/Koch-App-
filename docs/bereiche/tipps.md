@@ -148,12 +148,14 @@ Schlüssel nur in der Cron-Route). Die Tabelle hat keinen Personenbezug.
 
 ## Mini-Kreis (A-050)
 
-- `KreisReihe` nutzt `useWasLosSichtbar()` (Quelle an + Baustein an + etwas
-  in 14 Tagen im Umkreis) und öffnet `WasLosFenster` (nachgeladen).
+- `KreisReihe` nutzt `useWasLosSichtbar()` (Quelle an + Baustein an – seit
+  A-063 immer, auch ohne Einträge) und öffnet `WasLosFenster` (nachgeladen).
+  Ist in 14 Tagen im Umkreis nichts, sagt das Fenster „Gerade nichts in
+  deiner Nähe.“ statt den Kreis still zu verstecken.
 - `KreiseBearbeiten` zeigt „Was los?“, sobald die Quelle an ist; einschalten
   schaltet den Baustein mit ein (`setWasLos`).
 - Unter dem Kreis nur „Was los?“ – keine Zahl, kein Tipp, keine Uhrzeit.
-- Rein (ohne Hook): `wasLosSichtbar({ quelle, baustein, events, heute })`,
+- Rein (ohne Hook): `wasLosSichtbar({ quelle, baustein })`,
   `hatEintraege14Tage(events, heute)`. Das frühere `wasLosVerfuegbar()`
   (immer false) ist weg.
 

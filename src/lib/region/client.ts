@@ -144,10 +144,8 @@ export function useWasLosListe(): WasLosListe | undefined {
 export function useWasLosSichtbar(): boolean {
   const liste = useWasLosListe();
   const an = useWasLosAn();
-  const day = useToday();
-  const minutes = useMinutes();
-  if (!liste || !day) return false;
-  return wasLosSichtbar({ quelle: liste.quelle, baustein: Boolean(an), events: liste.events, heute: toIsoDate(day), jetzt: minutes ?? 0 });
+  if (!liste) return false;
+  return wasLosSichtbar({ quelle: liste.quelle, baustein: Boolean(an) });
 }
 
 // --- Aktionen ----------------------------------------------------------------------------

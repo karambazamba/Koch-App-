@@ -6,6 +6,14 @@ ist inzwischen anders. Den aktuellen Stand je Bereich beschreibt
 `docs/bereiche/<bereich>.md`, die festen Regeln stehen in `CLAUDE.md`.
 Ältere Pfadangaben meinen die Orte vor dem Umzug (siehe CLAUDE.md, „Ordner“).
 
+## „Was los?“-Kreis immer da, wenn an (A-063, v0.171.0)
+
+- Felix sah den Kreis auf v0.169 erst nicht (der erste Abruf lief erst beim
+  ersten Öffnen). Neue Regel: Quelle an + Baustein an → Kreis immer
+  (`wasLosSichtbar({ quelle, baustein })`, ohne Blick auf die Einträge). Ist
+  in 14 Tagen im Umkreis nichts, sagt das Fenster „Gerade nichts in deiner
+  Nähe.“. Die Bearbeiten-Liste zeigt ihn wie bisher, sobald die Quelle an ist.
+
 ## Pinnwand flach, Termine ohne „…“ (Tafel 147 B, v0.170.0)
 
 - Pinnwand-Kachel und -Seite ohne inneren Korkrahmen: feine Kork-Punkte über
