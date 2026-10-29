@@ -1,6 +1,6 @@
 # Durchatmen
 
-## Feste Regeln (A-051, Tafel 138/139, v0.161.0)
+## Feste Regeln (A-051, Tafel 138/139, v0.159.0)
 
 - **Angebot, nie Pflicht.** Kein Zähler, keine Serie, keine Statistik, kein
   Lob-Feuerwerk, keine Gesundheitsversprechen, keine Diagnosen. Ende nur
