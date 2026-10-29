@@ -91,6 +91,9 @@ describe("Kachel: Anordnung", () => {
     const state = { version: 1 as const, since: "2026-10-20", cleared: [], done: [], gone: [], asked: false };
     expect(demoTiles(state, "2026-10-20")).toContain("wundertuete");
     expect(demoTiles({ ...state, cleared: ["wundertuete" as const] }, "2026-10-20")).not.toContain("wundertuete");
+    // Bleibt nur die Wundertüte übrig, ist der Beispiel-Tag vorbei (sie hält ihn nicht allein am Laufen)
+    const rest = ["termine", "aufgaben", "pinnwand", "einkauf", "essen", "notizen", "sport", "vorrat"] as const;
+    expect(demoTiles({ ...state, cleared: [...rest] }, "2026-10-20")).toEqual([]);
   });
 });
 

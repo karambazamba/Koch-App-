@@ -52,10 +52,14 @@ export function startDemo() {
   store.save({ version: 1, since: todayIso(), cleared: [], done: [], gone: [], asked: false });
 }
 
+/** Nur Begleitung des Beispiel-Tags: bleibt sie allein übrig, ist der Beispiel-Tag vorbei (A-022) */
+const NUR_MIT: DemoTile[] = ["wundertuete"];
+
 /** Welche Kacheln gerade Beispiele zeigen (leer = keine) */
 export function demoTiles(state: DemoState | null, today: string): DemoTile[] {
   if (!state || today >= addDays(state.since, DAYS)) return [];
-  return TILES.filter((t) => !state.cleared.includes(t));
+  const tiles = TILES.filter((t) => !state.cleared.includes(t));
+  return tiles.every((t) => NUR_MIT.includes(t)) ? [] : tiles;
 }
 
 /** Eine Kachel hat jetzt Eigenes → ihre Beispiele verschwinden für immer */

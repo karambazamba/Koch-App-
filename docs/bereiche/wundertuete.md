@@ -83,7 +83,8 @@ Wissen, Platt, Rätsel (Angeberwissen dann mit Hinweis „Zum Weitererzählen“
 - Beispiel-Tag: feste Karte Angeberwissen (Regentropfen), nie gespeichert;
   „Beispiel“ nur für VoiceOver (sichtbar steht das eine leise Schild an der
   Pinnwand, Tafel 119; allein gar keins). Das erste „nochmal tippen“ leert
-  das Beispiel.
+  das Beispiel. Die Wundertüte hält den Beispiel-Tag nie allein am Laufen: haben alle
+  anderen Kacheln Eigenes, ist er vorbei (`demoTiles`, `NUR_MIT`).
 - S und M: dieselbe Karte, M nur breiter mit größerer Frage (Stufen
   `FRAGE_STUFEN`/`ANTWORT_STUFEN`: S 17 → 12 px, M 21 → 14 px; Antwort
   S 14,5 → 11,5 px, M 17 → 13 px). Kopf: Name → Kurzform (Wissen, Platt,
