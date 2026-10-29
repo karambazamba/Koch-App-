@@ -8,7 +8,8 @@
 // EINEM fetten Wort, „Nochmal tippen = Neues“, oben rechts Teilen. Ohne
 // Rückseite (Tischrunde, Wer zuerst) bringt Antippen gleich die nächste.
 // S und M sind dieselbe Karte, M nur breiter mit größerer Frage. Beispiel-Tag:
-// eine feste Karte Angeberwissen mit leisem „Beispiel“ (nie gespeichert).
+// eine feste Karte Angeberwissen (nie gespeichert); „Beispiel“ nur für
+// VoiceOver – sichtbar steht das eine leise Schild an der Pinnwand (Tafel 119).
 
 import { useEffect, useRef, useState } from "react";
 import { Anchor, Calendar, Dice5, Lightbulb, MessageSquare, Puzzle, Scale, Share, type LucideIcon } from "lucide-react";
@@ -49,10 +50,10 @@ function Eingepasst({ stufen, text, className, data, children }: { stufen: reado
   );
 }
 
-function Kopf({ meta, demo, knopf }: { meta: SorteMeta; demo: boolean; knopf?: React.ReactNode }) {
+function Kopf({ meta, knopf }: { meta: SorteMeta; knopf?: React.ReactNode }) {
   const Icon = SYMBOL[meta.symbol];
   const name = useRef<HTMLSpanElement>(null);
-  useNameEinpassen(name, `${meta.id}|${demo}|${Boolean(knopf)}`);
+  useNameEinpassen(name, `${meta.id}|${Boolean(knopf)}`);
   return (
     <div className="flex h-[26px] shrink-0 items-center gap-1.5">
       <Icon className="h-3.5 w-3.5 shrink-0 text-tile-label" strokeWidth={2} aria-hidden />
@@ -62,7 +63,6 @@ function Kopf({ meta, demo, knopf }: { meta: SorteMeta; demo: boolean; knopf?: R
           {meta.kurz}
         </span>
       </span>
-      {demo && <span className="shrink-0 text-[11px] font-semibold text-muted">Beispiel</span>}
       {knopf}
     </div>
   );
@@ -138,7 +138,7 @@ export function WundertueteTile({ size = "S", today, minutes, haushalt, gericht,
       <div key={karte.id} className="wt-dreh wt-neu relative h-full">
         <section className={`wt-vorne isolate ${box}`} data-tone={meta.tone} inert={seite !== "vorne"} aria-hidden={seite !== "vorne"}>
           <KachelWasserzeichen kachel="wundertuete" size={size} frei />
-          <Kopf meta={meta} demo={demo} />
+          <Kopf meta={meta} />
           <Eingepasst stufen={FRAGE_STUFEN[stufe]} text={`${karte.id}|${size}`} className="font-extrabold leading-[1.22]" data="frage">
             {karte.vorne}
           </Eingepasst>
@@ -151,7 +151,7 @@ export function WundertueteTile({ size = "S", today, minutes, haushalt, gericht,
         </section>
         {hinten && (
           <section className={`wt-hinten ${box} border-2 border-tile-accent bg-surface`} data-tone={meta.tone} data-rueckseite inert={seite !== "hinten"} aria-hidden={seite !== "hinten"}>
-            <Kopf meta={meta} demo={demo} knopf={<QuickButton icon={Share} label="Teilen" onClick={() => void teilen()} />} />
+            <Kopf meta={meta} knopf={<QuickButton icon={Share} label="Teilen" onClick={() => void teilen()} />} />
             <Eingepasst stufen={ANTWORT_STUFEN[stufe]} text={`${karte.id}|${size}|hinten`} className="font-medium leading-snug" data="antwort">
               {antwortTeile(karte.hinten ?? "").map((t, i) => (t.fett ? <strong key={i} className="font-extrabold">{t.text}</strong> : <span key={i}>{t.text}</span>))}
             </Eingepasst>

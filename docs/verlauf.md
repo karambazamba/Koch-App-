@@ -36,7 +36,8 @@ ist inzwischen anders. Den aktuellen Stand je Bereich beschreibt
   Antwort mit Schrift in Stufen statt `line-clamp`, Kopf mit Kurzform bzw.
   nur Symbol (`useEinpassen`), Sorte „Wer zuerst“ ohne „…“. Durchklick
   `wundertueteAlle` (alle Karten vorne/hinten, S/M, iPhone SE),
-  Wundertüte in `nichtsAbgeschnitten`. Fakten nachgeprüft: Hamburgs Brücken
+  Wundertüte in `nichtsAbgeschnitten`. Beispiel-Tag ohne eigenes Schild
+  „Beispiel“ (nur VoiceOver, Tafel 119). Fakten nachgeprüft: Hamburgs Brücken
   und 500 g Spaghetti vorsichtiger formuliert.
 
 ## Aufgeräumt (v0.25)

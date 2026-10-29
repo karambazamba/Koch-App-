@@ -80,8 +80,10 @@ Wissen, Platt, Rätsel (Angeberwissen dann mit Hinweis „Zum Weitererzählen“
   Heute vor 100 Jahren: nur am Tag (`tag` „MM-TT“, `jahr` + 100) und dann zuerst.
 - Gilt die aktuelle Karte nicht mehr (17 Uhr, Haushalt gewechselt, Anlass
   vorbei), kommt beim nächsten Anzeigen die passende nächste.
-- Beispiel-Tag: feste Karte Angeberwissen (Regentropfen) mit leisem
-  „Beispiel“, nie gespeichert; das erste „nochmal tippen“ leert das Beispiel.
+- Beispiel-Tag: feste Karte Angeberwissen (Regentropfen), nie gespeichert;
+  „Beispiel“ nur für VoiceOver (sichtbar steht das eine leise Schild an der
+  Pinnwand, Tafel 119; allein gar keins). Das erste „nochmal tippen“ leert
+  das Beispiel.
 - S und M: dieselbe Karte, M nur breiter mit größerer Frage (Stufen
   `FRAGE_STUFEN`/`ANTWORT_STUFEN`: S 17 → 12 px, M 21 → 14 px; Antwort
   S 14,5 → 11,5 px, M 17 → 13 px). Kopf: Name → Kurzform (Wissen, Platt,

@@ -126,6 +126,11 @@ describe("Kachel: Oberfläche", () => {
     expect(code).toMatch(/label="Teilen"/);
     expect(code).toMatch(/Beispiel/);
   });
+
+  it("Beispiel-Tag: „Beispiel“ nur für VoiceOver, kein eigenes Schild (das eine steht an der Pinnwand, Tafel 119)", () => {
+    expect(code).toContain('demo ? " · Beispiel" : ""');
+    expect(code).not.toMatch(/>\s*Beispiel\s*</);
+  });
 });
 
 describe("Mia per Gespräch", () => {

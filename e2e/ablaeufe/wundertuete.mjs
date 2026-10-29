@@ -34,7 +34,8 @@ export const wundertuete = async (page, check) => {
   await hello(page);
   const neu = karte(page);
   check(await neu.isVisible().catch(() => false), "neuer Nutzer: Wundertüte steht auf der Startseite");
-  check((await neu.getAttribute("aria-label"))?.includes("Beispiel"), "Beispiel-Tag: feste Karte mit leisem „Beispiel“");
+  check((await neu.getAttribute("aria-label"))?.includes("Beispiel"), "Beispiel-Tag: feste Karte, „Beispiel“ für VoiceOver");
+  check(!(await neu.getByText("Beispiel", { exact: true }).count()), "Beispiel-Tag: kein eigenes Schild (das eine steht an der Pinnwand, Tafel 119)");
   const order = await page.evaluate(() => [...document.querySelectorAll("[data-raster] > [data-unit]")].map((u) => u.dataset.unit));
   check(order.indexOf("wundertuete") === order.indexOf("essen+einkauf") + 1, "Wundertüte direkt hinter Essen + Einkauf");
 

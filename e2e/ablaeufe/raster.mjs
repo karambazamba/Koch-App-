@@ -198,7 +198,8 @@ export const standardJeHaushalt = async (page, check, device) => {
       const col = (expected(width, "S").w + 8);
       const ok = cells.every(([id, c, r]) => { const u = units.find((x) => x.key === id); return u && near(u.x, c * col, 2) && near(u.y, r * row, 2); });
       check(ok, `${wahl}: Kacheln wie Tafel 119 (${units.map((u) => u.key).join(", ")})`);
-      check(units.map((u) => u.key).slice(-3).join() === "termine,aufgaben,essen+einkauf", `${wahl}: dann Termine M, Aufgaben M, Essen | Einkauf`);
+      // Beim allerersten Start dahinter Mias Wundertüte S (A-022, `ersteStartseite`)
+      check(units.map((u) => u.key).slice(-4).join() === "termine,aufgaben,essen+einkauf,wundertuete", `${wahl}: dann Termine M, Aufgaben M, Essen | Einkauf, Wundertüte`);
       const flach = units.flatMap((u) => u.flach.map((z) => `${u.key}: ${z}`));
       const over = units.flatMap((u) => u.over.map((z) => `${u.key}: ${z}`));
       const verdeckt = units.flatMap((u) => u.verdeckt.map((z) => `${u.key}: ${z}`));

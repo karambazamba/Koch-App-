@@ -639,7 +639,8 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
 - Neu an für neue Nutzer (S hinter Essen + Einkauf), bestehende: aus, in der
   Auswahl „NEU“; Einschalten in „Mehr Funktionen“ stellt die Kachel auf die
   Startseite. Ausnahme vom Feature-Stopp für 1.0, von Felix gewollt.
-- Beispiel-Tag: feste Karte Angeberwissen mit leisem „Beispiel“.
+- Beispiel-Tag: feste Karte Angeberwissen, „Beispiel“ nur für VoiceOver
+  (kein zweites Schild neben dem an der Pinnwand, Tafel 119).
 - Raster (A-023): nur S und M, keine Standard-Position im Tafel-119-Standard
   (`defaultHome`), nur beim allerersten Start dazu (`ersteStartseite`).
   Nichts abgeschnitten: Schrift passt sich der Fläche an, Kopf mit
