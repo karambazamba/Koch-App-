@@ -127,6 +127,6 @@ describe("Beispiel-Tag: Tagesplan", () => {
     expect(late.entries.filter((e) => e.typ === "termin")).toHaveLength(3);
     // Aufgaben werktags für den Tag des Beispiels
     expect(late.entries.find((e) => e.id === "beispiel:a3")!.data).toMatchObject({ date: "2026-10-21" });
-    expect(demo.DEMO_SHOPS.map((s) => s.shop)).toEqual(["Edeka", "Rewe", "Lidl", "Rossmann"]);
+    expect(demo.DEMO_SHOPS.map((s) => s.shop)).toEqual(["Edeka", "Rewe", "Lidl"]);
   });
 });

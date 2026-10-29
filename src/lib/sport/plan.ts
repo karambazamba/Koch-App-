@@ -3,7 +3,7 @@
 // Terminen erkennen (nur Hinweis, trotzdem erlaubt), zuletzt genutzte Zeit je
 // Sportart, die Zeile „Als Nächstes“ auf der Kachel.
 
-import { createEntry } from "@/lib/core/entries";
+import { createEntry, type Room } from "@/lib/core/entries";
 import { addDays } from "@/lib/core/now";
 import { clockLabel } from "@/lib/kalender/answers";
 import { itemsForDay, removeItem, sanitizeEntry, tomorrowLabel, upsertEntry, weekdayShort, type CalendarEntry, type DayItem, type Termin } from "@/lib/kalender/model";
@@ -58,8 +58,8 @@ function whenLabel(item: Pick<DayItem, "date" | "time">, today: string): string 
 
 export type SportPlan = { sport: string; date: string; start: string; minutes: number; weekly: boolean };
 
-/** Neues geplantes Training (Termin mit Etikett Sport, Erinnerung 30 Min vorher) */
-export function plannedEntry(plan: SportPlan, me: string | null): CalendarEntry | null {
+/** Neues geplantes Training (Termin mit Etikett Sport, Erinnerung 30 Min vorher); `raum` = Familie (Standard) oder „Ich“ (Sport-Fenster der Startseite, A-050) */
+export function plannedEntry(plan: SportPlan, me: string | null, raum: Room = "familie"): CalendarEntry | null {
   const data = {
     title: sportTitle(plan.sport),
     date: plan.date,
@@ -70,7 +70,7 @@ export function plannedEntry(plan: SportPlan, me: string | null): CalendarEntry 
     label: "Sport",
     ...(me ? { who: [me] } : {}),
   };
-  return sanitizeEntry(createEntry("termin", data, { raum: "familie" }));
+  return sanitizeEntry(createEntry("termin", data, { raum }));
 }
 
 /**

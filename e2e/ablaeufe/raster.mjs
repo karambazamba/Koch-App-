@@ -175,6 +175,9 @@ export const bearbeitenWieFertig = async (page, check) => {
   // Ziehen: Platzhalter rastet im Raster ein
   await page.getByRole("button", { name: "Startseite bearbeiten" }).last().click();
   await page.waitForTimeout(500);
+  // Über dem Raster steht im Bearbeiten „Kreise oben“ (A-050) – Termine erst in Sicht holen
+  await page.locator('[data-unit="termine"]').scrollIntoViewIfNeeded();
+  await page.waitForTimeout(300);
   const t = await page.locator('[data-unit="termine"]').boundingBox();
   await page.mouse.move(t.x + t.width / 2, t.y + t.height / 2);
   await page.mouse.down();
@@ -191,9 +194,9 @@ export const bearbeitenWieFertig = async (page, check) => {
 export const standardJeHaushalt = async (page, check, device) => {
   const browser = page.context().browser();
   const want = {
-    "Für die Familie": [["pinnwand", 0, 0], ["wetter", 1, 0], ["notizen", 1, 1]],
-    "Für uns zwei": [["pinnwand", 0, 0], ["wetter", 1, 0], ["notizen", 1, 1]],
-    "Nur für mich": [["wetter", 0, 0], ["sport", 0, 1], ["notizen", 1, 0], ["vorrat", 1, 1]],
+    "Für die Familie": [["wetter", 0, 0], ["notizen", 0, 1], ["pinnwand", 1, 0]],
+    "Für uns zwei": [["wetter", 0, 0], ["notizen", 0, 1], ["pinnwand", 1, 0]],
+    "Nur für mich": [["wetter", 0, 0], ["notizen", 0, 1], ["wundertuete", 1, 0]],
   };
   const jetzt = { "Für die Familie": "Laternelaufen", "Für uns zwei": "Kino heute um 20:15", "Nur für mich": "18 Uhr Yoga" };
   for (const [wahl, cells] of Object.entries(want)) {
@@ -210,9 +213,11 @@ export const standardJeHaushalt = async (page, check, device) => {
       const row = (expected(width, "XS").h + 8);
       const col = (expected(width, "S").w + 8);
       const ok = cells.every(([id, c, r]) => { const u = units.find((x) => x.key === id); return u && near(u.x, c * col, 2) && near(u.y, r * row, 2); });
-      check(ok, `${wahl}: Kacheln wie Tafel 119 (${units.map((u) => u.key).join(", ")})`);
-      // Beim allerersten Start dahinter Mias Wundertüte S (A-022, `ersteStartseite`)
-      check(units.map((u) => u.key).slice(-4).join() === "termine,aufgaben,essen+einkauf,wundertuete", `${wahl}: dann Termine M, Aufgaben M, Essen | Einkauf, Wundertüte`);
+      check(ok, `${wahl}: Kacheln wie Tafel 140 (${units.map((u) => u.key).join(", ")})`);
+      // Tafel 140: Familie/zu zweit Essen S | Wundertüte S, dann Einkauf breit; allein Essen und Einkauf breit
+      const ende = wahl === "Nur für mich" ? "termine,aufgaben,essen,einkauf" : "termine,aufgaben,essen,wundertuete,einkauf";
+      check(units.map((u) => u.key).slice(-ende.split(",").length).join() === ende, `${wahl}: dann ${ende}`);
+      check(await p.locator("nav[data-kreise]").isVisible(), `${wahl}: Mini-Kreise oben`);
       const flach = units.flatMap((u) => u.flach.map((z) => `${u.key}: ${z}`));
       const over = units.flatMap((u) => u.over.map((z) => `${u.key}: ${z}`));
       const verdeckt = units.flatMap((u) => u.verdeckt.map((z) => `${u.key}: ${z}`));
@@ -221,17 +226,16 @@ export const standardJeHaushalt = async (page, check, device) => {
       check(wahl === "Nur für mich" ? !units.some((u) => u.key === "pinnwand") : units.some((u) => u.key === "pinnwand"), `${wahl}: Pinnwand ${wahl === "Nur für mich" ? "aus" : "an"}`);
       check(await p.locator("[data-jetzt]").getByText(jetzt[wahl]).first().isVisible().catch(() => false), `${wahl}: Jetzt-Karte „${jetzt[wahl]}“`);
       // Familie/zu zweit: Schild „Beispiel“ unten rechts an der Pinnwand; allein (Tafel 119 ohne Pinnwand) kein Schild, die Beispiel-Kacheln sagen es VoiceOver
-      check(wahl === "Nur für mich" ? (await p.getByRole("region", { name: /· Beispiel$/ }).count()) >= 3 && !(await p.getByText("Beispiel", { exact: true }).count()) : (await p.getByText("Beispiel", { exact: true }).count()) > 0, `${wahl}: leise „Beispiel“`);
+      check(wahl === "Nur für mich" ? (await p.getByRole("region", { name: /· Beispiel$/ }).count()) >= 2 && !(await p.getByText("Beispiel", { exact: true }).count()) : (await p.getByText("Beispiel", { exact: true }).count()) > 0, `${wahl}: leise „Beispiel“`);
       if (device === "iPhone 15 Pro") {
-        // Ohne Scrollen: alles bis Aufgaben ganz, Essen + Einkauf mindestens mit Kopf über der Leiste
+        // Ohne Scrollen (Tafel 140, mit Kreisen oben): Kreise, Wetter/Notizen, Pinnwand bzw. Wundertüte und Termine ganz, Aufgaben mit Kopf
         const seen = await p.evaluate(() => {
-          const leiste = document.querySelector("[data-leiste]")?.getBoundingClientRect().top ?? innerHeight;
           const box = (id) => document.querySelector(`[data-unit="${id}"]`)?.getBoundingClientRect();
-          const whole = ["pinnwand", "wetter", "notizen", "sport", "vorrat", "termine", "aufgaben"].filter((id) => box(id) && box(id).bottom > innerHeight);
-          const pair = box("essen+einkauf");
-          return { whole, pair: Boolean(pair && pair.top < innerHeight), unter: pair ? Math.round(pair.top - leiste) : null };
+          const whole = ["pinnwand", "wetter", "notizen", "termine", ...(document.querySelector('[data-unit="pinnwand"]') ? [] : ["wundertuete"])].filter((id) => box(id) && box(id).top < innerHeight && box(id).bottom > innerHeight);
+          const aufgaben = box("aufgaben");
+          return { whole, aufgaben: Boolean(aufgaben && aufgaben.top < innerHeight - 40) };
         });
-        check(!seen.whole.length && seen.pair, `${wahl}: iPhone 15 Pro ohne Scrollen bis Essen/Einkauf${seen.whole.length ? ` (unten: ${seen.whole.join(", ")})` : ""}`);
+        check(!seen.whole.length && seen.aufgaben, `${wahl}: iPhone 15 Pro ohne Scrollen bis Termine, Aufgaben angeschnitten${seen.whole.length ? ` (unten: ${seen.whole.join(", ")})` : ""}`);
       }
       // Ganz schmal (iPhone SE 1, 320 px): Beispiel-Tag ohne Überquellen, ohne flache Zeilen, kein Knopf unter einem anderen
       await p.setViewportSize({ width: 320, height: 568 });
@@ -247,30 +251,29 @@ export const standardJeHaushalt = async (page, check, device) => {
   }
 };
 
-/** Timer ohne festen Platz: läuft einer, steht er als XS ganz oben – danach wieder weg */
-export const timerXS = async (page, check) => {
+/** Timer ohne festen Platz (A-050): läuft einer, zeigt der Timer-Kreis oben die Restzeit vorn – keine Kachel schiebt sich dazu */
+export const timerKreis = async (page, check) => {
   await hello(page);
   await seedFamily(page);
   await page.reload();
   await page.locator("[data-raster]").waitFor();
   await page.waitForTimeout(600);
-  check(!(await page.locator('[data-unit="timer"]').count()), "ohne laufenden Timer keine Timer-Kachel");
+  const kreise = () => page.locator("[role=tabpanel]:not([inert]) nav[data-kreise] [data-kreis]").evaluateAll((els) => els.map((e) => `${e.dataset.kreis}:${e.innerText.replace(/\s+/g, " ").trim()}`));
+  check((await kreise()).at(-1) === "timer:Timer", `ohne laufenden Timer: Timer-Kreis hinten (${(await kreise()).join(", ")})`);
   await page.evaluate(() => {
     const t = Date.now();
     localStorage.setItem("wasgibts.timer", JSON.stringify({ version: 1, timers: [{ id: "n1", name: "Nudeln", emoji: "🍝", durationMs: 600000, endsAt: t + 462000, pausedLeft: null, startedAt: t - 138000, acked: false }], stopwatch: null, hintSeen: true, firstAt: t - 138000, lastEnd: t + 462000 }));
   });
   await page.reload();
-  await page.locator('[data-unit="timer"]').waitFor({ timeout: 5000 }).catch(() => {});
-  const { width, units } = await boxes(page);
-  const timer = units.find((u) => u.key === "timer");
-  check(Boolean(timer) && timer.size === "XS" && timer.y === 0 && timer.x === 0 && near(timer.h, expected(width, "XS").h), "laufender Timer: XS ganz oben links");
-  check(await page.locator('[data-unit="timer"]').getByText(/Nudeln/).isVisible(), "Timer-XS: „Nudeln · 7:42“");
+  await page.locator("[data-timer-rest]").waitFor({ timeout: 5000 }).catch(() => {});
+  check((await kreise())[0] === "timer:7:42 Timer", `laufender Timer: „7:42“ im Kreis an Position 1 (${(await kreise()).join(", ")})`);
+  check(!(await page.locator('[data-unit="timer"]').count()), "keine Timer-Kachel");
   const saved = await page.evaluate((k) => JSON.parse(localStorage.getItem(k)).tiles.find((t) => t.id === "timer")?.visible, KEY);
   check(saved === false, "die gespeicherte Anordnung bleibt unverändert");
   await page.evaluate(() => localStorage.removeItem("wasgibts.timer"));
   await page.reload();
   await page.waitForTimeout(800);
-  check(!(await page.locator('[data-unit="timer"]').count()), "Timer vorbei: Kachel wieder weg");
+  check((await kreise()).at(-1) === "timer:Timer", "Timer vorbei: Kreis zurück an seinem Platz");
 };
 
 /** Wetter mit Himmel: jede Lage × XS/S/M – Szene da, Text links nie unter der Zeichnung, nichts abgeschnitten */

@@ -11,7 +11,8 @@ import { BAUSTEINE, bausteinOf, featureOn, setFeature } from "@/lib/core/feature
 import { CALENDAR_IMPORT_REPLY, isCalendarImportRequest } from "@/lib/kalender/import/chat";
 import { anbieterIn, openMitbringen } from "@/lib/kalender/mitbringen/angebot";
 import { einladenWunsch } from "@/lib/konten/einladenHinweis";
-import { changeHome, describeHomeChange, requestHomeEdit, unlockHomeTile } from "@/lib/core/homeLayout";
+import { changeHome, changeKreise, describeHomeChange, requestHomeEdit, unlockHomeTile } from "@/lib/core/homeLayout";
+import { beschreibeKreis } from "@/lib/heute/kreise";
 import { addPin, changeMemos, changePins, createPin, formatDauer, householdNames, isPinboardQuery, loadMemos, loadPins, memoPlayRequest, memoToPlay, pinForAllCommand, pinPrivate, pinStays, pinToShare, pinWriteCommand, setMemoHeard, updatePin, activeMemos, activePins } from "@/lib/pinnwand";
 import { playMemo } from "@/lib/pinnwand/memoPlayer";
 import { dayAnswer, umbrellaAnswer, weatherQuestion } from "@/lib/wetter/forecast";
@@ -405,6 +406,11 @@ export function homeCommand(ctx: RuleContext, t: string): boolean {
     if (cmd.target === "startseite") requestHomeEdit();
     router.push(cmd.target === "wochenplan" ? "/?seite=essen" : cmd.target === "einkaufsliste" ? "/einkaufsliste" : "/");
     onClose();
+    return true;
+  }
+  if (cmd.kind === "kreise") {
+    const undo = pushUndo(beschreibeKreis(cmd.change), changeKreise(cmd.change));
+    localReply(t, `Erledigt ✓ ${beschreibeKreis(cmd.change)}`, undo, cmd.change.aktion === "aus");
     return true;
   }
   if (cmd.kind === "home") {

@@ -100,7 +100,7 @@ export function AddTileTip({ anchor, shown, onDismiss }: { anchor: RefObject<HTM
           Neue Kacheln holen
         </h2>
         <p id="tipp-kacheln-text" className="mt-2 text-[17px] leading-snug">
-          Tippe auf <strong className="font-extrabold text-accent-strong">+ Kachel</strong>, um zum Beispiel einen Timer oder deinen Sport hinzuzufügen.
+          Tippe auf <strong className="font-extrabold text-accent-strong">+ Kachel</strong>, um zum Beispiel „Im Haus“ oder deine Sport-Karte hinzuzufügen.
         </p>
         <button ref={ok} type="button" onClick={onDismiss} className="mt-5 h-[52px] w-full rounded-full bg-accent text-[17px] font-bold text-on-accent active:scale-[0.98]">
           Verstanden

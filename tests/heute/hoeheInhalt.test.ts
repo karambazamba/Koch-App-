@@ -26,11 +26,11 @@ describe("Höhe = Inhalt (A-048)", () => {
     expect(u.map((x) => [x.key, inhaltsHoch(x)])).toEqual([["termine", true], ["essen+einkauf", true], ["essen", false], ["pinnwand", false], ["wetter", false]]);
   });
 
-  it("Standard Familie (Tafel 119/135): Pinnwand | Wetter/Notizen fest, Termine, Aufgaben und Essen + Einkauf je EINE Zeile so hoch wie der Inhalt", () => {
+  it("Standard Familie (Tafel 140/135): Wetter/Notizen | Pinnwand fest, Termine, Aufgaben je EINE Zeile so hoch wie der Inhalt, Essen | Wundertüte fest, Einkauf M so hoch wie der Inhalt", () => {
     const { r, p } = plan(defaultHome("familie").filter((t) => t.visible));
-    expect(r.rows).toBe(8);
-    expect(p.zeilen).toEqual(["fest", "fest", "inhalt", "inhalt", "inhalt"]);
-    expect(p.von).toEqual([0, 1, 2, 2, 3, 3, 4, 4]);
+    expect(r.rows).toBe(10);
+    expect(p.zeilen).toEqual(["fest", "fest", "inhalt", "inhalt", "fest", "fest", "inhalt"]);
+    expect(p.von).toEqual([0, 1, 2, 2, 3, 3, 4, 5, 6, 6]);
     // Die Plätze im Raster bleiben dieselben (Tafel 118)
     expect(r).toEqual(rasterOf(DEFAULT_HOME.filter((t) => t.visible)));
     const termine = r.plaetze.find((x) => x.key === "termine")!;

@@ -22,13 +22,14 @@ const KACHELN = [
   ["einkauf", ["S", "M"]],
   ["timer", ["XS", "S"]],
   ["sport", ["XS", "S"]],
-  ["vorrat", ["XS", "S"]],
+  ["vorrat", ["S", "M"]],
   ["notizen", ["XS", "S", "M"]],
   ["wundertuete", ["S", "M"]],
 ];
-/** Nächste erlaubte Größe (wie die Migration der Startseite v9) */
+/** Nächste erlaubte Größe (wie die Migration der Startseite) */
 const naechste = (sizes, size) => (sizes.includes(size) ? size : size === "XS" ? sizes[0] : sizes[sizes.length - 1]);
-const layout = (size) => ({ version: 9, tipSeen: true, tiles: KACHELN.map(([id, sizes]) => ({ id, visible: true, size: naechste(sizes, size) })) });
+/** Startseite v10 (A-050): alle Kacheln sichtbar (auch Sport/Timer XS und Im Haus – gewählt), dazu die Kreise oben */
+const layout = (size) => ({ version: 10, tipSeen: true, tiles: KACHELN.map(([id, sizes]) => ({ id, visible: true, size: naechste(sizes, size) })), kreise: [] });
 
 const WOCHE = "2026-10-19";
 const LANG = "Gemüselasagne mit Béchamel";
@@ -91,8 +92,8 @@ async function durchgehen(page, check, wo) {
   for (const size of ["XS", "S", "M"]) {
     await pruefen(page, check, `${wo} · Familie`, size);
     await essenPillen(page, check, `${wo} · Familie`, size);
-    // Im Haus in S (bei M die nächste erlaubte: S) zeigt die Namen ganz; XS ist eine Zeile
-    if (size !== "XS") {
+    // Im Haus in S/M (bei XS die nächste erlaubte: S) zeigt die Namen ganz
+    {
       const haus = page.locator("[role=tabpanel]:not([inert]) [data-tile~=vorrat]");
       const hausText = await haus.innerText();
       // Feste Fläche (Raster): zwei Sachen + „Was koch ich daraus?“; jede gezeigte steht ganz da, nie „Würstc…“

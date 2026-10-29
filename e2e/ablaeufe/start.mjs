@@ -510,10 +510,9 @@ export const nurFuerMich = async (page, check) => {
   check((await page.evaluate(() => JSON.parse(localStorage.getItem("familienkueche.haushaltsprofil") || "{}").householdType)) === "single", "Profil: nur für mich");
   check(!(await page.locator('section[aria-label^="Pinnwand"]').count()), "Pinnwand-Kachel aus");
   check(!(await page.getByText(/Kita, Jonne|Laternelaufen|Mathis/).count()), "Beispiel-Tag ohne Familie");
-  // Tafel 119: Wetter, Sport, Notizen, Im Haus als XS oben; Beispiel-Inhalte allein
-  for (const id of ["wetter", "sport", "notizen", "vorrat"]) check((await page.locator(`[data-unit="${id}"][data-groesse="XS"]`).count()) === 1, `${id} als XS`);
-  check(await page.getByText("2 von 3 diese Woche").isVisible(), "Sport-Beispiel „2 von 3 diese Woche“");
-  // Name vor Schild (Tafel 133): „Hähnchen“ und das Schild „heute“ (10,5 px)
-  const haus = (await page.locator('[data-unit="vorrat"]').innerText()).replace(/\s+/g, " ");
-  check(/Hähnchen heute/.test(haus), `Im-Haus-Beispiel „Hähnchen“ + Schild „heute“ (${haus})`);
+  // Tafel 140: Wetter und Notizen als XS links, Wundertüte daneben; Sport als Kreis oben, Im Haus nicht auf der Startseite (A-050)
+  for (const id of ["wetter", "notizen"]) check((await page.locator(`[data-unit="${id}"][data-groesse="XS"]`).count()) === 1, `${id} als XS`);
+  check((await page.locator('[data-unit="wundertuete"]').count()) === 1, "Wundertüte neben Wetter/Notizen");
+  check((await page.locator('nav[data-kreise] [data-kreis="sport"]').count()) === 1, "Sport als Kreis oben");
+  check(!(await page.locator('[data-unit="sport"], [data-unit="vorrat"]').count()), "keine Sport- und keine Im-Haus-Kachel");
 };

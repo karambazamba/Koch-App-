@@ -2,7 +2,8 @@
 
 // Timer aus der Oberfläche oder von Lotte starten/stoppen – mit allem, was
 // dazugehört: Ton freischalten (iPhone), einmaliger Hinweis, Phase sofort auf
-// "Kochen"; ohne Timer-Kachel wird sie an ihrem Standard-Platz eingeblendet.
+// "Kochen". Auf der Startseite zeigt ihn der Timer-Kreis oben (A-050, Tafel
+// 143: Restzeit im Kreis, Position 1) – eine Kachel wird nicht mehr eingeblendet.
 
 import { showToast } from "@/lib/core/toast";
 import { now } from "@/lib/core/now";
@@ -10,24 +11,15 @@ import { nudgePhase } from "@/lib/heute/nudge";
 import { addTimer, findTimer, removeTimer, startStopwatch, pauseStopwatch, isExpired, type Timer } from "@/lib/timer/model";
 import { changeTimers, loadTimers } from "@/lib/timer/store";
 import { unlockTimerSound } from "@/lib/timer/sound";
-import { applyHomeChange, loadHomeTiles, saveHomeTiles } from "@/lib/core/homeLayout";
 
 const TIMER_HINT = "Der Ton kommt, solange die App geöffnet ist. Erinnerungen bei geschlossener App kommen bald per Mitteilung.";
 const TIMER_FULL = "Fünf Timer laufen schon – sobald einer fertig ist, geht der nächste.";
 
-/** Timer-Kachel an ihrem Standard-Platz einblenden, falls sie fehlt; true = eingeblendet */
-function showTimerTile(): boolean {
-  const tiles = loadHomeTiles();
-  if (tiles.find((t) => t.id === "timer")?.visible) return false;
-  saveHomeTiles(applyHomeChange(tiles, { tile: "timer", action: "zeigen" }));
-  return true;
-}
-
 /**
  * Timer starten; null = schon 5 laufen. `quiet` = kein Hinweis (z. B. im Chat,
- * der selbst antwortet). `tileShown` = die Timer-Kachel wurde dafür eingeblendet.
+ * der selbst antwortet).
  */
-export function startTimer(input: { name?: string; minutes: number; step?: string }, opts: { quiet?: boolean } = {}): { timer: Timer; undo: () => void; tileShown: boolean } | null {
+export function startTimer(input: { name?: string; minutes: number; step?: string }, opts: { quiet?: boolean } = {}): { timer: Timer; undo: () => void } | null {
   unlockTimerSound();
   const before = loadTimers();
   const result = addTimer(before, input, now().getTime());
@@ -38,9 +30,8 @@ export function startTimer(input: { name?: string; minutes: number; step?: strin
   const firstTime = !before.hintSeen;
   const undo = changeTimers(() => ({ ...result.state, hintSeen: true }));
   if (firstTime) showToast({ text: TIMER_HINT, seconds: 8 });
-  const tileShown = showTimerTile();
   nudgePhase();
-  return { timer: result.timer, undo, tileShown };
+  return { timer: result.timer, undo };
 }
 
 /** Timer nach Name stoppen ("Stopp den Nudel-Timer"); liefert den gestoppten */

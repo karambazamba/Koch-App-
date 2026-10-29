@@ -59,6 +59,7 @@ export function everydayUses(latest: string, system: string): Anthropic.Beta.Bet
   const home = parseHomeCommand(latest);
   if (home) {
     if (home.kind === "undo") return tools([{ name: "rueckgaengig", input: {} }]);
+    if (home.kind === "kreise") return tools([{ name: "kreise_anpassen", input: { kreis: home.change.kreis, aktion: home.change.aktion } }]);
     if (home.kind === "home") return tools([{ name: "startseite_anpassen", input: { kachel: home.change.tile, aktion: home.change.action, ...(home.change.farbe ? { farbe: home.change.farbe } : {}) } }]);
     if (home.kind === "clear_week") return tools([{ name: "wochenplan_loeschen", input: {} }]);
     if (home.kind === "clear_shopping") return tools([{ name: "einkaufsliste_leeren", input: {} }]);
@@ -205,7 +206,7 @@ export function noteUses(latest: string): Anthropic.Beta.BetaMessage | null {
   }
 }
 
-export const CALENDAR_WRITE = new Set(["pinnwand_schreiben", "termin_in_aufgabe_umwandeln", "aufgabe_in_termin_umwandeln", "notiz_anlegen", "notiz_aendern", "notiz_loeschen", "liste_eintrag_hinzufuegen", "notiz_anheften", "baustein_an", "baustein_aus", "portionen_anpassen", "pause_setzen", "pause_beenden", "startseite_anpassen", "wochenplan_loeschen", "einkaufsliste_leeren", "einkaufsliste_entfernen", "rueckgaengig", "termin_anlegen", "termin_aendern", "termin_loeschen", "aufgabe_anlegen", "aufgabe_aendern", "aufgabe_erledigen", "aufgabe_verschieben"]);
+export const CALENDAR_WRITE = new Set(["pinnwand_schreiben", "termin_in_aufgabe_umwandeln", "aufgabe_in_termin_umwandeln", "notiz_anlegen", "notiz_aendern", "notiz_loeschen", "liste_eintrag_hinzufuegen", "notiz_anheften", "baustein_an", "baustein_aus", "portionen_anpassen", "pause_setzen", "pause_beenden", "startseite_anpassen", "kreise_anpassen", "wochenplan_loeschen", "einkaufsliste_leeren", "einkaufsliste_entfernen", "rueckgaengig", "termin_anlegen", "termin_aendern", "termin_loeschen", "aufgabe_anlegen", "aufgabe_aendern", "aufgabe_erledigen", "aufgabe_verschieben"]);
 
 /** Einträge aus der Kontext-Liste "- Mo 2026-10-19: 09:00 Titel [id=…; termin, familie] | …" */
 function contextEntries(system: string): { date: string; time: string | null; title: string; id: string; typ: string; repeat: boolean }[] {

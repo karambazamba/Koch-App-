@@ -241,7 +241,7 @@ export function KitchenHelper() {
     learnLikes(likesFromIngredients(chosen), LIKE_WEIGHTS.chosen);
     setChat((c) => ({ ...c, turns: [...c.turns, { role: "assistant", text: ["Übernommen ✓", ...notes].join(" "), local: true }], proposal: null }));
     // Hinzufügen/Ändern still; nur echtes Löschen bekommt "Rückgängig"
-    const deleting = chat.proposal.ops.some((op) => selected.has(op.id) && (DELETING.has(op.type) || (op.type === "home" && op.change.action === "ausblenden")));
+    const deleting = chat.proposal.ops.some((op) => selected.has(op.id) && (DELETING.has(op.type) || (op.type === "home" && op.change.action === "ausblenden") || (op.type === "kreise" && op.change.aktion === "aus")));
     if (deleting) setUndo({ run, key: Date.now() });
     setUndone(false);
     return run;

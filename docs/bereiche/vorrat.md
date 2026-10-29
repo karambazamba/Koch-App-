@@ -111,8 +111,11 @@ weiter Vorrat (`src/lib/vorrat/`, `/vorrat`, `wasgibts.vorrat`).
   Spontan-Ideen steht dann die alte Karte „Spontan kochen“).
 - **Bald aufbrauchen**: nur Frisches im letzten Drittel seiner Zeit, Schild
   „heute“/„morgen“ (Orange) bzw. „bis Sa“ (Gelb), nie rot.
-- **Kachel** (XS/S im festen Raster; Standard nur bei „allein“, sonst über die
-  Auswahl): XS = EINE Zeile („Hähnchen · heute“), S = „Bald aufbrauchen“
+- **Kachel** (A-032 entschieden 29.10., umgesetzt mit A-050: nur wählbar in
+  „Startseite bearbeiten“, S/M, in keinem Standard; bestehende Nutzer mit
+  Im-Haus-Kachel: Startseite v10 nimmt sie aus der Anordnung, nichts gelöscht,
+  eine alte XS wird beim Wiederwählen S; der Bereich bleibt unter Essen mit
+  „Was koch ich daraus?“): S/M = „Bald aufbrauchen“
   (2 Zeilen à 30 px), sonst „Zuletzt eingekauft“; unten
   „Was koch ich daraus?“ → Spontan kochen; leer „Sag mir, was da ist, dann
   schlag ich was vor.“ Zeilen in S (`HausZeile`, Tafel 124 A): Symbol 20 px,

@@ -8,30 +8,32 @@
 // Essen-Kachel, Ruhe nach Feierabend). Lange drücken, der Link unten, die
 // Einstellungen oder Lotte öffnen den Bearbeiten-Modus direkt hier: Kopf
 // "Startseite bearbeiten" + "Fertig", Kacheln wackeln, ziehen, "–", XS · S · M.
-// Ein laufender Timer erscheint als XS ganz oben, solange er läuft.
+// Darüber die Mini-Kreise (A-050): ein laufender Timer steht im Timer-Kreis vorn.
 
 import { oeffneDurchatmen } from "@/lib/durchatmen/oeffnen";
 import { useMiaRoutinen } from "@/components/heute/useMiaRoutinen";
+import dynamic from "next/dynamic";
+import { KreisReihe } from "@/components/heute/kreise/KreisReihe";
+import { KreiseBearbeiten } from "@/components/heute/kreise/KreiseBearbeiten";
+import { STANDARD_KREISE } from "@/lib/heute/kreise";
 import { greetOncePerDay } from "@/lib/core/avatarState";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { PenLine, Settings } from "lucide-react";
 import { MoreMenu } from "@/components/ui/MoreMenu";
-import { DEFAULT_HOME, markHomeTipSeen, tileMeta, useHomeTiles, useHomeTipSeen, type HomeTile, type HomeTileId } from "@/lib/core/homeLayout";
+import { DEFAULT_HOME, markHomeTipSeen, tileMeta, useHomeTiles, useKreise, useHomeTipSeen, type HomeTile, type HomeTileId } from "@/lib/core/homeLayout";
 import { useWelcomeFinished } from "@/lib/einstellungen/welcomeStore";
 import { HomeBoard } from "@/components/heute/HomeBoard";
 import { FoodTile, NotesTile, PantryTile, ShoppingTile } from "@/components/heute/HomeTiles";
 import { WeatherTile } from "@/components/wetter/WeatherTile";
 import { PinboardTile } from "@/components/pinnwand/PinboardTile";
 import { TimerTile } from "@/components/timer/TimerTile";
-import { Sheet } from "@/components/ui/Sheet";
 import { DemoFoodTile } from "@/components/essen/DemoFoodTile";
 import { JetztCard, JetztPlaceholder } from "@/components/heute/JetztCard";
 import { DeinTag } from "@/components/heute/DeinTag";
 import { onOpenDeinTag } from "@/lib/heute/deinTag";
 import { useJetztTopics } from "@/components/heute/useJetztTopics";
 import { jetztAktionen, wochenendQuelle } from "@/components/heute/jetztAktionen";
-import { mitLaufendemTimer } from "@/lib/heute/raster";
 import { takeHelloFlight } from "@/lib/core/hello";
 import { SportTile } from "@/components/sport/SportTile";
 import { WundertueteTile } from "@/components/wundertuete/WundertueteTile";
@@ -109,6 +111,9 @@ import { useMiaDenkt } from "@/components/begleitung/denktmit/useMiaDenkt";
 import { MiaKarte } from "@/components/begleitung/denktmit/MiaKarte";
 import { HomeBildschirmKarte, useHomeBildschirmKarte } from "@/components/heute/HomeBildschirmKarte";
 
+
+// Timer-Fenster (A-050, Tafel 137/3) erst beim Öffnen laden
+const TimerFenster = dynamic(() => import("@/components/timer/TimerFenster").then((m) => m.TimerFenster));
 
 /** Name für die Begrüßung: die erste Person im Haushalt (meist man selbst) */
 const firstName = (data: HomeData) => data.profile.persons[0]?.name.trim() ?? "";
@@ -193,6 +198,9 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
     return iso === data.todayIso ? d.getHours() * 60 + d.getMinutes() + offset : iso < data.todayIso ? -1 : 24 * 60;
   };
   const sportTile = all.find((t) => t.id === "sport");
+  // Tagesphase Sport auch mit dem Sport-Kreis oben (A-050)
+  const kreise = useKreise();
+  const sportKreis = Boolean(sportOn && (kreise ?? STANDARD_KREISE).find((k) => k.id === "sport")?.an);
   const workEnd = arbeitsEnde(allItems);
   const weekday = preview?.weekday ?? weekdayIndex(data.todayIso);
   const ctx: PhaseContext | null = timers && cooking
@@ -207,7 +215,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
           firstTimerAt: minuteOf(timers.firstAt),
           lastTimerEnd: minuteOf(timers.lastEnd),
         },
-        sport: { on: Boolean(sportTile?.visible), training: todaysTraining(entries, data.todayIso, me) },
+        sport: { on: Boolean(sportTile?.visible) || sportKreis, training: todaysTraining(entries, data.todayIso, me) },
         workEnd,
       }
     : null;
@@ -256,9 +264,8 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
 
   // Kacheln: genau die gespeicherte Reihenfolge und Größe – im Bearbeiten-Modus dieselbe
   const saved = all.filter((t) => t.visible && !tileMeta(t.id).soon && (t.id !== "vorrat" || pantryOn) && (t.id !== "tipps" || regionOn) && (t.id !== "sport" || sportOn) && (t.id !== "notizen" || notesOn) && (t.id !== "pinnwand" || pinboardOn) && (t.id !== "spendentopf" || potOn) && (t.id !== "wundertuete" || wtOn));
-  // Timer ohne festen Platz: solange einer läuft, als XS ganz oben im Raster (danach wieder weg)
-  const visible = mitLaufendemTimer(saved, timerLaeuft);
-  const laufend = visible.length > saved.length ? "timer" : null;
+  // Ein laufender Timer steht im Timer-Kreis oben (A-050) – keine Kachel schiebt sich dazwischen
+  const visible = saved;
 
   const entry = cookableEntry(data.day);
   const recipe = entry?.recipeId ? data.recipes[entry.recipeId] : undefined;
@@ -356,7 +363,8 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
     demo: demoOn,
     demoThema: demoDay.termine ? demoJetzt(demoDay.label ? tomorrowIso : data.todayIso, Boolean(demoDay.label), haushalt) : null,
     demoShop: demoDay.tiles.includes("einkauf"),
-    tiles: visible.map((t) => t.id),
+    // Was oben in den Kreisen steht, zeigt die Karte nicht noch einmal (laufender Timer)
+    tiles: [...visible.map((t) => t.id), ...(timerLaeuft ? (["timer"] as const) : [])],
     solo: haushalt === "allein",
     kidsWay: kidsWay(data.profile.persons),
     tomorrowDish: tomorrowPrep,
@@ -473,6 +481,9 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
 
           {jetzt.on && (editing.on ? <JetztPlaceholder /> : <JetztCard topics={jetzt.topics} name={helperName(data.profile)} onOpen={openTopic} onSkip={skipTopic} onAktion={jetztTun.onAktion} wochenende={jetztTun.wochenende} arrive={arrive} />)}
 
+          {/* Mini-Kreise (A-050, Tafel 143): unter Kopf bzw. Jetzt-Karte, über allen Kacheln; im Bearbeiten der Abschnitt „Kreise oben“ */}
+          {editing.on ? <KreiseBearbeiten /> : <KreisReihe entries={entries} today={data.todayIso} minutes={minutes} me={me} sportFarbe={sportTile?.farbe} beispiel={demoDay.tiles.length > 0} />}
+
           {!editing.on && (
             <>
               {/* Höchstens ein Hinweis, Reihenfolge und „nur einmal“ in core/hinweise.ts; alle im Stil der Seiten-Tipps (SeitenTipp) */}
@@ -490,16 +501,10 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
           {!editing.on && demoDay.tiles.length > 0 && <DemoRow ask={demoDay.ask} />}
 
           <div className={arrive ? "tiles-arrive" : undefined}>
-            <HomeBoard tiles={visible} all={all} editing={editing.on} render={renderTile} hrefFor={tileHref} picking={picking} onPicking={setPicking} glow={editing.on ? null : denkt.glow} vorstellen={denkt.vorstellung} haushalt={haushalt} laufend={laufend} />
+            <HomeBoard tiles={visible} all={all} editing={editing.on} render={renderTile} hrefFor={tileHref} picking={picking} onPicking={setPicking} glow={editing.on ? null : denkt.glow} vorstellen={denkt.vorstellung} haushalt={haushalt} />
           </div>
 
-          {timerOpen && (
-            <Sheet title="Timer" onClose={() => setTimerOpen(false)}>
-              <div className="pb-3">
-                <TimerTile size="M" />
-              </div>
-            </Sheet>
-          )}
+          {timerOpen && <TimerFenster onClose={() => setTimerOpen(false)} />}
           {demoItem && <DemoItemSheet item={demoItem} today={data.todayIso} onClose={() => setDemoItem(null)} />}
           {dayTopic && (
             <DeinTag

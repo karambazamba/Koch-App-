@@ -6,6 +6,40 @@ ist inzwischen anders. Den aktuellen Stand je Bereich beschreibt
 `docs/bereiche/<bereich>.md`, die festen Regeln stehen in `CLAUDE.md`.
 Ältere Pfadangaben meinen die Orte vor dem Umzug (siehe CLAUDE.md, „Ordner“).
 
+## Startseite neu: Mini-Kreise, Fenster, Einkauf M, Korkrahmen (A-050, v0.166.0)
+
+- Auftrag A-050 (Paket P4, Tafeln 137, 140, 141, 143; Wortlaut
+  `docs/auftraege/A-050-minikreise-durchatmen.md`). Es gilt „Mini-Kreise
+  final“ (Tafel 143) samt Nachtrag „kein Schild“ – Tafel 136 und Teil 1/2 der
+  Tafel 137 sind ersetzt, die Fenster aus 137 bleiben.
+- Mini-Kreise oben (`heute/kreise.ts`, `components/heute/kreise/`): direkt
+  unter Kopf bzw. Jetzt-Karte, über allen Kacheln, nicht wischbar. Bis zu 5
+  Kreise gleich verteilt (5 = 56 px, sonst 64 px), je EIN Wort. Standard Sport ·
+  Pause · Was los? · Rätsel · Timer. Nur Sport hat einen Wochen-Ring (Stücke =
+  Ziel, geschafft grün), der laufende Timer zeigt die Restzeit im Kreis und
+  rückt nach vorn – sonst keine Schilder, Zahlen oder Plaketten. „Was los?“
+  bleibt ausgeblendet, bis A-055 `wasLosVerfuegbar()` anbindet.
+- Fenster: Sport (Stempel, Woche planen → Termin im Raum „Ich“), Timer
+  (laufende Timer, 6 Felder, ein Tipp startet), Pause öffnet Durchatmen
+  (A-051), Rätsel das Rätsel-Fenster (A-052).
+- Bearbeiten: Abschnitt „Kreise oben“ (an/aus, ziehen, „Höchstens 5 Kreise“);
+  Mia: Werkzeug `kreise_anpassen`, ohne KI „Nimm Rätsel oben raus“, „Timer
+  nach vorn“ (Prüfstand +4 Sätze).
+- Startseite v10: XS-Kacheln Sport/Timer → Kreise, Im Haus aus der Anordnung
+  (A-032 entschieden: bleibt unter Essen, als Kachel nur wählbar S/M), nichts
+  gelöscht. Neuer Standard je Haushalt nach Tafel 140, Knopf „Neue
+  Standard-Ordnung übernehmen“. Essen + Einkauf sind nur noch ein Paar, wenn
+  beide S sind. Ein gestarteter Timer blendet keine Kachel mehr ein; Sport
+  von Mia schaltet den Sport-Kreis an. Neue Nutzer: Sport an.
+- Einkauf M: eine Reihe Laden-Chips nebeneinander, gleich breit, „+n
+  weitere“, nie abgekürzt (gemessen per Canvas). Beispiel-Einkauf ohne
+  Rossmann (Tafel 140).
+- Pinnwand mit Korkrahmen (Tafel 141 A) in Kachel und auf der Seite (statt
+  der grauen Kühlschranktür), 8 Farben, hell/dunkel, Schlicht nur Rand.
+- Tests: `tests/heute/kreise.test.ts`, `tests/heute/kreisFenster.test.ts`,
+  Durchklick `e2e/ablaeufe/kreise.mjs` (`kreiseOben`, `kreisFenster`,
+  `kreiseBearbeiten`, `kreiseMigration`), `einkaufChips`, `timerKreis`.
+
 ## Notizen-Vorschau + Mia-Zubehör (A-060 Block B, v0.165.0)
 
 - Notizen-Kachel (Punkt 3, Tafel 144): die neueste Notiz in XS (und als

@@ -64,7 +64,9 @@ export function PinboardTile({ size = "S", me, demo = false, haushalt = "familie
 
   return (
     <>
-      <section className={`${TILE} flex h-full flex-col overflow-hidden px-3.5 pb-2.5 pt-3`} aria-label="Pinnwand" data-groesse={size}>
+      <section className={`${TILE} isolate flex h-full flex-col overflow-hidden px-3.5 pb-2.5 pt-3`} aria-label="Pinnwand" data-groesse={size}>
+        {/* Korkrahmen (A-050, Tafel 141 A): 7 px eingerückt, Rand im Kachel-Akzent, feine Kork-Punkte – nur Deko */}
+        <span className="korkrahmen pointer-events-none absolute inset-[7px] -z-10" aria-hidden data-korkrahmen />
         <div className="flex items-center gap-2">
           <Link href="/pinnwand" className={`hit flex min-w-0 flex-1 items-center gap-1.5 ${TILE_LABEL}`} aria-label="Pinnwand öffnen">
             <Pin className="h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden />
@@ -72,7 +74,8 @@ export function PinboardTile({ size = "S", me, demo = false, haushalt = "familie
           </Link>
           {recording ? <span className="h-[26px] w-[26px] shrink-0" aria-hidden /> : <QuickButton icon={Plus} label="Neuer Zettel" onClick={() => setWriting(true)} />}
         </div>
-        <div className="relative mt-1 min-h-0 flex-1">
+        {/* Zettel und Fotos liegen IM Rahmen: mindestens 8 px Abstand zu seinem Rand */}
+        <div className="relative mx-[7px] mb-[11px] mt-1 min-h-0 flex-1" data-pinnwand-innen>
           {recording ? (
             <div className="flex h-full flex-col justify-center">
               <RecordingRow recorder={recorder} compact />

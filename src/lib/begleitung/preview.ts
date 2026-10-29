@@ -2,6 +2,7 @@
 // gruppiert nach Tag. Gerechnet wird mit denselben Funktionen wie beim
 // Übernehmen; abgewählte Änderungen zählen für spätere Zeilen nicht mit.
 
+import { beschreibeKreis, kreisMeta } from "@/lib/heute/kreise";
 import { standardRaum } from "@/lib/kalender/raum/raten";
 import type { RecipeCategory } from "@/lib/essen/cookbook";
 import { MEAL_TIME_LABELS, personLabel } from "@/lib/einstellungen/profile";
@@ -210,6 +211,8 @@ function describe(
       return { opId: op.id, group: "Wochenplan", order: -1, label: formatWeekRange(op.weekStart), before: "alle Gerichte", after: "Woche wieder frei" };
     case "home":
       return { opId: op.id, group: "Startseite", order: 30_000, label: tileLabel(op.change.tile), before: null, after: describeHomeChange(op.change) };
+    case "kreise":
+      return { opId: op.id, group: "Startseite", order: 30_000, label: `Kreis ${kreisMeta(op.change.kreis).wort}`, before: null, after: beschreibeKreis(op.change) };
     case "set_persons": {
       const p = place(op.slot.weekStart, op.slot.weekday);
       const entry = findSlot(p.week, op.slot.weekday)?.entry;

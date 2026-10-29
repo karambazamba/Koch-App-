@@ -2,7 +2,7 @@
 // Bearbeiten, Wischen, Eintragen, Kalender, Essen, Rezept, Einkauf, Vorrat,
 // Pinnwand, Wetter, Spendentopf, Tipps, Einstellungen, Chat im Testmodus,
 // Konten mit zwei Browsern, Vorführen: Bearbeiten beenden, Memo antippen,
-// Offline, neue Version, Stammartikel, Sport als Stempelkarte, Mikrofon aus, Termin in einem Satz, Stimme, Wochencheck, Kochtipp, Mehr Ideen, Mia zuerst, Sprachnachricht 5× / Mikro hängt / Kachel-Knöpfe, App heißt Mia, Härtetest Familie teilen, nichts abgeschnitten auch auf dem SE, Startseiten-Raster XS · S · M, Startseite kompakter, Durchatmen, Kaputt: Notizen-Kachel, ••• beim ersten Tippen, Wischen nur klar, unten frei).
+// Offline, neue Version, Stammartikel, Sport als Stempelkarte, Mikrofon aus, Termin in einem Satz, Stimme, Wochencheck, Kochtipp, Mehr Ideen, Mia zuerst, Sprachnachricht 5× / Mikro hängt / Kachel-Knöpfe, App heißt Mia, Härtetest Familie teilen, nichts abgeschnitten auch auf dem SE, Startseiten-Raster XS · S · M, Startseite kompakter, Durchatmen, Kaputt: Notizen-Kachel, ••• beim ersten Tippen, Wischen nur klar, unten frei, Mini-Kreise oben mit ihren Fenstern).
 // Startet selbst einen Testserver (vorher `npm run build`) oder nutzt
 // E2E_BASE. Nur einzelne Abläufe: `npm run durchklick -- wetter pinnwand`.
 import { checker, launch, newPage, startServer } from "./lib.mjs";
@@ -61,8 +61,9 @@ import * as wundertuete from "./ablaeufe/wundertuete.mjs";
 import * as kompakter from "./ablaeufe/kompakter.mjs";
 import * as durchatmen from "./ablaeufe/durchatmen.mjs";
 import * as kaputt from "./ablaeufe/kaputt.mjs";
+import * as kreise from "./ablaeufe/kreise.mjs";
 
-const ALL = { ...start, ...alltag, ...essen, ...mehr, ...konten, ...vorfuehren, ...mikrofon, ...termin, ...stimme, ...wochencheck, ...kochtipp, ...mehrideen, ...miazuerst, ...pinnwandgesten, ...pinnwandordnen, ...sprachnachricht, ...mianame, ...startseite, ...schnelleingabe, ...kalendertag, ...mails, ...datenschutz, ...mikrocheck, ...zuhoeren, ...serverstimme, ...ohrlive, ...miasprechen, ...wischen, ...abhaken, ...uebersicht, ...ergebniskarten, ...testcode, ...notizen, ...notizvorschau, ...zubehoer, ...sprechenhaengt, ...heim, ...essenkachel, ...wochenkarte, ...laeden, ...familieTeilen, ...einsortieren, ...einkaufneu, ...kochmodus, ...vorschau, ...erledigt, ...abgeschnitten, ...einkaufnamen, ...raumwahl, ...raster, ...sport, ...wundertuete, ...kompakter, ...durchatmen, ...kaputt };
+const ALL = { ...start, ...alltag, ...essen, ...mehr, ...konten, ...vorfuehren, ...mikrofon, ...termin, ...stimme, ...wochencheck, ...kochtipp, ...mehrideen, ...miazuerst, ...pinnwandgesten, ...pinnwandordnen, ...sprachnachricht, ...mianame, ...startseite, ...schnelleingabe, ...kalendertag, ...mails, ...datenschutz, ...mikrocheck, ...zuhoeren, ...serverstimme, ...ohrlive, ...miasprechen, ...wischen, ...abhaken, ...uebersicht, ...ergebniskarten, ...testcode, ...notizen, ...notizvorschau, ...zubehoer, ...sprechenhaengt, ...heim, ...essenkachel, ...wochenkarte, ...laeden, ...familieTeilen, ...einsortieren, ...einkaufneu, ...kochmodus, ...vorschau, ...erledigt, ...abgeschnitten, ...einkaufnamen, ...raumwahl, ...raster, ...sport, ...wundertuete, ...kompakter, ...durchatmen, ...kaputt, ...kreise };
 const pick = process.argv.slice(2);
 const flows = Object.entries(ALL).filter(([name, run]) => typeof run === "function" && (!pick.length || pick.includes(name)));
 const stop = await startServer();

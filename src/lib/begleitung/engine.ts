@@ -55,7 +55,7 @@ type EngineEvents = { onText?: (delta: string) => void; onRound?: () => void };
 
 export class AssistantInputError extends Error {}
 
-const OP_TYPES = new Set(["add_timer", "stop_timer", "stopwatch", "cook_step", "start_cooking", "set_jetzt", "set_household", "set_dislike", "add_training", "set_sport_goal", "add_pin", "upsert_note", "remove_note", "set_meal", "set_double", "clear_slot", "move_meal", "update_week", "add_recipe", "add_shopping", "set_shop_rule", "add_pantry", "add_wish", "upsert_entry", "remove_entry", "done_entry", "move_entry", "remove_shopping", "clear_shopping", "clear_week", "home", "undo_last", "set_persons", "set_pause", "app_command", "set_feature"]);
+const OP_TYPES = new Set(["add_timer", "stop_timer", "stopwatch", "cook_step", "start_cooking", "set_jetzt", "set_household", "set_dislike", "add_training", "set_sport_goal", "add_pin", "upsert_note", "remove_note", "set_meal", "set_double", "clear_slot", "move_meal", "update_week", "add_recipe", "add_shopping", "set_shop_rule", "add_pantry", "add_wish", "upsert_entry", "remove_entry", "done_entry", "move_entry", "remove_shopping", "clear_shopping", "clear_week", "home", "kreise", "undo_last", "set_persons", "set_pause", "app_command", "set_feature"]);
 
 /** Läden aus der App: feste Regeln (höchstens 200) und „Meine Läden“ (höchstens 20), nur Texte */
 function sanitizeLaeden(raw: unknown): AssistantData["laeden"] {
@@ -181,6 +181,8 @@ function pendingSummary(ops: ChangeOp[]): string {
         return `Wochenplan ab ${op.weekStart} leeren`;
       case "home":
         return `Startseite: ${op.change.tile} ${op.change.action}`;
+      case "kreise":
+        return `Kreise oben: ${op.change.kreis} ${op.change.aktion}`;
       case "undo_last":
         return "Letzte Änderung zurücknehmen";
       case "set_persons":

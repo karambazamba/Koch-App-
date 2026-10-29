@@ -8,9 +8,9 @@ Status: offen · in Arbeit · fertig vX.Y · zurückgestellt (Grund)
 
 ## Fragen an Felix
 
-- Darf `www.kreis-oh.de` in die erlaubten Domains der Cloud-Umgebung (Umgebung → Bearbeiten → Network access), damit der „Was los?“-Parser an echten Seiten gebaut und getestet werden kann?
-- Reicht für die Durchatmen-Ansagen erst einmal die Handy-Stimme, bis die Lola-Dateien einmalig mit dem ElevenLabs-Schlüssel erzeugt sind (der liegt nur in Vercel)?
-- A-032: Bleibt Im Haus nur unter Essen, oder soll es später wieder eine eigene Kachel bekommen?
+- ~~Darf `www.kreis-oh.de` in die erlaubten Domains der Cloud-Umgebung?~~ **Beantwortet (29.10.): freigegeben.**
+- ~~Reicht für die Durchatmen-Ansagen erst einmal die Handy-Stimme?~~ **Beantwortet (29.10.): Lola-Ansagen über die Server-Route und Storage** (einmal erzeugen, Bucket `durchatmen-ansagen`).
+- ~~A-032: Bleibt Im Haus nur unter Essen?~~ **Beantwortet (29.10.): Im Haus bleibt unter Essen, als Kachel nur wählbar (S/M)** – umgesetzt mit A-050.
 
 ## Sortier-Auftrag 29.10.: Pakete und Reihenfolge
 
@@ -21,7 +21,7 @@ Bei Widersprüchen gilt der neuere Auftrag. Gemergt wird in dieser Reihenfolge, 
 | P1 | Sofort-Fixes | A-056 Mia hört von Anfang an + mehrere Sachen (Vorrang), A-045/A-046 Essen-Kachel final (Tafel 134), A-048 Startseite kompakter + Höhe nach Anzahl (Tafel 135), A-043 Erledigte 12 h, A-042 Familie verbinden, A-038 Vorschau vor „Nehmen“, A-054 Jetzt-Karte nur Nützliches | A-056 fertig v0.157 (Vorrang), A-048 fertig v0.158; A-054 fertig v0.163 |
 | P2 | Gebaut, wartet | A-020/A-034 Räume, A-024 Pinnwand abhaken, A-028 Pinnwand Teil 1 + 2, A-029/A-036 Wasserzeichen | fertig (v0.145–v0.153) |
 | P3 | Einkauf | A-040/A-041 (Tafel 127/128), Einkauf M Läden nebeneinander (Tafel 140, mit P4) | A-040/A-041 fertig v0.154, Einkauf M kommt mit P4 |
-| P4 | Startseite neu | A-050: Mini-Kreise final (Tafel 143, keine Schilder), Fenster Sport/Timer/Rätsel (Tafel 137), Beispiel-Startseite (Tafel 140), Korkrahmen (Tafel 141), Einkauf M, Im Haus von der Startseite | startet nach A-048, Ziel v0.159 |
+| P4 | Startseite neu | A-050: Mini-Kreise final (Tafel 143, keine Schilder), Fenster Sport/Timer/Rätsel (Tafel 137), Beispiel-Startseite (Tafel 140), Korkrahmen (Tafel 141), Einkauf M, Im Haus von der Startseite | fertig v0.166 (Zweig `startseiteneu`) |
 | P5 | Essen/Kochen | A-025 Rezeptseite, Kochmodus, Schnellanleitung (Tafel 122) | fertig v0.146 |
 | P6 | Ergebnis-Karten | A-037 (Tafel 126) | fertig v0.151 |
 | P7 | Sport-Seite | A-044 Stempelkarte (Tafel 132) | fertig v0.153 |
@@ -53,7 +53,7 @@ Ersetzt und nicht mehr gebaut: Essen-Kachel Tafel 121/122/133 → Tafel 134 (Rez
 - **Vercel:** Die Production-Deployments kann ich von hier nicht prüfen (kein Zugriff auf Vercel). Bitte im Vercel-Dashboard nachsehen, ob „Production“ auf v0.156 steht.
 - **Wartet, und warum:**
   - A-039 Wundertüte nachfüllen: Monatsauftrag, erst nach A-022
-  - A-032 Im-Haus-/Essen-Kachel: Entscheidung liegt bei Felix
+  - A-032 Im-Haus-/Essen-Kachel: entschieden (29.10.) – Im Haus bleibt unter Essen, als Kachel nur wählbar (S/M)
   - Text/Tafel nie angekommen: Auftragstext A-040 (nach Tafel 127 gebaut), Bilder 1/2 zu A-042, Tafeln 129/130 (durch 132 ersetzt)
 - **Offen, klein (notiert, nicht gebaut):**
   - ~~Die Jetzt-Karte kürzt noch mit „…“ („Neu auf der Pinnwand · …“).~~ Erledigt mit A-054 (v0.163): nie mehr „…“, die Karte bricht um (Test lange Titel + Durchklick iPhone SE).
@@ -110,7 +110,7 @@ Ersetzt und nicht mehr gebaut: Essen-Kachel Tafel 121/122/133 → Tafel 134 (Rez
   9a. A-022 Mias Wundertüte (Baustein, für neue Nutzer an als S-Kachel; Ausnahme vom Feature-Stopp, von Felix gewollt)
   10. A-028 Teil 2 (Klein/Groß, Halten und Ziehen, „Nur für mich“, einklappbar)
   11. Volle Prüfung (bilder, bilder:vergleich, pruefen, kompletter Durchklick, Prüfstand)
-- **Zurückgestellt (nach Launch):** A-032 Im-Haus-Kachel/Essen-Kachel-Entscheidung
+- **Entschieden (29.10.):** A-032 Im Haus bleibt unter Essen, als Kachel nur wählbar (S/M)
   (offen bei Felix).
 - **Ausprobieren:** Einladungslink teilen → zeigt auf mia.karamba-eis.de;
   Mia-Knopf an einem sonnigen, kühlen Tag mittags (kleine Sonne, dreht sich
@@ -161,7 +161,7 @@ Ersetzt und nicht mehr gebaut: Essen-Kachel Tafel 121/122/133 → Tafel 134 (Rez
 | A-029 | Sport-Kachel mit Wasserzeichen + kleine Reparaturen (Im-Haus-Namen, Sport leer, Gedankenstriche) | Tafel 124 A (kein Bild) | fertig v0.153 (Sport-Teil ersetzt durch A-044) |
 | A-030 | Neue Adresse mia.karamba-eis.de (keine Weiterleitung, feste Adressen ersetzen; Supabase-Redirects von Hand) | – | fertig v0.140 |
 | A-031 | SOFORT: Zugangscode nachsichtig prüfen (Groß/klein, Leerzeichen egal; 10 Versuche je Adresse) | – | fertig v0.141 (mit A-027) |
-| A-032 | Im-Haus-Kachel / Essen-Kachel – Entscheidung | – | zurückgestellt (offen bei Felix, nach Launch) |
+| A-032 | Im-Haus-Kachel / Essen-Kachel – Entscheidung | – | entschieden: Im Haus bleibt unter Essen, als Kachel nur wählbar (S/M) – umgesetzt mit A-050 (v0.166) |
 | A-033 | Mia-Zubehör: Sonne das ganze Jahr (Sonnenbrille ab 18 °C, sonst kleine Sonne tagsüber; nie nachts; nicht am Logo; Wortlaut `docs/auftraege/A-033-zubehoer-sonne.md`) | – | fertig v0.140 |
 | A-034 | Nachtrag A-020: gleiche Räume Familie · Ich · Arbeit für Termine und Aufgaben, Vorauswahl (Termin = Familie, Aufgabe = Ich), Familien-Aufgaben für alle („erledigt von …“), RLS Ich/Arbeit nur Besitzer, `ui/RaumChips` überall, Mia rät und lernt, Raum per Lang-Drücken ändern, Prüfstand ≥ 30 Sätze (ersetzt A-021 teilweise; Wortlaut `docs/auftraege/A-034-raeume.md`) | – | fertig v0.151 |
 | A-035 | Nachtrag A-019: Mias Stimme bleibt Mias Stimme (Status einmal holen und merken, erste Silbe 2,5 s mit „Mhm“, nie im Gespräch springen, erst nach 2 Fehlern Handy-Stimme mit Hinweis, Vorwärmen, Ersatz mit Grund im Mikro-Protokoll) | – | fertig v0.143 |
@@ -179,7 +179,7 @@ Ersetzt und nicht mehr gebaut: Essen-Kachel Tafel 121/122/133 → Tafel 134 (Rez
 | A-047 | `pruefen` grün im Raster: Wasserzeichen nicht mitmessen, Mindest-Zeile auf dem SE 1, Essen-Bildfläche ohne Überquellen, XS-Zeile 30 px, Einkauf „+N“ nicht unter dem Plus, Wetter-XS „Morgen“ | – | fertig v0.155 |
 | A-048 | SOFORT: Startseite kompakter – Termine/Aufgaben/Einkauf S/Notizen Höhe = Inhalt (0/1/2/3, ab 4 „+n weitere“, 14 px Rand, Paare gleich hoch), Einkauf 3 Läden, Wasserzeichen in allen Größen, Notizen-Leertext „Schnell notieren …“ (Wortlaut `docs/auftraege/A-048-startseite-kompakter.md`) | `tafel-135.png` | fertig v0.158 (v0.157 = Vorrang-Fix „Mia hört sofort“) |
 | A-049 | SOFORT: Wundertüte – keine Punkte, nie wiederholen | – | ersetzt durch A-052 |
-| A-050 | Startseite neu (P4): Mini-Kreise final (Sport · Pause · Was los? · Rätsel · Timer, 56/64 px, ein Wort, keine Schilder), Fenster Sport/Timer/Rätsel, Beispiel-Startseite neu geordnet, Wasserzeichen in allen XS, Pinnwand-Korkrahmen, Einkauf M Läden nebeneinander, Im Haus von der Startseite (Wortlaut `docs/auftraege/A-050-minikreise-durchatmen.md`) | `tafel-137.png`, `tafel-140.png`, `tafel-141.png`, `tafel-143.png` | wartet auf A-048 (Ziel v0.159) |
+| A-050 | Startseite neu (P4): Mini-Kreise final (Sport · Pause · Was los? · Rätsel · Timer, 56/64 px, ein Wort, keine Schilder), Fenster Sport/Timer/Rätsel, Beispiel-Startseite neu geordnet, Wasserzeichen in allen XS, Pinnwand-Korkrahmen, Einkauf M Läden nebeneinander, Im Haus von der Startseite (Wortlaut `docs/auftraege/A-050-minikreise-durchatmen.md`) | `tafel-137.png`, `tafel-140.png`, `tafel-141.png`, `tafel-143.png` | fertig v0.166 (Kreise oben, Sport-/Timer-Fenster, Pause → Durchatmen, Rätsel → Rätsel-Fenster, „Was los?“ wartet ausgeblendet auf A-055 über `wasLosVerfuegbar()`; Startseite v10). Geprüft: npm test 3758/3758, tsc, eslint, knip, Build; Durchklick Kreise + nichtsAbgeschnitten ok (vorher 42 betroffene Abläufe und der komplette Durchklick auf v0.161/v0.163 grün). Volle Prüfung (bilder, pruefen) nach Felix’ Vorgabe zurückgestellt |
 | A-051 | Durchatmen (12 Übungen, Vorschlag nach Tageszeit, Lieblinge, kein Zähler) + Mia leitet an (Stimme + Klang / Nur Klang / Still, Bildschirm dunkel, Wake Lock) | `tafel-138.png`, `tafel-139.png` | fertig v0.159 (Lola-Ansagen: einmal auf dem Server erzeugen – Für Entwickler → „Ansagen erzeugen“ → Bucket `durchatmen-ansagen`; bis dahin Handy-Stimme; `docs/bereiche/durchatmen.md`) |
 | A-052 | Rätsel als eigener Bereich + Wundertüte (Witze, „Platt för Plietsche“, Angeberwissen), „Noch eine ›“, nie doppelt im Haushalt, KI-Nachschub nur Witze/Rätsel | `tafel-137.png` (Bild 4), `tafel-140.png` | fertig v0.160 (Rätsel-Paket 001: 91 Rätsel; Mini-Kreis bindet das Fenster an) |
 | A-053 | Gesamtauftrag Teil 7: Tests gesamt + volle Prüfung | – | zurückgestellt (später, auf Zuruf) |

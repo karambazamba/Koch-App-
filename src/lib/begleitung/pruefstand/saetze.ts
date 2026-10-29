@@ -273,6 +273,11 @@ export const PRUEFSAETZE: PruefSatz[] = [
   S("Mach die Notizen blau", ["home"]),
   S("Mach das Wetter ganz klein", ["home"]),
   S("Pinnwand wieder in Standardfarbe", ["home"]),
+  // Mini-Kreise oben (A-050, Tafel 143)
+  S("Nimm Rätsel oben raus", ["kreise"]),
+  S("Timer nach vorn", ["kreise"]),
+  S("Hol die Pause wieder nach oben", ["kreise"]),
+  S("Den Sport-Kreis bitte ganz nach hinten", ["kreise"]),
   S("Zeig mir den Vorrat", ["app_command", "set_feature", "antwort"]),
   S("Schreib der Kita, dass Mathis morgen krank ist", ["mail_draft", "app_command"]),
   S("Lies mir den Kalender vor", ["app_command", "antwort"], { max: 3 }),

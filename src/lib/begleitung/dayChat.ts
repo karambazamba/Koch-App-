@@ -13,7 +13,7 @@ import { WEEKDAYS_SHORT_MO } from "@/lib/core/days";
 import { changeEntries, loadEntries } from "@/lib/kalender/store";
 import { createEntry } from "@/lib/core/entries";
 import { now } from "@/lib/core/now";
-import { applyHomeChange, loadHomeTiles, saveHomeTiles } from "@/lib/core/homeLayout";
+import { SPORT_OBEN, zeigeSportKreis } from "@/lib/heute/sportKreis";
 import { pushUndo } from "@/lib/core/undo";
 import { upsertEntry, type CalendarEntry } from "@/lib/kalender/model";
 import { currentStep, loadCooking, nextStep, startCooking } from "@/lib/essen/kochSession";
@@ -54,15 +54,7 @@ const COOK_START = /\b(ich\s+)?(fang\w*|beginn\w*)\s+(jetzt\s+|gleich\s+)?(an\s+
 const NEXT_STEP = /^(nächster|naechster)\s+schritt\b|^weiter\b.*\b(schritt|kochen)?|^(schritt\s+)?(erledigt|fertig)\b.*\bschritt/i;
 const WHAT_NOW = /^was\s+kommt\s+(jetzt|als\s+nächstes)\b|^welcher\s+schritt\b/i;
 
-/** Sport-Kachel einblenden, wenn Lotte Sport nutzt (true = neu) */
 const minuteNow = () => now().getHours() * 60 + now().getMinutes();
-
-function showSportTile(): boolean {
-  const tiles = loadHomeTiles();
-  if (tiles.find((t) => t.id === "sport")?.visible) return false;
-  saveHomeTiles(applyHomeChange(tiles, { tile: "sport", action: "zeigen" }));
-  return true;
-}
 
 export function dayChat(text: string, ctx: DayChatContext): DayChatReply | null {
   const t = text.trim();
@@ -86,9 +78,8 @@ export function dayChat(text: string, ctx: DayChatContext): DayChatReply | null 
     if (timer.kind === "start") {
       const started = startTimer({ minutes: timer.minutes, name: timer.name });
       if (!started) return { text: "Fünf Timer laufen schon. Sobald einer fertig ist, geht der nächste." };
-      // Ohne Timer-Kachel blendet startTimer sie ein – dann sagen, wo er steht
-      const where = started.tileShown ? " Der Timer steht jetzt auf der Startseite." : "";
-      return { text: `Läuft ⏱ ${started.timer.name} – ${durationLabel(started.timer.durationMs)}.${where}`, undo: pushUndo("den Timer", started.undo) };
+      // Der Timer-Kreis oben zeigt ihn (A-050) – keine Kachel nötig
+      return { text: `Läuft ⏱ ${started.timer.name} – ${durationLabel(started.timer.durationMs)}.`, undo: pushUndo("den Timer", started.undo) };
     }
     if (timer.kind === "stop") {
       const stopped = stopTimerByName(timer.name);
@@ -129,8 +120,8 @@ export function dayChat(text: string, ctx: DayChatContext): DayChatReply | null 
     const entries = loadEntries();
     if (sport.kind === "goal") {
       const undo = setSportGoal(sport.goal);
-      const shown = showSportTile();
-      return { text: `Wochenziel: ${sport.goal}× pro Woche ✓${shown ? " Die Sport-Kachel steht jetzt auf der Startseite." : ""}`, undo };
+      const shown = zeigeSportKreis();
+      return { text: `Wochenziel: ${sport.goal}× pro Woche ✓${shown ? ` ${SPORT_OBEN}` : ""}`, undo };
     }
     if (sport.kind === "add") {
       const minutes = sport.minutes ?? guessMinutes(sport.sport, sport.km);
@@ -138,9 +129,9 @@ export function dayChat(text: string, ctx: DayChatContext): DayChatReply | null 
       const vorher = stempelkarte(state, entries, ctx.today, minuteNow(), ctx.me).geschafft;
       const { undo } = addTraining(data);
       const jetzt = stempelkarte(loadSport(), entries, ctx.today, minuteNow(), ctx.me).geschafft;
-      const shown = showSportTile();
+      const shown = zeigeSportKreis();
       // Text-Baustein der Bestätigung (die spätere Ergebnis-Karte übernimmt ihn): „Volleyball · heute · gestempelt“
-      return { text: `${gestempeltText(sport.sport, sport.date, ctx.today)}${jetzt && !vorher ? ". Woche geschafft." : ""}${shown ? `${jetzt && !vorher ? "" : "."} Die Sport-Kachel steht jetzt auf der Startseite.` : ""}`, undo };
+      return { text: `${gestempeltText(sport.sport, sport.date, ctx.today)}${jetzt && !vorher ? ". Woche geschafft." : ""}${shown ? `${jetzt && !vorher ? "" : "."} ${SPORT_OBEN}` : ""}`, undo };
     }
     if (sport.kind === "lage") return { text: sportLage(stempelkarte(state, entries, ctx.today, minuteNow(), ctx.me), ctx.today) };
     if (sport.kind === "stats") {
@@ -168,10 +159,10 @@ export function dayChat(text: string, ctx: DayChatContext): DayChatReply | null 
     if (!plan.slots.length) return { text: `Da finde ich gerade keine freie Lücke. ${plan.notes.join(" ")}`.trim() };
     const created: CalendarEntry[] = plan.slots.map((s) => createEntry("termin", { title: s.title, date: s.date, start: s.start, end: s.end, label: "Sport", reminder: "30" as const, ...(ctx.me ? { who: [ctx.me] } : {}) }) as CalendarEntry);
     const undo = pushUndo("die geplanten Trainings", changeEntries((list) => created.reduce((acc, e) => upsertEntry(acc, e), list)));
-    const shown = showSportTile();
+    const shown = zeigeSportKreis();
     const day = (iso: string) => WEEKDAYS_SHORT_MO[(new Date(`${iso}T12:00:00`).getDay() + 6) % 7];
     return {
-      text: `Eingeplant ✓ ${plan.slots.map((s) => `${day(s.date)} ${s.start} ${s.title}`).join(", ")} – mit Erinnerung 30 Min vorher.${plan.notes.length ? ` ${plan.notes.join(". ")}.` : ""}${shown ? " Die Sport-Kachel steht jetzt auf der Startseite." : ""}`,
+      text: `Eingeplant ✓ ${plan.slots.map((s) => `${day(s.date)} ${s.start} ${s.title}`).join(", ")} – mit Erinnerung 30 Min vorher.${plan.notes.length ? ` ${plan.notes.join(". ")}.` : ""}${shown ? ` ${SPORT_OBEN}` : ""}`,
       undo,
     };
   }

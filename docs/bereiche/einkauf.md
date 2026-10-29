@@ -58,7 +58,30 @@ nur einmal da. Kennt Läden, feste Regeln und eure Produkte. Immer sichtbar
   `listMigration.ts`, `listEdits.ts`, `shops.ts`, `staples.ts`,
   `buildList.ts`, `quickAdd.ts` (`istEinkaufSache`), `shoppingParse.ts`.
 - Kachel „Einkauf“ auf Heute: `ShoppingTile`/`ShopRows` in
-  `src/components/heute/HomeTiles.tsx` (Laden-Zeile = Laden-Seite).
+  `src/components/heute/HomeTiles.tsx` (Laden-Zeile = Laden-Seite); M (breit,
+  Standard seit Tafel 140): `components/einkauf/kacheln/LadenChipReihe.tsx`,
+  rein `lib/einkauf/kacheln/ladenChips.ts`.
+
+### Einkauf-Kachel M: Läden nebeneinander (A-050, Nachtrag 2, Tafel 140 unten)
+
+- Kopf „EINKAUF“ mit Symbol, rechts das Plus (Schnelleingabe). Darunter EINE
+  Reihe mit bis zu 3 Laden-Chips, gleich breit: Strich links in Ladenfarbe,
+  Name 14 px fett, rechts die Anzahl in Ladenfarbe. Reihenfolge wie die
+  Zeilen in S (`tileRows`): meiste Sachen zuerst, bei Gleichstand die
+  Reihenfolge aus „Meine Läden“; nur Läden mit Sachen.
+- Mehr als 3 Läden: der dritte Chip wird „+n weitere“ (grau, gleiche Breite) →
+  Einkaufsliste. Chip = Laden-Seite, Rest der Kachel = Einkaufsliste.
+- Nie abgeschnitten, nie abgekürzt: die Breite wird gemessen (ResizeObserver,
+  Text per Canvas in der Schrift der Seite); passt ein Name nicht, erst 13 px,
+  dann lieber weniger Chips + „+n weitere“ (ganz schmal, iPhone SE 1 mit
+  320 px: z. B. „Rossmann · +2 weitere“).
+- „Ohne Laden“: kleine Zeile darunter „6 ohne Laden · Sortieren ›“ (nur > 0).
+  Leer: „Liste ist leer. Plus tippen oder Mia sagen.“ Höhe = Inhalt, das
+  Wasserzeichen (Wagen) liegt unten rechts und nie über den Chips (die haben
+  eigene Fläche). S (halbe Breite) bleibt untereinander.
+- Beispiel-Einkauf (Tafel 140): Edeka 3, Rewe 3, Lidl 2 (`DEMO_SHOPS`).
+- Tests: `tests/heute/kreisFenster.test.ts` („Einkauf M“), Durchklick
+  `einkaufChips` und `startseiteKompakt` (SE, 15 Pro, Pixel 7).
 - Mia im Modus „Einkauf“: `openHelper("einkauf")`, `chat.einkauf`,
   `components/begleitung/useModusChat.ts`, Testmodus `lib/begleitung/mockModus.ts`.
 - Feste Reihenfolgen in `src/lib/core/sort.ts`: `SECTION_WALK`, `SHOPPING`,

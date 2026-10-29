@@ -123,8 +123,26 @@ proaktiv (`pushAllowed` Art „proaktiv“): höchstens 1 am Tag (Schlüssel
 kommt nur jene. Nur auf dem Gerät, solange die App offen ist (Sport liegt
 nicht beim Server; Server-Push sieht ihn nicht).
 
-Kachel `sport` (Größen XS/S/M im festen Raster, Standard XS, Pastell-Flieder;
-Standard nur bei „allein“, Tafel 119), Plus = „Training eintragen“, die
+Sport-Kreis oben und Fenster (A-050, Tafel 143/137/2): Auf der Startseite steht
+Sport seit A-050 als Kreis (`heute/kreise.ts`, siehe `heute.md`): Laufschuh
+bzw. Symbol der nächsten Sportart, Ring außen = Wochenziel (Stücke wie Ziel,
+ohne Ziel 3; füllt sich je Training; geschafft grün), nur „Sport“ darunter.
+Antippen = Fenster `SportFenster` (`components/sport/SportFenster.tsx`, rein
+`lib/sport/wochePlanen.ts`): Kopf „Sport · diese Woche“, Unterzeile „Ziel 2× ·
+Mo geschafft, Do geplant“ (`wochenUnterzeile`), die Stempel der Woche
+(geplant gestrichelt mit „Do 8:00“), „Woche planen“: Mo–So als Kreise
+(geschafft voll mit Symbol, geplant gestrichelt mit Symbol, frei = Plus,
+vergangene freie Tage still). Tag tippen → orange → Sportart-Chips (eigene
+zuerst, höchstens 4) und Uhrzeiten 8:00 · 10:00 · 18:00 · andere → großer
+Knopf „Sa 10:00 Volleyball planen“ legt einen Termin im Raum „Ich“ an
+(`plannedEntry(…, "ich")`, Etikett Sport, Erinnerung 30 Min, 60 Min, mit
+Rückgängig); der Tag steht danach gestrichelt da. „Schon trainiert?
+Eintragen“ (`SportEintragen`), „Alles zu Sport ›“ = `/sport`. Neue Nutzer
+haben Sport an. Die XS-Kachel ist bei bestehenden Nutzern zum Kreis geworden
+(Startseite v10); S/M bleiben als Kachel wählbar.
+
+Kachel `sport` (Größen XS/S/M im festen Raster, Standard S, Pastell-Flieder;
+nicht mehr im Standard, nur wählbar), Plus = „Training eintragen“, die
 ganze Kachel = `/sport`, kein Wasserzeichen (die Stempel sind das Bild):
 - XS (A-048, Tafel 135): zwei kleine Stempel (30 px, `xsFelder`: bei mehr
   Feldern die letzten zwei Stempel) links, rechts zwei Zeilen (`xsZeilen`):
@@ -177,7 +195,7 @@ Wochenziel ist geschafft.“, 2 Sekunden, Antippen schließt, Avatar „freuen�
 Beim Öffnen der App wird nicht nachgefeiert.
 
 Phase „Sport“: 60 Min vor einem heutigen Sport-Termin bis zu seinem Ende, nur
-mit sichtbarer Sport-Kachel; ändert nur Inhalte. Jetzt-Karte: heute geplantes
+mit sichtbarer Sport-Kachel oder Sport-Kreis; ändert nur Inhalte. Jetzt-Karte: heute geplantes
 Training (sanft).
 
 ## Begleitung (Mia)
@@ -204,7 +222,8 @@ Training (sanft).
   `sportLage`), die Karte übernimmt sie später unverändert.
 - Prüfstand: „War heute Volleyball“ (`add_training`), „Wie läuft’s mit
   Sport?“ (Antwort ohne Aktion).
-- Nutzt sie Sport, wird die Sport-Kachel eingeblendet und sie sagt es.
+- Nutzt sie Sport, kommen Baustein und Sport-Kreis oben dazu (`zeigeSportKreis`,
+  „Sport steht jetzt oben als Kreis.“) – keine Kachel mehr (A-050).
 
 ## Tests
 

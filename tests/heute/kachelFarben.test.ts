@@ -149,7 +149,7 @@ describe("Speichern in der Startseiten-Anordnung (v8/v9)", () => {
 
   it("Migration: v7 → v9 ohne Farben (alles automatisch), v8 behält sie", () => {
     const v7 = migrateHome({ version: 7, tiles: DEFAULT_HOME, tipSeen: true })!;
-    expect(v7.version).toBe(9);
+    expect(v7.version).toBe(10);
     expect(v7.tiles.every((t) => t.farbe === undefined)).toBe(true);
     const v8 = migrateHome({ version: 8, tiles: [{ id: "notizen", visible: true, size: "M", farbe: "sand" }], tipSeen: false })!;
     expect(farbe(v8.tiles, "notizen")).toBe("sand");
@@ -160,7 +160,7 @@ describe("Speichern in der Startseiten-Anordnung (v8/v9)", () => {
     vi.resetModules();
     const home = await import("@/lib/core/homeLayout");
     home.changeHome({ tile: "termine", action: "farbe", farbe: "flieder" });
-    expect(JSON.parse(win.localStorage.getItem("wasgibts.startseite")!)).toMatchObject({ version: 9 });
+    expect(JSON.parse(win.localStorage.getItem("wasgibts.startseite")!)).toMatchObject({ version: 10 });
     const backup = createBackup(win.localStorage);
     const fresh = memoryStorage();
     restoreBackup(backup, fresh);

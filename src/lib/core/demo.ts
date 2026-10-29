@@ -242,7 +242,6 @@ export const DEMO_SHOPS: { shop: string; names: string[] }[] = [
   { shop: "Edeka", names: ["Äpfel", "Eier", "Käse"] },
   { shop: "Rewe", names: ["Milch", "Brot", "Butter"] },
   { shop: "Lidl", names: ["Bananen", "Nudeln"] },
-  { shop: "Rossmann", names: ["Zahnpasta", "Küchenrolle"] },
 ];
 
 /** Beispiel „Noch ohne Laden“ auf der Seite „Einkauf“ (zwei Chips) */

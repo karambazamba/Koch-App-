@@ -6,7 +6,7 @@
 import { readFileSync } from "node:fs";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { fakeWindow, noBrowser } from "../helpers";
-import { DEFAULT_HOME, ersteStartseite, homeForHaushalt, migrateHome, tileMeta, type HomeTile } from "@/lib/core/homeLayout";
+import { DEFAULT_HOME, ersteStartseite, homeForHaushalt, migrateHome, sanitizeHome, tileMeta, type HomeTile } from "@/lib/core/homeLayout";
 import { rasterOf } from "@/lib/heute/raster";
 import { farbWaehlbar } from "@/lib/heute/kachelFarben";
 import { BAUSTEINE, LAUNCH_AUS } from "@/lib/core/features";
@@ -61,11 +61,11 @@ describe("Baustein: neu an, bestehend unverändert", () => {
 });
 
 describe("Kachel: Anordnung", () => {
-  it("erster Start: Standard des Haushalts + Wundertüte S direkt hinter Essen + Einkauf", () => {
-    expect(shown(ersteStartseite("familie"))).toEqual(["pinnwand:S", "wetter:XS", "notizen:XS", "termine:M", "aufgaben:M", "essen:S", "einkauf:S", "wundertuete:S"]);
-    expect(shown(ersteStartseite("allein")).slice(-3)).toEqual(["essen:S", "einkauf:S", "wundertuete:S"]);
+  it("erster Start (Tafel 140): Wundertüte S neben Essen (Familie) bzw. neben Wetter/Notizen (allein)", () => {
+    expect(shown(ersteStartseite("familie"))).toEqual(["wetter:XS", "notizen:XS", "pinnwand:S", "termine:M", "aufgaben:M", "essen:S", "wundertuete:S", "einkauf:M"]);
+    expect(shown(ersteStartseite("allein")).slice(0, 3)).toEqual(["wetter:XS", "notizen:XS", "wundertuete:S"]);
     const r = rasterOf(ersteStartseite("familie").filter((t) => t.visible));
-    expect(r.plaetze.find((p) => p.key === "wundertuete")).toMatchObject({ col: 0, w: 1, h: 2 });
+    expect(r.plaetze.find((p) => p.key === "wundertuete")).toMatchObject({ col: 1, w: 1, h: 2 });
   });
 
   it("bestehende Startseite: Wundertüte kommt still unsichtbar dazu, sonst bleibt alles", () => {
@@ -73,11 +73,12 @@ describe("Kachel: Anordnung", () => {
     const m = migrateHome({ version: 9, tiles, tipSeen: true })!;
     expect(shown(m.tiles)).toEqual(["termine:M", "essen:S", "einkauf:S"]);
     expect(m.tiles.find((t) => t.id === "wundertuete")).toMatchObject({ visible: false, size: "S" });
-    expect(DEFAULT_HOME.find((t) => t.id === "wundertuete")?.visible).toBe(false);
   });
 
   it("Haushaltswechsel schiebt sie nie dazu, behält sie aber, wenn sie da ist", () => {
-    expect(shown(homeForHaushalt(DEFAULT_HOME, "familie", "allein"))).not.toContain("wundertuete:S");
+    // Anordnung eines bestehenden Nutzers ohne Wundertüte: sie kommt nie von selbst dazu
+    const alt = sanitizeHome(DEFAULT_HOME.map((t) => (t.id === "wundertuete" ? { ...t, visible: false } : t)));
+    expect(shown(homeForHaushalt(alt, "familie", "allein"))).not.toContain("wundertuete:S");
     const neu = ersteStartseite("familie");
     expect(shown(homeForHaushalt(neu, "familie", "allein"))).toContain("wundertuete:S");
     expect(shown(homeForHaushalt(neu, "familie", "allein"))).not.toContain("pinnwand:S");
