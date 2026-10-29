@@ -21,16 +21,23 @@
 // Die Browser-Erkennung selbst (Wachhund, Notausgang, erzwungenes Ende) steckt
 // in `spracherk().ts`; vor jedem Zuhören verstummt Mia (`vorDemZuhoeren`),
 // und kommt die App aus dem Hintergrund zurück, ist alles zurückgesetzt.
+// A-056 (kein Wort verlieren): Auf der Bühne läuft das Mikrofon schon im
+// Antippen an (Vorlauf, `ohrPuffer.ts`) – live und eigene Aufnahme bekommen
+// zuerst den gepufferten Anfang. Scheitert live und war schon etwas zu
+// hören, übernimmt die eigene Aufnahme den Puffer (sonst wie bisher der
+// Browser). `bereit` (Ring „Ich höre“) erst, wenn wirklich Ton kommt.
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { setAvatarFlag } from "@/lib/core/avatarState";
 import { hintSeen } from "@/lib/core/hints";
-import { claimMic, classifyMicError, guardMic, micPlatform, micSettleWait, micState, micSubscribe, releaseMic, reportMicBlocked } from "@/lib/core/mic";
+import { MIC_SETTLE_MS, claimMic, classifyMicError, guardMic, micPlatform, micSettleWait, micState, micSubscribe, releaseMic, reportMicBlocked } from "@/lib/core/mic";
 import { micLog } from "@/lib/core/micLog";
 import { aufnahmeStarten, type Aufnahme } from "@/lib/begleitung/aufnahme";
-import { aufnahmeVerstehen, liveGeklappt, liveGescheitert, liveOhr, serverOhr } from "@/lib/begleitung/stimmeClient";
+import { aufnahmeVerstehen, liveGeklappt, liveGescheitert, liveOhr, ohrTokenVorwaermen, serverOhr } from "@/lib/begleitung/stimmeClient";
 import { ohrLiveStarten } from "@/lib/begleitung/ohrLive";
 import { liveDeps } from "@/lib/begleitung/ohrLiveBrowser";
+import { bereitSignal, ohrVorbereiten, vorlaufJetzt, vorlaufNehmen, vorlaufVerwerfen } from "@/lib/begleitung/ohrMikro";
+import type { Vorlauf } from "@/lib/begleitung/ohrPuffer";
 import { ohrWeg, spracheMoeglich } from "@/lib/begleitung/ohrWeg";
 import { tempoOhr } from "@/lib/begleitung/tempo";
 import { serverStimme, serverStimmeJetzt } from "@/lib/begleitung/zugang";
@@ -92,6 +99,8 @@ export function useSpeechInput({ onTranscript, onEnd, long = false, buehne = fal
   const [error, setError] = useState("");
   /** Bühne: es ist still, gleich wird abgeschickt (Ring läuft ab) */
   const [wartet, setWartet] = useState(false);
+  /** Das Mikrofon nimmt wirklich auf (erst dann Ring „Ich höre“ und der leise „bereit“-Ton) */
+  const [bereit, setBereit] = useState(false);
   // Avatar der Begleitung hört zu, solange dieses Mikrofon an ist
   const listeningFlag = useRef(false);
   const flagListening = useCallback((on: boolean) => {
@@ -113,7 +122,9 @@ export function useSpeechInput({ onTranscript, onEnd, long = false, buehne = fal
     listening: (on) => {
       setListening(on);
       flagListening(on);
+      if (!on) setBereit(false);
     },
+    bereit: () => setBereit(true),
     interim: setInterim,
     error: setError,
     wartet: setWartet,
@@ -139,6 +150,12 @@ export function useSpeechInput({ onTranscript, onEnd, long = false, buehne = fal
   /** Eigene Aufnahme bzw. Live-Runde (Ohr vom Server) und ihre Nummer – ältere melden nichts mehr */
   const ohrRef = useRef<Pick<Aufnahme, "stoppen" | "abbrechen"> | null>(null);
   const ohrLauf = useRef(0);
+  /** Der Vorlauf dieser Runde (Mikro seit dem Antippen) – gehört uns, bis die Runde endet */
+  const vorlaufRef = useRef<Vorlauf | null>(null);
+  const vorlaufAus = useCallback(() => {
+    vorlaufRef.current?.stoppen();
+    vorlaufRef.current = null;
+  }, []);
   /** Wartet gerade auf Mias Verstummen (abbrechbar) */
   const warteRef = useRef<() => void>(() => {});
 
@@ -150,9 +167,10 @@ export function useSpeechInput({ onTranscript, onEnd, long = false, buehne = fal
     const hatteOhr = ohrRef.current !== null;
     ohrRef.current?.abbrechen();
     ohrRef.current = null;
+    vorlaufAus();
     if (hatteOhr) releaseMic(micId.current);
     erk().detach();
-  }, [erk]);
+  }, [erk, vorlaufAus]);
 
   // Beim Verlassen (z. B. Chat schließen): abbrechen, nichts abschicken
   useEffect(() => () => detach(), [detach]);
@@ -161,14 +179,19 @@ export function useSpeechInput({ onTranscript, onEnd, long = false, buehne = fal
   useEffect(() => {
     if (!buehne) return;
     let aktiv = true;
-    void serverStimme().then((s) => aktiv && setServerKann(liveOhr(s) || serverOhr(s)));
+    void serverStimme().then((s) => {
+      if (!aktiv) return;
+      setServerKann(liveOhr(s) || serverOhr(s));
+      // Einmal-Schlüssel schon bereitlegen (A-056) – dann steht die Verbindung meist sofort
+      if (liveOhr(s)) void ohrTokenVorwaermen();
+    });
     return () => {
       aktiv = false;
     };
   }, [buehne]);
 
-  /** Bühne mit Mias Ohr vom Server: selbst aufnehmen, Satzende am Pegel, Text vom Server */
-  const beginOhr = useCallback(() => {
+  /** Bühne mit Mias Ohr vom Server: selbst aufnehmen, Satzende am Pegel, Text vom Server (mit Vorlauf: ab dem Antippen) */
+  const beginOhr = useCallback((mitVorlauf: Vorlauf | null = null) => {
     erk().cancel();
     detach();
     const lauf = ++ohrLauf.current;
@@ -176,12 +199,18 @@ export function useSpeechInput({ onTranscript, onEnd, long = false, buehne = fal
     setError("");
     setInterim("");
     setWartet(false);
+    const v = mitVorlauf ?? vorlaufNehmen() ?? (vorlaufJetzt(), vorlaufNehmen());
+    vorlaufRef.current = v;
+    if (v) v.beiBereit(() => aktuell() && (setBereit(true), bereitSignal()));
+    else setBereit(true);
     const zuEnde = () => {
       ohrRef.current = null;
+      vorlaufRef.current = null;
       releaseMic(micId.current);
       setListening(false);
       flagListening(false);
       setWartet(false);
+      setBereit(false);
     };
     const ohr = aufnahmeStarten({
       laut: () => {},
@@ -219,7 +248,7 @@ export function useSpeechInput({ onTranscript, onEnd, long = false, buehne = fal
         if (block) reportMicBlocked(block);
         else setError(NICHT_GEKLAPPT);
       },
-    });
+    }, v);
     ohrRef.current = ohr;
     claimMic(micId.current, () => {
       ohrLauf.current++;
@@ -248,12 +277,19 @@ export function useSpeechInput({ onTranscript, onEnd, long = false, buehne = fal
     setError("");
     setInterim("");
     setWartet(false);
+    // Mikro läuft meist schon seit dem Antippen; sonst jetzt (z. B. Weiterhören nach Mias Antwort)
+    const v = vorlaufNehmen() ?? (vorlaufJetzt(), vorlaufNehmen());
+    vorlaufRef.current = v;
+    if (v) v.beiBereit(() => aktuell() && (setBereit(true), bereitSignal()));
+    else setBereit(true);
     const zuEnde = () => {
       ohrRef.current = null;
+      vorlaufRef.current = null;
       releaseMic(micId.current);
       setListening(false);
       flagListening(false);
       setWartet(false);
+      setBereit(false);
       setInterim("");
     };
     const runde = ohrLiveStarten(
@@ -266,6 +302,7 @@ export function useSpeechInput({ onTranscript, onEnd, long = false, buehne = fal
         wartet: (an) => aktuell() && setWartet(an),
         fertig: (said, info) => {
           if (!aktuell()) return;
+          v?.stoppen();
           zuEnde();
           liveGeklappt(info.sekunden);
           tempoOhr("live");
@@ -281,16 +318,23 @@ export function useSpeechInput({ onTranscript, onEnd, long = false, buehne = fal
           zuEnde();
           if (art === "verbindung") {
             liveGescheitert();
+            // Schon etwas gesagt? Dann übernimmt die eigene Aufnahme den Puffer – nichts geht verloren
+            if (v?.aktiv() && v.lautGehoert() && serverOhr(serverStimmeJetzt())) {
+              micLog("Ohr: live ging nicht, Aufnahme übernimmt den Puffer");
+              return beginOhr(v);
+            }
+            v?.stoppen();
             // Mikro kurz frei werden lassen (iPhone), dann der nächste Weg
-            return void setTimeout(() => aktuell() && ersatz(), micSettleWait());
+            return void setTimeout(() => aktuell() && ersatz(), Math.max(micSettleWait(), v ? MIC_SETTLE_MS : 0));
           }
+          v?.stoppen();
           if (name === "belegt") return setError(BELEGT);
           const block = classifyMicError(name, micPlatform(navigator.userAgent));
           if (block) reportMicBlocked(block);
           else setError(NICHT_GEKLAPPT);
         },
       },
-      liveDeps(),
+      liveDeps(v),
     );
     ohrRef.current = runde;
     claimMic(micId.current, () => {
@@ -300,7 +344,7 @@ export function useSpeechInput({ onTranscript, onEnd, long = false, buehne = fal
     });
     setListening(true);
     flagListening(true);
-  }, [detach, erk, ersatz, flagListening]);
+  }, [beginOhr, detach, erk, ersatz, flagListening]);
 
   useEffect(() => {
     beiErkennungAus.current = () => {
@@ -315,6 +359,12 @@ export function useSpeechInput({ onTranscript, onEnd, long = false, buehne = fal
       const weg = ohrWeg({ buehne, live: liveOhr(stand), browser: Boolean(speechRecognitionClass()), aufnahme: serverOhr(stand) });
       if (weg === "live") return beginLive();
       if (weg === "aufnahme") return beginOhr();
+      // Der Browser braucht das Mikro selbst: einen Vorlauf vorher freigeben
+      if (vorlaufVerwerfen()) {
+        const t = setTimeout(() => erk().begin(), MIC_SETTLE_MS);
+        warteRef.current = () => clearTimeout(t);
+        return;
+      }
       erk().begin();
     },
     [buehne, beginLive, beginOhr, erk],
@@ -347,6 +397,14 @@ export function useSpeechInput({ onTranscript, onEnd, long = false, buehne = fal
     () =>
       guardMic(() => {
         letztesWort.current = null;
+        setBereit(false);
+        // A-056: noch im Antippen Ton-Kontext an und – wenn Mia gleich über den Server hört – Mikro sofort an (Vorlauf)
+        if (buehne) {
+          ohrVorbereiten();
+          const stand = serverStimmeJetzt();
+          const weg = stand ? ohrWeg({ buehne, live: liveOhr(stand), browser: Boolean(speechRecognitionClass()), aufnahme: serverOhr(stand) }) : null;
+          if (weg === "live" || weg === "aufnahme") vorlaufJetzt();
+        }
         // Vor jedem Zuhören: Mia verstummt, kurz warten, bis das iPhone den Ton freigibt
         warteRef.current();
         warteRef.current = vorDemZuhoeren(() => {
@@ -354,7 +412,7 @@ export function useSpeechInput({ onTranscript, onEnd, long = false, buehne = fal
           begin();
         });
       }, hintSeen("mikro-gefragt")),
-    [begin],
+    [begin, buehne],
   );
 
   // Zurück aus dem Hintergrund: laufendes Zuhören beenden, alles zurücksetzen
@@ -369,6 +427,7 @@ export function useSpeechInput({ onTranscript, onEnd, long = false, buehne = fal
       flagListening(false);
       setInterim("");
       setWartet(false);
+      setBereit(false);
     };
     document.addEventListener("visibilitychange", onVisibility);
     return () => document.removeEventListener("visibilitychange", onVisibility);
@@ -387,6 +446,7 @@ export function useSpeechInput({ onTranscript, onEnd, long = false, buehne = fal
     setListening(false);
     setInterim("");
     setWartet(false);
+    setBereit(false);
   }, [detach, erk]);
 
   /**
@@ -401,10 +461,11 @@ export function useSpeechInput({ onTranscript, onEnd, long = false, buehne = fal
     setInterim("");
     setError("");
     setWartet(false);
+    setBereit(false);
   }, [detach, erk]);
 
   /** Zeitpunkt (performance.now) des letzten erkannten Wortes dieser Aufnahme, sonst null */
   const letztesWortAm = useCallback(() => letztesWort.current, []);
 
-  return { supported, blocked, listening, interim, error, wartet, start, stop, cancel, reset, letztesWortAm };
+  return { supported, blocked, listening, bereit, interim, error, wartet, start, stop, cancel, reset, letztesWortAm };
 }

@@ -9,6 +9,9 @@
 // Tätigkeit, „Erinner mich …“), Notiz, Pinnwand, Timer. Termine und Aufgaben
 // bekommen den Raum wie überall (`raum/raten.ts`: gesagt › gelernt › Inhalt ›
 // Standard Termine Familie, Aufgaben Ich); ist er unklar, macht es die KI.
+// A-056: nur GENAU EINE Sache – mit „und“, Komma, „außerdem“, „dann“, mehreren
+// Doppelpunkten oder Frage geht alles an die KI (`mehrteilig`); Füllwörter
+// sind vorher schon weg (`ohneFuellwoerter`).
 
 import { createEntry } from "@/lib/core/entries";
 import type { ChangeOp } from "@/lib/begleitung/ops";
@@ -21,6 +24,8 @@ import { createNote } from "@/lib/notizen/model";
 import { PIN_MAX, pinForAllCommand } from "@/lib/pinnwand/model";
 import { kurzeBestaetigung } from "@/lib/begleitung/bestaetigung";
 import { einkaufErkennen } from "@/lib/begleitung/sofort/einkauf";
+import { mehrteilig } from "@/lib/begleitung/aufteilen";
+import { ohneFuellwoerter } from "@/lib/begleitung/fuellwoerter";
 
 export type SofortArt = "einkauf" | "termin" | "aufgabe" | "notiz" | "pinnwand" | "timer";
 
@@ -179,8 +184,10 @@ function was(art: SofortArt, ops: ChangeOp[]): string {
 
 /** Eindeutiger Kurzbefehl → sofort erledigen; sonst null (die KI macht es) */
 export function sofortErkennen(text: string, ctx: SofortKontext): Sofort | null {
-  const t = text.trim().replace(/^(?:moin|hey|hallo|okay|ok)[,!]?\s+/i, "");
+  const t = ohneFuellwoerter(text).replace(/^(?:moin|hey|hallo|okay|ok)[,!]?\s+/i, "");
   if (!t || t.length > 90 || /[?\n]/.test(t) || t.startsWith("[")) return null;
+  // Genau EINE Sache (das Komma nach „Notier dir,“ / „Sag Lisa,“ trennt nichts)
+  if (mehrteilig(t.replace(/^((?:bitte\s+)?(?:notier\w*(?:\s+(?:dir|mir))?|merk\s+dir|sag\s+\p{L}+|schreib\w*\s+(?:dir\s+)?auf))\s*,/iu, "$1"))) return null;
   if (NIE.test(t)) return null;
   // „Zettel für alle sichtbar machen“ ist Bedienung der Pinnwand (Tafel 123), keine Aufgabe
   if (pinForAllCommand(t) !== null) return null;

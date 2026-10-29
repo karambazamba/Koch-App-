@@ -58,7 +58,7 @@ function flyBack() {
 }
 
 /** Große Mia: Zustand, Ring (`stageRing`), Tonwelle, Satz darunter – die einzige antippbare Mia auf der Bühne (zuhören ↔ fertig) */
-export function StageMia({ state, size = STAGE_SIZE.big, hint, label, done = false, pause = false, onTap }: { state: StageState; size?: number; hint?: string; label: string; done?: boolean; /** Stille nach dem letzten Wort: Mia blinzelt, ein dünner Ring läuft ab, dann wird abgeschickt */ pause?: boolean; onTap: () => void }) {
+export function StageMia({ state, size = STAGE_SIZE.big, hint, label, done = false, pause = false, bereit = true, onTap }: { state: StageState; size?: number; hint?: string; label: string; done?: boolean; /** Stille nach dem letzten Wort: Mia blinzelt, ein dünner Ring läuft ab, dann wird abgeschickt */ pause?: boolean; /** Mikro nimmt wirklich auf – vorher kein Ring, keine Tonwelle (A-056) */ bereit?: boolean; onTap: () => void }) {
   const ref = useRef<HTMLButtonElement>(null);
   const [flight, setFlight] = useState<string | undefined>(undefined);
   // Einfliegen: Start dort, wo der Knopf ist (eine Bewegung, Größe und Ort zugleich)
@@ -74,10 +74,10 @@ export function StageMia({ state, size = STAGE_SIZE.big, hint, label, done = fal
   // Auf der Bühne nur die kleine Sonne (A-033), das übrige Zubehör bleibt am Knopf
   const sonne = useMiaLook().zubehoer === "sonne";
   // Höchstens EIN Ring: Wellen beim Zuhören, beim Abschicken der ablaufende Ring, im Warten keiner
-  const ring = stageRing(state, pause);
+  const ring = stageRing(state, pause, bereit);
   return (
     <div className="flex flex-col items-center gap-2" data-daneben>
-      {state === "zuhoeren" && (
+      {state === "zuhoeren" && bereit && (
         <span className="mia-tonwelle" aria-hidden>
           {[0, 1, 2, 3, 4].map((i) => (
             <span key={i} style={{ animationDelay: `${i * 0.12}s` }} />

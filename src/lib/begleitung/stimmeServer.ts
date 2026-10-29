@@ -181,7 +181,8 @@ export async function aufnahmeHoeren(request: Request, abruf: Abruf = fetch): Pr
   form.append("model_id", hoerModell());
   form.append("language_code", "de");
   form.append("tag_audio_events", "false");
-  form.append("file", new Blob([audio], { type: typ }), typ.includes("mp4") ? "aufnahme.mp4" : "aufnahme.webm");
+  // WAV kommt aus dem Vorlauf (A-056: Mikro seit dem Antippen, nichts verloren)
+  form.append("file", new Blob([audio], { type: typ }), typ.includes("mp4") ? "aufnahme.mp4" : typ.includes("wav") ? "aufnahme.wav" : "aufnahme.webm");
   const r = await abruf(`${ANBIETER}/v1/speech-to-text`, {
     method: "POST",
     headers: { "xi-api-key": schluessel() },

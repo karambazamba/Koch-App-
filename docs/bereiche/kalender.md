@@ -378,7 +378,7 @@ Aufgaben und Essen stehen nie im Kalender – alles zusammen zeigt „Dein Tag�
   Familie zugleich ohne Hinweis ist unklar (`raumUnklar`): der Sofort-Weg
   überlässt es der KI, die kurz fragt.
 - Beim allerersten Vorwählen steht einmal darunter „Hab Familie gewählt.
-  Tippen zum Ändern.“ (bei Ich „Nur für dich gewählt. …“), danach nie wieder
+  Tippen zum Ändern.“ (bei Ich „Nur für dich. Tippen zum Ändern.“, A-056), danach nie wieder
   (`raumHinweisOffen`).
 - Mia lernt: Korrigiert man den Raum (Chips, Detail, lange drücken, Satz
   „Mach den Zahnarzt nur für mich“), merkt sie sich ein Stichwort des Titels

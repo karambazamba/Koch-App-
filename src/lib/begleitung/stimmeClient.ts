@@ -371,8 +371,56 @@ export function liveGeklappt(sekunden: number) {
   if (sekunden > 0) recordStimme(heute(), { sekunden: Math.max(1, Math.round(sekunden)) });
 }
 
-/** Einmal-Schlüssel fürs Live-Zuhören (gilt kurz und nur für eine Verbindung); null = geht nicht */
-export async function ohrToken(): Promise<{ token: string; modell: string } | null> {
+type OhrSchluessel = { token: string; modell: string };
+
+/** Ein Einmal-Schlüssel gilt 15 Min. – vorgewärmt nehmen wir ihn höchstens so lange (Rest = Luft fürs Verbinden) */
+export const TOKEN_FRISCH_MS = 13 * 60_000;
+/** Nach dem Verbrauch so lange warten, bevor der nächste geholt wird (stört das Verbinden nicht) */
+const NACHFUELLEN_MS = 1500;
+let vorrat: (OhrSchluessel & { am: number }) | null = null;
+let holt: Promise<OhrSchluessel | null> | null = null;
+let erneuern: ReturnType<typeof setTimeout> | null = null;
+const frisch = () => (vorrat && now().getTime() - vorrat.am < TOKEN_FRISCH_MS ? vorrat : null);
+
+/**
+ * Schlüssel vorwärmen (A-056): beim Öffnen der App, wenn die Leiste sichtbar
+ * wird und nach jedem Verbrauch. Vor Ablauf (13 Min.) wird er erneuert, aber
+ * nur, solange die App sichtbar ist. Er kommt nur vom eigenen Server, liegt nur
+ * im Arbeitsspeicher und steht nie im Protokoll.
+ */
+export function ohrTokenVorwaermen(): Promise<void> {
+  if (typeof window === "undefined" || !liveOhr(serverStimmeJetzt())) return Promise.resolve();
+  if (frisch()) return Promise.resolve();
+  holt ??= tokenHolen().then((t) => {
+    holt = null;
+    if (t) {
+      vorrat = { ...t, am: now().getTime() };
+      if (erneuern) clearTimeout(erneuern);
+      erneuern = setTimeout(() => {
+        vorrat = null;
+        if (document.visibilityState === "visible") void ohrTokenVorwaermen();
+      }, TOKEN_FRISCH_MS);
+    }
+    return t;
+  });
+  return holt.then(() => {});
+}
+
+/** Einmal-Schlüssel fürs Live-Zuhören (gilt kurz und nur für eine Verbindung); vorgewärmt sofort, sonst frisch geholt; null = geht nicht */
+export async function ohrToken(): Promise<OhrSchluessel | null> {
+  if (!frisch() && holt) await holt;
+  const v = frisch();
+  vorrat = null;
+  if (v) {
+    // Gleich den nächsten bereitlegen (Mia hört nach ihrer Antwort oft wieder zu)
+    setTimeout(() => void ohrTokenVorwaermen(), NACHFUELLEN_MS);
+    micLog("Ohr live: Schlüssel war vorgewärmt");
+    return { token: v.token, modell: v.modell };
+  }
+  return tokenHolen();
+}
+
+async function tokenHolen(): Promise<OhrSchluessel | null> {
   try {
     const r = await fetch(OHR_TOKEN_ENDPOINT, {
       method: "POST",

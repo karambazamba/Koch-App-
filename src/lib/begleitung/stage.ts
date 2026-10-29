@@ -24,9 +24,10 @@ export function stageState({ listening, thinking, speaking }: { listening: boole
  * Zuhören, in der Stille nach dem letzten Wort („Gleich schick ich’s ab“)
  * nur der ablaufende Ring.
  */
-export function stageRing(state: StageState, pause = false): "wellen" | "pause" | null {
+export function stageRing(state: StageState, pause = false, bereit = true): "wellen" | "pause" | null {
   if (pause) return "pause";
-  return state === "zuhoeren" ? "wellen" : null;
+  // „Ich höre“ erst, wenn das Mikro wirklich aufnimmt (A-056)
+  return state === "zuhoeren" && bereit ? "wellen" : null;
 }
 
 /** Kleiner Satz unter Mia (beim Überlegen und Sprechen keiner); `fresh` = noch nichts erzählt */

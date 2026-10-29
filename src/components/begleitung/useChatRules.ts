@@ -41,6 +41,8 @@ import { saveSpontanFilters } from "@/lib/essen/spontanFilters";
 import type { ChatState, ChatTurnView } from "@/components/begleitung/chatTypes";
 import { pauseRule, dayRule, boardRule, schnellnotizRule, shopRuleRule, noteRule, bausteinRule, calendarImportRule, inviteRule, homeCommand, shopModeRule, memoPlayRule, type RuleContext } from "@/components/begleitung/localRules";
 import { mailRule } from "@/components/begleitung/mailRules";
+import { mehrereRule } from "@/components/begleitung/mehrereRule";
+import { ohneFuellwoerter } from "@/lib/begleitung/fuellwoerter";
 import { openHelper } from "@/lib/begleitung/open";
 import { isWeekCheckRequest } from "@/lib/kalender/wochencheck";
 import { isKochtippRequest } from "@/lib/essen/kochtipp/start";
@@ -170,8 +172,10 @@ export function useChatRules({ ruleCtx, chat, setGuided, startSpontan, pantry, s
   };
 
   /** Feste Regeln (ohne KI, oder wenn die KI ein `app_befehl` schickt). true = erledigt */
-  const rules = (t: string): boolean => {
+  const rules = (gesagt: string): boolean => {
     if (!data || !today) return false;
+    // Füllwörter weg vor jeder Auswertung (A-056)
+    const t = ohneFuellwoerter(gesagt);
     // „Was steht heute an?“ → kurz in 2 Sätzen, dann öffnet sich „Dein Tag“ (Tafel 68)
     if (isDayQuestion(t)) {
       setInput("");
@@ -253,6 +257,8 @@ export function useChatRules({ ruleCtx, chat, setGuided, startSpontan, pantry, s
       setChat((c) => ({ ...c, turns: [...c.turns, { role: "user", text: t, local: true }, { role: "assistant", text: direct, local: true }] }));
       return true;
     }
+    // Mehrere Sachen in einem Satz: aufteilen, wenn es eindeutig geht (A-056)
+    if (mehrereRule(ruleCtx, t)) return true;
     return localFirst(t) || localFallback(t);
   };
 

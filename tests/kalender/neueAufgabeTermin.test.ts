@@ -176,7 +176,10 @@ describe("Raum-Chips Familie · Ich · Arbeit (A-034)", () => {
     expect(istKorrektur({ hand: "arbeit", vorschlag: "ich", haushalt: "familie" })).toBe(true);
     expect(istKorrektur({ hand: "familie", vorschlag: "ich", haushalt: "allein" })).toBe(false);
     expect(vorgewaehltText("familie", "familie")).toBe("Hab Familie gewählt. Tippen zum Ändern.");
-    expect(vorgewaehltText("ich", "familie")).toBe("Nur für dich gewählt. Tippen zum Ändern.");
+    expect(vorgewaehltText("ich", "familie")).toBe("Nur für dich. Tippen zum Ändern.");
+    expect(vorgewaehltText("ich", "paar")).toBe("Nur für dich. Tippen zum Ändern.");
+    expect(vorgewaehltText("familie", "paar")).toBe("Hab Wir gewählt. Tippen zum Ändern.");
+    expect(vorgewaehltText("arbeit", "familie")).toBe("Hab Arbeit gewählt. Tippen zum Ändern.");
     expect(vorgewaehltText("ich", "allein")).toBe("Hab Privat gewählt. Tippen zum Ändern.");
   });
 });

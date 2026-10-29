@@ -55,7 +55,7 @@ export const raumChipsPlus = async (page, check) => {
   const feldA = aufgabe.getByRole("textbox", { name: "Neue Aufgabe" });
   await feldA.fill("Tim antworten");
   check(await aktiv(chipsA, "Ich"), "Aufgabe ohne Hinweis: Ich ist vorgewählt");
-  check(await aufgabe.getByText("Nur für dich gewählt. Tippen zum Ändern.").isVisible(), "beim allerersten Mal: „… gewählt. Tippen zum Ändern.“");
+  check(await aufgabe.getByText("Nur für dich. Tippen zum Ändern.").isVisible(), "beim allerersten Mal: „… gewählt. Tippen zum Ändern.“");
   await chipsA.getByRole("radio", { name: "Arbeit" }).click();
   check(!(await aufgabe.locator("[data-raum-hinweis]").count()), "nach dem Tippen ist der Satz weg");
   await feldA.press("Enter");
