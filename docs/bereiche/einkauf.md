@@ -4,11 +4,15 @@ Kurz: Die Seite „Einkauf“ ist so klar wie die Startseiten-Kachel (v0.142, Ta
 110/111): oben **Einsprechen** (Mia hört zu und macht die Liste daraus) und
 **Aussuchen** (erst Laden, dann Sachen antippen), darunter „Meine Läden“ als
 große farbige Karten und – nur wenn nötig – „Noch ohne Laden“ zum Antippen
-oder Draufziehen. Abgehakt wird auf der Laden-Seite (zu Hause wie im Laden):
-erst „Schon im Wagen“, dann „Einkauf fertig“ (→ Im Haus). Gleiche Sachen im
-selben Laden stehen nur einmal da, Rezeptmengen als übliche Packung.
-Die Liste rechnet sich weiter aus dem Wochenplan, kennt Läden, feste Regeln,
-lernt und merkt sich eure Produkte. Immer sichtbar (kein Baustein).
+oder Draufziehen. Abgehakt wird auf der Laden-Seite (zu Hause wie im Laden)
+wie bei Aufgaben: erst „Im Wagen ⌄“, dann „Einkauf fertig“ (→ Im Haus).
+Seit A-040/A-041 (Tafel 127/128) steht auf der Liste nur, was man kauft:
+Symbol und Name, eine Menge nur, wenn selbst gesagt. Zutaten aus dem
+Wochenplan sind ein Angebot oben auf der Laden-Seite („Für deinen
+Wochenplan“, „Alle dazu“). Mia merkt sich beim Abhaken, wo es was gibt
+(„Rewe · wie immer“, „Oft bei Rewe“). Gleiche Sachen im selben Laden stehen
+nur einmal da. Kennt Läden, feste Regeln und eure Produkte. Immer sichtbar
+(kein Baustein).
 
 ## Wo im Code
 
@@ -20,7 +24,10 @@ lernt und merkt sich eure Produkte. Immer sichtbar (kein Baustein).
   `HALTEN_MS` 250), `seite/EinkaufMenue.tsx` („···“), `Einsortieren.tsx`
   („Wo kaufst du das?“), `EinsprechenKarte.tsx` („Hab ich:“ + Live-Blase),
   `EinkaufBeispiel.tsx`, `MeineLaeden.tsx` (Frage, „Meine Läden“),
-  `seite/LadenZeile.tsx` (Zeile der Laden-Seite: Kreis, Name, Hinweis),
+  `seite/LadenZeile.tsx` (Zeile der Laden-Seite: Kreis, Symbol, Name, Menge
+  nur selbst gesagt; Zeile antippen = `seite/SacheFenster.tsx`),
+  `seite/WochenplanAngebot.tsx` („Für deinen Wochenplan“),
+  `merken/ErgebnisLaden.tsx` („Rewe · wie immer ⌄“ in Mias Ergebnis-Karte),
   `ShoppingParts.tsx` (`EditItemSheet`, `StaplesSheet`), `QuickAdd.tsx` (＋ der
   Kachel und des Essen-Reiters), `EinkaufLaden.tsx` (Laden in der
   Schnelleingabe), `kacheln/ItemTile.tsx` (Kachel für „Im Haus“),
@@ -33,11 +40,18 @@ lernt und merkt sich eure Produkte. Immer sichtbar (kein Baustein).
   `seite/karten.ts` (`ladenKarten`, `ohneLadenListe`, `ladenHref`, gemeinsame
   Woche `useEinkaufWoche`), `wagen/wagen.ts` (Laden-Seite: `wagenTeilen`,
   `leerVorschlaege`, `einkaufFertig`, `STEHEN_MS`/`GLEITEN_MS`),
+  `wagen/useAbhaken.ts` (EIN Ablauf fürs Abhaken: `abhakenAblauf`,
+  `useAbhaken`), `merken/gelernt.ts` (Laden lernen: `abgehakt`, `korrigiert`,
+  `gilt` = 90-Tage-Regel, `oftBeiGelernt`, `gelerntListe`), `merken/karte.ts`
+  („wie immer“, „Hab Rewe genommen …“, „Merk ich mir …“),
+  `angebot/angebot.ts` (Wochenplan-Angebot: `angebotFuer`, `alleDazu`,
+  `alsEintrag`, `wofuer`),
   `zusammen/zusammen.ts` (Doppeltes: `normalform`, `gleicheSache`,
   `mengenAddieren`, `zielFuer`, `wocheZusammenfassen`),
-  `zusammen/packung.ts` (Rezeptmenge → Einkaufsmenge: `einkaufsMenge`,
-  `alsEinkauf`, `rezeptHinweis`), `einsortieren.ts`, `meineLaeden.ts`,
-  `shopRules.ts`, `shopMode.ts` (gemerkter Laden, `shopModeHref`,
+  `zusammen/packung.ts` (Packung nur als Vorschlag: `einkaufsMenge`,
+  `packungFuer`, `packungAus`; `alsEinkauf` ohne Menge, `rezeptHinweis`),
+  `einsortieren.ts`, `meineLaeden.ts`, `shopRules.ts` (`ladenHerkunft`,
+  `shopChoice`, `noteShopCheck`, `ladenKorrigieren`, `gelerntVergessen`), `shopMode.ts` (gemerkter Laden, `shopModeHref`,
   „Ich bin bei REWE“), `kacheln/view.ts` (`walkOrder`, `recentBought`),
   `kacheln/gruppen.ts` (`grundsachen`), dazu wie bisher `shoppingList.ts`
   (Einstieg), `sections.ts`, `amounts.ts`, `listModel.ts`, `listStore.ts`,
@@ -52,25 +66,33 @@ lernt und merkt sich eure Produkte. Immer sichtbar (kein Baustein).
 
 ## Daten und Speicher
 
-- `wasgibts.einkaufsliste` v7 (in der Sicherung, Abgleich `einkauf` v7):
-  `{ version: 7, weeks, products, shops, itemShops, staples, myShops,
-  shopsAsked, shopRules, learned, learnAsked, alwaysList }`. `myShops` =
+- `wasgibts.einkaufsliste` v8 (in der Sicherung, Abgleich `einkauf` v8):
+  `{ version: 8, weeks, products, shops, itemShops, staples, myShops,
+  shopsAsked, shopRules, learned, learnAsked, alwaysList, angebotAb }`. `myShops` =
   „Meine Läden“ in gewählter Reihenfolge, `shopsAsked` = Läden-Frage
   beantwortet, `shopRules` = feste Regeln (Artikel klein → Laden),
-  `learned` = Zähler fürs Lernen beim Abhaken im Laden, `learnAsked` = schon
-  gefragt, `alwaysList` = Grundsachen, die trotzdem auf die Liste sollen
+  `learned` = gelernt beim Abhaken auf einer Laden-Seite (Artikel klein →
+  `{ shop, n, am }`: Laden, wie oft hintereinander, letztes Datum; gefunden über
+  die Normalform; geteilt im Haushalt über die Einkauf-Einstellungen, keine
+  Server-Statistik), `learnAsked` = früher „schon gefragt“ (ungenutzt, bleibt),
+  `angebotAb` = ab welchem Wochenbeginn der Plan ein Angebot ist ("" = immer),
+  `alwaysList` = Grundsachen, die trotzdem auf die Liste sollen
   (v4 → v5 → v6: leer, einmal fragen; nichts geht verloren; v6 → v7:
   doppelte offene eigene Artikel je Woche zusammengefasst – gleiche Sache im
   selben Laden, Mengen addiert, die kleinste Kennung bleibt, damit alle
   Geräte im Haushalt gleich entscheiden; der Abgleich markiert den anderen
-  als gelöscht, `upgrade` fasst ältere Stände genauso zusammen).
+  als gelöscht, `upgrade` fasst ältere Stände genauso zusammen; v7 → v8:
+  Gelerntes bekommt das Datum der Umstellung, `angebotAb` = heute + 8 Tage
+  (diese und die nächste Planungswoche rechnen wie bisher von selbst, nichts
+  verschwindet von der Liste), unsere gerundete Packungsmenge an
+  Rezept-Zutaten (`rezeptMenge`) fällt weg, selbst geänderte bleiben).
   - `weeks[<Wochenbeginn>]` = `WeekList`: `manual` (eigene Artikel: `id`,
     `name`, `amount` als Text, `section`, `done`, optional `day` = Wochentag,
     `now` = „Jetzt mitnehmen“, `dish`, `rezeptMenge` = Rezeptmenge als
-    Hinweis bei Zutaten aus Rezept-Link/Kochidee), `checked` (Schlüssel
+    Hinweis im Fenster bei Zutaten aus Rezept-Link/Kochidee/Angebot), `checked` (Schlüssel
     abgehakter Rezept-Artikel), `have` („Haben wir schon“), `renamed` (nur
     diese Woche), `skippedStaples` („diesmal nicht“), `fertig` (Schlüssel
-    nach „Einkauf fertig“ – nicht mehr in „Schon im Wagen“; im Abgleich mit
+    nach „Einkauf fertig“ – nicht mehr in „Im Wagen“; im Abgleich mit
     `einkauf-woche`).
   - `products`: Zutat (klein) → euer Produkt. `shops`: eigene Läden.
     `itemShops`: Artikel (klein) → Laden; leerer Laden = bewusst „Egal wo“,
@@ -87,7 +109,9 @@ lernt und merkt sich eure Produkte. Immer sichtbar (kein Baustein).
   - Ohne gespeicherten Stand gilt eine Standard-Stammliste (Brot, Aufschnitt,
     Käse, Butter, Milch, Joghurt, Obst – je wöchentlich, `basicsToStaples(null)`).
 - Artikel aus Rezepten werden nie gespeichert, nur ihr Häkchen (Schlüssel
-  „zutat|einheitenfamilie“) – so übersteht es Änderungen am Plan.
+  „zutat|einheitenfamilie“) – so übersteht es Änderungen am Plan. Seit v8
+  sind sie (ab `angebotAb`) nur ein Angebot (`ShoppingList.angebot`); was man
+  übernimmt, wird ein eigener Eintrag.
 - `wasgibts.einkaufsansicht` v2 (pro Gerät, nicht in der Sicherung):
   `{ version: 2, chip: "laden:<Name>" | … }` – seit v0.142 der zuletzt aktive
   Laden in „Aussuchen“ (gleiches Format wie früher der Chip der Liste, kein
@@ -169,32 +193,75 @@ lernt und merkt sich eure Produkte. Immer sichtbar (kein Baustein).
     und rechts der orange Knopf „Fertig“ (zurück zu „Einkauf“). Dunkel über
     das Token `--app-leiste-dunkel` (warmes Fast-Schwarz, nie reines
     Schwarz; der Knopf selbst ist orange).
-- **Laden-Seite (Punkt 5 + Nachtrag)**: Tipp auf eine Karte oder eine
-  Kachel-Zeile; jede Laden-Karte (auch mit 0) öffnet sie gleich. Große
-  farbige Karte „Rewe · 3 Sachen“, Liste mit großem Kreis zum Abhaken,
-  Symbol, Name, Menge leise, darunter klein der Rezept-Hinweis („250 ml für
-  Lasagne“).
-  - Leer: „Für Edeka steht nichts drauf.“ und „Oft bei Edeka“ als Chips
-    (`leerVorschlaege`: Regel, Gelerntes, Gemerktes, hier Gekauftes; sonst
-    „Zuletzt gekauft“, sonst „Beliebt“; aus dem Stand beim Öffnen, bleiben
-    stehen, solange die Seite offen ist). Antippen = direkt bei Edeka
-    (feste Regel, kein Laden-Wählen), kurz „Steht drin.“.
-  - Abhaken: Häkchen orange, Zeile blasser (nie durchgestrichen), 1 s stehen
-    (nochmal tippen = doch nicht), dann gleitet sie 0,8 s nach unten
-    (transform/opacity, `cubic-bezier(.16,1,.3,1)`, reduzierte Bewegung =
-    nur Überblenden) in „Schon im Wagen“ – zugeklappt, ohne Zahl, antippen =
-    aufklappen. Einmal oben „Abhaken, was im Wagen liegt.“ (bis zum ersten
-    Abhaken, Einmal-Hinweis `einkauf-wagen`).
+- **Laden-Seite (Punkt 5 + Nachtrag, Tafel 127/128)**: Tipp auf eine Karte
+  oder eine Kachel-Zeile; jede Laden-Karte (auch mit 0) öffnet sie gleich.
+  Großer Titel „Rewe“ mit Strich in Ladenfarbe (`data-laden-kopf`, „Rewe · 3
+  Sachen“ zum Vorlesen). Beim ersten Mal überhaupt (nicht je Laden) Mias
+  Seiten-Tipp „Abhaken, was im Wagen liegt. Ich merk mir das für Rewe.“
+  (`seite:einkauf-laden`), sonst darüber die Zeile „Abhaken, was im Wagen liegt.“.
+  - **Für deinen Wochenplan** (A-040, nur wenn der Plan etwas anbietet): Karte
+    mit Gerichten („Lasagne · Fr · Curry · Sa“, einklappbar ⌄), Zutaten als
+    Chips mit Symbol (≥ 44 px), einzeln antippen = drauf, „Alle dazu“
+    (orange) = alles außer Grundsachen („Steht drauf.“). Salz & Co. blass,
+    kommen nie von selbst (außer „immer auf die Liste“). Angeboten wird, was
+    hierher gelernt/gemerkt ist oder noch ohne Laden; übernommen landet es
+    hier. Danach verschwindet die Karte von selbst. Ohne eigene Läden steht
+    sie auf der Übersicht.
+  - **Nach „Nehmen“** (Rezept-Vorschau der Essen-Kachel, A-046): kleine
+    Meldung „Auf die Liste: Eier, Limette +2?“ mit „Alle dazu“ – nur die
+    Zutaten dieses Gerichts aus dem Angebot, ohne Grundsachen, eingegrenzt auf
+    das, was die Vorschau „auf die Liste“ nannte (`angebotFuerGericht`,
+    `angebotFrage`, `zutatenAnbieten` in `einkauf/angebot/nachNehmen.ts`).
+    „Alle dazu“ setzt sie wie auf der Laden-Seite drauf („Steht drauf.“);
+    sonst bleiben sie hier im Angebot. Kennt die Liste das Rezept nicht
+    (eingebautes Rezept) oder kocht man spontan, gilt, was die Vorschau „auf
+    die Liste“ nannte. Nichts anzubieten = still.
+  - Liste: großer Kreis, Symbol, Name, sonst nichts; Menge nur, wenn selbst
+    gesagt („2 Liter“). Zeile antippen = Fenster (`SacheFenster`, `ui/Sheet`):
+    Name, darunter erst hier „für Gemüselasagne · Fr“ und „200 g im Rezept“,
+    Menge („z. B. 1 Packung“ bzw. die übliche Packung), Laden („● Rewe ⌄“,
+    ändern wird gemerkt), „Von der Liste nehmen“ (Löschen mit Rückgängig bzw.
+    „Haben wir schon“). Lange drücken = „Wo kaufst du das?“ (anderer Laden,
+    „Schon gekauft“, „Ändern“ → „Artikel bearbeiten“, Löschen).
+  - Abhaken wie bei Aufgaben (A-041, `useAbhaken`, ein Ablauf für alle
+    Stellen): Häkchen orange, Zeile blasser (nie durchgestrichen), 1 s stehen
+    (nochmal tippen = zurück, auch das Gemerkte), dann gleitet sie 0,8 s weg
+    (transform/opacity, `cubic-bezier(.16,1,.3,1)`, reduzierte Bewegung = nur
+    Überblenden) in „Im Wagen ⌄“, direkt unter der Liste, zugeklappt, ohne
+    Zahl, antippen = aufklappen. Übersicht und Kachel haben keine Haken;
+    Abgehaktes zählt dort sofort nicht mehr mit.
+  - Darunter „Was noch bei Rewe?“ mit Vorschlägen ab 2 Buchstaben; landet in
+    diesem Laden (feste Regel). `name=` leer = bewusst „Egal wo“.
+  - **Oft bei Rewe** (A-041): die am häufigsten hier abgehakten Sachen, die
+    gerade nicht draufstehen (höchstens 8, Gleichstand zuletzt gekauft
+    zuerst), als Chips mit Symbol; antippen = direkt hier, kurz „Steht
+    drin.“. Darunter einmal klein „Merk ich mir, wenn du bei Rewe abhakst.“
+    (bis zum ersten Abhaken, Einmal-Hinweis `einkauf-merken`). Noch nichts
+    gelernt und leer: „Für Edeka steht nichts drauf.“ und wie bisher
+    `leerVorschlaege` (Regel, Gemerktes, hier Gekauftes; sonst „Zuletzt
+    gekauft“, sonst „Beliebt“; aus dem Stand beim Öffnen).
   - „Einkauf fertig“ (großer Knopf, sobald etwas im Wagen liegt oder der
     Einkauf geteilt ist): alles aus dem Wagen nach „Im Haus“ (nur mit
     Baustein; Abhaken allein legt noch nichts hinein), Meldung „Fertig. Liegt
     jetzt bei Im Haus.“ bzw. „Fertig.“ mit Rückgängig („Wieder im Wagen“),
     zurück zur Übersicht „Einkauf“. Geteilter Einkauf: meldet „Eingekauft ✓“.
-  - Lange drücken = „Wo kaufst du das?“ (anderer Laden, „Schon gekauft“,
-    „Ändern“ → „Artikel bearbeiten“, Löschen – samt Zusammengefasstem – bzw.
-    „Haben wir schon“). Unten „Was noch bei Rewe?“ mit Vorschlägen ab 2
-    Buchstaben; landet in diesem Laden (feste Regel). `name=` leer = bewusst
-    „Egal wo“.
+- **Mia merkt sich den Laden (A-041, `einkauf/merken`)**: jedes Abhaken auf
+  einer Laden-Seite merkt Sache (Normalform) → Laden, Zähler, Datum, auch
+  neben einer festen Regel (zählt für „Oft bei“). Eine neue Sache ohne Laden
+  (Mia, ＋, Angebot) landet von selbst im gelernten Laden (`ladenHerkunft`:
+  feste Regel → gewählter Laden → gelernt → ähnlicher Name). Anderer Laden
+  beim Abhaken = neu gezählt (zuletzt gilt). Nie gemerkt: nur einmal und vor
+  über 90 Tagen gekauft (verblasst still, `gilt`). Korrektur (Ergebnis-Karte,
+  Fenster) gilt sofort und fürs nächste Mal (`ladenKorrigieren`; eine feste
+  Regel zieht mit). Einstellungen → Mia → „Was ich mir gemerkt hab“: Gruppe
+  „Wo du was kaufst“ („Tomaten → Rewe“, Löschen = `gelerntVergessen`). Das
+  frühere „zweimal hintereinander, dann einmal fragen“ ist abgelöst.
+- **Stellt sich vor**: beim ersten Öffnen der Einkaufsliste Mias Seiten-Tipp
+  mit drei Zeilen („Ich merk mir, wo du was kaufst.“ / „Sag einfach ‚Tomaten
+  auf die Liste‘, den Laden such ich aus.“ / „Abgehakt ist weg. Fürs Rezept
+  leg ich dir Zutaten oben hin.“, Schlüssel `seite:einkaufsliste`, auch am
+  Beispiel-Tag), auf der Laden-Seite einmal (siehe oben). Zurück über
+  Einstellungen → Mia → „Tipps nochmal zeigen“ (`mia/denktmit/tipps.ts`).
 - **Doppeltes zusammen (Nachtrag)**: gleiche Sache (`normalform`: Groß/klein,
   Einzahl/Mehrzahl, Umlaute; „Milch“ ≠ „Hafermilch“) im selben Laden = ein
   Eintrag. Mengen addiert, wenn die Einheiten passen („500 g“ + „250 g“ =
@@ -205,13 +272,15 @@ lernt und merkt sich eure Produkte. Immer sichtbar (kein Baustein).
   Rezept-Zutat, `teile` – Abhaken und Löschen gelten für alle) und
   rückwirkend (v7). Abgehaktes bleibt für sich. Rückgängig nach einem
   zusammengefassten Hinzufügen nimmt nur die dazugekommene Menge heraus.
-- **Rezeptmengen als Einkaufsmengen (Nachtrag)**: `einkaufsMenge` rundet auf
-  übliche Packungen (Milch 1 l, Sahne 200 ml, Mehl/Zucker 1 kg, Butter 250 g,
-  Parmesan/Käse Stück bzw. Packung, Nudeln/Lasagneplatten 500 g = „1
-  Packung“, Reis, Eier 6/10, Dosen …); Löffel, Prisen und unter 50 g/ml
-  fallen als Hauptmenge weg. Die Rezeptmenge steht klein als Hinweis („250 ml
-  für Lasagne“). Gilt für Zutaten aus dem Plan, dem Rezept-Link und der
-  Kochidee – eigene Mengen der Nutzer bleiben immer, wie sie sind.
+- **Rezeptmengen und Packungen (Nachtrag, seit A-040 nur noch Vorschlag)**:
+  `einkaufsMenge` rundet auf übliche Packungen (Milch 1 l, Sahne 200 ml,
+  Mehl/Zucker 1 kg, Butter 250 g, Parmesan/Käse Stück bzw. Packung,
+  Nudeln/Lasagneplatten 500 g = „1 Packung“, Reis, Eier 6/10, Dosen …);
+  Löffel, Prisen und unter 50 g/ml ergeben keine Packung. Auf der Liste
+  steht das nie: die Packung ist nur der Vorschlag im Mengenfeld des
+  Fensters (`packung`), die Rezeptmenge ein Hinweis dort („250 ml für
+  Lasagne“). Gilt für Zutaten aus dem Plan, dem Rezept-Link, der Kochidee und
+  dem Angebot; eigene Mengen der Nutzer bleiben immer, wie sie sind.
 - **Kein eigener Einkaufsmodus mehr (Punkt 6)**: der Kreis gilt zu Hause und
   im Laden (ein Knopf „Bei Edeka einkaufen ›“ ist deshalb nicht nötig). Die Abteilungs-Reihenfolge (Laufweg) sortiert still im
   Hintergrund. Lernen bleibt still (`noteShopCheck` beim Abhaken).
@@ -231,7 +300,7 @@ lernt und merkt sich eure Produkte. Immer sichtbar (kein Baustein).
   zeigen“ bzw. „Diese Woche zeigen“. Beim Kochstil „spontan“: immer die laufende
   Woche, ohne Artikel aus dem Plan (`manualOnly`), kein Umschalter; offene
   eigene Artikel früherer Wochen wandern mit (`carryOverManual`).
-- **Aus dem Plan** (`buildShoppingList`): Zutaten aller Gerichte der Woche
+- **Aus dem Plan** (`buildShoppingList`, mit `angebot` nur als Angebot; Wochen vor `angebotAb` wie früher als Zeilen): Zutaten aller Gerichte der Woche
   (nicht an Ausflugs-/Pausetagen), Mengen je Einheitenfamilie addiert
   (g/kg, ml/l; 1500 g → „1,5 kg“), „doppelt kochen“ = ×2. Ein für den Tag
   umgerechnetes Gericht („heute nur zu zweit“) wird auf diese Personenzahl
@@ -319,6 +388,12 @@ lernt und merkt sich eure Produkte. Immer sichtbar (kein Baustein).
   kauf ich wo?“) in `shoppingTools.ts`; Mia sieht Läden und Regeln im
   Kontext. Ohne KI dasselbe über `parseShopRule` bzw.
   `isShopOverviewQuestion` (`shopRuleRule` in `localRules.ts`).
+- Mia legt eine Sache ohne Laden an: sie landet im gelernten Laden; die
+  Ergebnis-Karte zeigt „● Rewe · wie immer ⌄“ (antippen = andere Läden,
+  gemerkt), beim ersten Mal einmal „Hab Rewe genommen, wie letztes Mal.“
+  (`ErgebnisLaden`, Einmal-Hinweis `einkauf-laden-gewaehlt`). Gesagter Laden =
+  „● Rewe ⌄“. `einkaufsliste_anzeigen` nennt das Wochenplan-Angebot getrennt
+  (`wochenplan_angebot`).
 - `einkaufsliste_anzeigen`, `einkaufsliste_leeren` (Op `clear_shopping`:
   eigene weg, Rezept-Zutaten „haben wir“), `einkaufsliste_entfernen` (Op
   `remove_shopping`) in `homeTools.ts`. „Ich bin bei REWE“ mit KI über
@@ -349,9 +424,14 @@ lernt und merkt sich eure Produkte. Immer sichtbar (kein Baustein).
   Menü, gemeinsame Woche, Ziehen (250 ms, kein Scrollen, Rückgängig nimmt die
   Regel), „Mia sortiert“, Laden-Seite (Kreis, 2 s, Feld, kein Einkaufsmodus),
   Kachel-Sprünge, Beispiel-Tag.
+- `tests/einkauf/merken.test.ts` – A-040/A-041: Abhaken (1 s, zurück, „Im
+  Wagen“), Tomaten 2× bei Rewe → „wie immer“, Korrektur, 90-Tage-Regel, „Oft
+  bei Rewe“, Löschen in den Einstellungen, Angebot („Alle dazu“, Salz blass,
+  wofür im Fenster), nur Namen, Migration v7 → v8, Tipps je Stelle einmal +
+  „Tipps nochmal zeigen“.
 - `tests/einkauf/wagen.test.ts` – Laden leer (Satz, „Oft bei Edeka“, sonst
   Zuletzt gekauft/Beliebt, Tippen landet bei Edeka), Abhaken (1 s, 0,8 s,
-  „Schon im Wagen“, nochmal tippen, noch nicht Im Haus), „Einkauf fertig“
+  „Im Wagen“, nochmal tippen, noch nicht Im Haus), „Einkauf fertig“
   (Im Haus nur mit Baustein, Meldung, Rückgängig, `fertig`).
 - `tests/einkauf/zusammen.test.ts` – Normalform, Mengen addieren, „Zucchini“
   zweimal = eins (Rückgängig nimmt nur das Dazugekommene), Mia, Migration
@@ -370,8 +450,9 @@ lernt und merkt sich eure Produkte. Immer sichtbar (kein Baustein).
   (`e2e/ablaeufe/einsortieren.mjs`: ＋ der Kachel → „Noch ohne Laden“, Chip →
   Fenster, „Mia sortiert“, echtes Touch-Ziehen per CDP auf eine Karte +
   Rückgängig, ohne Halten kein Einsortieren, Laden-Seite hakt ab →
-  „Schon im Wagen“), `einkaufSeite`, `aussuchenLaeden`, `einsprechen`,
-  `ladenLeer`, `imWagen`, `doppeltEins` (`e2e/ablaeufe/einkaufneu.mjs`), `laedenWaehlen`, `laedenSpaeter`
+  „Im Wagen“), `einkaufSeite`, `aussuchenLaeden`, `einsprechen`,
+  `ladenLeer`, `imWagen`, `doppeltEins` (`e2e/ablaeufe/einkaufneu.mjs`),
+  `wochenplanAngebot`, `ladenMerken`, `einkaufTipps` (`e2e/ablaeufe/einkaufnamen.mjs`), `laedenWaehlen`, `laedenSpaeter`
   (`laeden.mjs`), `einkauf`/`imHaus` (`essen.mjs`), `stammartikel`
   (`vorfuehren.mjs`), `familieTeilen`, `einkaufUnterwegs` (`konten.mjs`,
   Laden-Seite mit `&unterwegs=1`).

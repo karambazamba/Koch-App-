@@ -138,9 +138,12 @@ describe("Vorstellen und erster Besuch", () => {
     expect(naechsteVorstellung(state({ besucht: ["seite:kalender"] }), visible, o)?.tile).toBe("aufgaben");
   });
 
-  it("erster Besuch: Einkauf-Text einmal, danach nie wieder", () => {
-    expect(ersterBesuch(state(), "/einkaufsliste")).toBe("Sag mir, wo du einkaufst. Dann merk ich mir, was es wo gibt.");
-    expect(ersterBesuch(state({ besucht: ["/einkaufsliste"] }), "/einkaufsliste")).toBeNull();
+  it("erster Besuch: Einkauf-Text einmal, danach nie wieder (A-040/A-041: neuer Schlüssel, drei Zeilen)", () => {
+    const text = "Ich merk mir, wo du was kaufst.\nSag einfach ‚Tomaten auf die Liste‘, den Laden such ich aus.\nAbgehakt ist weg. Fürs Rezept leg ich dir Zutaten oben hin.";
+    expect(ersterBesuch(state(), "seite:einkaufsliste")).toBe(text);
+    // wer die alte Liste schon kannte, sieht die neue Vorstellung trotzdem einmal
+    expect(ersterBesuch(state({ besucht: ["/einkaufsliste"] }), "seite:einkaufsliste")).toBe(text);
+    expect(ersterBesuch(state({ besucht: ["seite:einkaufsliste"] }), "seite:einkaufsliste")).toBeNull();
     expect(ersterBesuch(state(), "/profil")).toBeNull();
   });
 });

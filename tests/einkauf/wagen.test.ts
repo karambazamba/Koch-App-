@@ -117,9 +117,9 @@ describe("Im Laden abhaken: „Schon im Wagen“", () => {
     expect(items()[0].fertig).toBeUndefined();
   });
 
-  it("Seite: zugeklappt ohne Zahl, großer Knopf „Einkauf fertig“, dann zurück zur Übersicht; Familie Bescheid bleibt", () => {
-    expect(laden).toMatch(/Schon im Wagen\n/);
-    expect(laden).not.toMatch(/Schon im Wagen[^"\n]*\{/);
+  it("Seite: „Im Wagen ⌄“ zugeklappt ohne Zahl, großer Knopf „Einkauf fertig“, dann zurück zur Übersicht; Familie Bescheid bleibt", () => {
+    expect(laden).toMatch(/ {14}Im Wagen\n/);
+    expect(laden).not.toMatch(/Schon im Wagen/);
     expect(laden).toMatch(/\{wagenOffen && <ul/);
     expect(laden).toMatch(/einkaufFertig\(weekStart, imWagen, todayIso, imHausAn\)/);
     expect(laden).toMatch(/undoneText: "Wieder im Wagen"/);

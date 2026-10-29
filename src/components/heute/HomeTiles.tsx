@@ -105,9 +105,9 @@ export function FoodTile({ data, dish, over, dishClock, onOpen, size = "S", hat 
   const zustand = kachelZustand(view, kocht);
   const morgen = weekdayShort(addDays(todayIso(), 1));
   const kopf = essenKopf(zustand, { over, clock: dish && dishClock ? clockLabel(dishClock) : null, morgen });
-  /** Vorschlag nehmen – tagsüber für heute, nach dem Essen für morgen (fehlende Zutaten kommen wie immer über den Plan auf die Liste) */
+  /** Vorschlag nehmen – tagsüber für heute, nach dem Essen für morgen; danach die Zutaten anbieten (Wochenplan-Angebot, A-040) */
   const take = (it: Idea, rezeptId?: string) => {
-    if (takeDish(data, rezeptId ? { ...it, recipeId: rezeptId } : it, over ? addDays(todayIso(), 1) : todayIso())) setAlt(null);
+    if (takeDish(data, rezeptId ? { ...it, recipeId: rezeptId } : it, over ? addDays(todayIso(), 1) : todayIso(), { anbieten: true, needs: it.needs })) setAlt(null);
   };
   // Für „Was anderes?“ bei Mias Kochidee zählt nur ein heute geplantes Gericht (nach dem Abendessen: frei für morgen)
   const corner = hat ? (

@@ -56,9 +56,9 @@ describe("Liste aus dem Wochenplan", () => {
   it("addiert gleiche Zutaten derselben Einheiten-Familie, doppelt kochen ×2", () => {
     const plan = week([day("Montag", entry("Pasta", "pasta")), day("Dienstag", entry("Gulasch", "gulasch", { double: true }))]);
     const list = buildShoppingList(plan, RECIPES);
-    // Nachtrag A-018: Packung statt Rezeptmenge, die Rezeptmenge steht klein als Hinweis
-    expect(find(list, "Sahne")).toMatchObject({ amount: "6 Becher", hinweis: "1,2 l für Pasta, Gulasch", dishes: ["Pasta (Mo)", "Gulasch (Di) ×2"], days: ["Montag", "Dienstag"], section: "kuehlregal" });
-    expect(find(list, "Rindfleisch")?.amount).toBe("1,6 kg");
+    // A-040: keine Menge auf der Liste – die Packung nur als Vorschlag, die Rezeptmenge als Hinweis im Fenster
+    expect(find(list, "Sahne")).toMatchObject({ amount: "", packung: "6 Becher", rezeptMenge: "1,2 l", hinweis: "1,2 l für Pasta, Gulasch", dishes: ["Pasta (Mo)", "Gulasch (Di) ×2"], days: ["Montag", "Dienstag"], section: "kuehlregal" });
+    expect(find(list, "Rindfleisch")).toMatchObject({ amount: "", packung: "1,6 kg" });
     expect(find(list, "Salz")?.amount).toBe("");
     expect(find(list, "Paprikapulver")).toMatchObject({ amount: "", hinweis: "4 EL für Gulasch" });
     expect(list.items.some((i) => !i.name.trim())).toBe(false);
@@ -79,11 +79,11 @@ describe("Liste aus dem Wochenplan", () => {
   it("kleiner Haushalt: auf die Personen umgerechnet und aufgerundet, Backen bleibt ganz", () => {
     const plan = week([day("Montag", entry("Pasta", "pasta"), { persons: 1 }), day("Dienstag", entry("Kuchen", "kuchen"), { persons: 1 })]);
     const list = buildShoppingList(plan, RECIPES, undefined, undefined, { small: true });
-    // Packung als Einkaufsmenge, umgerechnete Rezeptmenge als Hinweis
-    expect(find(list, "Nudeln")).toMatchObject({ amount: "1 Packung", hinweis: "150 g für Pasta" });
-    expect(find(list, "Tomaten")?.amount).toBe("250 g");
+    // Packung nur als Vorschlag (A-040), umgerechnete Rezeptmenge als Hinweis
+    expect(find(list, "Nudeln")).toMatchObject({ amount: "", packung: "1 Packung", hinweis: "150 g für Pasta" });
+    expect(find(list, "Tomaten")?.packung).toBe("250 g");
     expect(find(list, "Mehl")).toMatchObject({ amount: "", hinweis: "250 g für Kuchen" });
-    expect(find(list, "Eier")).toMatchObject({ amount: "6 Stück", hinweis: "3 Stück für Kuchen" });
+    expect(find(list, "Eier")).toMatchObject({ amount: "", packung: "6 Stück", hinweis: "3 Stück für Kuchen" });
     // ohne „klein“ bleiben die Rezeptmengen (im Hinweis)
     expect(find(buildShoppingList(plan, RECIPES), "Nudeln")?.hinweis).toBe("500 g für Pasta");
   });
@@ -141,7 +141,8 @@ describe("Liste teilen", () => {
     const list = buildShoppingList(week([day("Montag", entry("Pasta", "pasta"))]), RECIPES, wl, { products: {}, itemShops: { zahnpasta: "dm" } });
     const text = shoppingListText(list, "Einkauf");
     expect(text.split("\n")[0]).toBe("Einkauf");
-    expect(text).toContain("🥕 Obst & Gemüse\n- 1 kg Tomaten");
+    // nur Namen (A-040): Rezeptmengen sind keine Menge
+    expect(text).toContain("🥕 Obst & Gemüse\n- Tomaten");
     expect(text).toContain("- Salz");
     expect(text).not.toContain("Sahne");
     expect(shoppingListText(list, "dm", "dm")).toBe("dm\n\n🛍️ Sonstiges\n- Zahnpasta");

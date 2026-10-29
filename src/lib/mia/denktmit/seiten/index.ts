@@ -2,7 +2,7 @@
 // norddeutsch, kein Gedankenstrich, höchstens 2 Sätze.
 
 import { AUFGABEN } from "@/lib/mia/denktmit/seiten/aufgaben";
-import { EINKAUF } from "@/lib/mia/denktmit/seiten/einkauf";
+import { EINKAUF, EINKAUF_LADEN_SEITE, EINKAUF_LISTE_SEITE } from "@/lib/mia/denktmit/seiten/einkauf";
 import { ESSEN, ESSEN_SEITE } from "@/lib/mia/denktmit/seiten/essen";
 import { NOTIZEN } from "@/lib/mia/denktmit/seiten/notizen";
 import { PINNWAND } from "@/lib/mia/denktmit/seiten/pinnwand";
@@ -29,6 +29,9 @@ export const SEITE_FUER: Record<string, VorstellTile> = {
   "seite:kalender": "termine",
   "/aufgaben": "aufgaben",
   "/einkaufsliste": "einkauf",
+  // A-040/A-041: die Einkaufsliste stellt sich neu vor, die Laden-Seite einmal
+  [EINKAUF_LISTE_SEITE]: "einkauf",
+  [EINKAUF_LADEN_SEITE]: "einkauf",
   // früherer Besuch zählt weiter als „benutzt“, die Karte kommt mit dem neuen Schlüssel einmal
   "seite:essen": "essen",
   [ESSEN_SEITE]: "essen",

@@ -144,7 +144,9 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
   Aufgabe Häkchen, Pinnwand Pin, Notiz Zettel, Im Haus Kühlschrank), Mitte fett
   der Inhalt („Fr 16:00 Zahnarzt“, „Milch“), darunter klein Art · Raum
   („Termin · Familie ⌄“, „Aufgabe · Ich ⌄“, „Einkauf · für alle“ ohne
-  Raum-Wahl), rechts die grüne Pille (`--app-good-pill`, Schrift ≥ 4,5:1) mit
+  Raum-Wahl; mit Läden seit A-041 „● Rewe · wie immer ⌄“, wenn Mia den Laden
+  selbst ausgesucht hat, antippen = anderer Laden, gemerkt; einmal „Hab Rewe
+  genommen, wie letztes Mal.“, siehe `docs/bereiche/einkauf.md`), rechts die grüne Pille (`--app-good-pill`, Schrift ≥ 4,5:1) mit
   Häkchen: „Eingetragen“ / „Steht drauf“ / „Hängt dran“ / „Notiert“
   (abgehakt „Abgehakt“, Regeln „Gemerkt“). Text nie abgeschnitten: wird der
   Inhalt länger als 2 Zeilen, schrumpft die Pille aufs Häkchen. Mehr als 4:

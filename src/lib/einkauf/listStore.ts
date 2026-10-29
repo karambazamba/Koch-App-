@@ -11,7 +11,8 @@ export const store = createLocalStore("wasgibts.einkaufsliste", migrateStore);
 const EMPTY_WEEKS: Record<string, WeekList> = {};
 
 const emptyStore = (): ShoppingListStore => ({
-  version: 7,
+  version: 8,
+  angebotAb: "",
   myShops: [],
   shopsAsked: false,
   shopRules: {},
@@ -49,7 +50,7 @@ let cachedSettings: { source: ShoppingListStore | null; value: ShoppingSettings 
 function settingsOf(data: ShoppingListStore | null): ShoppingSettings {
   if (!data) return DEFAULT_SETTINGS;
   if (cachedSettings?.source === data) return cachedSettings.value;
-  const value = { products: data.products, shops: data.shops, itemShops: data.itemShops, staples: data.staples, shopRules: data.shopRules, alwaysList: data.alwaysList, learned: data.learned };
+  const value = { products: data.products, shops: data.shops, itemShops: data.itemShops, staples: data.staples, shopRules: data.shopRules, alwaysList: data.alwaysList, learned: data.learned, angebotAb: data.angebotAb };
   cachedSettings = { source: data, value };
   return value;
 }

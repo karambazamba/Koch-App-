@@ -42,7 +42,7 @@ export function toggleChecked(weekStart: string, item: ListItem, today?: string,
 export const alleSchluessel = (item: Pick<ListItem, "key" | "teile">) => [item.key, ...(item.teile ?? []).map((id) => `m:${id}`)];
 
 /**
- * „Einkauf fertig“: die abgehakten Artikel verlassen „Schon im Wagen“ (gemerkt
+ * „Einkauf fertig“: die abgehakten Artikel verlassen „Im Wagen“ (gemerkt
  * in `fertig`). Liefert Rückgängig (wieder im Wagen).
  */
 export function markFertig(weekStart: string, keys: string[]): () => void {

@@ -18,6 +18,8 @@ Jede Vorlage aus einem Auftrag liegt hier als `tafel-<nr>.png`; der Auftrag in
 | 123 | `tafel-123.png` | A-028 Pinnwand aufgeräumt, Größe, Ordnen, Ecke „Nur für mich“ (A für alle, B mit Ecke, C lange drücken) |
 | 125 | `tafel-125.png` | A-036 Alle Kacheln mit Wasserzeichen (Sport seit A-044 mit Stempeln statt Zeichen) |
 | 126 | `tafel-126.png` | A-037 Ergebnis-Karten wie im Clip („Einfach erzählen. Mia sortiert.“) + Aufleuchten in der Kachel |
+| 127 | `tafel-127.png` | A-040 Einkaufsliste nur mit Namen (Wochenplan als Angebot, „Alle dazu“, Zeile antippen = Fenster) |
+| 128 | `tafel-128.png` | A-041 Abhaken wie Aufgaben, Mia merkt sich den Laden („Im Wagen ⌄“, „Rewe · wie immer ⌄“, „Oft bei Rewe“) |
 | 132 | `tafel-132.png` | A-044 Sport als Stempelkarte, final (ersetzt 129/130 und den Wochen-Kreis-Teil von 124) |
 | 133 | `tafel-133.png` | A-045 Essen-Kachel S: nichts abgeschnitten |
 | 134 | `tafel-134.png` | A-046 Essen-Kachel final: Bild antippen = Rezept |

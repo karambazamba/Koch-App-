@@ -38,7 +38,7 @@ export const STORAGE = [
   { key: "wasgibts.vorlagen", what: "Lieblingswochen (Vorlagen)", version: 1, migration: "essen/templates.ts", area: "local", backup: true },
   { key: "wasgibts.kochbuch", what: "Rezepte", version: 3, migration: "essen/cookbook.ts", area: "local", backup: true },
   { key: "wasgibts.vorrat", what: "Im Haus: was da ist (ohne Mengen), Gruppen Kühlschrank/Vorrat/Obst & Gemüse/Brot/Tiefkühl, aufgebraucht, gemerkte Orte je Sorte", version: 4, migration: "vorrat/pantry.ts migratePantry", area: "local", backup: true },
-  { key: "wasgibts.einkaufsliste", what: "Einkaufsliste (Doppeltes zusammengefasst, „Einkauf fertig“), Produkte, Läden, Meine Läden, feste Laden-Regeln, Gelerntes, Stammliste", version: 7, migration: "einkauf/listMigration.ts migrateStore", area: "local", backup: true },
+  { key: "wasgibts.einkaufsliste", what: "Einkaufsliste (nur Namen, Doppeltes zusammengefasst, „Einkauf fertig“), Produkte, Läden, Meine Läden, feste Laden-Regeln, Gelerntes (Sache → Laden, Zähler, Datum), Wochenplan als Angebot, Stammliste", version: 8, migration: "einkauf/listMigration.ts migrateStore", area: "local", backup: true },
   { key: "wasgibts.pinnwandansicht", what: "Pinnwand: Ecke „Nur für mich“ zugeklappt (pro Gerät)", version: 1, migration: "pinnwand/ansicht.ts", area: "local", backup: false },
   { key: "wasgibts.essenansicht", what: "Essen: die nächsten 7 Tage als Liste oder Reihe (pro Gerät)", version: 1, migration: "essen/sieben/ansicht.ts", area: "local", backup: false },
   { key: "wasgibts.rezeptansicht", what: "Rezept „So geht’s“: Kurz oder Ausführlich (pro Gerät)", version: 1, migration: "essen/kurz/ansicht.ts", area: "local", backup: false },

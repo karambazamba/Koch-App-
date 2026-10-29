@@ -17,7 +17,7 @@ export type ManualItem = {
   dish?: string;
   /** Konto, das es auf die Liste gesetzt hat (nur im Haushalt, kommt vom Abgleich) */
   von?: string;
-  /** Aus einem Rezept: die Rezeptmenge („250 ml“) – nur als kleiner Hinweis, die Menge ist schon auf die Packung gerundet */
+  /** Aus einem Rezept: die Rezeptmenge („250 ml“) – nur als Hinweis im Zeilen-Fenster, nie als Menge auf der Liste (A-040) */
   rezeptMenge?: string;
 };
 
@@ -31,7 +31,7 @@ export type WeekList = {
   renamed?: Record<string, string>;
   /** Stammartikel, die diese Woche nicht vorgeschlagen werden ("diesmal nicht") */
   skippedStaples?: string[];
-  /** „Einkauf fertig“: Schlüssel abgehakter Artikel, die nicht mehr in „Schon im Wagen“ stehen */
+  /** „Einkauf fertig“: Schlüssel abgehakter Artikel, die nicht mehr in „Im Wagen“ stehen */
   fertig?: string[];
 };
 
@@ -48,9 +48,12 @@ export type Staple = {
   active: boolean;
 };
 
+/** Gelernt beim Abhaken auf einer Laden-Seite (A-041): zuletzt dort abgehakt, wie oft hintereinander, wann zuletzt */
+export type Gelernt = { shop: string; n: number; /** „YYYY-MM-DD“ (fehlt nur bei Ständen anderer Geräte vor v8 = gilt) */ am?: string };
+
 export type ShoppingListStore = {
-  /** v7: Doppeltes zusammengefasst (Nachtrag A-018); v6: feste Laden-Regeln, Gelerntes, „hat man da“-Ausnahmen; v5: „Meine Läden“ + schon gefragt; v4: eigene Produkte, Läden, Stammliste */
-  version: 7;
+  /** v8: Gelerntes mit Datum, Wochenplan als Angebot, Rezeptmengen nur als Hinweis (A-040/A-041); v7: Doppeltes zusammengefasst (Nachtrag A-018); v6: feste Laden-Regeln, Gelerntes, „hat man da“-Ausnahmen; v5: „Meine Läden“ + schon gefragt; v4: eigene Produkte, Läden, Stammliste */
+  version: 8;
   weeks: Record<string, WeekList>;
   /** Zutat (klein) → euer Produkt */
   products: Record<string, string>;
@@ -65,15 +68,21 @@ export type ShoppingListStore = {
   shopsAsked: boolean;
   /** Feste Regeln „immer“: Artikel (klein) → Laden („Tomaten kaufe ich immer bei Rewe“) */
   shopRules: Record<string, string>;
-  /** Still gelernt im Einkaufsmodus: Artikel (klein) → Laden und wie oft hintereinander */
-  learned: Record<string, { shop: string; n: number }>;
-  /** Schon gefragt „Soll ich mir das merken?“ (je Artikel höchstens einmal) */
+  /** Gelernt beim Abhaken auf einer Laden-Seite: Artikel (klein; gefunden wird über die Normalform) → Laden, Zähler, Datum */
+  learned: Record<string, Gelernt>;
+  /** Früher: schon gefragt „Soll ich mir das merken?“ (seit A-041 ungenutzt, bleibt als Wert) */
   learnAsked: string[];
   /** Grundsachen, die trotzdem immer auf die Liste sollen (sonst „Hast du bestimmt im Haus“) */
   alwaysList: string[];
+  /**
+   * Wochenplan-Zutaten sind ein Angebot (A-040) für Wochen ab diesem Beginn;
+   * "" = immer. Wochen davor (Stand vor v8) rechnen wie früher von selbst – was
+   * schon auf der Liste stand, bleibt.
+   */
+  angebotAb: string;
 };
 
-export type ShoppingSettings = Pick<ShoppingListStore, "products" | "shops" | "itemShops" | "staples"> & Partial<Pick<ShoppingListStore, "shopRules" | "alwaysList" | "learned">>;
+export type ShoppingSettings = Pick<ShoppingListStore, "products" | "shops" | "itemShops" | "staples"> & Partial<Pick<ShoppingListStore, "shopRules" | "alwaysList" | "learned" | "angebotAb">>;
 
 export type ListItem = {
   key: string;
@@ -104,14 +113,20 @@ export type ListItem = {
   hidden: boolean;
   /** Mit diesem zusammengefasste eigene Artikel (gleiche Sache, gleicher Laden) – abhaken/löschen gilt für alle */
   teile?: string[];
-  /** Kleiner Hinweis unter dem Namen: Rezeptmenge und Gericht („250 ml für Lasagne“) */
+  /** Hinweis im Zeilen-Fenster (nie auf der Liste): Rezeptmenge und Gericht („250 ml für Lasagne“) */
   hinweis?: string;
+  /** Übliche Packung als Vorschlag im Mengenfeld („1 Packung“), nie als Menge */
+  packung?: string;
+  /** Rezeptmenge („250 ml“) – nur Hinweis (Zeilen-Fenster, Angebot übernehmen) */
+  rezeptMenge?: string;
   /** „Einkauf fertig“ schon gedrückt (abgehakt, nicht mehr im Wagen) */
   fertig?: boolean;
 };
 
 export type ShoppingList = {
   items: ListItem[];
+  /** Zutaten aus dem Wochenplan, die (noch) nicht auf der Liste stehen: ein Angebot (A-040) */
+  angebot: ListItem[];
   /** Gerichte ohne Zutaten (Freitext, Wunsch, Rezept ohne Zutaten) */
   missing: string[];
   openCount: number;

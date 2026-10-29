@@ -25,7 +25,11 @@ Status: offen · in Arbeit · fertig vX.Y · zurückgestellt (Grund)
   mit Standard je Haushalt und Wetter mit Himmel, Wasserzeichen für alle
   Kacheln, Sport als Stempelkarte (A-023, A-029, A-036, A-044, v0.153;
   ausprobieren: Startseite bearbeiten → Größen XS · S · M, Sport-Kachel
-  „Training eintragen“).
+  „Training eintragen“), Einkaufsliste nur mit Namen + Abhaken wie Aufgaben,
+  Mia merkt sich den Laden, „Nehmen“ bietet die Zutaten an (A-040/A-041,
+  Tafel 127/128, v0.154; ausprobieren: Laden-Seite „Für deinen Wochenplan“ →
+  „Alle dazu“, Zeile antippen, abhaken → „Im Wagen ⌄“, Essen-Kachel → Rezept →
+  „Nehmen“ → „Alle dazu“).
 - **Merge-Reihenfolge (Sortier-Auftrag 28.10., je bauen → testen → PR → mergen,
   dann der nächste auf dem neuesten `main`):**
   1. A-027 Erster Start rund (mit A-031 Zugangscode nachsichtig, 10 Versuche)
@@ -102,13 +106,13 @@ Status: offen · in Arbeit · fertig vX.Y · zurückgestellt (Grund)
 | A-037 | Mias Ergebnis-Karten wie im Clip + Aufleuchten in der Kachel (Wortlaut `docs/auftraege/A-037-ergebniskarten.md`) | `tafel-126.png` | fertig v0.151 |
 | A-038 | SOFORT: Vorschläge erst anschauen, dann nehmen (Rezept-Vorschau als Fenster, überall wo Gerichte zur Auswahl stehen; Wortlaut `docs/auftraege/A-038-vorschau.md`) | `tafel-122-essen-rezept.png` | fertig v0.146 |
 | A-039 | Monatlich: Mias Wundertüte nachfüllen (Pool von 459 Richtung ~845, nur geprüfte Fakten, Quellen gegenprüfen) | – | offen (nach A-022) |
-| A-040 | Einkaufsliste nur mit Namen: Wochenplan als Angebot oben, Liste nur Symbol + Name, „wofür“ erst im Fenster (nur Tafel, Auftragstext nicht angekommen) | `tafel-127.png` | gebaut, wartet (nach A-037) |
-| A-041 | Abhaken wie Aufgaben, Mia merkt sich den Laden („wie immer ⌄“, „Oft bei …“, „Was ich mir gemerkt hab“) + Ergänzung „Einkaufsliste stellt sich vor“ | `tafel-128.png` | gebaut, wartet (mit A-040) |
+| A-040 | Einkaufsliste nur mit Namen: Wochenplan-Zutaten als Angebot oben auf der Laden-Seite („Für deinen Wochenplan“, Chips, „Alle dazu“, Grundsachen blass), Liste nur Symbol + Name (Menge nur selbst gesagt), Zeile antippen = Fenster mit „wofür“, Menge, Laden, „Von der Liste nehmen“ (Auftragstext nicht angekommen, nur Tafel; `docs/auftraege/A-040-041-einkauf-namen.md`) | `tafel-127.png` | fertig v0.154 |
+| A-041 | Abhaken wie Aufgaben (1 s, zurück, „Im Wagen ⌄“ unter der Liste), Mia merkt sich den Laden (Sache → Laden, Zähler, Datum; „Rewe · wie immer ⌄“, „Oft bei Rewe“, 90-Tage-Regel, „Was ich mir gemerkt hab“) + Ergänzung „Einkaufsliste stellt sich beim ersten Mal vor“ (Wortlaut `docs/auftraege/A-040-041-einkauf-namen.md`) | `tafel-128.png` | fertig v0.154 |
 | A-042 | SOFORT: „Familie verbinden“ klarer + Namen statt Mail-Adresse + Einladungslink verständlich (Bilder 1/2 nicht angekommen) | – | fertig v0.148 |
 | A-043 | SOFORT: Erledigte Aufgaben nur 12 Stunden („Erledigt ⌄“ zugeklappt ohne Zahl, danach still weg per Lösch-Markierung auf allen Geräten, Serien nur die Runde, Mia nur die letzten 12 h; Wortlaut `docs/auftraege/A-043-erledigt-12h.md`) | – | fertig v0.147 |
 | A-044 | Sport als Stempelkarte: Sport-Seite (Diese Woche, zwei Sätze, „Training eintragen“, „Planen“, Letzte Wochen), Menü „•••“ (Wochenziel, Packlisten, Meine Sportarten, Erinnerung am Vorabend), Kachel ohne Wasserzeichen, Mia „gestempelt“ und „Wie läuft’s?“ (ersetzt Tafel 129/130 und den Wochen-Kreis-Teil von 124; Wortlaut `docs/auftraege/A-044-sport-stempel.md`) | `tafel-132.png` | fertig v0.153 |
 | A-045 | SOFORT: Essen-Kachel S – nichts abgeschnitten (Knöpfe ohne „…“, Stufen Symbol → 13 px → Kurzform, „Idee“ als Pille, Im-Haus-Namen ganz, Zutaten 2 + „+N“, Prüf-Ablauf `nichtsAbgeschnitten`; Wortlaut `docs/auftraege/A-045-kachel-ganz.md`) | `tafel-133.png` | fertig v0.150 (Essen-Teil durch A-046 ersetzt, Grundregel bleibt) |
-| A-046 | Essen-Kachel final – Bild antippen = Rezept (keine großen Knöpfe, „Was anderes?“ oben, „Wochenplan ›“ unten, Statuszeile, Antippen je Zustand; Wortlaut `docs/auftraege/A-046-essen-kachel-final.md`) | `tafel-134.png` | fertig v0.150 (mit A-045; „Nehmen“ ohne Wochenplan-Angebot aus Tafel 127, das kommt mit A-040) |
+| A-046 | Essen-Kachel final – Bild antippen = Rezept (keine großen Knöpfe, „Was anderes?“ oben, „Wochenplan ›“ unten, Statuszeile, Antippen je Zustand; Wortlaut `docs/auftraege/A-046-essen-kachel-final.md`) | `tafel-134.png` | fertig v0.150 (mit A-045; „Nehmen“ bietet seit v0.154 die Zutaten an, Wochenplan-Angebot aus Tafel 127 mit A-040) |
 
 ## Offene Punkte (ohne eigenen Auftrag)
 

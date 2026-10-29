@@ -6,6 +6,10 @@
 // Rezeptmenge steht klein als Hinweis „250 ml für Lasagne“), und gleiche
 // Sachen im selben Laden stehen nur einmal da (`einkauf/zusammen`) – auch
 // Rezept-Zutat und eigener Artikel. Gespeichert bleibt alles wie es ist.
+// A-040 (Tafel 127): auf der Liste steht nur der Name – Rezeptmengen sind nie
+// eine Menge (Hinweis und Packungs-Vorschlag nur fürs Zeilen-Fenster). Mit
+// `angebot` sind die Zutaten aus dem Plan ein Angebot (`angebot`), keine
+// Zeilen; was davon schon auf der Liste steht, wird nicht mehr angeboten.
 
 import type { Recipe } from "@/lib/essen/cookbook";
 import type { PlanWeek } from "@/lib/essen/mealPlan";
@@ -15,15 +19,18 @@ import { SHOPPING, sortBy } from "@/lib/core/sort";
 import { EMPTY_LIST, lower, type ListItem, type ShoppingList, type ShoppingSettings, type WeekList } from "@/lib/einkauf/listModel";
 import { shopChoice } from "@/lib/einkauf/shopRules";
 import { gleicheSache, mengenAddieren, normalform } from "@/lib/einkauf/zusammen/zusammen";
-import { einkaufsMenge, rezeptHinweis } from "@/lib/einkauf/zusammen/packung";
+import { einkaufsMenge, packungAus, rezeptHinweis } from "@/lib/einkauf/zusammen/packung";
+
+/** Sind die Plan-Zutaten dieser Woche ein Angebot (A-040)? Wochen vor `angebotAb` (Stand vor v8) rechnen wie früher */
+export const planAlsAngebot = (weekStart: string, angebotAb?: string) => !angebotAb || weekStart >= angebotAb;
 
 export function buildShoppingList(
   week: PlanWeek,
   recipes: Record<string, Recipe>,
   list: WeekList = EMPTY_LIST,
-  settings: Pick<ShoppingSettings, "products" | "itemShops" | "shopRules"> = { products: {}, itemShops: {} },
-  /** Kleiner Haushalt (1–2 Personen): Rezeptmengen auf die Personen des Tages umrechnen */
-  options: { small?: boolean; manualOnly?: boolean } = {},
+  settings: Pick<ShoppingSettings, "products" | "itemShops" | "shopRules" | "learned"> = { products: {}, itemShops: {} },
+  /** Kleiner Haushalt (1–2 Personen): Rezeptmengen auf die Personen des Tages umrechnen; `angebot` = Plan-Zutaten nur anbieten (A-040) */
+  options: { small?: boolean; manualOnly?: boolean; angebot?: boolean } = {},
 ): ShoppingList {
   type Acc = { name: string; family: string; total: number; hasAmount: boolean; dishes: string[]; days: string[]; optional: boolean; scaled: boolean };
   const acc = new Map<string, Acc>();
@@ -92,16 +99,18 @@ export function buildShoppingList(
     const name = display(key, a.name);
     const dishes = [...new Set(teile.flatMap((t) => t.dishes))];
     const rezeptMenge = teile.map(menge).reduce(mengenAddieren, "");
-    // Packung statt Rezeptmenge (nur bei einer Einheit – sonst alles stehen lassen, nichts verlieren)
+    // Übliche Packung nur als Vorschlag (bei einer Einheit); auf der Liste steht keine Menge
     const mit = teile.filter((t) => t.hasAmount);
     const total = mit.length ? mit.reduce((n, t) => n + (t.scaled ? roundSmall(t.total, t.family) : t.total), 0) : null;
-    const amount = teile.every((t) => t.family === a.family) ? einkaufsMenge(a.name, total, a.family) : rezeptMenge;
-    const hinweis = rezeptHinweis(amount === rezeptMenge ? "" : rezeptMenge, dishes);
+    const packung = teile.every((t) => t.family === a.family) ? einkaufsMenge(a.name, total, a.family) : "";
+    const hinweis = rezeptHinweis(rezeptMenge, dishes);
     return {
       key,
       name,
       originalName: a.name,
-      amount,
+      amount: "",
+      ...(packung ? { packung } : {}),
+      ...(rezeptMenge ? { rezeptMenge } : {}),
       section: sectionFor(a.name),
       dishes,
       days: [...new Set(teile.flatMap((t) => t.days))],
@@ -117,6 +126,7 @@ export function buildShoppingList(
     const name = settings.products[lower(m.name)] ?? m.name;
     const key = `m:${m.id}`;
     const hinweis = m.rezeptMenge ? rezeptHinweis(m.rezeptMenge, m.dish ? [m.dish] : []) : "";
+    const packung = m.rezeptMenge ? packungAus(m.name, m.rezeptMenge) : "";
     return {
       key,
       name,
@@ -131,15 +141,20 @@ export function buildShoppingList(
       ...(m.now ? { now: true } : {}),
       checked: m.done,
       hidden: false,
-      ...(m.rezeptMenge ? { hinweis } : {}),
+      ...(hinweis ? { hinweis } : {}),
+      ...(packung ? { packung } : {}),
+      ...(m.rezeptMenge ? { rezeptMenge: m.rezeptMenge } : {}),
       ...(list.fertig?.includes(key) ? { fertig: true } : {}),
     };
   });
 
-  const items = sortBy(zusammenlegen([...generated, ...manual]), ...SHOPPING);
+  // Angebot (A-040): Plan-Zutaten, die noch nicht (auch nicht abgehakt) auf der Liste stehen
+  const angebot = options.angebot ? generated.filter((g) => !g.hidden && !g.checked && !list.manual.some((m) => gleicheSache(m.name, g.name) || gleicheSache(m.name, g.originalName))) : [];
+  const items = sortBy(zusammenlegen(options.angebot ? manual : [...generated, ...manual]), ...SHOPPING);
   const visible = items.filter((i) => !i.hidden);
   return {
     items,
+    angebot,
     missing,
     openCount: visible.filter((i) => !i.checked).length,
     doneCount: visible.filter((i) => i.checked).length,

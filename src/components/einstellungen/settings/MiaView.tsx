@@ -6,7 +6,7 @@
 // v0.67) – kein Umbenennen mehr. Früher eigene Seiten (/profil/lotte,
 // /vorlesen, /farbe) leiten hierher.
 
-import { Brain, Hand, KeyRound, Mic, Palmtree, Sun } from "lucide-react";
+import { Brain, Hand, KeyRound, Lightbulb, Mic, Palmtree, Sun } from "lucide-react";
 import { useEffect, useState } from "react";
 import { CODE_TEXTE, requestCodeScreen } from "@/lib/begleitung/codeAbfrage";
 import { fetchStatus } from "@/lib/begleitung/zugang";
@@ -21,6 +21,8 @@ import { useProfile } from "@/lib/einstellungen/useProfile";
 import { VoiceSettings } from "@/components/einstellungen/settings/ReadingView";
 import { GESPRAECHIG } from "@/lib/mia/denktmit/regeln";
 import { setGespraechig, useDenkt } from "@/lib/mia/denktmit/store";
+import { TIPPS_NOCHMAL_TEXT, tippsNochmalZeigen } from "@/lib/mia/denktmit/tipps";
+import { showToast } from "@/lib/core/toast";
 import { ChoiceCards, Group, Row, SettingsPage, SwitchRow } from "@/components/einstellungen/settings/SettingsParts";
 
 const MODES: { value: HelperMode; label: string }[] = [
@@ -67,6 +69,16 @@ export function MiaView() {
             <Group title="">
               <Row href="/profil/mia-merkt" icon={Brain} title="Was ich mir gemerkt hab">
                 Gewohnheiten und Läden, einzeln löschbar
+              </Row>
+              <Row
+                onClick={() => {
+                  tippsNochmalZeigen();
+                  showToast({ text: TIPPS_NOCHMAL_TEXT, small: true });
+                }}
+                icon={Lightbulb}
+                title="Tipps nochmal zeigen"
+              >
+                Meine Tipps kommen beim nächsten Mal wieder
               </Row>
             </Group>
             {tipsOn && (

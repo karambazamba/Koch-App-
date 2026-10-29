@@ -179,7 +179,7 @@ describe("Migration – nie Daten verlieren", () => {
         kaputt: null,
       },
     })!;
-    expect(v3.version).toBe(7);
+    expect(v3.version).toBe(8);
     expect(v3.staples).toEqual([{ id: "b1", name: "Hafermilch", amount: "2", section: "kuehlregal", purchases: [], intervalDays: 7, active: false }]);
     const wk = v3.weeks[W];
     expect(wk.checked).toEqual(["nudeln|g"]);
@@ -223,6 +223,6 @@ describe("Migration – nie Daten verlieren", () => {
     w = fakeWindow({ [KEY]: JSON.stringify({ version: 2, weeks: { [W]: { manual: [{ id: "m", name: "Brot", amount: "", section: "brot", done: false }], checked: [], have: [] } } }) });
     const { store } = await import("@/lib/einkauf/listStore");
     expect(store.load()?.weeks[W].manual[0].name).toBe("Brot");
-    expect(saved().version).toBe(7);
+    expect(saved().version).toBe(8);
   });
 });

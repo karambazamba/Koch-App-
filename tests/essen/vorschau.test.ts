@@ -135,15 +135,15 @@ describe("„Nehmen“ aus der Vorschau = „Nehmen“ auf der Karte", () => {
     expect(speichern).toHaveBeenCalledTimes(1);
   });
 
-  it("fehlende Zutaten gehen auf die Liste – mit Mengen aus Mias Rezept, umgerechnet", async () => {
+  it("Zutaten gehen auf die Liste – nur mit Namen, die Menge aus Mias Rezept nur als Hinweis (A-040)", async () => {
     await ladeRezept("Kürbisrisotto", async () => NEU);
     const card: CookCard = { title: "Kürbisrisotto", minutes: 35, category: "vegetarisch", ingredients: ["Hokkaido"], uses: [], needs: ["Hokkaido"], badge: "einkauf" };
     const { toList, date } = takeOutcome(card, null, false, "2026-10-21", "2026-10-22");
     expect(date).toBe("2026-10-21");
     expect(toList).toEqual(["Hokkaido"]);
-    expect(listenMenge("Hokkaido", geladenFuer("Kürbisrisotto")!.rezept, 2)).toEqual({ amount: "250 g" });
+    expect(listenMenge("Hokkaido", geladenFuer("Kürbisrisotto")!.rezept, 2)).toEqual({ amount: "", rezeptMenge: "250 g" });
     expect(listenMenge("Hokkaido", undefined, 2)).toEqual({ amount: "" });
-    // Über Einkauf neu: auf die Packung gerundet, Rezeptmenge als Hinweis
+    // Rezeptmenge nur als Hinweis im Zeilen-Fenster (A-040)
     const milch = { ...geladenFuer("Kürbisrisotto")!.rezept, servings: 2, ingredients: [{ id: "m", amount: 250, unit: "ml", name: "Milch" }] };
     expect(listenMenge("Milch", milch, 2)).toEqual({ amount: "", rezeptMenge: "250 ml" });
   });

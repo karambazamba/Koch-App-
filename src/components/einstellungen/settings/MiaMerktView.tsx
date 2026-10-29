@@ -2,15 +2,18 @@
 
 // Einstellungen → Mia → „Was ich mir gemerkt hab“: alle gemerkten Muster und
 // Antworten (Ja/Nein), Essens-Rituale, feste Läden und gelernte Räume
-// („Zahnarzt“ → Nur ich, A-034) – einzeln löschbar. Vergessen heißt: Mia darf
+// („Zahnarzt“ → Nur ich, A-034) und gelernte Läden („Tomaten → Rewe“,
+// A-041, beim Abhaken gemerkt) – einzeln löschbar. Vergessen heißt: Mia darf
 // wieder fragen, plant nichts mehr fest ein bzw. rät den Raum wieder neu.
 
 import { X } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { CARD_LIST, PAGE_MAIN, SECTION_TITLE, SUBTLE } from "@/components/ui/styles";
 import { useShoppingSettings } from "@/lib/einkauf/listStore";
-import { removeShopRule } from "@/lib/einkauf/shopRules";
-import { merkListe, type MerkEintrag } from "@/lib/mia/denktmit/merken";
+import { gelerntVergessen, removeShopRule } from "@/lib/einkauf/shopRules";
+import { gelerntListe } from "@/lib/einkauf/merken/gelernt";
+import { MERK_GRUPPEN, merkListe, type MerkEintrag } from "@/lib/mia/denktmit/merken";
+import { todayIso } from "@/lib/core/now";
 import { useDenkt, vergessen } from "@/lib/mia/denktmit/store";
 import { raumVergessen, useRaumGedaechtnis } from "@/lib/kalender/raum/gedaechtnis";
 
@@ -18,15 +21,15 @@ export function MiaMerktView() {
   const s = useDenkt();
   const shop = useShoppingSettings();
   const raeume = useRaumGedaechtnis();
-  const liste = s && shop ? merkListe(s, shop.shopRules ?? {}, raeume.worte) : null;
-  const weg = (e: MerkEintrag) => (e.art === "laden" ? removeShopRule(e.key) : e.art === "raum" ? raumVergessen(e.key) : vergessen(e.art, e.key));
+  const liste = s && shop ? merkListe(s, shop.shopRules ?? {}, raeume.worte, gelerntListe(shop.learned, todayIso())) : null;
+  const weg = (e: MerkEintrag) => (e.art === "laden" ? removeShopRule(e.key) : e.art === "gelernt" ? gelerntVergessen(e.key) : e.art === "raum" ? raumVergessen(e.key) : vergessen(e.art, e.key));
   return (
     <div className="mx-auto flex w-full max-w-lg flex-1 flex-col">
       <PageHeader title="Was ich mir gemerkt hab" backHref="/profil/kuechenhelfer" />
       <main className={PAGE_MAIN}>
         {liste && !liste.length && <p className={`px-1 ${SUBTLE}`}>Noch nichts. Ich merk mir nur, was du mir sagst oder was sich oft wiederholt.</p>}
         {liste &&
-          (["Gewohnheiten", "Läden", "Wer was sieht"] as const).map((gruppe) => {
+          MERK_GRUPPEN.map((gruppe) => {
             const rows = liste.filter((e) => e.gruppe === gruppe);
             if (!rows.length) return null;
             return (

@@ -1,12 +1,19 @@
-// Einkaufsliste: Migration des gespeicherten Stands (v1–v6 → v7). Die frühere
+// Einkaufsliste: Migration des gespeicherten Stands (v1–v7 → v8). Die frühere
 // "Immer da"-Liste wird dabei zu Stammartikeln mit festem Wochenrhythmus; v5 → v6
 // bekommt leere feste Laden-Regeln, nichts Gelerntes, keine „hat man da“-Ausnahmen;
 // v6 → v7 fasst doppelte offene eigene Artikel zusammen (gleiche Sache im selben
-// Laden, Mengen addiert – nichts geht verloren, `einkauf/zusammen`).
+// Laden, Mengen addiert – nichts geht verloren, `einkauf/zusammen`);
+// v7 → v8 (A-040/A-041): Gelerntes bekommt ein Datum (heute, damit die
+// 90-Tage-Regel ab jetzt zählt), Wochenplan-Zutaten werden ab übernächster
+// Woche ein Angebot (was bisher von selbst auf der Liste stand, bleibt dort:
+// `angebotAb`), und von uns gerundete Packungsmengen an Rezept-Zutaten fallen
+// als Menge weg (die Rezeptmenge bleibt als Hinweis, eigene Mengen bleiben).
 
 import { SECTION_VALUES, sectionFor } from "@/lib/einkauf/sections";
 import { wocheZusammenfassen } from "@/lib/einkauf/zusammen/zusammen";
-import { newId, type ManualItem, type ShoppingListStore, type Staple, type WeekList } from "@/lib/einkauf/listModel";
+import { newId, type Gelernt, type ManualItem, type ShoppingListStore, type Staple, type WeekList } from "@/lib/einkauf/listModel";
+import { addDays, todayIso } from "@/lib/core/now";
+import { packungAus } from "@/lib/einkauf/zusammen/packung";
 
 /** Früher "Immer da" – wird bei der Migration zu Stammartikeln (wöchentlich) */
 const DEFAULT_BASIC_NAMES = ["Brot", "Aufschnitt", "Käse", "Butter", "Milch", "Joghurt", "Obst"];
@@ -37,11 +44,15 @@ function migrateManual(raw: unknown): ManualItem[] {
 export function migrateStore(raw: unknown): ShoppingListStore | null {
   if (!raw || typeof raw !== "object") return null;
   const data = raw as { version?: number; weeks?: Record<string, unknown> };
-  const empty: ShoppingListStore = { version: 7, weeks: {}, products: {}, shops: [], itemShops: {}, staples: [], myShops: [], shopsAsked: false, shopRules: {}, learned: {}, learnAsked: [], alwaysList: [] };
+  const empty: ShoppingListStore = { version: 8, weeks: {}, products: {}, shops: [], itemShops: {}, staples: [], myShops: [], shopsAsked: false, shopRules: {}, learned: {}, learnAsked: [], alwaysList: [], angebotAb: "" };
   // v1 war nur ein Datenmodell ohne Seite – es gibt dort keine echten Daten.
   if (data.version === 1) return { ...empty, staples: basicsToStaples(null) };
-  if (![2, 3, 4, 5, 6, 7].includes(data.version as number) || !data.weeks || typeof data.weeks !== "object") return null;
+  if (![2, 3, 4, 5, 6, 7, 8].includes(data.version as number) || !data.weeks || typeof data.weeks !== "object") return null;
   const modern = (data.version as number) >= 4;
+  const v8 = data.version === 8;
+  const heute = todayIso();
+  // v7 → v8: diese und die nächste Planungswoche rechnen wie bisher von selbst (nichts verschwindet von der Liste)
+  const legacy = { ...empty, angebotAb: addDays(heute, 8) };
 
   // v2/v3: "Immer da"-Basics (null = Standardliste)
   const rawBasics = (raw as { basics?: unknown }).basics;
@@ -56,7 +67,7 @@ export function migrateStore(raw: unknown): ShoppingListStore | null {
   for (const [key, value] of Object.entries(data.weeks)) {
     if (!value || typeof value !== "object") continue;
     const w = value as Partial<WeekList>;
-    const manual = migrateManual(w.manual);
+    const manual = v8 ? migrateManual(w.manual) : migrateManual(w.manual).map(ohnePackungsMenge);
     let checked = strings(w.checked);
     let have = strings(w.have);
     // Häkchen an Basics ("b:<id>") bleiben als eigene Artikel dieser Woche erhalten
@@ -80,7 +91,7 @@ export function migrateStore(raw: unknown): ShoppingListStore | null {
     };
   }
 
-  if (!modern) return zusammenfassen({ ...empty, weeks, staples: basicsToStaples(basics) });
+  if (!modern) return zusammenfassen({ ...legacy, weeks, staples: basicsToStaples(basics) });
 
   // v4 → v5: „Meine Läden“ leer, Frage noch offen (die Karte zeigt sich einmal, Läden an Artikeln vorausgewählt)
   // v5 → v6: keine festen Regeln, nichts gelernt, keine Ausnahmen
@@ -88,13 +99,14 @@ export function migrateStore(raw: unknown): ShoppingListStore | null {
   const v5 = (data.version as number) >= 5;
   const v6 = (data.version as number) >= 6;
   const next: ShoppingListStore = {
-    version: 7,
+    version: 8,
     myShops: v5 ? strings(v4.myShops) : [],
     shopsAsked: v5 && v4.shopsAsked === true,
     shopRules: v6 ? stringMap(v4.shopRules) : {},
-    learned: v6 ? learnedMap(v4.learned) : {},
+    learned: v6 ? learnedMap(v4.learned, v8 ? null : heute) : {},
     learnAsked: v6 ? strings(v4.learnAsked) : [],
     alwaysList: v6 ? strings(v4.alwaysList) : [],
+    angebotAb: v8 ? (typeof v4.angebotAb === "string" ? v4.angebotAb : "") : legacy.angebotAb,
     weeks,
     products: stringMap(v4.products),
     shops: strings(v4.shops),
@@ -111,7 +123,7 @@ export function migrateStore(raw: unknown): ShoppingListStore | null {
         active: st.active !== false,
       })),
   };
-  return data.version === 7 ? next : zusammenfassen(next);
+  return (data.version as number) >= 7 ? next : zusammenfassen(next);
 }
 
 /** v6 → v7: doppelte offene eigene Artikel je Woche zusammen (Laden wie auf der Liste) */
@@ -126,13 +138,26 @@ function zusammenfassen(s: ShoppingListStore): ShoppingListStore {
   return { ...s, weeks };
 }
 
-function learnedMap(v: unknown): ShoppingListStore["learned"] {
+/** Gelerntes lesen; `seit` = Datum für Einträge ohne Datum (v7 → v8), `null` = so lassen */
+function learnedMap(v: unknown, seit: string | null): ShoppingListStore["learned"] {
   if (!v || typeof v !== "object") return {};
   return Object.fromEntries(
-    Object.entries(v as Record<string, { shop?: unknown; n?: unknown }>)
+    Object.entries(v as Record<string, { shop?: unknown; n?: unknown; am?: unknown }>)
       .filter(([, x]) => x && typeof x.shop === "string" && typeof x.n === "number" && x.n > 0)
-      .map(([k, x]) => [k, { shop: x.shop as string, n: Math.min(9, Math.round(x.n as number)) }]),
+      .map(([k, x]): [string, Gelernt] => {
+        const am = typeof x.am === "string" && /^\d{4}-\d{2}-\d{2}$/.test(x.am) ? x.am : seit;
+        return [k, { shop: x.shop as string, n: Math.min(99, Math.round(x.n as number)), ...(am ? { am } : {}) }];
+      }),
   );
+}
+
+/**
+ * v7 → v8: bei Rezept-Zutaten (mit `rezeptMenge`) war die Menge unsere
+ * gerundete Packung – die fällt weg. Hat jemand sie selbst geändert, bleibt sie.
+ */
+function ohnePackungsMenge(m: ManualItem): ManualItem {
+  if (!m.rezeptMenge || !m.amount) return m;
+  return m.amount === packungAus(m.name, m.rezeptMenge) ? { ...m, amount: "" } : m;
 }
 
 function defaultBasics() {

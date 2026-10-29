@@ -1,9 +1,10 @@
-// Einkauf: Rezeptmengen als Einkaufsmengen (Nachtrag A-018, Punkt 4), rein.
-// Aus Rezepten wird auf die übliche Packung gerundet: Milch 250 ml → „Milch“,
-// Lasagneplatten 2 Stück → „1 Packung“, Parmesan 20 g → „Parmesan“. Die
-// Rezeptmenge steht nur klein als Hinweis („250 ml für Lasagne“). Krümel
-// (Löffel, Prisen, unter 50 g/ml) fallen als Hauptmenge weg. Gilt nur für
-// Rezeptmengen – eigene Mengen der Nutzer werden nie geändert.
+// Einkauf: Rezeptmengen und Packungen (Nachtrag A-018, Punkt 4; A-040), rein.
+// Seit A-040 (Tafel 127) steht auf der Liste nur der Name – eine Menge nur,
+// wenn man sie selbst gesagt hat. Rezeptmengen sind nie eine Menge auf der
+// Liste: sie stehen erst im Zeilen-Fenster als Hinweis („250 ml für
+// Lasagne“), die übliche Packung (Lasagneplatten 2 Stück → „1 Packung“) nur
+// als Vorschlag im Mengenfeld („z. B. 1 Packung“). Krümel (Löffel, Prisen,
+// unter 50 g/ml) ergeben keine Packung. Eigene Mengen bleiben, wie sie sind.
 
 type Packung = {
   /** Normalform-Muster (letztes Wort bzw. ganzer Name) */
@@ -97,15 +98,26 @@ export function rezeptHinweis(rezeptMenge: string, gerichte: string[]): string {
   return [menge, fuer].filter(Boolean).join(" ");
 }
 
-/**
- * Rezept-Zutat als eigener Artikel (Rezept-Link, Kochidee): Menge auf die
- * Packung gerundet, die Rezeptmenge nur als Hinweis (`rezeptMenge`).
- */
-export function alsEinkauf(name: string, amount: number | null, unit: string): { amount: string; rezeptMenge?: string } {
+/** Übliche Packung für eine Rezeptmenge in Rezept-Einheit („2 Stück“ Lasagneplatten → „1 Packung“) */
+export function packungFuer(name: string, amount: number | null, unit: string): string {
   const u = unit.trim().toLowerCase();
   const faktor = u === "kg" || u === "l" ? 1000 : 1;
   const familie = u === "kg" ? "g" : u === "l" ? "ml" : unit.trim();
+  return einkaufsMenge(name, amount === null ? null : amount * faktor, familie);
+}
+
+/** Packung aus einer gespeicherten Rezeptmenge („250 ml“, „2“, „0,5 kg“); leer = keine */
+export function packungAus(name: string, rezeptMenge: string): string {
+  const m = rezeptMenge.trim().match(/^(\d+(?:,\d+)?)\s*(.*)$/);
+  return m ? packungFuer(name, Number(m[1].replace(",", ".")), m[2]) : "";
+}
+
+/**
+ * Rezept-Zutat als eigener Artikel (Rezept-Link, Kochidee, Wochenplan-Angebot):
+ * keine Menge auf der Liste (A-040), die Rezeptmenge nur als Hinweis (`rezeptMenge`).
+ */
+export function alsEinkauf(_name: string, amount: number | null, unit: string): { amount: string; rezeptMenge?: string } {
+  void _name;
   const roh = amount === null ? "" : `${zahl(amount)} ${unit.trim()}`.trim();
-  const menge = einkaufsMenge(name, amount === null ? null : amount * faktor, familie);
-  return menge === roh || !roh ? { amount: menge } : { amount: menge, rezeptMenge: roh };
+  return roh ? { amount: "", rezeptMenge: roh } : { amount: "" };
 }

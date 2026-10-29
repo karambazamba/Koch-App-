@@ -18,9 +18,11 @@ type Props = {
   /** „Zeig mal“, wenn die Seite etwas zu zeigen hat (z. B. Einkauf → Meine Läden) */
   zeigMal?: () => void;
   className?: string;
+  /** Eigener Text statt des Seiten-Texts (z. B. mit Laden-Namen) */
+  text?: string;
 };
 
-export function ErsterBesuch({ seite, zeigMal, className }: Props) {
+export function ErsterBesuch({ seite, zeigMal, className, text: eigen }: Props) {
   const pathname = usePathname();
   const key = seite ?? pathname;
   const s = useDenkt();
@@ -30,7 +32,7 @@ export function ErsterBesuch({ seite, zeigMal, className }: Props) {
     if (!offen) return;
     return () => seiteBesucht(key);
   }, [offen, key]);
-  const text = s?.level === "ruhig" ? null : offen;
+  const text = s?.level === "ruhig" || !offen ? null : (eigen ?? offen);
   if (!text) return null;
   return <SeitenTipp text={text} id={key} onOk={() => seiteBesucht(key)} zeigMal={zeigMal} className={className} />;
 }

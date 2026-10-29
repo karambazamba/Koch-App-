@@ -81,7 +81,10 @@ export function Aussuchen() {
   // Feste Abschnitte: „Oft bei …“/„Beliebt“ aus dem Stand beim Öffnen – Antippen (= neue Regel) lässt nichts verschwinden
   const [stand, setStand] = useState<Verlauf | null>(null);
   if (s && !stand) setStand({ itemShops: s.itemShops, shopRules: s.shopRules, learned: s.learned, staples: s.staples, gekauft: recentBought([visible]) });
-  const abschnitte: Abschnitt[] = stand ? aussuchenAbschnitte({ shop: aktiv, items: visible, verlauf: stand }) : [];
+  // „Für eure Woche“: das Wochenplan-Angebot (A-040) aus dem Stand beim Öffnen – Dazunehmen lässt nichts verschwinden
+  const [wocheStand, setWocheStand] = useState<ListItem[] | null>(null);
+  if (data && !wocheStand) setWocheStand(data.list.angebot);
+  const abschnitte: Abschnitt[] = stand ? aussuchenAbschnitte({ shop: aktiv, items: [...visible, ...(wocheStand ?? [])], verlauf: stand }) : [];
   const abschnittIds = abschnitte.map((a) => a.id).join(",");
 
   // Aktiver Abschnitt beim Scrollen (für die Chip-Reihe)

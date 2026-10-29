@@ -3,11 +3,13 @@
 // Kurze Meldung oben mit "Rückgängig" – bei echtem Löschen ("Gelöscht ·
 // Rückgängig", 3 Sekunden: `showDeleted`) und beim Abhaken ("Erledigt ·
 // Rückgängig", 4 Sekunden: `showDone`). Hinzufügen, Übernehmen, Sortieren
-// melden sich still (Animation, Vibration). Überlebt einen Seitenwechsel.
+// melden sich still (Animation, Vibration). Einzige Ausnahme ist ein Angebot
+// mit Knopf (`action`, nach „Nehmen“ die Zutaten). Überlebt einen Seitenwechsel.
 
 import { useExternalStore } from "@/lib/core/useExternalStore";
 
-type Toast = { id: number; text: string; undo?: () => void; undoneText?: string; seconds?: number; small?: boolean };
+/** `action`: ein Angebot statt „Rückgängig“ (z. B. nach „Nehmen“: „Alle dazu“), `doneText` danach */
+type Toast = { id: number; text: string; undo?: () => void; undoneText?: string; action?: { label: string; run: () => void; doneText: string }; seconds?: number; small?: boolean };
 
 export const TOAST_SECONDS = 6;
 

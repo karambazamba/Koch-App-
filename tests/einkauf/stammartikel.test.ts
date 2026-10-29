@@ -6,7 +6,7 @@ import { at, fakeWindow } from "../helpers";
 
 const W = "2026-10-19";
 const staple = (over: Partial<Staple>): Staple => ({ id: over.name ?? "s", name: "Milch", amount: "", section: "kuehlregal", purchases: [], intervalDays: null, active: true, ...over });
-const listOf = (names: string[]): ShoppingList => ({ items: names.map((name) => ({ name }) as ListItem), missing: [], openCount: names.length, doneCount: 0 });
+const listOf = (names: string[]): ShoppingList => ({ items: names.map((name) => ({ name }) as ListItem), angebot: [], missing: [], openCount: names.length, doneCount: 0 });
 
 let w: ReturnType<typeof fakeWindow>;
 const saved = () => JSON.parse(w.localStorage.getItem("wasgibts.einkaufsliste")!) as ShoppingListStore;
