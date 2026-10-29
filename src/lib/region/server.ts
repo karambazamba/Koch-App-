@@ -102,6 +102,26 @@ export async function aktualisiereRegion(o: { quelle: RegionQuelle; heute: strin
   return { quelle: o.quelle, treffer: events.length, geschrieben, grund: events.length ? "ok" : abruf.grund, seiten: abruf.seiten };
 }
 
+/** Noch kein echter Lauf (frisch ausgeliefert oder vor dem fertigen Parser): Status fehlt oder „wartet“ */
+export const nochNieGelaufen = (s: RegionStatus | null) => !s || s.grund === "wartet";
+
+/**
+ * Erster Lauf gleich nach der Auslieferung statt erst um 5:00: nur wenn noch
+ * nie echt abgerufen wurde. Schreibt zuerst „laeuft“, damit es nur einmal
+ * passiert (die App fragt oft). `speicher` mit Schreibrecht reicht die Route
+ * herein. Liefert, ob gelaufen.
+ */
+export async function ersterLauf(heute: string, o: { quelle?: RegionQuelle; speicher: RegionSpeicher | null; holen?: Holer }): Promise<boolean> {
+  const quelle = o.quelle ?? regionQuelle();
+  if (quelle !== "kreisoh") return false;
+  const { speicher } = o;
+  if (!speicher || !nochNieGelaufen(await speicher.leseStatus())) return false;
+  if (!(await speicher.schreibeStatus({ lauf: nowIso(), treffer: 0, grund: "laeuft" }))) return false;
+  await aktualisiereRegion({ quelle, heute, speicher, holen: o.holen });
+  cache.clear();
+  return true;
+}
+
 export type RegionAntwort = { quelle: RegionQuelle; events: RegionEvent[]; status: RegionStatus | null };
 
 const STUNDE = 60 * 60 * 1000;

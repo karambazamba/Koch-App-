@@ -6,6 +6,24 @@ ist inzwischen anders. Den aktuellen Stand je Bereich beschreibt
 `docs/bereiche/<bereich>.md`, die festen Regeln stehen in `CLAUDE.md`.
 Ältere Pfadangaben meinen die Orte vor dem Umzug (siehe CLAUDE.md, „Ordner“).
 
+## „Was los?“: Parser an echten Seiten, Kreis erscheint (v0.169.0)
+
+- www.kreis-oh.de war freigegeben: echte Seiten nach
+  `tests/fixtures/kreis-oh/` (Liste, Gemeinde Eutin erste/letzte Seite,
+  Detailseite, robots.txt), Parser daran gebaut (`parseListe`,
+  `parseDetail`, `parseGemeinden`, `entitaeten`, `dekodiere`),
+  `PARSER_BEREIT = true`.
+- Die Liste nennt keinen Ort → Abfrage je Gemeinde (Suchformular
+  `ort=247.<n>`) mit Zeitraum heute bis +14 Tage, die Gemeinde ist der Ort.
+  Probelauf: 35 Anfragen in 45 s, 203 Veranstaltungen (alle im Zeitraum).
+  Höchstens 70 Seiten bzw. 95 s je Lauf, 1 Anfrage pro Sekunde.
+- Seiten sind ISO-8859-15: `kreisHolen` dekodiert selbst (sonst kaputte
+  Umlaute). Links ohne Such-Angaben.
+- Erster Lauf gleich nach der Auslieferung: `/api/region` holt den Abruf
+  einmal nach (`after`, `ersterLauf`), solange der Status fehlt oder
+  „wartet“ – der Kreis „Was los?“ erscheint beim ersten Öffnen, nicht erst
+  um 5 Uhr.
+
 ## Fenster: Schließen trifft nie ein neues Öffnen (v0.168.0)
 
 - Offener Punkt: Fenster mit ✕ schließen und binnen ~300 ms wieder öffnen →
