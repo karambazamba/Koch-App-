@@ -62,19 +62,21 @@ nur einmal da. Kennt Läden, feste Regeln und eure Produkte. Immer sichtbar
   Standard seit Tafel 140): `components/einkauf/kacheln/LadenChipReihe.tsx`,
   rein `lib/einkauf/kacheln/ladenChips.ts`.
 
-### Einkauf-Kachel M: Läden nebeneinander (A-050, Nachtrag 2, Tafel 140 unten)
+### Einkauf-Kachel M: Läden nebeneinander bzw. 2 × 2 (A-050, Tafel 140 unten; A-065, Tafel 148 B)
 
-- Kopf „EINKAUF“ mit Symbol, rechts das Plus (Schnelleingabe). Darunter EINE
-  Reihe mit bis zu 3 Laden-Chips, gleich breit: Strich links in Ladenfarbe,
+- Kopf „EINKAUF“ mit Symbol, rechts das Plus (Schnelleingabe). Darunter bei
+  1–3 Läden EINE Reihe Laden-Chips, gleich breit: Strich links in Ladenfarbe,
   Name 14 px fett, rechts die Anzahl in Ladenfarbe. Reihenfolge wie die
   Zeilen in S (`tileRows`): meiste Sachen zuerst, bei Gleichstand die
   Reihenfolge aus „Meine Läden“; nur Läden mit Sachen.
-- Mehr als 3 Läden: der dritte Chip wird „+n weitere“ (grau, gleiche Breite) →
-  Einkaufsliste. Chip = Laden-Seite, Rest der Kachel = Einkaufsliste.
+- 4 Läden (Tafel 148 B): alle sichtbar als 2 × 2, gleich große Felder
+  (≥ 44 px hoch), volle Namen (notfalls Umbruch, nie „…“), Anzahl rechts –
+  kein „+n weitere“. Ab 5 Läden: 2 × 2, das vierte Feld wird „+n weitere“
+  (grau) → Einkaufsliste. Feld = Laden-Seite, Rest der Kachel = Einkaufsliste.
 - Nie abgeschnitten, nie abgekürzt: die Breite wird gemessen (ResizeObserver,
   Text per Canvas in der Schrift der Seite); passt ein Name nicht, erst 13 px,
-  dann lieber weniger Chips + „+n weitere“ (ganz schmal, iPhone SE 1 mit
-  320 px: z. B. „Rossmann · +2 weitere“).
+  dann lieber weniger Chips + „+n weitere“ (nur bei 1–3 Läden in einer Reihe,
+  ganz schmal, iPhone SE 1 mit 320 px: z. B. „Rossmann · +2 weitere“).
 - „Ohne Laden“: kleine Zeile darunter „6 ohne Laden · Sortieren ›“ (nur > 0).
   Leer: „Liste ist leer. Plus tippen oder Mia sagen.“ Höhe = Inhalt, das
   Wasserzeichen (Wagen) liegt unten rechts und nie über den Chips (die haben

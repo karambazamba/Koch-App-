@@ -116,10 +116,24 @@ describe("Einkauf M: Läden nebeneinander (Tafel 140 unten)", () => {
     }
   });
 
-  it("mehr als 3 Läden: der dritte Chip wird „+n weitere“; nie abgekürzt", () => {
-    const fuenf = ["Edeka", "Rewe", "Lidl", "Aldi", "Penny"].map((s, i) => row(s, 5 - i));
-    const { chips } = ladenChips(fuenf, SE);
-    expect(chips.map((c) => (c.art === "laden" ? c.label : `+${c.anzahl} weitere`))).toEqual(["Edeka", "Rewe", "+3 weitere"]);
+  it("Tafel 148 B: 4 Läden alle als 2 × 2, ab 5 das vierte Feld „+n weitere“; meiste zuerst", () => {
+    for (const breite of [SE1, SE, PIXEL]) {
+      const vier = ladenChips([row("Lidl", 3), row("Rewe", 8), row("Kaufland", 2), row("Edeka", 5)].sort((a, b) => b.count - a.count), breite);
+      expect(vier.spalten).toBe(2);
+      expect(vier.chips.map((c) => (c.art === "laden" ? `${c.label} ${c.count}` : "weitere"))).toEqual(["Rewe 8", "Edeka 5", "Lidl 3", "Kaufland 2"]);
+      const fuenf = ladenChips(["Edeka", "Rewe", "Lidl", "Aldi", "Penny"].map((s, i) => row(s, 5 - i)), breite);
+      expect(fuenf.spalten).toBe(2);
+      expect(fuenf.chips.map((c) => (c.art === "laden" ? c.label : `+${c.anzahl} weitere`))).toEqual(["Edeka", "Rewe", "Lidl", "+2 weitere"]);
+    }
+    // 1–3 Läden bleiben eine Reihe
+    expect(ladenChips([row("Rewe", 2), row("Edeka", 1)], SE).spalten).toBe(2);
+    expect(ladenChips([row("Rewe", 2)], SE).spalten).toBe(1);
+    const src = readFileSync("src/components/einkauf/kacheln/LadenChipReihe.tsx", "utf8");
+    expect(src).toMatch(/hoch \? "min-h-11" : "h-10"/);
+    expect(src).toMatch(/hoch \? "break-words py-1" : "whitespace-nowrap"/);
+  });
+
+  it("drei Läden auf schmalem Handy: nie abgekürzt", () => {
     // Ganz schmal und lange Namen: lieber 2 Chips + „+n weitere“ als „Kaufl.“
     const lang = ladenChips([row("Kaufland", 4), row("Rossmann", 3), row("Wochenmarkt", 2)], SE1);
     expect(lang.chips.every((c) => c.art === "weitere" || !c.label.endsWith("."))).toBe(true);

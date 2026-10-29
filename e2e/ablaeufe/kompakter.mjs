@@ -219,7 +219,10 @@ const einkaufM = (laeden) => ({
   "wasgibts.beispiel": { version: 1, since: TAG, cleared: ["termine", "aufgaben", "pinnwand", "einkauf", "essen", "notizen", "sport", "vorrat"], done: [], gone: [], asked: true },
 });
 
-/** Einkauf M auf SE, 15 Pro/Pixel 7: Edeka/Rewe/Rossmann ganz in EINER Reihe, gleich breit; 5 Läden → 2 + „+3 weitere“; nie abgekürzt */
+/**
+ * Einkauf M auf SE, 15 Pro/Pixel 7: 1–3 Läden ganz in EINER Reihe, gleich breit;
+ * 4 Läden alle als 2 × 2 (Tafel 148 B), 5 Läden 2 × 2 mit „+2 weitere“ als viertem Feld; nie abgekürzt
+ */
 export const einkaufChips = async (page, check, device) => {
   const browser = page.context().browser();
   for (const geraet of ["iPhone SE", device]) {
@@ -228,7 +231,7 @@ export const einkaufChips = async (page, check, device) => {
       await p.goto(BASE);
       await losGehts(p, "Für die Familie");
       await p.locator("[data-raster]").waitFor();
-      for (const laeden of [["Rossmann", "Edeka", "Rewe"], ["Edeka", "Rewe", "Lidl", "Aldi", "Penny"], ["Kaufland", "Rossmann", "Wochenmarkt"]]) {
+      for (const laeden of [["Rossmann", "Edeka", "Rewe"], ["Rewe", "Edeka", "Lidl", "Kaufland"], ["Edeka", "Rewe", "Lidl", "Aldi", "Penny"], ["Kaufland", "Rossmann", "Wochenmarkt"]]) {
         await p.evaluate((d) => {
           for (const [k, v] of Object.entries(d)) localStorage.setItem(k, JSON.stringify(v));
         }, einkaufM(laeden));
@@ -241,15 +244,22 @@ export const einkaufChips = async (page, check, device) => {
           return {
             labels: chips.map((c) => c.dataset.ladenChip),
             reihen: new Set(b.map((r) => Math.round(r.top))).size,
+            spalten: new Set(b.map((r) => Math.round(r.left))).size,
+            hoch: Math.min(...b.map((r) => r.height)),
             gleich: b.every((r) => Math.abs(r.width - b[0].width) <= 1),
             ganz: chips.every((c) => [...c.querySelectorAll("span")].every((s) => s.scrollWidth <= s.clientWidth + 1) && !/…|\.$/.test(c.innerText.trim())),
           };
         });
         const wo = `${geraet} · ${laeden.join("/")}`;
+        if (laeden.length >= 4) {
+          // Tafel 148 B: 2 × 2, gleich große Felder ≥ 44 px, volle Namen, meiste zuerst
+          const erwartet = laeden.length === 4 ? laeden.join() : "Edeka,Rewe,Lidl,weitere";
+          check(m.reihen === 2 && m.spalten === 2 && m.gleich && m.ganz && m.hoch >= 44 && m.labels.join() === erwartet, `${wo}: 2 × 2, gleich groß, ≥ 44 px, Namen ganz (${m.labels.join(", ")}, ${Math.round(m.hoch)} px)`);
+          continue;
+        }
         check(m.reihen === 1 && m.gleich && m.ganz, `${wo}: eine Reihe, gleich breit, Namen ganz (${m.labels.join(", ")})`);
         // Ganz schmal (iPhone SE 1, 320 px) passt nicht jeder Name dreimal nebeneinander: dann lieber weniger Chips + „+n weitere“ – nie abgekürzt
         const schmal = p.viewportSize().width < 360;
-        if (laeden.length === 5) check(m.labels.at(-1) === "weitere" && m.labels.length === (schmal ? m.labels.length : 3), `${wo}: Läden + „+n weitere“ (${m.labels.join(", ")})`);
         if (laeden[0] === "Rossmann") check(m.labels[0] === "Rossmann" && (m.labels.join() === "Rossmann,Edeka,Rewe" || (schmal && m.labels.at(-1) === "weitere")), `${wo}: meiste zuerst, alle drei${schmal ? " bzw. „+n weitere“" : ""} (${m.labels.join(", ")})`);
       }
     } finally {

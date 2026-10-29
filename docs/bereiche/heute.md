@@ -729,7 +729,7 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
   Mengen (Termine/Aufgaben höchstens 3, Einkauf S 3 Läden untereinander – die mit den meisten
   Sachen zuerst – und darunter „n ohne Laden · Sortieren ›“, „+n“ erst ab dem
   4. Laden, A-048; nur in einer festen Reihe mit „ohne Laden“ 2; Einkauf M
-  EINE Reihe Laden-Chips nebeneinander, siehe `einkauf.md`; Notizen 3,
+  1–3 Läden in EINER Reihe, ab 4 Läden 2 × 2, siehe `einkauf.md`; Notizen 3,
   Im Haus 2 + „Was koch ich daraus?“), Rest als „+n“ im Kopf; nichts gestaucht. Pinnwand S = Fächer, M = drei nebeneinander.
 - Timer ohne festen Platz (A-050): ein laufender Timer steht im Timer-Kreis
   oben (Restzeit, Position 1), keine Kachel schiebt sich dazu; `startTimer`

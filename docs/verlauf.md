@@ -6,6 +6,13 @@ ist inzwischen anders. Den aktuellen Stand je Bereich beschreibt
 `docs/bereiche/<bereich>.md`, die festen Regeln stehen in `CLAUDE.md`.
 Ältere Pfadangaben meinen die Orte vor dem Umzug (siehe CLAUDE.md, „Ordner“).
 
+## Einkauf M: alle 4 Läden direkt antippen (A-065, Tafel 148 B, v0.173.0)
+
+- `ladenChips` liefert jetzt auch `spalten`: 1–3 Läden eine Reihe wie bisher,
+  4 Läden alle als 2 × 2, ab 5 Läden 2 × 2 mit „+n weitere“ als viertem Feld.
+- Im 2 × 2 sind die Felder 44 px hoch; Namen brechen notfalls um, statt
+  abgeschnitten zu werden. „ohne Laden · Sortieren ›“ bleibt darunter.
+
 ## Rätsel in der Wundertüte, vier Kreise oben (A-064, v0.172.0)
 
 - Rätsel und Wundertüte waren zu ähnlich (Frage → Antippen → Lösung): Rätsel
