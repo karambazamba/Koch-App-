@@ -164,7 +164,7 @@ bis fünf Karten am Tag also mehrere Wochen.
   Antippen, S/M, reduced-motion, Schlicht, Dunkel) und `wundertueteAlle`
   (alle 459 Karten vorne/hinten in S und M ganz, auf dem iPhone SE mit);
   dazu die Kachel in `nichtsAbgeschnitten` (`abgeschnitten.mjs`).
-- Fakten nachgeprüft beim Rebase auf v0.154 (Oktober 2026): Hamburgs
+- Fakten nachgeprüft beim Rebase auf v0.155 (Oktober 2026): Hamburgs
   Brücken vorsichtig („rund 2.500, je nachdem, was man mitzählt“, mehr als
   in Venedig oder Amsterdam, nicht „zusammen“), 500 g Spaghetti „je nach
   Dicke grob 500“.
