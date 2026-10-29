@@ -58,7 +58,8 @@ import { aufgabenFuerTag, aufgabenTag, aufgabenUebersicht, aufMorgen } from "@/l
 import { listenAnsicht } from "@/lib/kalender/liste/ordnung";
 import { AufgabenSection, TermineSection, type DemoProps } from "@/components/heute/MiniCards";
 import { useDemoDay } from "@/components/heute/useDemoDay";
-import { DemoItemSheet, DemoRow } from "@/components/heute/DemoBits";
+import { DemoHinweis, DemoItemSheet, DemoRow } from "@/components/heute/DemoBits";
+import { DEMO_HINWEIS_KREISE, demoHinweisJetzt, demoHinweise } from "@/lib/heute/demoHinweise";
 import { EditHeader } from "@/components/heute/EditHeader";
 import { useHomeEditing } from "@/components/heute/useHomeEditing";
 import { Pressable } from "@/components/heute/Pressable";
@@ -257,6 +258,9 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
   );
   // Beispiel-Tag (erster Start): Beispiele in denselben Kacheln, auch im Bearbeiten-Modus als Vorschau
   const demoDay = useDemoDay(entries, data.todayIso, minutes, Boolean(dish), haushalt);
+  // Erklärsätze (Tafel 150): nur in der Demo, je Kachel nur solange sie Beispiele zeigt (Wetter immer)
+  const zeigeHinweise = demoDay.hinweise && !editing.on;
+  const kachelHinweise = Object.fromEntries(Object.entries(demoHinweise(helperName(data.profile))).filter(([id]) => id === "wetter" || (demoDay.tiles as string[]).includes(id)));
   const [demoItem, setDemoItem] = useState<DayItem | null>(null);
   const demoProps: DemoProps = { label: demoDay.label, done: demoDay.done, onToggle: (i) => (buzz(), toggleDemoDone(i.entry.id)), onGone: (i) => showDone(hideDemoItem(i.entry.id)), onOpen: setDemoItem };
   const overview = taskOverview(entries, data.todayIso);
@@ -361,7 +365,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
     kids: hasKids(data.profile),
     regionHidden: tipSettings.jetztAus,
     demo: demoOn,
-    demoThema: demoDay.termine ? demoJetzt(demoDay.label ? tomorrowIso : data.todayIso, Boolean(demoDay.label), haushalt) : null,
+    demoThema: demoDay.termine ? demoJetzt(data.todayIso, minutes, haushalt) : null,
     demoShop: demoDay.tiles.includes("einkauf"),
     // Was oben in den Kreisen steht, zeigt die Karte nicht noch einmal (laufender Timer)
     tiles: [...visible.map((t) => t.id), ...(timerLaeuft ? (["timer"] as const) : [])],
@@ -479,10 +483,15 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
             </header>
           )}
 
+          {/* Beispiel-Tag (Tafel 150): Streifen oben, darunter die Erklärsätze */}
+          {!editing.on && demoDay.tiles.length > 0 && <DemoRow ask={demoDay.ask} hinweise={demoDay.hinweise} />}
+
           {jetzt.on && (editing.on ? <JetztPlaceholder /> : <JetztCard topics={jetzt.topics} name={helperName(data.profile)} onOpen={openTopic} onSkip={skipTopic} onAktion={jetztTun.onAktion} wochenende={jetztTun.wochenende} arrive={arrive} />)}
 
           {/* Mini-Kreise (A-050, Tafel 143): unter Kopf bzw. Jetzt-Karte, über allen Kacheln; im Bearbeiten der Abschnitt „Kreise oben“ */}
+          {jetzt.on && jetzt.topics.length > 0 && zeigeHinweise && <DemoHinweis text={demoHinweisJetzt(helperName(data.profile))} />}
           {editing.on ? <KreiseBearbeiten /> : <KreisReihe entries={entries} today={data.todayIso} minutes={minutes} me={me} sportFarbe={sportTile?.farbe} beispiel={demoDay.tiles.length > 0} />}
+          {zeigeHinweise && <DemoHinweis text={DEMO_HINWEIS_KREISE} />}
 
           {!editing.on && (
             <>
@@ -498,10 +507,8 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
             </>
           )}
 
-          {!editing.on && demoDay.tiles.length > 0 && <DemoRow ask={demoDay.ask} />}
-
           <div className={arrive ? "tiles-arrive" : undefined}>
-            <HomeBoard tiles={visible} all={all} editing={editing.on} render={renderTile} hrefFor={tileHref} picking={picking} onPicking={setPicking} glow={editing.on ? null : denkt.glow} vorstellen={denkt.vorstellung} haushalt={haushalt} />
+            <HomeBoard tiles={visible} all={all} editing={editing.on} render={renderTile} hrefFor={tileHref} picking={picking} onPicking={setPicking} glow={editing.on ? null : denkt.glow} vorstellen={denkt.vorstellung} haushalt={haushalt} hinweise={zeigeHinweise ? kachelHinweise : null} />
           </div>
 
           {timerOpen && <TimerFenster onClose={() => setTimerOpen(false)} />}

@@ -6,6 +6,19 @@ ist inzwischen anders. Den aktuellen Stand je Bereich beschreibt
 `docs/bereiche/<bereich>.md`, die festen Regeln stehen in `CLAUDE.md`.
 Ältere Pfadangaben meinen die Orte vor dem Umzug (siehe CLAUDE.md, „Ordner“).
 
+## Demo-Startseite: einfach, zur Uhrzeit, mit Erklärung (A-066, Tafel 150, v0.174.0)
+
+- Beispiel-Inhalte neu: 1–3 Wörter, je Werktag/Samstag/Sonntag drei
+  Varianten (zu zweit/allein eigene), nie Kita/Elternabend am Wochenende.
+- Zur echten Uhrzeit: laufende Termine 30 Min „läuft“, ab 20 Uhr morgen,
+  Essen = nächste Mahlzeit (vor 13 Uhr Mittag), Jetzt-Karte = nächster
+  Termin mit vorbereitendem Satz, Sport-Ring nach Wochentag.
+- Graue Erklärsätze unter Jetzt-Karte, Kreisen und Kacheln (eigene
+  Raster-Zeilen, `hinweisZeilen`), Streifen „Beispiel · tipp überall rein ·
+  Hinweise aus“; `wasgibts.beispiel` bekommt das optionale `hinweiseAus`.
+- Durchklick `demoTag` (Di 10:15, Sa 16:05), Tests zu 5 Uhrzeiten ×
+  Werktag/Wochenende.
+
 ## Einkauf M: alle 4 Läden direkt antippen (A-065, Tafel 148 B, v0.173.0)
 
 - `ladenChips` liefert jetzt auch `spalten`: 1–3 Läden eine Reihe wie bisher,

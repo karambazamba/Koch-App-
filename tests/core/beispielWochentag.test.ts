@@ -1,9 +1,9 @@
-// Beispiel-Tag passt zum Wochentag (v0.100): Werktag wie Tafel 119 (Kita,
-// Fußball, Laternelaufen), Samstag und Sonntag eigene Pläne, Feiertage (bundesweit +
-// Schleswig-Holstein) wie Sonntag; am Wochenende kein „heute dran“ und Zeit
-// zum Kochen.
+// Beispiel-Tag passt zum Wochentag (v0.100, Tafel 150): Werktag mit Kita,
+// Schwimmen, Elternabend; Samstag und Sonntag eigene Pläne, Feiertage
+// (bundesweit + Schleswig-Holstein) wie Sonntag; je Art mehrere Varianten;
+// am Wochenende kein „heute dran“.
 import { describe, expect, it } from "vitest";
-import { demoArt, demoDay, demoEntries } from "@/lib/core/demo";
+import { demoArt, demoDay, demoEntries, demoSportRing } from "@/lib/core/demo";
 import { demoDishAt } from "@/lib/essen/demoDish";
 import { feiertage, istFeiertag, ostersonntag } from "@/lib/core/feiertage";
 
@@ -31,41 +31,60 @@ describe("Feiertage (bundesweit + Schleswig-Holstein)", () => {
   });
 });
 
-describe("Beispiel-Termine je Wochentag", () => {
-  it("Mo bis Fr wie Tafel 119: Kita, Fußball, Laternelaufen", () => {
-    for (const d of ["2026-10-19", "2026-10-21", "2026-10-23"]) expect(titel(d)).toEqual(["Kita, Jonne bringt Lisa", "Mathis Fußball", "Laternelaufen"]);
+// Tafel 150: 5 Uhrzeiten × Werktag/Wochenende – nie ein vergangener Termin, nie Kita am Wochenende, nie „…“
+const UHRZEITEN = [7 * 60, 10 * 60 + 15, 13 * 60 + 30, 16 * 60 + 5, 21 * 60];
+const TAGE = { werktag: ["2026-10-19", "2026-10-20", "2026-10-21", "2026-10-22", "2026-10-23"], wochenende: ["2026-10-24", "2026-10-25", "2026-10-31", "2026-12-25"] };
+const NUR_WERKTAGS = /kita|elternabend|schule/i;
+
+describe("Beispiel-Termine je Wochentag (Tafel 150)", () => {
+  it("Mo–Fr mit Kita, Schwimmen bzw. Elternabend; mehrere Varianten, nicht jeden Tag gleich", () => {
+    const plaene = TAGE.werktag.map((d) => titel(d).join("|"));
+    expect(new Set(plaene).size).toBeGreaterThan(1);
+    for (const d of TAGE.werktag) expect(demoArt(d)).toBe("werktag");
+    expect(TAGE.werktag.some((d) => titel(d).includes("Kita"))).toBe(true);
+    expect(TAGE.werktag.some((d) => titel(d).includes("Elternabend") || titel(d).includes("Schwimmen"))).toBe(true);
   });
 
-  it("Samstag", () => {
+  it("Sa/So/Feiertag: Familie, Ausflug, Laternenumzug – nie Kita oder Elternabend", () => {
     expect(demoArt("2026-10-24")).toBe("samstag");
-    expect(titel("2026-10-24")).toEqual(["Brötchen holen", "Wochenmarkt", "Fußballspiel Mathis", "Kindergeburtstag Ben", "Grillen mit Nachbarn"]);
+    expect(demoArt("2026-10-25")).toBe("sonntag");
+    for (const d of TAGE.wochenende) {
+      expect(titel(d).some((t) => NUR_WERKTAGS.test(t)), d).toBe(false);
+      // tagsüber (vor 20 Uhr) nie Kita/Elternabend – ab 20 Uhr ist ggf. schon der Werktag von morgen dran
+      for (const m of UHRZEITEN.filter((x) => x < 20 * 60)) expect(termine(d, m).some((t) => NUR_WERKTAGS.test(t)), `${d} ${m}`).toBe(false);
+    }
   });
 
-  it("Sonntag", () => {
-    expect(demoArt("2026-10-25")).toBe("sonntag");
-    expect(titel("2026-10-25")).toEqual(["Familienfrühstück", "Spaziergang am See", "Kaffee bei Oma", "Pizza backen", "Tatort"]);
+  it.each(Object.entries(TAGE).flatMap(([art, tage]) => tage.flatMap((d) => UHRZEITEN.map((m) => [art, d, m] as const))))("%s %s um %i Min: nie vergangen, nie „…“, 1–3 Wörter", (_art, d, m) => {
+    const e = demoEntries(d, m);
+    for (const x of e.entries) {
+      const data = x.data as { title: string; start?: string; date?: string };
+      expect(data.title).not.toMatch(/…/);
+      expect(data.title.split(/\s+/).length).toBeLessThanOrEqual(3);
+      if (x.typ === "termin" && data.date === d) {
+        const [h, mi] = data.start!.split(":").map(Number);
+        expect(h * 60 + mi + 30).toBeGreaterThan(m);
+      }
+    }
+    // Am Samstag/Sonntag gezeigt: nie Kita oder Elternabend (auch wenn der Plan von morgen dran ist)
+    if (demoArt(e.date) !== "werktag") expect(e.entries.some((x) => NUR_WERKTAGS.test((x.data as { title: string }).title))).toBe(false);
   });
 
   it("Feiertag wie Sonntag – auch an einem Werktag (Reformationstag, Tag der Deutschen Einheit)", () => {
     expect(demoArt("2027-10-04")).toBe("werktag");
-    for (const d of ["2025-10-31", "2027-05-06", "2026-12-25"]) {
-      expect(demoArt(d), d).toBe("sonntag");
-      expect(titel(d)).toContain("Familienfrühstück");
-    }
-  });
-
-  it("Sa/So/Feiertag: keine Kita, kein Laternelaufen", () => {
-    for (const d of ["2026-10-24", "2026-10-25", "2026-10-31", "2026-12-25"]) {
-      expect(titel(d), d).not.toContain("Laternelaufen");
-      expect(termine(d, 6 * 60), d).not.toContain("Kita, Jonne bringt Lisa");
-    }
+    for (const d of ["2025-10-31", "2027-05-06", "2026-12-25"]) expect(demoArt(d), d).toBe("sonntag");
   });
 
   it("spät am Freitag: Beispiele für Samstag (der Plan wechselt mit dem Tag)", () => {
     const d = demoEntries("2026-10-23", 21 * 60);
     expect(d).toMatchObject({ tomorrow: true, date: "2026-10-24" });
-    expect(termine("2026-10-23", 21 * 60)[0]).toBe("Brötchen holen");
-    expect(termine("2026-10-25", 21 * 60)[0]).toBe("Kita, Jonne bringt Lisa");
+    expect(termine("2026-10-23", 21 * 60)).toEqual(titel("2026-10-24"));
+  });
+
+  it("Sport-Ring passt zum Wochentag: Mo leer, Do/Fr 2 von 3, am Wochenende geschafft", () => {
+    expect(demoSportRing("2026-10-19").trainings).toBe(0);
+    expect(demoSportRing("2026-10-22").trainings).toBe(2);
+    expect(demoSportRing("2026-10-24")).toEqual({ trainings: 3, ziel: 3 });
   });
 });
 
@@ -79,21 +98,14 @@ describe("Aufgaben und Essen am Wochenende", () => {
     }
   });
 
-  it("Essen: werktags Pasta, samstags Lasagne, sonntags Ofen-Hähnchen am Mittag", () => {
-    expect(demoDishAt("2026-10-21", 600).recipe.title).toBe("Pasta mit Tomaten & Burrata");
-    expect(demoDishAt("2026-10-24", 600)).toMatchObject({ clock: "18:30", tomorrow: false, photo: "/gerichte/lasagne.webp" });
-    expect(demoDishAt("2026-10-24", 600).recipe.title).toBe("Lasagne");
-    const so = demoDishAt("2026-10-25", 600);
-    expect(so).toMatchObject({ clock: "12:30", tomorrow: false });
-    expect(so.recipe.title).toBe("Ofen-Hähnchen mit Kartoffeln");
-    expect(demoDishAt("2026-10-31", 600).recipe.title).toBe("Ofen-Hähnchen mit Kartoffeln");
-  });
-
-  it("nach dem Essen das Gericht von morgen: Fr → Lasagne, Sa → Hähnchen, So → Pasta, Mi → Ofengemüse", () => {
-    expect(demoDishAt("2026-10-23", 21 * 60).recipe.title).toBe("Lasagne");
-    expect(demoDishAt("2026-10-24", 21 * 60)).toMatchObject({ tomorrow: true, clock: "12:30" });
-    expect(demoDishAt("2026-10-25", 15 * 60)).toMatchObject({ tomorrow: true, clock: "18:30" });
-    expect(demoDishAt("2026-10-25", 15 * 60).recipe.title).toBe("Pasta mit Tomaten & Burrata");
-    expect(demoDishAt("2026-10-21", 21 * 60).recipe.title).toBe("Ofengemüse mit Feta");
+  it("Essen = nächste Mahlzeit mit Foto: vormittags Mittag, nachmittags Abend, spät das Mittag von morgen", () => {
+    for (const d of [...TAGE.werktag, ...TAGE.wochenende]) {
+      expect(demoDishAt(d, 600)).toMatchObject({ clock: "12:30", tomorrow: false });
+      expect(demoDishAt(d, 16 * 60)).toMatchObject({ clock: "18:30", tomorrow: false });
+      expect(demoDishAt(d, 21 * 60)).toMatchObject({ clock: "12:30", tomorrow: true });
+      expect(demoDishAt(d, 600).photo).toMatch(/\.webp$/);
+    }
+    expect(demoDishAt("2026-10-24", 16 * 60).recipe.title).toBe("Lasagne");
+    expect(demoDishAt("2026-10-25", 600).recipe.title).toBe("Ofen-Hähnchen mit Kartoffeln");
   });
 });

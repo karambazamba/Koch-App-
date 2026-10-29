@@ -63,8 +63,9 @@ import * as durchatmen from "./ablaeufe/durchatmen.mjs";
 import * as kaputt from "./ablaeufe/kaputt.mjs";
 import * as kreise from "./ablaeufe/kreise.mjs";
 import * as waslos from "./ablaeufe/waslos.mjs";
+import * as demotag from "./ablaeufe/demotag.mjs";
 
-const ALL = { ...start, ...alltag, ...essen, ...mehr, ...konten, ...vorfuehren, ...mikrofon, ...termin, ...stimme, ...wochencheck, ...kochtipp, ...mehrideen, ...miazuerst, ...pinnwandgesten, ...pinnwandordnen, ...sprachnachricht, ...mianame, ...startseite, ...schnelleingabe, ...kalendertag, ...mails, ...datenschutz, ...mikrocheck, ...zuhoeren, ...serverstimme, ...ohrlive, ...miasprechen, ...wischen, ...abhaken, ...uebersicht, ...ergebniskarten, ...testcode, ...notizen, ...notizvorschau, ...zubehoer, ...sprechenhaengt, ...heim, ...essenkachel, ...wochenkarte, ...laeden, ...familieTeilen, ...einsortieren, ...einkaufneu, ...kochmodus, ...vorschau, ...erledigt, ...abgeschnitten, ...einkaufnamen, ...raumwahl, ...raster, ...sport, ...wundertuete, ...kompakter, ...durchatmen, ...kaputt, ...kreise, ...waslos };
+const ALL = { ...start, ...alltag, ...essen, ...mehr, ...konten, ...vorfuehren, ...mikrofon, ...termin, ...stimme, ...wochencheck, ...kochtipp, ...mehrideen, ...miazuerst, ...pinnwandgesten, ...pinnwandordnen, ...sprachnachricht, ...mianame, ...startseite, ...schnelleingabe, ...kalendertag, ...mails, ...datenschutz, ...mikrocheck, ...zuhoeren, ...serverstimme, ...ohrlive, ...miasprechen, ...wischen, ...abhaken, ...uebersicht, ...ergebniskarten, ...testcode, ...notizen, ...notizvorschau, ...zubehoer, ...sprechenhaengt, ...heim, ...essenkachel, ...wochenkarte, ...laeden, ...familieTeilen, ...einsortieren, ...einkaufneu, ...kochmodus, ...vorschau, ...erledigt, ...abgeschnitten, ...einkaufnamen, ...raumwahl, ...raster, ...sport, ...wundertuete, ...kompakter, ...durchatmen, ...kaputt, ...kreise, ...waslos, ...demotag };
 const pick = process.argv.slice(2);
 const flows = Object.entries(ALL).filter(([name, run]) => typeof run === "function" && (!pick.length || pick.includes(name)));
 const stop = await startServer();

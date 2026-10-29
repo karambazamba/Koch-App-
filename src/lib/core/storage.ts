@@ -91,7 +91,7 @@ export const STORAGE = [
   { key: "wasgibts.hinweise", what: "Hinweise der Startseite: an welchem Tag zuerst gezeigt (ab dem nächsten Tag weg)", version: 1, migration: "core/hinweise.ts", area: "local", backup: false },
   { key: "wasgibts.dunkeltipp", what: "Einmaliger Hinweis auf Dunkel/Automatisch (ab dem 3. Tag)", version: 1, migration: "core/darkTip.ts", area: "local", backup: false },
   { key: "wasgibts.homebildschirm", what: "Karte „Auf den Home-Bildschirm“: wie oft „Später“, wann zuletzt, installiert (nur dieser Browser)", version: 1, migration: "core/homeBildschirm.ts", area: "local", backup: false },
-  { key: "wasgibts.beispiel", what: "Beispiel-Tag beim ersten Start (seit wann, geleerte Kacheln, Abgehaktes)", version: 1, migration: "core/demo.ts", area: "local", backup: false },
+  { key: "wasgibts.beispiel", what: "Beispiel-Tag beim ersten Start (seit wann, geleerte Kacheln, Abgehaktes, „Hinweise aus“)", version: 1, migration: "core/demo.ts", area: "local", backup: false },
   { key: "wasgibts.willkommen", what: "Ergebnis des ersten Starts (wobei helfen)", version: 1, migration: "einstellungen/welcomeStore.ts (Zwischenstand bis v0.26 wird verworfen)", area: "local", backup: false },
   { key: "wasgibts.aktivitaet", what: "Zuletzt geöffnet, eigenes Tun", version: 1, migration: "core/activity.ts", area: "local", backup: false },
   { key: "wasgibts.chatnutzung", what: "Wie oft gechattet (Beispiel-Chips)", version: 1, migration: "begleitung/chatSuggestions.ts", area: "local", backup: false },

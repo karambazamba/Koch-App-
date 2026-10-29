@@ -198,7 +198,8 @@ export const standardJeHaushalt = async (page, check, device) => {
     "Für uns zwei": [["wetter", 0, 0], ["notizen", 0, 1], ["pinnwand", 1, 0]],
     "Nur für mich": [["wetter", 0, 0], ["notizen", 0, 1], ["wundertuete", 1, 0]],
   };
-  const jetzt = { "Für die Familie": "Laternelaufen", "Für uns zwei": "Kino heute um 20:15", "Nur für mich": "18 Uhr Yoga" };
+  // Tafel 150: die Jetzt-Karte nennt den nächsten Beispiel-Termin mit Uhrzeit („15 Uhr Schwimmen.“)
+  const jetzt = { "Für die Familie": / Uhr /, "Für uns zwei": / Uhr /, "Nur für mich": / Uhr / };
   for (const [wahl, cells] of Object.entries(want)) {
     const p = await newPage(browser, device);
     try {

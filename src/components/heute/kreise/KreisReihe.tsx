@@ -10,6 +10,7 @@
 // ganze Seite, `Pressable` in TodayPage). Einziges Zeichen: Sport-Ring und
 // die Restzeit des laufenden Timers (der dann vorn steht).
 
+import { demoSportRing } from "@/lib/core/demo";
 import dynamic from "next/dynamic";
 import { useState } from "react";
 import { Flag, Timer as TimerIcon, Wind } from "lucide-react";
@@ -36,8 +37,6 @@ const SportFenster = dynamic(() => import("@/components/sport/SportFenster").the
 const TimerFenster = dynamic(() => import("@/components/timer/TimerFenster").then((m) => m.TimerFenster));
 const WasLosFenster = dynamic(() => import("@/components/region/WasLosFenster").then((m) => m.WasLosFenster));
 
-/** Beispiel-Tag: der Sport-Ring zeigt „2 von 3“ wie die Beispiel-Kachel – nie in echten Speichern */
-const BEISPIEL_RING = { trainings: 2, ziel: 3 };
 
 type Props = { entries: CalendarEntry[]; today: string; minutes: number; me: string | null; sportFarbe?: KachelFarbe; beispiel?: boolean };
 
@@ -62,7 +61,9 @@ export function KreisReihe({ entries, today, minutes, me, sportFarbe, beispiel =
   const karte = sport ? stempelkarte(sport, entries, today, minutes, me) : null;
   const eigene = karte ? karte.felder.filter((f) => f.art === "stempel").length + karte.bonus.length : 0;
   const zeigeBeispiel = beispiel && sport !== undefined && !sport.trainings.length && eigene === 0;
-  const ring = zeigeBeispiel ? sportRing(BEISPIEL_RING.trainings, BEISPIEL_RING.ziel) : sportRing(eigene, karte?.ziel ?? null);
+  // Beispiel-Tag: der Ring passt zum Wochentag (Tafel 150) – nie in echten Speichern
+  const beispielRing = demoSportRing(today);
+  const ring = zeigeBeispiel ? sportRing(beispielRing.trainings, beispielRing.ziel) : sportRing(eigene, karte?.ziel ?? null);
   const naechstes = nextTraining(entries, today, minutes, me);
 
   const knopf = (id: KreisId) => {

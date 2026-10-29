@@ -20,6 +20,8 @@ export type DemoDay = {
   label: string | null;
   /** Dezent fragen: "Alle Beispiele entfernen?" */
   ask: boolean;
+  /** Graue Erklärsätze zeigen (Tafel 150), bis „Hinweise aus“ */
+  hinweise: boolean;
 };
 
 export function useDemoDay(entries: CalendarEntry[], today: string, minutes: number, ownDish = false, haushalt: Haushalt = "familie"): DemoDay {
@@ -44,5 +46,6 @@ export function useDemoDay(entries: CalendarEntry[], today: string, minutes: num
     done: demo?.done ?? [],
     label: demoData?.tomorrow ? tomorrowLabel(demoData.date) : null,
     ask: askRemoveAll(demo, tiles),
+    hinweise: tiles.length > 0 && !demo?.hinweiseAus,
   };
 }

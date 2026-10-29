@@ -120,13 +120,20 @@ export function demoLook(id: string): { photo?: string; emoji: string; tone: str
   return d ? { photo: d.photo, emoji: d.emoji, tone: d.tone } : null;
 }
 
-/** Beispielgericht je Art des Tages, mit Uhrzeit (sonntags der Braten am Mittag) */
-const DISH_FOR: Record<DemoArt, { id: string; at: number }> = {
-  werktag: { id: "pasta-burrata", at: 18 * 60 + 30 },
-  samstag: { id: "lasagne", at: 18 * 60 + 30 },
-  sonntag: { id: "ofen-haehnchen", at: 12 * 60 + 30 },
+/**
+ * Beispielgerichte je Art des Tages (Tafel 150: Essen = nächste Mahlzeit):
+ * Mittag 12:30 und Abend 18:30, nur Gerichte mit Foto.
+ */
+const DISH_FOR: Record<DemoArt, { mittag: string; abend: string }> = {
+  werktag: { mittag: "ofengemuese", abend: "pasta-burrata" },
+  samstag: { mittag: "pasta-burrata", abend: "lasagne" },
+  sonntag: { mittag: "ofen-haehnchen", abend: "ofengemuese" },
 };
-/** Wie AutoCooked: ab Essenszeit + 90 Minuten ist das Essen vorbei */
+const MITTAG = 12 * 60 + 30;
+const ABEND = 18 * 60 + 30;
+/** Vor 13 Uhr ist das Mittagessen dran */
+const MITTAG_BIS = 13 * 60;
+/** Wie AutoCooked: ab Essenszeit + 90 Minuten ist das Abendessen vorbei */
 const OVER = 90;
 const clockOf = (m: number) => `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
 const pick = (id: string, at: number, tomorrow: boolean) => {
@@ -135,17 +142,15 @@ const pick = (id: string, at: number, tomorrow: boolean) => {
 };
 
 /**
- * Beispielgericht passend zu Tag und Uhrzeit: bis Essenszeit + 90 Min das
- * Gericht von heute, danach das von morgen – zwei Werktage hintereinander
- * zeigen morgen das Ofengemüse (Abwechslung). Nie eine Uhrzeit, die schon vorbei ist.
+ * Beispielgericht = die nächste Mahlzeit zur echten Uhrzeit: vor 13 Uhr das
+ * Mittagessen, dann das Abendessen bis 18:30 + 90 Min, danach das Mittagessen
+ * von morgen. Nie eine Uhrzeit, die schon lange vorbei ist.
  */
 export function demoDishAt(today: string, minutes: number): { recipe: Recipe; clock: string; photo: string; tomorrow: boolean } {
   const heute = DISH_FOR[demoArt(today)];
-  if (minutes < heute.at + OVER) return pick(heute.id, heute.at, false);
-  const art = demoArt(addDays(today, 1));
-  const morgen = DISH_FOR[art];
-  if (art === "werktag" && demoArt(today) === "werktag") return pick("ofengemuese", morgen.at, true);
-  return pick(morgen.id, morgen.at, true);
+  if (minutes < MITTAG_BIS) return pick(heute.mittag, MITTAG, false);
+  if (minutes < ABEND + OVER) return pick(heute.abend, ABEND, false);
+  return pick(DISH_FOR[demoArt(addDays(today, 1))].mittag, MITTAG, true);
 }
 
 /** Personen fürs Beispielgericht (Tafel 122): eingetragene Personen, sonst nach Haushalt – allein 1, zu zweit 2, Familie 4 */
