@@ -6,6 +6,36 @@ ist inzwischen anders. Den aktuellen Stand je Bereich beschreibt
 `docs/bereiche/<bereich>.md`, die festen Regeln stehen in `CLAUDE.md`.
 Ältere Pfadangaben meinen die Orte vor dem Umzug (siehe CLAUDE.md, „Ordner“).
 
+## Mia hört von Anfang an und versteht mehrere Sachen (A-056, v0.157.0)
+
+- Auftrag A-056 (SOFORT, Vorrang, Wortlaut `docs/auftraege/A-056-mia-hoert-sofort.md`),
+  betrifft v0.143 (A-019/A-026): Am Anfang gingen Wörter verloren, und
+  „Ähm, Aufgabe heute dazu: Maler kommt und Bank anrufen“ wurde eine
+  einzige Aufgabe mit Füllwörtern im Titel.
+- Kein Wort verlieren: Vorlauf (`begleitung/ohrPuffer.ts`, rein; Browser-Teil
+  `begleitung/ohrMikro.ts`). Mikrofon schon im Antippen (Mia-Knopf in der
+  Leiste bzw. Mia auf der Bühne), Ringpuffer 8 s, parallel Schlüssel und
+  Websocket; die Runde nimmt den Puffer zuerst, dann live. Scheitert live,
+  nachdem schon etwas zu hören war, übernimmt die eigene Aufnahme den
+  Puffer (WAV 16 kHz an `/api/hoeren`), sonst wie bisher der Browser.
+  Schlüssel vorgewärmt (App auf, Zurückkommen, Bühne auf, nach jedem
+  Verbrauch; 13 Min. frisch, gilt 15). „Ich höre“-Ring und Tonwelle erst bei
+  echtem Ton, dazu kurz Vibrieren bzw. ein leiser Ton. Mikro-Protokoll:
+  „Ohr (live): Tippen→Mikro … · →Verbindung … · →erstes Wort …“.
+- Mehrere Sachen: Füllwörter weg vor jeder Auswertung (`fuellwoerter.ts`),
+  im Regel-Weg und bevor die Nachricht an die KI geht. Sofort-Weg nur bei
+  GENAU EINER Sache (`aufteilen.ts` `mehrteilig`). KI-Prompt und Werkzeuge:
+  Aufzählungen getrennt, gemischt Termin + Aufgabe, Titel sauber; der
+  Server räumt Titel nach (`titelSauber`). Ohne KI teilt `mehrereOhneKi`
+  eindeutig auf (sonst merken und nachholen). Ein „Rückgängig“ nimmt alle
+  Einträge einer Nachricht zurück, auch in „Mia hat schon …“.
+- Raum: Nur-ich-Einträge „Nur für dich. Tippen zum Ändern.“ statt „Nur für
+  dich gewählt.“; kein „Privat“, wo „Ich“ gemeint ist (geprüft).
+- Prüfstand: 34 neue Sätze (`pruefstand/aufzaehlung.ts`, jetzt 269), ohne KI
+  34/34; Sofort-Prüfstand mit neuen Kurzsätzen. Tests `hoertSofort.test.ts`
+  (erstes Wort in den ersten 500 ms bleibt, Gegenprobe ohne Vorlauf),
+  `mehrereSachen.test.ts`; Durchklick `hoertSofort`, `ohrLivePufferUebernimmt`.
+
 ## Mias Wundertüte (A-022, v0.156.0)
 
 - Auftrag A-022 (Tafel 116, Wortlaut `docs/auftraege/A-022-wundertuete.md`),

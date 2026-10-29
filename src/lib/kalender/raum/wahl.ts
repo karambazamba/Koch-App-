@@ -24,8 +24,13 @@ export function raumZumSpeichern(gewaehlt: Room, o: { art: RaumArt; vorher: Room
 /** Hat man Mias Vorschlag korrigiert? Dann lernt sie das Stichwort. */
 export const istKorrektur = (o: { hand: Room | null; vorschlag: Room; haushalt: Haushalt }): boolean => o.hand !== null && o.hand !== sichtRaum(o.vorschlag, o.haushalt);
 
-/** Der einmalige Satz unter den Chips: „Hab Familie gewählt. Tippen zum Ändern.“ („Ich“: „Nur für dich gewählt.“) */
+/**
+ * Der einmalige Satz unter den Chips: „Hab Familie gewählt. Tippen zum
+ * Ändern.“ (zu zweit „Hab Wir gewählt …“, allein „Hab Privat gewählt …“).
+ * Nur-ich-Einträge (A-056): „Nur für dich. Tippen zum Ändern.“ – nie „Hab Ich
+ * gewählt“ und nie „Privat“, wo „Ich“ gemeint ist.
+ */
 export function vorgewaehltText(r: Room, h: Haushalt): string {
   const sicht = sichtRaum(r, h);
-  return `${sicht === "ich" ? "Nur für dich" : `Hab ${raumLabel(sicht, h)}`} gewählt. Tippen zum Ändern.`;
+  return sicht === "ich" ? "Nur für dich. Tippen zum Ändern." : `Hab ${raumLabel(sicht, h)} gewählt. Tippen zum Ändern.`;
 }

@@ -5,10 +5,18 @@
 // der das Satzende erkennt (`lauschen.ts`). Die Aufnahme bleibt im Speicher,
 // bis sie an `/api/hoeren` geht – sie wird nirgends abgelegt. Benutzt nur
 // `useSpeechInput` (Bühne); Pinnwand-Sprachnachrichten haben ihre eigene.
+// A-056: Mit Vorlauf (`ohrPuffer.ts`, Mikro seit dem Antippen an) wird nichts
+// neu gestartet: der gepufferte Anfang plus alles danach geht als WAV
+// (16 kHz) an den Server – so fehlt auch hier kein Wort. Läuft die
+// Ton-Verarbeitung nicht (vom Browser angehalten), nimmt Mia wie früher mit
+// dem MediaRecorder auf.
 
 import { getMicWithRetry, noteMicRan, setMicPermission } from "@/lib/core/mic";
 import { micLog } from "@/lib/core/micLog";
 import { lauschSchritt, neuesLauschen, pegelVon } from "@/lib/begleitung/lauschen";
+import { LIVE_RATE, Umrechner } from "@/lib/begleitung/echtzeitProtokoll";
+import { pcmZuWav, verbinden, type Vorlauf } from "@/lib/begleitung/ohrPuffer";
+import { STIMME_GRENZEN } from "@/lib/begleitung/stimmeProtokoll";
 
 export type Aufnahme = {
   /** Jetzt Schluss (Antippen, „fertig“): was da ist, wird verstanden */
@@ -30,7 +38,99 @@ type Rueckmeldung = {
 
 const TYPEN = ["audio/webm;codecs=opus", "audio/mp4", "audio/webm", "audio/aac"];
 
-export function aufnahmeStarten(rueck: Rueckmeldung): Aufnahme {
+/** Ohne Ton so lange = Mikro belegt (wie live und Browser) */
+const WACHE_MS = 1500;
+
+/**
+ * Eigene Aufnahme aus dem Vorlauf: Pegel aus den Werten, Ton als WAV. Kommt
+ * kein Ton, weil die Ton-Verarbeitung angehalten ist, übernimmt `ersatz`.
+ */
+function ausVorlauf(v: Vorlauf, rueck: Rueckmeldung, ersatz: () => Aufnahme): Aufnahme {
+  let vorbei = false;
+  let wartet = false;
+  let stand = neuesLauschen();
+  let pegel = 0;
+  let tonDa = false;
+  let umrechner: Umrechner | null = null;
+  const teile: Int16Array[] = [];
+  let werteGesamt = 0;
+  const beginn = v.gestartetAm;
+  const jetzt = () => performance.now();
+  let weiter: Aufnahme | null = null;
+
+  const beenden = (mitTon: boolean) => {
+    if (vorbei) return;
+    vorbei = true;
+    clearInterval(takt);
+    v.stoppen();
+    const ms = jetzt() - beginn;
+    const pcm = verbinden(teile);
+    if (!mitTon || !pcm.length) return rueck.fertig(null, ms);
+    const wav = pcmZuWav(pcm, LIVE_RATE);
+    rueck.fertig(new Blob([wav.buffer as ArrayBuffer], { type: "audio/wav" }), ms);
+  };
+
+  v.nehmen((werte, rate) => {
+    if (vorbei) return;
+    tonDa = true;
+    pegel = pegelVon(werte);
+    umrechner ??= new Umrechner(rate);
+    const pcm = umrechner.push(werte);
+    // Höchstens die längste Aufnahme (60 s) – mehr nimmt der Server nicht
+    if (werteGesamt + pcm.length > (LIVE_RATE * STIMME_GRENZEN.aufnahmeMs) / 1000) return;
+    teile.push(pcm);
+    werteGesamt += pcm.length;
+  }).catch(() => {
+    if (vorbei) return;
+    vorbei = true;
+    clearInterval(takt);
+    v.stoppen();
+    // Mikro über den Vorlauf ging nicht: wie früher (der meldet einen echten Fehler selbst)
+    weiter = ersatz();
+  });
+  micLog("Ohr: Aufnahme läuft (aus dem Vorlauf, WAV)");
+
+  const takt = setInterval(() => {
+    if (vorbei) return;
+    if (!tonDa) {
+      if (jetzt() - beginn < WACHE_MS) return;
+      vorbei = true;
+      clearInterval(takt);
+      const angehalten = v.laeuft() === false;
+      v.stoppen();
+      // Angehaltene Ton-Verarbeitung ist kein belegtes Mikro: wie früher mit dem MediaRecorder
+      if (angehalten) {
+        micLog("Ohr: Ton-Verarbeitung angehalten, MediaRecorder");
+        weiter = ersatz();
+        return;
+      }
+      micLog("Ohr: Mikro belegt, kein Ton");
+      return rueck.fehler("belegt");
+    }
+    const vorher = stand.gesprochen;
+    const r = lauschSchritt(stand, pegel, jetzt() - beginn);
+    stand = r.s;
+    if (!vorher && stand.gesprochen) rueck.laut();
+    const w = r.aktion === "wartet";
+    if (w !== wartet) rueck.wartet((wartet = w));
+    if (r.aktion === "fertig") beenden(true);
+    else if (r.aktion === "nichts") beenden(false);
+  }, 50);
+
+  return {
+    stoppen: () => (weiter ? weiter.stoppen() : beenden(true)),
+    abbrechen: () => {
+      if (weiter) return weiter.abbrechen();
+      if (vorbei) return;
+      vorbei = true;
+      clearInterval(takt);
+      v.stoppen();
+    },
+  };
+}
+
+export function aufnahmeStarten(rueck: Rueckmeldung, vorlauf: Vorlauf | null = null): Aufnahme {
+  if (vorlauf?.aktiv()) return ausVorlauf(vorlauf, rueck, () => aufnahmeStarten(rueck));
   let vorbei = false;
   let stream: MediaStream | null = null;
   let rec: MediaRecorder | null = null;

@@ -563,7 +563,8 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
   einen Einmal-Schlüssel `realtime_scribe` (gilt 15 Min., eine Verbindung);
   Modell `ELEVENLABS_LIVE_MODEL` (`scribe_v2_realtime`, „aus“ = abgeschaltet),
   im Status `stimme.live`, nie im Testmodus. Mikrofon (`core/mic`) und
-  Schlüssel gleichzeitig, Ton wird bis zur Verbindung gepuffert, dann als PCM
+  Schlüssel gleichzeitig, seit A-056 das Mikro schon im Antippen (Vorlauf,
+  siehe unten), Ton wird bis zur Verbindung gepuffert, dann als PCM
   16 kHz an den Websocket (Deutsch fest, `commit_strategy=vad`, 1,2 s Stille,
   `vad_threshold` 0,5). Protokoll nur in `echtzeitProtokoll.ts`, Browser-Teil
   `ohrLiveBrowser.ts` (ScriptProcessor, Umrechnung auf 16 kHz). Vorläufiger
@@ -957,7 +958,8 @@ Sachen sofort eine Reaktion.
   wartet so lange, still → leise aus, danach wie gewohnt.
 - **Sofort-Weg** (`sofort/erkennen.ts`, `sofort/einkauf.ts`, rein):
   Einkauf (nur Katalog-Artikel aus den Abteilungen plus Drogerie/Haushalt,
-  auch Aufzählung, mit Laden; schon auf der Liste → KI), Termin mit
+  mit Laden; schon auf der Liste → KI; seit A-056 nur EINE Sache, Aufzählungen
+  macht die KI), Termin mit
   ausdrücklicher Uhrzeit (Tag + Uhrzeit oder heute und noch nicht vorbei;
   schon eingetragen, Serie, „ab“, mehrere → KI), Aufgabe (Ding + Tätigkeit
   ohne Uhrzeit wie „Tim antworten“, „Rechnung bezahlen“, „… kündigen“;
@@ -1016,3 +1018,76 @@ Sachen sofort eine Reaktion.
   `modellwahl.test.ts` (kein Doppelaufruf), `spracherkennung.test.ts`
   (Mikro belegt). e2e: `zuhoeren` (neue Zeiten, 2b Denkpause), `miasprechen`,
   `serverstimme`, `mikroBelegt`.
+
+## Mia hört von Anfang an und versteht mehrere Sachen (v0.157, A-056)
+
+Feste Regeln: kein Wort am Anfang verlieren; der Sofort-Weg nur für GENAU
+EINE Sache; Füllwörter nie im Titel; ein „Rückgängig“ für alles aus einer
+Nachricht.
+
+- **Vorlauf** (`ohrPuffer.ts` rein, Browser-Teil `ohrMikro.ts`): Tippen auf
+  den Mia-Knopf (Mikro erlaubt, Ohr vom Server) bzw. auf Mia auf der Bühne
+  startet sofort Ton-Kontext und Mikrofon (`vorlaufJetzt`, im Antippen –
+  iPhone: getUserMedia/AudioContext nur nach einer Geste). Alles landet in
+  einem Ringpuffer (`PUFFER_MS` = 8 s, mindestens 5 s). Die Runde nimmt ihn
+  (`nehmen`): erst der ganze Puffer der Reihe nach, dann live. Niemand nimmt
+  ihn → nach 5 s leise aus. Der Browser-Weg braucht das Mikro selbst: ein
+  Vorlauf wird dann freigegeben (350 ms Pause fürs iPhone).
+- **Ersatz-Kette ohne Verlust**: Scheitert live (Schlüssel, Verbindung) und
+  im Puffer war schon Sprache (`lautGehoert`), übernimmt die eigene Aufnahme
+  den Vorlauf (`aufnahmeStarten(rueck, vorlauf)`: Pegel aus den Werten, WAV
+  16 kHz an `/api/hoeren`, dort als `aufnahme.wav`). Sonst wie bisher der
+  Browser. Die eigene Aufnahme startet ebenfalls aus dem Vorlauf; läuft die
+  Ton-Verarbeitung nicht, nimmt Mia wie früher mit dem MediaRecorder auf.
+- **Schlüssel vorwärmen** (`ohrTokenVorwaermen` in `stimmeClient.ts`): beim
+  Öffnen der App (Mia-Knopf), beim Zurückkommen, beim Öffnen der Bühne und
+  1,5 s nach jedem Verbrauch; frisch 13 Min. (`TOKEN_FRISCH_MS`, gilt 15),
+  davor erneuert, nur solange die App sichtbar ist. Nur über die eigene Route
+  `/api/stimme/ohr-token`, nur im Arbeitsspeicher, nie im Protokoll.
+- **„Ich höre“ erst bei echtem Ton**: `useSpeechInput().bereit` (Vorlauf:
+  erster Ton; Browser: onstart/onaudiostart). Vorher keine Wellen und keine
+  Tonwelle (`stageRing(state, pause, bereit)`); dazu kurz Vibrieren (Android)
+  bzw. ein leiser Ton 880 Hz, 90 ms (`bereitSignal`).
+- **Zeiten** im Mikro-Protokoll, nur Zahlen: „Ohr: Mikro an nach … ms“ und
+  „Ohr (live): Tippen→Mikro … · →Verbindung … · →erstes Wort …“ (Ziel Mikro
+  an unter 300 ms). ScriptProcessor mit 2048 Werten (~43 ms je Stück).
+- **Füllwörter** (`fuellwoerter.ts`, `ohneFuellwoerter`): „äh“, „ähm“, „hm“
+  überall; „also“, „bitte“, „mal“, „noch“, „dazu“ am Anfang und vor einem
+  Doppelpunkt („Aufgabe heute dazu:“ → „Aufgabe heute:“), „mal“ hinter
+  Befehlen, Wiederholungen („Aufgabe Aufgabe“). Sinn bleibt („noch nicht“,
+  „noch mal“, „Was ist noch da?“, „Mhm“). Läuft im Regel-Weg
+  (`useChatRules`), im Sofort-Weg und bevor die Nachricht an die KI geht
+  (`useAskAssistant`; im Chat steht das Gesagte). `titelSauber`: ohne Füll-
+  und Steuerwörter, ohne Punkt, erster Buchstabe groß – auch auf dem Server
+  für Titel der KI (`calendarTools.ts`).
+- **Sofort-Weg nur bei einer Sache** (`aufteilen.ts`, `mehrteilig`): „und“,
+  Komma, „außerdem“, „dann“, „danach“, mehrere Doppelpunkte oder Frage →
+  KI. Ausnahme: das Komma nach „Notier dir,“ / „Sag Lisa,“ trennt nichts.
+- **KI**: Prompt („So arbeitest du“) und Werkzeuge `termin_anlegen` /
+  `aufgabe_anlegen` („je Sache ein Aufruf“): Aufzählungen getrennt, gemischte
+  Sätze („Termin morgen 10 Uhr Zahnarzt und danach Bank“ → Termin + Aufgabe
+  morgen), Titel sauber. Je Eintrag eine Ergebnis-Karte (A-037).
+- **Ohne KI** (`mehrereOhneKi`, Regel `mehrereRule`): teilt nur eindeutig auf
+  – Einkauf (Katalog, „auf die Liste“, bloße Artikel daneben gehören dazu),
+  Termin (Uhrzeit), Aufgabe (mit „Aufgabe:“ vorn, sonst nur mit Tätigkeit am
+  Ende oder „danach“ am Termin, erbt dann dessen Tag). Unklar → nichts, dann
+  merkt Mia es sich und holt es mit KI nach.
+- **Rückgängig für alle**: `noteMiaDone` liefert die EINE Rücknahme aller
+  Einträge einer Nachricht; sie nimmt auch die Zeilen in „Mia hat schon …“
+  raus (Chat, Sofort-Weg, Regel-Weg).
+- **Raum**: Nur-ich-Einträge zeigen einmal „Nur für dich. Tippen zum
+  Ändern.“ (`vorgewaehltText`), sonst „Hab Familie/Wir/Privat/Arbeit gewählt.
+  Tippen zum Ändern.“
+- Prüfstand: `pruefstand/aufzaehlung.ts` (34 Sätze: Aufzählungen,
+  Füllwörter, gemischt; im großen Prüfstand, jetzt 269), neue Prüfungen
+  `termine`, `aufgaben`, `titel` in `bewerten.ts`; ohne KI 34/34 (100 %).
+  Sofort-Prüfstand: Aufzählungen jetzt `null`, Füllwort-Kurzsätze dazu.
+- Tests: `tests/begleitung/hoertSofort.test.ts` (Ringpuffer, WAV, Zeiten;
+  Audio-Fixture mit „Milch“ in 80–420 ms, Mikro und Websocket nachgestellt:
+  das erste Wort steht in der Mitschrift, Gegenprobe ohne Vorlauf verliert
+  es; Status spät; Übergabe an die Aufnahme; Schlüssel vorgewärmt),
+  `tests/begleitung/mehrereSachen.test.ts`. Durchklick `hoertSofort` (Fake-
+  Mikro, sofort nach dem Tippen sprechen: erstes Stück enthält das Wort,
+  ein getUserMedia, Zeiten), `ohrLivePufferUebernimmt` (live kaputt nach dem
+  ersten Wort → WAV aus dem Puffer).
+

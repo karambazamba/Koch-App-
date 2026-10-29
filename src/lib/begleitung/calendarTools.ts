@@ -6,6 +6,7 @@
 import { createEntry, roomOf, type Room } from "@/lib/core/entries";
 import { addDays, now } from "@/lib/core/now";
 import { ohneAbgelaufene } from "@/lib/kalender/erledigt";
+import { titelSauber } from "@/lib/begleitung/fuellwoerter";
 import { contextLines, mitgewandert, showAnswer } from "@/lib/kalender/answers";
 import { itemsForDay, REMINDERS, taskOverview, sanitizeEntry, sanitizeRepeat, weekdayIndex, type AufgabeData, type CalendarEntry, type Reminder, type Repeat, type TerminData } from "@/lib/kalender/model";
 import { findDate } from "@/lib/kalender/parse";
@@ -98,7 +99,7 @@ function proposeEntry(ctx: ToolContext, entry: CalendarEntry, isNew: boolean): T
 function terminInput(ctx: ToolContext, input: Input, base?: TerminData): TerminData | string {
   const date = input.datum !== undefined ? dateFrom(ctx, input.datum) : (base?.date ?? null);
   const start = input.start !== undefined ? timeFrom(input.start) : base?.start;
-  const title = input.titel !== undefined ? str(input.titel) : (base?.title ?? "");
+  const title = input.titel !== undefined ? titelSauber(str(input.titel)) : (base?.title ?? "");
   if (!title) return "titel angeben.";
   if (!date) return "datum nicht erkannt – YYYY-MM-DD aus der Datumsliste nehmen.";
   // Mehrtägig („vom 9. bis 13. November“): ein ganztägiger Eintrag über alle Tage
@@ -121,7 +122,7 @@ function terminInput(ctx: ToolContext, input: Input, base?: TerminData): TerminD
 }
 
 function aufgabeInput(ctx: ToolContext, input: Input, base?: AufgabeData): AufgabeData | string {
-  const title = input.titel !== undefined ? str(input.titel) : (base?.title ?? "");
+  const title = input.titel !== undefined ? titelSauber(str(input.titel)) : (base?.title ?? "");
   if (!title) return "titel angeben.";
   const date = input.tag !== undefined ? dateFrom(ctx, input.tag) ?? undefined : base?.date;
   const due = input.frist !== undefined ? dateFrom(ctx, input.frist) ?? undefined : base?.due;
@@ -185,7 +186,7 @@ export const CALENDAR_TOOLS: BegleitungTool[] = [
     definition: {
       name: "termin_anlegen",
       description:
-        "Legt einen Termin an (feste Uhrzeit an einem Tag, optional wiederkehrend): 'Morgen um 9 Steuerberater, erinner mich 30 Minuten vorher'. Mehrtägig ('Klassenfahrt vom 9. bis 13. November'): datum + bis_datum ohne start = EIN ganztägiger Eintrag. Ohne feste Uhrzeit (und nicht mehrtägig) ist es eine Aufgabe (aufgabe_anlegen). Erinnerung nur, wenn gesagt: 'erinner mich 30 Minuten vorher' → erinnerung '30', 'am Abend vorher' → 'vorabend'.",
+        "Legt einen Termin an (feste Uhrzeit an einem Tag, optional wiederkehrend), je Termin ein Aufruf: 'Morgen um 9 Steuerberater, erinner mich 30 Minuten vorher'. Mehrtägig ('Klassenfahrt vom 9. bis 13. November'): datum + bis_datum ohne start = EIN ganztägiger Eintrag. Ohne feste Uhrzeit (und nicht mehrtägig) ist es eine Aufgabe (aufgabe_anlegen). Erinnerung nur, wenn gesagt: 'erinner mich 30 Minuten vorher' → erinnerung '30', 'am Abend vorher' → 'vorabend'.",
       input_schema: { type: "object", properties: TERMIN_FIELDS, required: ["titel", "datum"], additionalProperties: false },
     },
     run: (ctx, raw) => {
@@ -233,7 +234,7 @@ export const CALENDAR_TOOLS: BegleitungTool[] = [
     definition: {
       name: "aufgabe_anlegen",
       description:
-        "Legt eine Aufgabe an. Alles ist heute: ohne genannten Tag ('Irgendwann mal Keller', 'Diese Woche noch Reifen') immer für heute, tag weglassen. Nur bei ausdrücklich genanntem Tag tag setzen ('Freitag KFZ-Steuer' → ab Freitag, bis dahin unter 'Geplant'). 'Bis Mittwoch Kita-Formular' (frist), 'Jeden Dienstag Müll rausbringen' (wiederholung wochentage [1]).",
+        "Legt eine Aufgabe an, je Sache ein Aufruf ('Maler kommt und Bank anrufen' = zwei Aufgaben; titel ohne Füll- und Steuerwörter, erster Buchstabe groß). Alles ist heute: ohne genannten Tag ('Irgendwann mal Keller', 'Diese Woche noch Reifen') immer für heute, tag weglassen. Nur bei ausdrücklich genanntem Tag tag setzen ('Freitag KFZ-Steuer' → ab Freitag, bis dahin unter 'Geplant'). 'Bis Mittwoch Kita-Formular' (frist), 'Jeden Dienstag Müll rausbringen' (wiederholung wochentage [1]).",
       input_schema: { type: "object", properties: AUFGABE_FIELDS, required: ["titel"], additionalProperties: false },
     },
     run: (ctx, raw) => {

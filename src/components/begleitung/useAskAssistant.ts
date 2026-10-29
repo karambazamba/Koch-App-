@@ -10,6 +10,8 @@
 // prüft im Hintergrund und korrigiert nur, wenn sie etwas anderes versteht.
 // Fortsetzung nach einer Denkpause: `zurueckziehen` nimmt die eben gestellte
 // Frage samt Antwort zurück (Anfrage abgebrochen, Erledigtes zurückgenommen).
+// A-056: Füllwörter („äh“, „also“, „Aufgabe Aufgabe“) sind weg, bevor die
+// Nachricht ausgewertet wird oder an die KI geht; im Chat steht das Gesagte.
 
 import { newMiaConversation, reactToUser } from "@/lib/mia/reaktion";
 import { useRef, useState, type Dispatch, type SetStateAction } from "react";
@@ -33,6 +35,7 @@ import { DEFAULT_SHOPPING_DAY, planningWeekStart, toIsoDate, weekStartFor } from
 import { unlockTips } from "@/lib/tipps/client";
 import { sofortErkennen, type Sofort } from "@/lib/begleitung/sofort/erkennen";
 import { SOFORT_OK } from "@/lib/begleitung/sofortOk";
+import { ohneFuellwoerter } from "@/lib/begleitung/fuellwoerter";
 import { tempoMarke, tempoSofort } from "@/lib/begleitung/tempo";
 import { loadCalendarEntries } from "@/lib/kalender/useCalendarEntries";
 import { shopRulesForMia } from "@/lib/einkauf/shopRules";
@@ -92,9 +95,10 @@ export function useAskAssistant({ data, today, ready, chat, setChat, setInput, s
     // „Was ist da?“ (Tafel 102) und „Einsprechen“ (Tafel 110): erst als Vorschau, nie sofort
     if (result.ops.length && !chat.proposal && !isEinkaufFrage(question) && !isImHausFrage(question) && result.ops.every(isSafeOp)) {
       const committed = commitOps(d, result.ops, new Set(result.ops.map((op) => op.id)), question);
-      noteMiaDone(result.ops, committed.undo);
+      // EIN Rückgängig für alle Einträge dieser Nachricht – auch in „Mia hat schon …“
+      const alle = noteMiaDone(result.ops, committed.undo);
       const timerUndo = done;
-      done = timerUndo ? () => (committed.undo(), timerUndo()) : committed.undo;
+      done = timerUndo ? () => (alle(), timerUndo()) : alle;
       karten = ergebnisse(result.ops);
       // Mit Karten nur kurz „Steht drin.“ (A-037); bei einer Sache bleibt der Hinweis, wo es steht
       const kurz = shortDoneReply(result.reply, karten.length);
@@ -123,7 +127,7 @@ export function useAskAssistant({ data, today, ready, chat, setChat, setInput, s
   };
 
   /** Sofort-Weg: selbst erledigen, kurz bestätigen – die KI prüft still im Hintergrund */
-  const sofortWeg = (s: Sofort, question: string, display: string | undefined, history: ChatTurn[], d: AssistantData, weekStart: string) => {
+  const sofortWeg = (s: Sofort, question: string, shown: string, history: ChatTurn[], d: AssistantData, weekStart: string) => {
     tempoSofort();
     setSofortAktiv(true);
     const instant = runInstantOps(s.ops);
@@ -131,14 +135,13 @@ export function useAskAssistant({ data, today, ready, chat, setChat, setInput, s
     let notes = instant.notes;
     if (instant.rest.length) {
       const committed = commitOps(d, instant.rest, new Set(instant.rest.map((op) => op.id)), question);
-      noteMiaDone(instant.rest, committed.undo);
-      undo = committed.undo;
+      undo = noteMiaDone(instant.rest, committed.undo);
       notes = [...notes, ...committed.notes];
     }
     const karten = ergebnisse(instant.rest);
     const satz = shortDoneReply(s.reply, karten.length);
     const turn: ChatTurnView = { role: "assistant", text: notes.length ? `${satz}\n${notes.join(" ")}` : satz, undo, quick: true, ...(karten.length ? { ergebnisse: karten } : {}) };
-    setChat((c) => ({ ...c, turns: [...c.turns, { role: "user", text: display ?? question, send: display ? question : undefined }, turn] }));
+    setChat((c) => ({ ...c, turns: [...c.turns, { role: "user", text: shown, send: shown !== question ? question : undefined }, turn] }));
     tempoMarke("fertig");
     const abbrechen = new AbortController();
     laufend.current = { frage: question, abbrechen, undo, proposal: chat.proposal };
@@ -161,11 +164,14 @@ export function useAskAssistant({ data, today, ready, chat, setChat, setInput, s
    * `local` versucht es ohne KI, falls sie gerade nicht erreichbar ist.
    */
   const ask = async (text: string, display?: string, local?: (t: string) => boolean) => {
-    const question = text.trim();
+    const roh = text.trim();
+    // Füllwörter weg, bevor irgendetwas ausgewertet wird oder an die KI geht – angezeigt wird das Gesagte
+    const question = ohneFuellwoerter(roh);
+    const shown = display ?? roh;
     if (!question || busy || !data || !today) return;
     if (!ready) {
       setInput("");
-      notUnderstood(display ?? question, local);
+      notUnderstood(shown, local);
       return;
     }
     const history: ChatTurn[] = [
@@ -192,9 +198,9 @@ export function useAskAssistant({ data, today, ready, chat, setChat, setInput, s
           entries: loadCalendarEntries(),
           gelernt: gelernteRaeume(),
         });
-    if (sofort) return sofortWeg(sofort, question, display, history, d, weekStart);
+    if (sofort) return sofortWeg(sofort, question, shown, history, d, weekStart);
     setSofortAktiv(false);
-    setChat((c) => ({ ...c, turns: [...c.turns, { role: "user", text: display ?? question, send: display ? question : undefined }] }));
+    setChat((c) => ({ ...c, turns: [...c.turns, { role: "user", text: shown, send: shown !== question ? question : undefined }] }));
     setBusy(true);
     const abbrechen = new AbortController();
     const mine: Laufend = { frage: question, abbrechen, undo: null, proposal: chat.proposal };
@@ -229,7 +235,7 @@ export function useAskAssistant({ data, today, ready, chat, setChat, setInput, s
       // Offline, kein Guthaben, Limit, falscher Code …: nie Technik-Texte – die Frage
       // wandert an die eigenen Regeln (ohne KI), sonst der ehrliche Satz
       setChat((c) => ({ ...c, turns: c.turns.slice(0, -1) }));
-      notUnderstood(display ?? question, local, e instanceof BegleitungUnavailable ? e.reason : undefined);
+      notUnderstood(shown, local, e instanceof BegleitungUnavailable ? e.reason : undefined);
     } finally {
       setBusy(false);
       setStreaming(null);
@@ -243,7 +249,7 @@ export function useAskAssistant({ data, today, ready, chat, setChat, setInput, s
    */
   const zurueckziehen = (frage: string): boolean => {
     const l = laufend.current;
-    if (!l || l.frage !== frage.trim()) return false;
+    if (!l || (l.frage !== frage.trim() && l.frage !== ohneFuellwoerter(frage.trim()))) return false;
     laufend.current = null;
     l.abbrechen.abort();
     l.undo?.();

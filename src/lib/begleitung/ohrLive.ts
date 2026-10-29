@@ -1,7 +1,9 @@
 // Mias Ohr live: eine Zuhör-Runde über ElevenLabs Realtime (ohne React, alles
 // von außen hereingereicht – getestet in tests/begleitung/ohrLive.test.ts).
 // Ablauf: Einmal-Schlüssel holen und Mikrofon an (gleichzeitig), Ton wird
-// gepuffert, bis der Websocket steht – das erste Wort geht nie verloren.
+// gepuffert, bis der Websocket steht – das erste Wort geht nie verloren. Seit
+// A-056 läuft das Mikrofon schon beim Antippen (`ohrPuffer.ts`, Vorlauf): die
+// Runde bekommt dann zuerst den ganzen Anfang, danach live.
 // Vorläufiger Text kommt live auf die Bühne; das Satzende erkennt ElevenLabs
 // (VAD, 1,2 s Stille) und der fertige Satz geht sofort an Mia. Antippen
 // schließt den Satz von Hand ab. Ring nach 0,6 s ohne neue Wörter; höchstens
@@ -23,6 +25,7 @@ import {
   liveAdresse,
   tonNachricht,
 } from "@/lib/begleitung/echtzeitProtokoll";
+import { Ringpuffer, verbinden, zeitenZeile } from "@/lib/begleitung/ohrPuffer";
 
 /** Das Nötigste eines Websockets (im Test nachgestellt) */
 export type LiveSocket = {
@@ -49,6 +52,10 @@ export type LiveDeps = {
   socket: (url: string) => LiveSocket;
   log: (text: string) => void;
   uhr: () => number;
+  /** Wann getippt wurde (Uhr wie `uhr`; Standard: Beginn der Runde) – fürs Mikro-Protokoll */
+  tippenAm?: number;
+  /** Wann der erste Ton kam (Vorlauf) – sonst misst die Runde selbst */
+  mikroAm?: () => number | null;
 };
 
 type LiveEnde = "satz" | "tippen" | "ohneWorte" | "lang" | "abbruch" | "nichts";
@@ -78,14 +85,18 @@ export function ohrLiveStarten(rueck: LiveRueck, d: LiveDeps): LiveRunde {
   let mikro: LiveMikro | null = null;
   let umrechner: Umrechner | null = null;
   let tonDa = false;
-  let puffer: Int16Array[] = [];
-  let gepuffert = 0;
+  // Vor der Verbindung höchstens ~10 s puffern (Ringpuffer: der Anfang fällt erst danach raus)
+  let puffer = new Ringpuffer<Int16Array>(LIVE_RATE * 10);
   let gesendet = 0;
   let fertigTeile = "";
   let teil = "";
   let wartet = false;
   let tippen = false;
   const beginn = d.uhr();
+  const tippenAm = d.tippenAm ?? beginn;
+  let eigenesMikroAm: number | null = null;
+  let verbundenAm: number | null = null;
+  let zeitenGemeldet = false;
   const timer = new Map<string, ReturnType<typeof setTimeout>>();
 
   const stell = (name: string, ms: number, fn: () => void) => {
@@ -117,11 +128,20 @@ export function ohrLiveStarten(rueck: LiveRueck, d: LiveDeps): LiveRunde {
         // schon zu
       }
     }
-    puffer = [];
+    puffer = new Ringpuffer<Int16Array>(0);
+  };
+
+  /** Tippen → Mikro an → Verbindung → erstes Wort, einmal je Runde ins Protokoll */
+  const zeitenMelden = (wort: number | null) => {
+    if (zeitenGemeldet) return;
+    zeitenGemeldet = true;
+    const mikroAm = d.mikroAm?.() ?? eigenesMikroAm;
+    d.log(zeitenZeile({ mikro: mikroAm === null ? null : mikroAm - tippenAm, verbunden: verbundenAm === null ? null : verbundenAm - tippenAm, erstesWort: wort === null ? null : wort - tippenAm }));
   };
 
   const fertig = (ende: LiveEnde, text = ganz()) => {
     if (vorbei) return;
+    zeitenMelden(null);
     aufraeumen();
     if (wartet) rueck.wartet(false);
     const sekunden = Math.round((gesendet / LIVE_RATE) * 10) / 10;
@@ -156,17 +176,9 @@ export function ohrLiveStarten(rueck: LiveRueck, d: LiveDeps): LiveRunde {
 
   /** Gepufferten Ton in ~100-ms-Stücken losschicken */
   const abschicken = (alles = false) => {
-    if (!bereit || (!alles && gepuffert < LIVE_STUECK)) return;
-    if (!gepuffert) return;
-    const pcm = new Int16Array(gepuffert);
-    let o = 0;
-    for (const p of puffer) {
-      pcm.set(p, o);
-      o += p.length;
-    }
-    puffer = [];
-    gepuffert = 0;
-    senden(pcm);
+    if (!bereit || (!alles && puffer.laenge < LIVE_STUECK)) return;
+    if (!puffer.laenge) return;
+    senden(verbinden(puffer.entnehmen()));
   };
 
   const neueWoerter = () => {
@@ -183,12 +195,16 @@ export function ohrLiveStarten(rueck: LiveRueck, d: LiveDeps): LiveRunde {
     if (e.art === "bereit") {
       if (bereit) return;
       bereit = true;
-      d.log(`Ohr live: verbunden nach ${Math.round(d.uhr() - beginn)} ms`);
+      verbundenAm = d.uhr();
+      d.log(`Ohr live: verbunden nach ${Math.round(verbundenAm - beginn)} ms`);
       abschicken(true);
     } else if (e.art === "teil") {
       if (e.text === teil) return;
       teil = e.text;
-      if (teil) neueWoerter();
+      if (teil) {
+        zeitenMelden(d.uhr());
+        neueWoerter();
+      }
       rueck.text(ganz(), teil);
     } else if (e.art === "satz") {
       if (e.text) {
@@ -223,14 +239,12 @@ export function ohrLiveStarten(rueck: LiveRueck, d: LiveDeps): LiveRunde {
 
   d.mikro((werte, rate) => {
     if (vorbei) return;
+    if (!tonDa) eigenesMikroAm = d.uhr();
     tonDa = true;
     umrechner ??= new Umrechner(rate);
     const pcm = umrechner.push(werte);
     if (!pcm.length) return;
     puffer.push(pcm);
-    gepuffert += pcm.length;
-    // Vor der Verbindung höchstens ~10 s puffern
-    while (gepuffert > LIVE_RATE * 10 && puffer.length > 1) gepuffert -= puffer.shift()!.length;
     abschicken();
   })
     .then((m) => {

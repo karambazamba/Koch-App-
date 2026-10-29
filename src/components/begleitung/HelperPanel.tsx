@@ -508,7 +508,7 @@ export function HelperPanel({ data, chat, setChat, onApply, onApplyOne, onClose,
   };
   // Mikro belegt bzw. hat nicht geklappt: der ruhige Satz statt des Hinweises, „Lieber schreiben“ steht darunter
   const hint = done ? "Erledigt" : state === "warten" && speech.error ? speech.error : (stimmeHinweis ?? stageHint(state, name, userTurns === 0));
-  const mia = <StageMia state={state} size={layout.size} hint={layout.field && !done ? undefined : speech.wartet ? "Gleich schick ich’s ab" : hint} label={stageLabel(state, mic)} done={done} pause={speech.wartet} onTap={tapMia} />;
+  const mia = <StageMia state={state} size={layout.size} hint={layout.field && !done ? undefined : speech.wartet ? "Gleich schick ich’s ab" : hint} label={stageLabel(state, mic)} done={done} pause={speech.wartet} bereit={speech.bereit} onTap={tapMia} />;
 
   return (
     <MiaLayer name={name} onClose={onClose} onHistory={() => setHistory((h) => !h)} history={history} inset={inset}>

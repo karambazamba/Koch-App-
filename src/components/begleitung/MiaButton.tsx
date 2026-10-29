@@ -5,6 +5,10 @@
 // Begleitung auf die Bühne (sie hört gleich zu, wenn das Mikro erlaubt ist);
 // lange drücken = sofort sprechen, Loslassen = absenden. Beim ersten Mal
 // einmal der Hinweis „Schreiben & sprechen“. Von hier fliegt Mia ein und zurück.
+// A-056: Hört Mia über den Server zu, läuft das Mikrofon schon in diesem
+// Antippen an (Vorlauf, `ohrMikro.ts`) – kein Wort am Anfang geht verloren.
+// Der Einmal-Schlüssel fürs Live-Zuhören wird beim Öffnen der App und beim
+// Zurückkommen vorgewärmt.
 
 import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
@@ -12,7 +16,10 @@ import { wakeAvatar } from "@/lib/core/avatarState";
 import { markHintSeen, useHintSeen } from "@/lib/core/hints";
 import { seitErsterStart } from "@/lib/core/hello";
 import { openHelper, releaseHelperVoice } from "@/lib/begleitung/open";
-import { serverStimme } from "@/lib/begleitung/zugang";
+import { serverStimme, serverStimmeJetzt } from "@/lib/begleitung/zugang";
+import { micState } from "@/lib/core/mic";
+import { vorlaufJetzt } from "@/lib/begleitung/ohrMikro";
+import { ohrWeg } from "@/lib/begleitung/ohrWeg";
 import { BegleitungAvatar } from "@/components/begleitung/BegleitungAvatar";
 import { useMiaLook, useMiaMoment } from "@/components/begleitung/useMiaLook";
 
@@ -51,7 +58,12 @@ export function MiaButton({ name, links = false }: { name: string; links?: boole
   const moment = useMiaMoment();
   // Früh wissen, ob Mia über den Server hört und spricht (nur mit KI-Einwilligung) – sonst nähme das erste Zuhören den Browser
   useEffect(() => {
-    void serverStimme();
+    // Danach den Einmal-Schlüssel vorwärmen (nur mit Live-Ohr) – und beim Zurückkommen in die App
+    const warm = () => void import("@/lib/begleitung/stimmeClient").then((m) => m.ohrTokenVorwaermen()).catch(() => {});
+    void serverStimme().then((s) => s?.live && warm());
+    const sichtbar = () => document.visibilityState === "visible" && serverStimmeJetzt()?.live && warm();
+    document.addEventListener("visibilitychange", sichtbar);
+    return () => document.removeEventListener("visibilitychange", sichtbar);
   }, []);
   useEffect(() => {
     if (!hint) return;
@@ -94,6 +106,12 @@ export function MiaButton({ name, links = false }: { name: string; links?: boole
           markHintSeen("mia-knopf");
           if (press.current?.long) return;
           wakeAvatar();
+          // Mikro erlaubt und Mia hört über den Server: schon jetzt (im Antippen) aufnehmen und puffern
+          const m = micState();
+          const s = serverStimmeJetzt();
+          const erkennung = "SpeechRecognition" in window || "webkitSpeechRecognition" in window;
+          const weg = s ? ohrWeg({ buehne: true, live: Boolean(s.live), browser: erkennung, aufnahme: s.hoeren }) : "browser";
+          if (m.granted && !m.block && (weg === "live" || weg === "aufnahme")) vorlaufJetzt();
           openHelper();
         }}
         aria-label={`Sag ${name}, was ansteht … (${name} holen)`}

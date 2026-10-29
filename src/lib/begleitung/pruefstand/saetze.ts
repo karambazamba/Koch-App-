@@ -10,6 +10,7 @@
 import type { Room } from "@/lib/core/entries";
 import type { Lage } from "@/lib/begleitung/pruefstand/haushalt";
 import { RAUM_SAETZE } from "@/lib/begleitung/pruefstand/raeume";
+import { AUFZAEHL_SAETZE } from "@/lib/begleitung/pruefstand/aufzaehlung";
 
 export type PruefSatz = {
   text: string;
@@ -49,6 +50,11 @@ export type PruefSatz = {
   nenntNie?: string;
   /** Pinnwand (Tafel 123): der Zettel ist „Nur für mich“ (true) bzw. für alle (false) */
   privat?: boolean;
+  /** Genau so viele neue Termine bzw. Aufgaben (Aufzählungen, A-056) */
+  termine?: number;
+  aufgaben?: number;
+  /** Diese Titel kommen genau so vor (ohne Füll-/Steuerwörter, erster Buchstabe groß, A-056) */
+  titel?: string[];
 };
 
 const S = (text: string, ops: string[], extra: Omit<PruefSatz, "text" | "ops"> = {}): PruefSatz => ({ text, ops, ...extra });
@@ -289,4 +295,7 @@ export const PRUEFSAETZE: PruefSatz[] = [
   S("Pack Milch, Brot und Eier auf die Liste und Kita-Formular und Geschenk für Oma in die Aufgaben", ["add_shopping", "upsert_entry"], { alle: true, woerter: 2 }),
   S("Zahnarzt Montag 10 Uhr, Turnen Freitag 16 Uhr und Butter auf die Liste", ["upsert_entry", "add_shopping"], { alle: true, woerter: 2, lage: ["ohne-zahnarzt"] }),
   S("Kaffee und Klopapier auf die Liste, Mathis Freitag 15 Uhr Fußball und Steuer bis Mittwoch als Aufgabe", ["add_shopping", "upsert_entry"], { alle: true, woerter: 2, lage: ["ohne-steuer"] }),
+
+  // Mehrere Sachen und Füllwörter (A-056)
+  ...AUFZAEHL_SAETZE,
 ];

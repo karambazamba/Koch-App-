@@ -61,22 +61,32 @@ function doneLine(op: ChangeOp): { text: string; href: string | null } | null {
   }
 }
 
-/** Erledigtes merken (mit Rücknahme für diese Sitzung); nach dem Schließen der Bühne leuchtet es in der Kachel (A-037) */
-export function noteMiaDone(ops: ChangeOp[], undo: () => void) {
+/**
+ * Erledigtes merken (mit Rücknahme für diese Sitzung); nach dem Schließen der
+ * Bühne leuchtet es in der Kachel (A-037). Liefert die EINE Rücknahme für alle
+ * Einträge dieser Nachricht – sie nimmt auch die Zeilen in „Mia hat schon …“
+ * wieder raus (A-056: „Rückgängig“ im Chat und dort ist dasselbe).
+ */
+export function noteMiaDone(ops: ChangeOp[], undo: () => void): () => void {
   const day = todayIso();
   leuchtenMerken(leuchtZiele(ergebnisse(ops)));
   const lines = ops.map(doneLine).filter((l): l is { text: string; href: string | null } => l !== null);
-  if (!lines.length) return;
+  if (!lines.length) return undo;
   const at = now().getTime();
   const fresh = lines.map((l, i) => ({ id: `${at}-${i}`, ...l, day, at }));
-  // Alle Zeilen einer Antwort teilen sich eine Rücknahme
-  for (const f of fresh) undos.set(f.id, () => {
+  // Alle Zeilen einer Antwort teilen sich eine Rücknahme (höchstens einmal)
+  let zurueck = false;
+  const alle = () => {
+    if (zurueck) return;
+    zurueck = true;
     undo();
     for (const g of fresh) undos.delete(g.id);
     store.save({ version: 1, items: (store.load()?.items ?? []).filter((x) => !fresh.some((g) => g.id === x.id)) });
-  });
+  };
+  for (const f of fresh) undos.set(f.id, alle);
   const kept = (store.load()?.items ?? []).filter((x) => x.day === day);
   store.save({ version: 1, items: [...kept, ...fresh].slice(-MAX) });
+  return alle;
 }
 
 /** Rücknahme eines Punkts (null = nicht mehr möglich, z. B. nach Neustart) */

@@ -77,6 +77,8 @@ export type Anzeige = {
   interim: (text: string) => void;
   error: (text: string) => void;
   wartet: (on: boolean) => void;
+  /** Das Mikro nimmt wirklich auf (onstart/onaudiostart) */
+  bereit?: () => void;
   transcript: (text: string) => void;
   end: (text: string) => void;
 };
@@ -261,6 +263,8 @@ export class Spracherkennung {
 
     /** Erstes Lebenszeichen: der Wachhund kann gehen */
     const lebt = () => {
+      // Die Erkennung hört wirklich zu: erst jetzt der Ring „Ich höre“ (A-056)
+      if (aktuell()) ui.bereit?.();
       if (!aktuell() || this.bestaetigt) return;
       this.bestaetigt = true;
       if (this.wache) clearTimeout(this.wache);

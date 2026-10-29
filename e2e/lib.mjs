@@ -363,7 +363,8 @@ export const FAKE_HOEREN = () => {
  */
 export const FAKE_ECHTZEIT = () => {
   const Echt = window.WebSocket;
-  const live = (window.__live = { adressen: [], stuecke: 0, commits: 0, kaputt: false, offen: null, letzterTeil: "" });
+  // `laut` = lautester Wert je Ton-Stück (0…1) – so sieht der Test, ob der gepufferte Anfang zuerst kommt (A-056)
+  const live = (window.__live = { adressen: [], stuecke: 0, commits: 0, kaputt: false, offen: null, letzterTeil: "", laut: [], werte: [] });
   class FakeLive {
     constructor(url) {
       this.url = String(url);
@@ -391,7 +392,17 @@ export const FAKE_ECHTZEIT = () => {
       if (m.commit) {
         live.commits++;
         setTimeout(() => this.melde({ message_type: "committed_transcript", text: live.letzterTeil }), 80);
-      } else live.stuecke++;
+      } else {
+        live.stuecke++;
+        const bin = atob(m.audio_base_64 || "");
+        let max = 0;
+        for (let i = 0; i + 1 < bin.length; i += 2) {
+          const v = (bin.charCodeAt(i) | (bin.charCodeAt(i + 1) << 8)) << 16 >> 16;
+          max = Math.max(max, Math.abs(v) / 32768);
+        }
+        live.laut.push(Math.round(max * 100) / 100);
+        live.werte.push(bin.length / 2);
+      }
     }
     close() {
       this.readyState = 3;

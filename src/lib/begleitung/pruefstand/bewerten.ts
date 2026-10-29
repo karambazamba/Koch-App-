@@ -98,6 +98,15 @@ export function bewerte(satz: PruefSatz, reply: AssistantReply, ms: number): Pru
     const pins = reply.ops.flatMap((op) => (op.type === "add_pin" ? [op] : []));
     if (pins.some((op) => (op.privat === true) !== satz.privat)) gruende.push(satz.privat ? "nicht „Nur für mich“" : "ungefragt „Nur für mich“");
   }
+  if (satz.termine !== undefined || satz.aufgaben !== undefined || satz.titel) {
+    const neu = reply.ops.flatMap((op) => (op.type === "upsert_entry" && op.isNew ? [op.entry] : []));
+    const zahl = (typ: string) => neu.filter((e) => e.typ === typ).length;
+    if (satz.termine !== undefined && zahl("termin") !== satz.termine) gruende.push(`${zahl("termin")} statt ${satz.termine} Termine`);
+    if (satz.aufgaben !== undefined && zahl("aufgabe") !== satz.aufgaben) gruende.push(`${zahl("aufgabe")} statt ${satz.aufgaben} Aufgaben`);
+    const titel = neu.map((e) => e.data.title.trim());
+    const ohne = (satz.titel ?? []).filter((t) => !titel.includes(t));
+    if (ohne.length) gruende.push(`Titel nicht sauber: erwartet ${ohne.join(", ")} (${titel.join(", ") || "keine"})`);
+  }
   const einkauf = reply.ops.flatMap((op) => (op.type === "add_shopping" ? [op] : []));
   if (satz.anzahl !== undefined && einkauf.length !== satz.anzahl) gruende.push(`${einkauf.length} statt ${satz.anzahl} Sachen (${einkauf.map((op) => op.name).join(", ") || "keine"})`);
   if (satz.menge && !einkauf.some((op) => op.amount.trim().startsWith(satz.menge!))) gruende.push(`Menge ${satz.menge} nicht übernommen`);

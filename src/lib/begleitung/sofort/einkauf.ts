@@ -13,7 +13,7 @@ import { sameIngredient } from "@/lib/vorrat/pantry";
 const VERBRAUCH = /^(klopapier|toilettenpapier|küchenrolle|küchenpapier|taschentücher|spülmittel|spültabs|geschirrtabs|waschmittel|weichspüler|zahnpasta|zahnbürsten?|shampoo|duschgel|seife|deo|rasierer|windeln|feuchttücher|müllbeutel|mülltüten|alufolie|backpapier|frischhaltefolie|gefrierbeutel|kaffeefilter|batterien(?: aa| aaa)?|glühbirnen?|kerzen|katzenfutter|hundefutter|katzenstreu|schwämme|spülschwämme|putzmittel|creme|sonnencreme|pflaster|tampons|binden|watte|wattestäbchen)$/i;
 
 /** Ist das ein Katalog-Artikel? (kurz, bekannt) */
-function imKatalog(name: string): boolean {
+export function imKatalog(name: string): boolean {
   const n = name.trim().toLowerCase();
   if (!n || n.split(/\s+/).length > 3 || /\d{3,}|[!?:]/.test(n)) return false;
   // Zeitangaben, Zwecke und Mengenwörter gehören nicht in den Namen

@@ -26,16 +26,27 @@ export type SofortSatz = {
 const S = (text: string, art: SofortArt | null, extra: Omit<SofortSatz, "text" | "art"> = {}): SofortSatz => ({ text, art, ...extra });
 
 export const SOFORT_SAETZE: SofortSatz[] = [
-  // Einkauf: nur Katalog, auch Aufzählung
+  // Einkauf: nur Katalog, genau EINE Sache (A-056: Aufzählungen macht die KI)
   S("Milch auf die Liste", "einkauf", { name: "Milch" }),
-  S("Milch und Eier auf die Liste", "einkauf", { anzahl: 2 }),
-  S("Wir brauchen Brot und Butter", "einkauf", { anzahl: 2 }),
+  S("Milch und Eier auf die Liste", null), // „und“ → KI (A-056)
+  S("Wir brauchen Brot und Butter", null),
   S("Setz Klopapier auf den Einkaufszettel", "einkauf", { name: "Klopapier" }),
   S("pack mal zahnpasta drauf", "einkauf", { name: "Zahnpasta" }),
   S("Shampoo bei Rossmann", "einkauf", { name: "Shampoo", laden: "Rossmann" }),
   S("Joghurt bei Rewe", "einkauf", { name: "Joghurt", laden: "Rewe" }),
-  S("Für Lidl: Milch, Eier", "einkauf", { anzahl: 2, laden: "Lidl" }),
-  S("Äpfel, Birnen und Bananen", "einkauf", { anzahl: 3 }),
+  S("Für Lidl: Milch", "einkauf", { anzahl: 1, laden: "Lidl" }),
+  S("Für Lidl: Milch, Eier", null),
+  S("Äpfel, Birnen und Bananen", null),
+  // Füllwörter sind vorher weg (A-056)
+  S("Ähm, Milch auf die Liste", "einkauf", { name: "Milch", anzahl: 1 }),
+  S("äh äh Kaffee Kaffee auf die Liste", "einkauf", { name: "Kaffee", anzahl: 1 }),
+  S("Also bitte Tim antworten", "aufgabe", { name: "Tim antworten" }),
+  S("Hm, Freitag 9 Uhr Elternabend", "termin", { datum: "2026-10-23", zeit: "09:00", name: "Elternabend" }),
+  S("Ähm, Aufgabe heute dazu: Maler kommt und Bank anrufen", null),
+  S("Termin morgen 10 Uhr Zahnarzt und danach Bank", null),
+  S("Bank anrufen, Rechnung bezahlen", null),
+  S("Steuer machen außerdem Keller", null),
+  S("Paket abholen dann Bank", null),
   S("noch 2 liter milch bitte auf die liste", "einkauf", { name: "Milch" }),
   S("Kaffee auf die Liste", "einkauf", { name: "Kaffee" }),
   S("Windeln auf die Liste", "einkauf", { name: "Windeln" }),
