@@ -6,7 +6,7 @@ ist inzwischen anders. Den aktuellen Stand je Bereich beschreibt
 `docs/bereiche/<bereich>.md`, die festen Regeln stehen in `CLAUDE.md`.
 Ältere Pfadangaben meinen die Orte vor dem Umzug (siehe CLAUDE.md, „Ordner“).
 
-## Notizen-Vorschau + Mia-Zubehör (A-060 Block B, v0.164.0)
+## Notizen-Vorschau + Mia-Zubehör (A-060 Block B, v0.165.0)
 
 - Notizen-Kachel (Punkt 3, Tafel 144): die neueste Notiz in XS (und als
   erste Zeile in S/M) in bis zu 2 Zeilen, Umbruch an Wortgrenzen, die zweite
