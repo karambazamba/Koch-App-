@@ -723,7 +723,7 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
   Antworten erkennt `recognizer.ts` – mit KI über `/api/kennenlernen`
   (Modell `MODEL`, änderbar per `KENNENLERNEN_MODEL`), sonst Regeln.
 
-### Durchatmen (A-051, v0.159.0)
+### Durchatmen (A-051, v0.160.0)
 
 - „Ich brauch kurz Ruhe“, „Atemübung“, „Handy-Pause“, „Kopf leeren“, „Was
   ist jetzt wichtig?“ → `app_befehl` mit dem Satz (Beschreibung in

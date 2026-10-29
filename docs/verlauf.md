@@ -74,6 +74,8 @@ ist inzwischen anders. Den aktuellen Stand je Bereich beschreibt
 
 ## Durchatmen + Mia leitet an (A-051, v0.159.0)
 
+## Durchatmen + Mia leitet an (A-051, v0.160.0)
+
 - Paket B des Gesamtauftrags vom 29.10. (A-050 bis A-053, Tafel 138/139):
   Baustein `durchatmen`, Standard an (Bausteine v7: beim Update einmal an),
   von Felix gewollte Ausnahme vom Launch-Stopp.
