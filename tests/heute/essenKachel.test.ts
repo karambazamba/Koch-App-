@@ -2,7 +2,7 @@
 // „MORGEN · MO – Bibimbap – 3 Ideen ansehen“ ohne Bild, nicht auswählbar).
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { KACHEL_VERLAUF, TITEL_BREITE, essenKopf, essenPille, essenTippen, essenUnterzeile, essenUnterzeilen, kachelZustand, foodTileView, kachelBild, kachelVerlaufCss, kochSchrittText, kontrastWeiss, rezeptVorratZeile, titelPx, titelZeilen, verlaufAlpha, zutatenKurz } from "@/lib/heute/essenKachel";
+import { KACHEL_VERLAUF, TITEL_BREITE, essenKopf, essenPille, essenTippen, essenUnterzeile, essenUnterzeilen, passendeUnterzeilen, kachelZustand, foodTileView, kachelBild, kachelVerlaufCss, kochSchrittText, kontrastWeiss, rezeptVorratZeile, titelPx, titelZeilen, verlaufAlpha, zutatenKurz } from "@/lib/heute/essenKachel";
 import { GERICHTE } from "@/lib/essen/gerichte";
 import { BUILTIN_COOK } from "@/lib/essen/kochen";
 import { DEMO_RECIPES } from "@/lib/essen/demoDish";
@@ -146,6 +146,24 @@ describe("Tafel 122: Name groß, zwei Knöpfe, Unterzeile", () => {
     expect(rezeptVorratZeile(90, ["Karotte"])).toBe("90 Min · alles im Haus bis auf Karotte");
     expect(rezeptVorratZeile(90, [])).toBe("90 Min · alles im Haus");
     for (const t of [essenUnterzeile({ minutes: 9, needs: ["X"] }), rezeptVorratZeile(9, ["X"])]) expect(t).not.toMatch(/fehlt|offen|überfällig/i);
+  });
+
+  it("feste Fläche: nur so viele Unterzeilen, wie hineinpassen (pruefen v0.155: „auf die Liste: Gyrosfleisch“ quoll auf dem iPhone SE über)", () => {
+    const texte = (z: { text: string; nur?: string }[], wo: "normal" | "schmal") => z.filter((x) => !x.nur || x.nur === wo).map((x) => x.text);
+    // zweizeiliger Name: Zeit und zweizeiliger Vorrat passen nicht beide in S → die eine Zeile, die passt
+    const gyros = passendeUnterzeilen(["25 Min", "auf die Liste: Gyrosfleisch"], "Gyros-Pfanne mit Reis", "S", "Kochidee · Heute");
+    expect(texte(gyros, "normal")).toHaveLength(1);
+    expect(texte(gyros, "schmal")).toEqual(["25 Min"]);
+    // kurzer Name: beide Zeilen wie Tafel 133 (auf dem SE 1 bricht der Vorrat womöglich um – dann nur eine)
+    const lasagne = passendeUnterzeilen(["30 Min", "auf die Liste: Eier +3"], "Lasagne", "S", "Essen · 18:30");
+    expect(texte(lasagne, "normal")).toEqual(["30 Min", "auf die Liste: Eier +3"]);
+    expect(texte(lasagne, "schmal").length).toBeGreaterThanOrEqual(1);
+    // passt nur eine, bleibt lieber der Vorrat
+    expect(texte(passendeUnterzeilen(["25 Min", "alles im Haus"], "Gyros-Pfanne mit Reis", "S", "Kochidee · Heute"), "schmal")).toEqual(["alles im Haus"]);
+    // M ist breit genug
+    expect(passendeUnterzeilen(["25 Min · auf die Liste: Gyrosfleisch"], "Gyros-Pfanne mit Reis", "M", "Kochidee · Heute")).toEqual([{ text: "25 Min · auf die Liste: Gyrosfleisch" }]);
+    // dreizeiliger Name auf dem SE: keine Unterzeile mehr
+    expect(texte(passendeUnterzeilen(["Schritt 2 von 3"], "Ofengemüse mit Feta und Kichererbsen-Dip", "S", "Essen · Jetzt"), "schmal")).toEqual([]);
   });
 
   it("A-046: Statuszeile, Pille und Antippen je Zustand", () => {

@@ -1,7 +1,7 @@
 // Startseite im festen Raster XS · S · M (Tafel 118–120, A-023): jede Kachel
 // in jeder erlaubten Größe mit fester Höhe auf SE, 15 Pro und Pixel 7 (S
 // quadratisch aus der Breite, XS halb so hoch, M so hoch wie S, nichts quillt
-// über); zwei S und XS-Paare bündig; Größenwechsel lässt die Nachbarn
+// über, ganz tippbare Zeilen ≥ 30 px); zwei S und XS-Paare bündig; Größenwechsel lässt die Nachbarn
 // nachrücken; Bearbeiten = Fertig-Ansicht (auch die Pinnwand-S nach „Fertig“);
 // Standard je Haushalt mit Beispiel-Tag; Timer-XS nur bei laufendem Timer;
 // Wetter-Szenen; auf dem iPhone 15 Pro ohne Scrollen bis Essen/Einkauf.
@@ -37,8 +37,23 @@ const boxes = (page) =>
       width: board.width,
       units: [...document.querySelectorAll("[data-raster] > [data-unit]")].map((el) => {
         const r = el.getBoundingClientRect();
-        const inner = [...el.querySelectorAll("section, a.wx-himmel")].filter((s) => !s.closest("[role=dialog]"));
+        // Kacheln, Wetter-Himmel und die Bild-Fläche der Essen-Kachel (schneidet selbst ab)
+        const inner = [...el.querySelectorAll("section, a.wx-himmel, [data-essen-antippen]")].filter((s) => !s.closest("[role=dialog]"));
+        // Kein Knopf liegt mit seiner Mitte auf einem anderen (z. B. „+2“ unter dem Plus der Einkauf-Kachel auf dem SE 1)
+        const area = r.width * r.height;
+        const knoepfe = [...el.querySelectorAll("a[href], button")].filter((b) => !b.closest("[role=dialog],[aria-hidden=true]") && b.getBoundingClientRect().width * b.getBoundingClientRect().height > 0 && b.getBoundingClientRect().width * b.getBoundingClientRect().height < 0.25 * area);
+        const verdeckt = [];
+        for (const a of knoepfe)
+          for (const b of knoepfe) {
+            if (a === b || a.contains(b) || b.contains(a)) continue;
+            const ra = a.getBoundingClientRect();
+            const rb = b.getBoundingClientRect();
+            const cx = ra.left + ra.width / 2;
+            const cy = ra.top + ra.height / 2;
+            if (cx > rb.left && cx < rb.right && cy > rb.top && cy < rb.bottom) verdeckt.push(`„${(a.getAttribute("aria-label") || a.textContent || "").trim().slice(0, 20)}“ unter „${(b.getAttribute("aria-label") || b.textContent || "").trim().slice(0, 20)}“`);
+          }
         return {
+          verdeckt,
           key: el.dataset.unit,
           size: el.dataset.groesse,
           x: Math.round(r.left - board.left),
@@ -46,6 +61,10 @@ const boxes = (page) =>
           w: Math.round(r.width),
           h: Math.round(r.height),
           over: inner.filter((s) => s.scrollHeight > s.clientHeight + 2).map((s) => s.getAttribute("aria-label") || s.tagName),
+          // Ganz tippbare Listenzeilen (`data-zeile`) sind mindestens 30 px hoch (sonst gilt 44 px) – auch die EINE Zeile in XS („WLAN: Tohuus2026“)
+          flach: [...el.querySelectorAll("a[href][data-zeile], button[data-zeile], [data-zeile] a[href], [data-zeile] button")]
+            .filter((z) => !z.closest(".hit") && z.getBoundingClientRect().height > 0 && z.getBoundingClientRect().height < 29)
+            .map((z) => `${(z.getAttribute("aria-label") || z.textContent || "").trim().slice(0, 24)} ${Math.round(z.getBoundingClientRect().height)} px`),
         };
       }),
     };
@@ -81,6 +100,8 @@ export const rasterHoehen = async (page, check, device) => {
         const want = u.key === "essen+einkauf" ? expected(width, "M") : expected(width, u.size);
         if (!near(u.w, want.w) || !near(u.h, want.h)) bad.push(`${u.key} ${u.w}×${u.h} statt ${Math.round(want.w)}×${Math.round(want.h)}`);
         if (u.over.length) bad.push(`${u.key} quillt über (${u.over.join(", ")})`);
+        if (u.flach.length) bad.push(`${u.key}: Zeile unter 30 px (${u.flach.join(", ")})`);
+        if (u.verdeckt.length) bad.push(`${u.key}: ${u.verdeckt.join(", ")}`);
       }
       check(!bad.length && units.length >= 2, `${where} · ${size}: ${units.length} Kacheln mit fester Höhe, nichts gestaucht${bad.length ? ` – ${bad.join(" · ")}` : ""}`);
     }
@@ -178,6 +199,11 @@ export const standardJeHaushalt = async (page, check, device) => {
       const ok = cells.every(([id, c, r]) => { const u = units.find((x) => x.key === id); return u && near(u.x, c * col, 2) && near(u.y, r * row, 2); });
       check(ok, `${wahl}: Kacheln wie Tafel 119 (${units.map((u) => u.key).join(", ")})`);
       check(units.map((u) => u.key).slice(-3).join() === "termine,aufgaben,essen+einkauf", `${wahl}: dann Termine M, Aufgaben M, Essen | Einkauf`);
+      const flach = units.flatMap((u) => u.flach.map((z) => `${u.key}: ${z}`));
+      const over = units.flatMap((u) => u.over.map((z) => `${u.key}: ${z}`));
+      const verdeckt = units.flatMap((u) => u.verdeckt.map((z) => `${u.key}: ${z}`));
+      check(!verdeckt.length, `${wahl}: kein Knopf unter einem anderen${verdeckt.length ? ` (${verdeckt.join(", ")})` : ""}`);
+      check(!flach.length && !over.length, `${wahl}: Beispiel-Zeilen ≥ 30 px, nichts quillt über${flach.length ? ` (flach: ${flach.join(", ")})` : ""}${over.length ? ` (quillt: ${over.join(", ")})` : ""}`);
       check(wahl === "Nur für mich" ? !units.some((u) => u.key === "pinnwand") : units.some((u) => u.key === "pinnwand"), `${wahl}: Pinnwand ${wahl === "Nur für mich" ? "aus" : "an"}`);
       check(await p.locator("[data-jetzt]").getByText(jetzt[wahl]).first().isVisible().catch(() => false), `${wahl}: Jetzt-Karte „${jetzt[wahl]}“`);
       // Familie/zu zweit: Schild „Beispiel“ unten rechts an der Pinnwand; allein (Tafel 119 ohne Pinnwand) kein Schild, die Beispiel-Kacheln sagen es VoiceOver
@@ -193,6 +219,11 @@ export const standardJeHaushalt = async (page, check, device) => {
         });
         check(!seen.whole.length && seen.pair, `${wahl}: iPhone 15 Pro ohne Scrollen bis Essen/Einkauf${seen.whole.length ? ` (unten: ${seen.whole.join(", ")})` : ""}`);
       }
+      // Ganz schmal (iPhone SE 1, 320 px): Beispiel-Tag ohne Überquellen, ohne flache Zeilen, kein Knopf unter einem anderen
+      await p.setViewportSize({ width: 320, height: 568 });
+      await p.waitForTimeout(500);
+      const schmal = (await boxes(p)).units.flatMap((u) => [...u.over.map((z) => `${u.key} quillt: ${z}`), ...u.flach.map((z) => `${u.key} flach: ${z}`), ...u.verdeckt.map((z) => `${u.key}: ${z}`)]);
+      check(!schmal.length, `${wahl}: iPhone SE 1 (320 px) – nichts quillt, Zeilen ≥ 30 px, kein Knopf verdeckt${schmal.length ? ` (${schmal.join(", ")})` : ""}`);
       // Speicher: Beispiele nie in echten Speichern
       const echt = await p.evaluate(() => JSON.parse(localStorage.getItem("wasgibts.eintraege") ?? "null")?.entries?.length ?? 0);
       check(echt === 0, `${wahl}: keine Beispiele in den echten Einträgen`);
@@ -251,6 +282,31 @@ export const wetterSzenen = async (page, check) => {
         return { szene: tile?.dataset.szene, under, cut, satz: tile?.querySelector("[data-wetter-zeile]")?.textContent ?? "" };
       });
       check(Boolean(r.szene) && !r.under.length && !r.cut.length && r.satz.length <= 22, `Wetter ${sz} · ${size}: Szene „${r.szene}“, Satz „${r.satz}“${r.under.length ? ` – unter der Zeichnung: ${r.under.join(", ")}` : ""}${r.cut.length ? ` – abgeschnitten: ${r.cut.join(", ")}` : ""}`);
+    }
+  }
+};
+
+/** Feierabend: Wetter-XS zeigt morgen („Morgen · Do“, 16°, „Schirm einpacken“) und quillt nicht über – auch auf dem iPhone SE 1 (pruefen v0.155) */
+export const wetterMorgenXS = async (page, check, device) => {
+  const browser = page.context().browser();
+  for (const vp of [null, { width: 320, height: 568 }]) {
+    const p = await newPage(browser, device, { time: "2026-10-21T21:30:00+02:00" });
+    try {
+      if (vp) await p.setViewportSize(vp);
+      await hello(p);
+      await seedFamily(p);
+      await layout(p, [["wetter", "XS"], ["notizen", "XS"], ["termine", "M"]]);
+      await p.locator('[data-unit="wetter"] a[href^="/wetter?tag=morgen"]').waitFor({ timeout: 6000 }).catch(() => {});
+      const r = await p.evaluate(() => {
+        const a = document.querySelector('[data-unit="wetter"] a.wx-himmel');
+        const satz = a?.querySelector("[data-wetter-zeile]");
+        return { morgen: Boolean(a?.getAttribute("href")?.includes("morgen")), over: a ? a.scrollHeight - a.clientHeight : -1, satz: satz && satz.getBoundingClientRect().height > 0 ? satz.textContent : null, zeilen: satz ? Math.round(satz.getBoundingClientRect().height / 17) : 0 };
+      });
+      const wo = vp ? "iPhone SE 1" : device;
+      check(r.morgen && r.over <= 2 && r.zeilen <= 1, `${wo}: Wetter-XS morgen passt (über ${r.over} px, Satz „${r.satz ?? "–"}“)`);
+      if (!vp) check(Boolean(r.satz), `${wo}: Wetter-XS morgen mit Satz`);
+    } finally {
+      await p.context().close();
     }
   }
 };

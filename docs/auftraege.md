@@ -113,6 +113,7 @@ Status: offen · in Arbeit · fertig vX.Y · zurückgestellt (Grund)
 | A-044 | Sport als Stempelkarte: Sport-Seite (Diese Woche, zwei Sätze, „Training eintragen“, „Planen“, Letzte Wochen), Menü „•••“ (Wochenziel, Packlisten, Meine Sportarten, Erinnerung am Vorabend), Kachel ohne Wasserzeichen, Mia „gestempelt“ und „Wie läuft’s?“ (ersetzt Tafel 129/130 und den Wochen-Kreis-Teil von 124; Wortlaut `docs/auftraege/A-044-sport-stempel.md`) | `tafel-132.png` | fertig v0.153 |
 | A-045 | SOFORT: Essen-Kachel S – nichts abgeschnitten (Knöpfe ohne „…“, Stufen Symbol → 13 px → Kurzform, „Idee“ als Pille, Im-Haus-Namen ganz, Zutaten 2 + „+N“, Prüf-Ablauf `nichtsAbgeschnitten`; Wortlaut `docs/auftraege/A-045-kachel-ganz.md`) | `tafel-133.png` | fertig v0.150 (Essen-Teil durch A-046 ersetzt, Grundregel bleibt) |
 | A-046 | Essen-Kachel final – Bild antippen = Rezept (keine großen Knöpfe, „Was anderes?“ oben, „Wochenplan ›“ unten, Statuszeile, Antippen je Zustand; Wortlaut `docs/auftraege/A-046-essen-kachel-final.md`) | `tafel-134.png` | fertig v0.150 (mit A-045; „Nehmen“ bietet seit v0.154 die Zutaten an, Wochenplan-Angebot aus Tafel 127 mit A-040) |
+| A-047 | `pruefen` grün im Raster: Wasserzeichen nicht mitmessen, Mindest-Zeile auf dem SE 1, Essen-Bildfläche ohne Überquellen, XS-Zeile 30 px, Einkauf „+N“ nicht unter dem Plus, Wetter-XS „Morgen“ | – | fertig v0.155 |
 
 ## Offene Punkte (ohne eigenen Auftrag)
 

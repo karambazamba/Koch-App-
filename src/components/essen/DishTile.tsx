@@ -16,7 +16,7 @@ import type { ReactNode } from "react";
 import { DishPicture } from "@/components/essen/DishPicture";
 import { KachelKnopf as Knopf } from "@/components/ui/KachelKnopf";
 import type { RecipeCategory } from "@/lib/essen/cookbook";
-import { titelPx } from "@/lib/heute/essenKachel";
+import { passendeUnterzeilen, titelPx } from "@/lib/heute/essenKachel";
 
 type Picture = { photo?: string; title: string; ingredients?: string[]; category?: RecipeCategory | null; leer?: boolean };
 
@@ -37,7 +37,7 @@ export function DishTile({
   /** „Essen · 18:30“, „Morgen · Do“ – angezeigt in Großbuchstaben */
   kopf: string;
   title: string;
-  /** Zeilen unter dem Namen (`essenUnterzeilen`: S zwei, M eine) */
+  /** Zeilen unter dem Namen (`essenUnterzeilen`: S zwei, M eine; gezeigt nur, was passt – `passendeUnterzeilen`) */
   sub?: string[];
   picture: Picture;
   /** Rest der Kachel antippen: Seite (Link) oder eigener Schritt */
@@ -50,6 +50,8 @@ export function DishTile({
   pille?: Pille;
 }) {
   const px = titelPx(title, half ? "S" : "M");
+  // Feste Fläche (Raster): nur so viele Unterzeilen, wie sicher hineinpassen – lieber eine weniger als überquellen
+  const zeilen = sub && passendeUnterzeilen(sub, title, half ? "S" : "M", kopf);
   // Bereich heißt für VoiceOver immer „Essen …“, auch bei „Kochidee · Heute“ und „Morgen · Do“
   const bereich = /^Essen/i.test(kopf) ? kopf : `Essen · ${kopf}`;
   const body = (
@@ -63,9 +65,9 @@ export function DishTile({
         <span className="hyphens-auto font-extrabold leading-[1.06] tracking-tight [overflow-wrap:break-word]" style={{ fontSize: px }} data-titel>
           {title}
         </span>
-        {sub?.map((zeile) => (
-          <span key={zeile} className="text-[12px] font-semibold leading-[15px]" data-unterzeile>
-            {zeile}
+        {zeilen?.map(({ text, nur }) => (
+          <span key={text} className={`text-[12px] font-semibold leading-[15px] ${nur === "normal" ? "@max-[320px]:hidden" : nur === "schmal" ? "hidden @max-[320px]:block" : ""}`} data-unterzeile>
+            {text}
           </span>
         ))}
       </span>
