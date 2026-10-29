@@ -117,7 +117,7 @@ export function DeinTag({ today, dateLabel, minutes, termine, tomorrow, tasks, t
   }, []);
   const empty = !termine.length && !dish && !shop && !openTasks.length && !pins.length;
   const marked = (key: string) => Boolean(spot && spot.key && key === spot.key);
-  const doneButton = topic && ["vorbereiten", "packliste", "geburtstag", "erinnerung", "jahrestag", "morgenwetter", "frueh", "vorlauf"].includes(topic.kind);
+  const doneButton = topic && ["gleich", "wetter", "geburtstag", "erinnerung", "jahrestag", "vorlauf"].includes(topic.kind) && Boolean(topic.detail);
   const topicHint =
     hint ? (
       <span className="flex items-center justify-between gap-2 pt-0.5">

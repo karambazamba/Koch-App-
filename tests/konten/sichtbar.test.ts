@@ -5,7 +5,8 @@ import { existsSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { addedBy, addNews, emptyNews, markNewsShown, migrateNews, newsForCard, newsFromDocs, NEWS_FRESH_MS } from "@/lib/konten/wer";
 import { ADAPTERS, type CloudDoc } from "@/lib/konten/sync/docs";
-import { jetztTopics, type JetztInput } from "@/lib/heute/jetztTopics";
+import { jetztTopics } from "@/lib/heute/jetztTopics";
+import { jetztInput } from "../helpers";
 import type { Member } from "@/lib/konten/model";
 
 const FELIX = "u-felix";
@@ -55,9 +56,9 @@ describe("Neuigkeiten aus dem Haushalt", () => {
     }
   });
 
-  it("Zeile 1 höchstens 32 Zeichen", () => {
+  it("Zeile 1 nie mit „…“ gekürzt (A-054: die Jetzt-Karte bricht um)", () => {
     const long = newsFromDocs([doc("ek:w:x", "einkauf", { week: "w", item: { id: "x", name: "Hafermilch ohne Zucker Barista" } })], () => false, members, FELIX);
-    expect(long[0].title.length).toBeLessThanOrEqual(32);
+    expect(long[0].title).toBe("Hafermilch ohne Zucker Barista steht auf der Liste");
   });
 
   it("höchstens eine am Tag, jede nur einmal, nach 6 Std. still", () => {
@@ -81,13 +82,12 @@ describe("Neuigkeiten aus dem Haushalt", () => {
     expect(migrateNews({ version: 1, items: [{ id: "x", title: "a", detail: "b", at: T }, { id: 3 }], shown: ["x", 4], lastDay: null })).toEqual({ version: 1, items: [{ id: "x", title: "a", detail: "b", at: T, href: "/" }], shown: ["x"], lastDay: null });
   });
 
-  it("Jetzt-Karte: sanftes Thema „familie“, nachts nicht", () => {
-    const base = { minutes: 600, today: "2026-10-21", calm: false, upcoming: [], tomorrow: { label: "Morgen · Do", date: "2026-10-22", items: [] }, urgent: [], dueToday: [], pin: null, planWeather: null, dish: null, birthdays: [], sport: null, shop: null, timer: null, cookingStep: null, reminder: null, pause: null, dinnerFree: false, leisure: null, tip: null, region: null, kids: false, weekCheck: null, demo: false, tiles: [], weights: {}, hidden: [] } as unknown as JetztInput;
+  it("Jetzt-Karte: Thema „familie“ (Rang 45), auch in Ruhe, nachts nicht", () => {
     const family = { id: "ek:1", title: "Milch steht auf der Liste", detail: "Hat Lisa gerade gesetzt.", href: "/einkaufsliste" };
-    const day = jetztTopics({ ...base, family });
-    expect(day.some((t) => t.kind === "familie" && t.title === family.title && t.button === "Öffnen")).toBe(true);
-    expect(jetztTopics({ ...base, calm: true, family }).some((t) => t.kind === "familie")).toBe(true);
-    expect(jetztTopics({ ...base, minutes: 23 * 60, family }).some((t) => t.kind === "familie")).toBe(false);
+    const day = jetztTopics(jetztInput(600, { family }));
+    expect(day.some((t) => t.kind === "familie" && t.title === family.title)).toBe(true);
+    expect(jetztTopics(jetztInput(600, { calm: true, family })).some((t) => t.kind === "familie")).toBe(true);
+    expect(jetztTopics(jetztInput(23 * 60, { family })).some((t) => t.kind === "familie")).toBe(false);
   });
 });
 

@@ -30,6 +30,7 @@ import { JetztCard, JetztPlaceholder } from "@/components/heute/JetztCard";
 import { DeinTag } from "@/components/heute/DeinTag";
 import { onOpenDeinTag } from "@/lib/heute/deinTag";
 import { useJetztTopics } from "@/components/heute/useJetztTopics";
+import { jetztAktionen, wochenendQuelle } from "@/components/heute/jetztAktionen";
 import { mitLaufendemTimer } from "@/lib/heute/raster";
 import { takeHelloFlight } from "@/lib/core/hello";
 import { SportTile } from "@/components/sport/SportTile";
@@ -82,12 +83,11 @@ import { useFeature } from "@/lib/core/features";
 import { pauseLabel } from "@/lib/essen/spontan";
 import { pushUndo } from "@/lib/core/undo";
 import { mealIsOver, useCookedDays } from "@/lib/essen/mealDone";
-import { matchStock } from "@/lib/essen/dishIdeas";
+import { matchStock, realStock } from "@/lib/essen/dishIdeas";
 import { useStock } from "@/lib/essen/useStock";
 import { beispielPersonen, demoDishAt } from "@/lib/essen/demoDish";
 import { openHelper } from "@/lib/begleitung/open";
-import { doneJetztTopic, noteJetztSkip, noteJetztTap, weekCheckDone } from "@/lib/heute/jetztStore";
-import { weekCheckKey } from "@/lib/kalender/wochencheck";
+import { doneJetztTopic } from "@/lib/heute/jetztStore";
 import type { JetztTopic } from "@/lib/heute/jetztTopics";
 import type { HomeData } from "@/components/heute/useHomeData";
 import { dishOf } from "@/components/essen/useMeals";
@@ -310,7 +310,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
   const leisure = evening && notes ? leisureIdea(notes, data.todayIso) : null;
   const regionTips = useTipsWindow(data.todayIso, regionOn && !demoDay.tiles.length);
   const potState = usePotState();
-  // Mia denkt mit: höchstens eine Karte am Tag (nur, wenn kein anderer Hinweis steht), sonst vielleicht ein Spruch
+  // Mia denkt mit: höchstens eine Karte am Tag (nur, wenn kein anderer Hinweis steht)
   // Jetzt-Karte: Essen von heute (Beispielgericht nur, solange es heute noch dran ist – danach steht es für morgen da)
   const jetztDish = demoDish
     ? demoMeal.tomorrow
@@ -329,60 +329,42 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
   const arbeitMorgen = view.hideWork ? tasksJetzt.length - tasksAll.length : 0;
   const tasksTomorrow = workless(aufgabenFuerTag(entries, tomorrowIso, mitwandern));
   const denkt = useMiaDenkt({ data, entries, items: allItems, minutes, visible: visible.map((t) => t.id), demo: demoOn, pause: Boolean(paused), ruhe: evening && routine.ruhe, besetzt: Boolean(hinweis) || homeKarteSteht, me: name || "Ich", onOpenFood });
-  const mia = useMiaRoutinen({ today: data.todayIso, minutes, entries, termine: allItems, tomorrow: tomorrowAll, profile: data.profile, me: name || "Ich", regen: null, demo: Boolean(demoDay.termine) || demoDay.tiles.length > 0 });
+  const mia = useMiaRoutinen({ today: data.todayIso, minutes, entries, termine: allItems, tomorrow: tomorrowAll, profile: data.profile, me: name || "Ich", demo: Boolean(demoDay.termine) || demoDay.tiles.length > 0 });
   const jetzt = useJetztTopics({
-    routinen: mia.routinen,
     today: data.todayIso,
     minutes,
-    me: name || "Ich",
     calm: (evening && routine.ruhe) || weekday >= 5,
     // Beispiel-Tag mit weniger als 2 Terminen heute: die Beispiele gelten für morgen
     upcoming: jetztUpcoming,
-    tomorrow: demoDay.termine && demoDay.label ? demoDay.termine : [...tomorrowAll.filter((i) => i.entry.typ === "termin" && (!view.hideWork || i.room !== "arbeit")), ...tasksTomorrow],
-    urgent: view.tasksRest ? [] : tasksAll.filter(isUrgent).filter((i) => !i.done),
-    dueToday: view.tasksRest ? [] : dueToday.filter((i) => !i.done),
-    pins: demoDay.tiles.includes("pinnwand") ? [] : pins,
-    memos: demoDay.tiles.includes("pinnwand") ? [] : memos,
-    nowMs,
+    tomorrow: demoDay.termine && demoDay.label ? demoDay.termine : tomorrowAll.filter((i) => i.entry.typ === "termin" && (!view.hideWork || i.room !== "arbeit")),
     dish: jetztDish,
-    dinnerFree: !dish && !over && !data.day?.away && Boolean(dishClock && dishClock >= "15:00"),
+    vorratDa: Boolean(stock && realStock(stock).length),
     todayAll: allItems,
+    weekend: demoOn ? null : wochenendQuelle(data, entries, minutes),
     training: training && !demoDay.tiles.length ? { key: `sport:${data.todayIso}`, title: training.title, time: `${String(Math.floor(training.start / 60)).padStart(2, "0")}:${String(training.start % 60).padStart(2, "0")}` } : null,
+    nowMs,
     timer: runningTimer ? { name: runningTimer.name, left: leftWords(runningTimer.endsAt - nowMs) } : null,
     cookingStep,
     reminder: reminder ? { key: reminder.key, text: reminder.text } : null,
     pause: paused && data.profile.pause ? pauseLabel(data.profile.pause) : null,
     leisure: leisure ? { text: leisure.item.text, href: `/notizen/bearbeiten?id=${leisure.note.id}` } : null,
     tip: tip?.text ?? null,
-    spruch: denkt.spruch,
     regionTips: regionTips?.tips ?? null,
     potInvite: potState ? liveInvite(POT_STATUS, potState.pledge, potState.liveAsked) : null,
     kids: hasKids(data.profile),
     regionHidden: tipSettings.jetztAus,
-    demo: demoDay.tiles.length > 0,
+    demo: demoOn,
     demoThema: demoDay.termine ? demoJetzt(demoDay.label ? tomorrowIso : data.todayIso, Boolean(demoDay.label), haushalt) : null,
     demoShop: demoDay.tiles.includes("einkauf"),
-    weekCheck: demoDay.tiles.length || paused || (evening && routine.ruhe) ? null : weekCheckKey(data.todayIso, minutes),
-    kuehlCheck: denkt.kuehlcheck,
     tiles: visible.map((t) => t.id),
-    // Abends (Tafel 98): EIN Thema über morgen – Haushalt, Kita/Schule, Essen mit Vorlauf
-    evening,
     solo: haushalt === "allein",
     kidsWay: kidsWay(data.profile.persons),
     tomorrowDish: tomorrowPrep,
   });
-  const spruchSteht = jetzt.topics[0]?.kind === "spruch";
-  // Kurz-Check „Im Haus“ zählt als der eine Hinweis des Tages – sobald er in der Jetzt-Karte steht
-  const kuehlSteht = jetzt.topics.some((t) => t.kind === "kuehlcheck");
-  useEffect(() => {
-    if (spruchSteht) denkt.spruchGesehen();
-    if (kuehlSteht) denkt.kuehlcheckGesehen();
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- einmal, wenn er steht
-  }, [spruchSteht, kuehlSteht]);
+  const jetztTun = jetztAktionen({ data, onOpenFood });
   // Antippen der Jetzt-Karte = „Dein Tag“ mit dem Thema hervorgehoben (Tafel 66 B); läuft ein Timer: der Timer.
   // Wochencheck und Pause bleiben Handlungen, kein Tagesinhalt.
   const openTopic = (t: JetztTopic) => {
-    noteJetztTap(t.kind);
     if (t.kind === "erinnerung" && reminder) markReminderSeen(reminder.key);
     if (t.target && "action" in t.target) {
       // Timer-Kachel da: dorthin scrollen; sonst das Timer-Fenster (eine Seite /timer gibt es nicht)
@@ -392,22 +374,17 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
       }
       if (t.target.action === "pause") return endPause();
       if (t.target.action === "durchatmen") return oeffneDurchatmen();
-      if (t.target.action === "wochencheck") {
-        weekCheckDone(t.id.slice("wochencheck:".length));
-        return openHelper("wochencheck");
-      }
     }
-    // Region-Tipp, Spendentopf und Kurz-Check haben keinen Platz in „Dein Tag“ – sie öffnen ihre Seite
-    if ((t.kind === "spendentopf" || t.kind === "region" || t.kind === "kuehlcheck") && t.target && "href" in t.target) return router.push(t.target.href);
+    // Bausteine (Mails, Region-Tipp, Spendentopf) haben keinen Platz in „Dein Tag“ – sie öffnen ihre Seite
+    if ((t.kind === "mail" || t.kind === "spendentopf" || t.kind === "region") && t.target && "href" in t.target) return router.push(t.target.href);
     setDayTopic({ topic: t });
   };
   const [timerOpen, setTimerOpen] = useState(false);
   const [dayTopic, setDayTopic] = useState<{ topic: JetztTopic | null } | null>(null);
   // Mia: „Was steht heute an?“ öffnet „Dein Tag“ (ohne Thema)
   useEffect(() => onOpenDeinTag(() => setDayTopic({ topic: null })), []);
-  // Weiterwischen: etwas weniger Interesse; ein Region-Tipp kommt dieses Wochenende nicht wieder
+  // Weiterwischen: ein Region-Tipp kommt dieses Wochenende nicht wieder
   const skipTopic = (t: JetztTopic) => {
-    noteJetztSkip(t.kind);
     if (t.kind === "region") hideJetztTipWeekend(weekendKey(data.todayIso));
   };
   // „Erledigt“: abhaken (Erinnerung gesehen) und das Thema für heute weglegen – die Karte zeigt kurz ✓
@@ -494,7 +471,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
             </header>
           )}
 
-          {jetzt.on && (editing.on ? <JetztPlaceholder /> : <JetztCard topics={jetzt.topics} name={helperName(data.profile)} onOpen={openTopic} onSkip={skipTopic} arrive={arrive} />)}
+          {jetzt.on && (editing.on ? <JetztPlaceholder /> : <JetztCard topics={jetzt.topics} name={helperName(data.profile)} onOpen={openTopic} onSkip={skipTopic} onAktion={jetztTun.onAktion} wochenende={jetztTun.wochenende} arrive={arrive} />)}
 
           {!editing.on && (
             <>

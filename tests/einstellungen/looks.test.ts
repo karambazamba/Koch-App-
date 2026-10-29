@@ -52,19 +52,18 @@ describe("Mia: ruhiger ↔ farbig", () => {
   });
 });
 
-describe("Jetzt-Karte ohne Doppelung", () => {
+describe("Jetzt-Karte (A-054)", () => {
   const evening = (over: Partial<JetztInput> = {}) =>
     jetztInput(20 * 60, { tomorrow: { label: "Morgen · Do", date: "2026-10-22", items: [jetztTermin("Kita bringen", "08:00", {}, "2026-10-22")] }, ...over });
-  it("abends EIN Thema: früher Termin morgen mit Wecker, nie die Kachel-Zeile „Morgen · Do: …“; Wetter nie ohne Plan", () => {
+  it("abends: „Morgen · Do: 8:00 Kita bringen“ mit Wecker; Wetter nie ohne Plan", () => {
     const list = jetztTopics(evening());
     expect(list).toHaveLength(1);
-    expect(list[0]).toMatchObject({ kind: "frueh", title: "Morgen 8 Uhr Kita bringen.", detail: "Wecker auf 7?" });
+    expect(list[0]).toMatchObject({ kind: "morgen", title: "Morgen · Do: 8:00 Kita bringen", detail: "Wecker auf 7?" });
     expect(list.map((t) => t.kind)).not.toContain("wetter");
-    expect(list.some((t) => t.title.startsWith("Morgen · "))).toBe(false);
   });
-  it("Regen zum Draußen-Termin bleibt – auch wenn die Wetter-Kachel da ist", () => {
-    const planWeather = { key: "f", title: "Fußball", time: "17:00", word: "Regen" };
-    expect(jetztTopics(jetztInput(14 * 60, { planWeather })).map((t) => t.kind)).toContain("wetter");
+  it("Regen zum Termin bleibt – auch wenn die Wetter-Kachel da ist", () => {
+    const upcoming = [jetztTermin("Fußball", "17:00", { outdoor: true })];
+    expect(jetztTopics(jetztInput(14 * 60, { upcoming, rainHours: [16, 17] })).map((t) => t.kind)).toContain("wetter");
   });
 });
 

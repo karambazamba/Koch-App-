@@ -37,7 +37,8 @@ export const abhakenUeberall = async (page, check) => {
   await page.waitForTimeout(1200);
   await abhaken(page, page.locator("main"), check, "Aufgaben-Seite");
 
-  // Dein Tag (über die Jetzt-Karte)
+  // Dein Tag (über die Jetzt-Karte – A-054: sie steht nur mit einem Thema, hier „Gleich 16:15 Zahnarzt.“)
+  await page.clock.setFixedTime(new Date("2026-10-21T15:40:00+02:00"));
   await page.goto(BASE + "/");
   await page.waitForTimeout(1500);
   const openDay = async () => {

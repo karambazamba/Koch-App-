@@ -1,8 +1,7 @@
 "use client";
 
-// Mias Routinen auf Heute (Tafel 81/82, Punkt 2): Morgen-Info, Überschneidung
-// und Packliste für die Jetzt-Karte – und die Fragen mit genau 2 Knöpfen für
-// „Dein Tag“. Regeln rein in `src/lib/mia/routinen.ts`; jede Frage nur
+// Mias Routinen auf Heute (Tafel 81/82, Punkt 2): Überschneidung und
+// Packliste als Fragen mit genau 2 Knöpfen für „Dein Tag“. Regeln rein in `src/lib/mia/routinen.ts`; jede Frage nur
 // einmal (`src/lib/mia/fragen.ts`).
 
 import { showToast } from "@/lib/core/toast";
@@ -11,10 +10,9 @@ import { changeEntries } from "@/lib/kalender/store";
 import { sanitizeEntry, upsertEntry, type CalendarEntry, type DayItem } from "@/lib/kalender/model";
 import { quickTaskData } from "@/lib/kalender/quick";
 import { addPin, changePins, createPin } from "@/lib/pinnwand";
-import { morgenInfo, packFrage, ueberschneidungen, type RoutineTermin } from "@/lib/mia/routinen";
+import { packFrage, ueberschneidungen, type RoutineTermin } from "@/lib/mia/routinen";
 import { answerFrage, useAnsweredFragen } from "@/lib/mia/fragen";
 import type { HouseholdProfile } from "@/lib/einstellungen/profile";
-import type { JetztInput } from "@/lib/heute/jetztTopics";
 
 export type MiaFrage = { key: string; title: string; detail: string; yes: { label: string; run: () => void }; no: { label: string; run: () => void } };
 
@@ -32,9 +30,9 @@ function addNote(entries: CalendarEntry[], key: string, note: string) {
   changeEntries((list) => upsertEntry(list, { ...e, data: { ...e.data, note: old ? `${old} ${note}` : note } } as CalendarEntry));
 }
 
-export function useMiaRoutinen(o: { today: string; minutes: number; entries: CalendarEntry[]; termine: DayItem[]; tomorrow: DayItem[]; profile: HouseholdProfile; me: string; regen: { time: string; title: string } | null; demo: boolean }): { routinen: JetztInput["routinen"]; fragen: MiaFrage[] } {
+export function useMiaRoutinen(o: { today: string; minutes: number; entries: CalendarEntry[]; termine: DayItem[]; tomorrow: DayItem[]; profile: HouseholdProfile; me: string; demo: boolean }): { fragen: MiaFrage[] } {
   const answered = useAnsweredFragen();
-  if (o.demo) return { routinen: undefined, fragen: [] };
+  if (o.demo) return { fragen: [] };
   const termine = o.termine.filter((i) => i.entry.typ === "termin").map(toRoutine);
   const ueber = ueberschneidungen(termine).find((u) => !answered[u.key]) ?? null;
   const packRaw = packFrage(o.tomorrow.filter((i) => i.entry.typ === "termin").map(toRoutine), o.minutes);
@@ -76,7 +74,6 @@ export function useMiaRoutinen(o: { today: string; minutes: number; entries: Cal
     });
   }
   return {
-    routinen: { morgen: morgenInfo(termine, o.minutes, o.regen), ueber: ueber ? { key: ueber.key, title: ueber.title, detail: ueber.detail } : null, pack: pack ? { key: pack.key, title: pack.title, detail: pack.detail } : null },
     fragen,
   };
 }

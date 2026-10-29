@@ -148,14 +148,14 @@ describe("Leises Angebot in der Jetzt-Karte", () => {
     expect(s.loadDurchatmen().angebote.anlaesse).toHaveLength(2);
   });
 
-  it("Jetzt-Karte: leiser Satz, nie nachts, höchstens 3 Themen, Antippen öffnet das Fenster", () => {
+  it("Jetzt-Karte: leiser Satz (Rang 70), nie nachts, höchstens 2 Themen (A-054), Antippen öffnet das Fenster", () => {
     const atem = { anlass: "nachmittag", detail: "1 Min · Handy-Pause" };
     const t = jetztTopics(jetztInput(15 * 60, { durchatmen: atem })).find((x) => x.kind === "durchatmen");
     expect(t).toMatchObject({ title: "Kurz durchatmen?", detail: "1 Min · Handy-Pause", target: { action: "durchatmen" } });
     expect(jetztTopics(jetztInput(23 * 60, { durchatmen: atem })).some((x) => x.kind === "durchatmen")).toBe(false);
-    // Wichtigeres geht vor: mit drei anderen Themen bleibt es weg
+    // Wichtigeres geht vor: mit anderen Themen bleibt es weg
     const voll = jetztTopics(jetztInput(15 * 60 + 30, { durchatmen: atem, reminder: { key: "r", text: "Paket" }, timer: { name: "Tee", left: "3:00" }, tiles: [], cookingStep: "Wasser aufsetzen" }));
-    expect(voll).toHaveLength(3);
+    expect(voll).toHaveLength(2);
     expect(voll.some((x) => x.kind === "durchatmen")).toBe(false);
     // Feierabend/Wochenende: sanft genug
     expect(jetztTopics(jetztInput(15 * 60, { durchatmen: atem, calm: true })).some((x) => x.kind === "durchatmen")).toBe(true);

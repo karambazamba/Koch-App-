@@ -24,7 +24,7 @@
 - **Mia denkt mit:** höchstens EINE ungefragte Karte am Tag (Regler „Wie
   gesprächig?“: Ruhig nur Muster, Gesprächig zwei), nie 22–7 Uhr, Pause oder
   Ruhe, nur wenn kein anderer Hinweis steht; jede Frage nur einmal, alles in
-  „Was ich mir gemerkt hab“ löschbar. Spruch nur statt „Alles ruhig“. Texte je
+  „Was ich mir gemerkt hab“ löschbar. Kein Spruch des Tages (A-054). Texte je
   Seite in `mia/denktmit/seiten/`. → `docs/bereiche/begleitung.md`
 - **Mias Stimme und Ohr (ElevenLabs):** `ELEVENLABS_API_KEY` nur in Vercel
   (Sensitive), nie im Repo, Client, Log oder Chat; fehlt er, alles wie bisher
@@ -840,8 +840,8 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
 
 - Rein in `src/lib/mia/routinen.ts`, auf Heute über
   `src/components/heute/useMiaRoutinen.ts`:
-  - Morgens 6–10 Uhr Jetzt-Karte „Moin! Fußball 15, Zahnarzt 16“, Zeile 2
-    Wetter nur mit Planbezug („Ab 14 Uhr Regen. Regenjacke für Mathis?“).
+  - (Bis v0.162: morgens 6–10 Uhr Jetzt-Karte „Moin! Fußball 15, Zahnarzt
+    16“ – seit A-054 weg, die Termine-Kachel zeigt das schon.)
   - Überschneidung zweier Termine mit Personen (auch < 15 Min Fahrtzeit):
     „Fußball und Zahnarzt – 15 und 16:10 Uhr. Das wird knapp. Wer fährt?“, in
     „Dein Tag“ mit genau 2 Knöpfen „Ich fahre“ (Notiz am Termin) / „Lisa
@@ -920,7 +920,9 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
 - Regeln: höchstens EINE ungefragte Karte am Tag (Gesprächig zwei), nie
   22–7 Uhr, nie in Pause oder Ruhe nach Feierabend, nur wenn kein anderer
   Hinweis unter der Jetzt-Karte steht. Ruhig = nur Muster-Fragen. Beispiel-Tag
-  = nur der Spruch. Jede Frage nur einmal; Nein/Später gemerkt.
+  = nichts Ungefragtes. Jede Frage nur einmal; Nein/Später gemerkt. Der
+  Kurz-Check „Im Haus“ ist seit A-054 eine dieser Karten („Los geht’s“ /
+  „Heute nicht“).
 - Seiten-Tipp (Tafel 101, `SeitenTipp`): EINE Karte für alle Tipps von Mia
   im Seitenfluss, schiebt den Inhalt nach unten, schwebt nie. Warmer Verlauf
   wie die Jetzt-Karte (`from-jetzt-from to-jetzt-to`), feiner orange Rand,
@@ -948,9 +950,10 @@ räumt weg – mit KI über `/api/lotte`, ohne KI über feste Regeln.
 - Mitdenken (ohne KI): früher Termin an Kita-/Schultag → „Wer bringt Ole?“
   (Partner → Pinnwand, Ich → Aufgabe); Regen × Wäsche-Aufgabe; voller Tag
   (≥ 3 Termine) ohne Gericht → schnelles Rezept (≤ 20 Min) mit Nehmen / Was
-  anderes. Regen zu Draußen-Terminen bleibt auf der Jetzt-Karte.
-- Spruch des Tages: 200 feste Sprüche nach Anlass, steht statt „Alles ruhig“
-  auf der Jetzt-Karte, nur ohne Karte heute, nie derselbe in 30 Tagen.
+  anderes. Regen zu Terminen bleibt auf der Jetzt-Karte.
+- Spruch des Tages: seit A-054 (v0.163) weg, samt Satz-Pool
+  (`mia/denktmit/sprueche.ts`) – die Jetzt-Karte zeigt nur, was man heute
+  braucht. Alte gespeicherte Sprüche werden nur noch gelesen.
 - Tests: `tests/mia/denktMit.test.ts`, `tests/mia/seitenTipp.test.ts`,
   Durchklick `ersterBesuchKarte` (startseite-heim), `imHausEssen` (essen).
 

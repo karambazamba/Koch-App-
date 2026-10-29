@@ -148,14 +148,6 @@ export function weekDayLabel(item: WeekItem, today: string): string {
 }
 
 /** Montag der gemeinten Woche: So/Mo gesprochen = die kommende Mo–So */
-/** Jetzt-Karte „Kurzer Wochencheck?“: Montag ganztags, Sonntag ab 17 Uhr (für die neue Woche) – sonst null */
-export function weekCheckKey(today: string, minutes: number): string | null {
-  const wd = (new Date(`${today}T12:00:00Z`).getUTCDay() + 6) % 7;
-  if (wd === 0) return today;
-  if (wd === 6 && minutes >= 17 * 60) return addDays(today, 1);
-  return null;
-}
-
 const pad2 = (n: number) => String(n).padStart(2, "0");
 const plus = (start: string, minutes: number) => {
   const m = Math.min(23 * 60 + 59, Number(start.slice(0, 2)) * 60 + Number(start.slice(3, 5)) + minutes);

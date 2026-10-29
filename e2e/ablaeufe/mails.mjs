@@ -48,13 +48,13 @@ export const mailsAnMia = async (page, check, device) => {
   check((await send(page, "Spam <x@spam.example>", address)).ok === true, "fremder Absender: still angenommen …");
   check((await send(page, `Felix <${felix}>`, address)).ok === true, "Felix leitet die Kita-Mail weiter");
 
-  // Jetzt-Karte: bis zu drei Themen durchwischen
+  // Jetzt-Karte (A-054: Baustein ganz hinten in der Rangliste – an diesem Vormittag ist sonst nichts dran)
   await page.goto(BASE + "/");
   const card = page.locator("[data-jetzt]");
-  await card.waitFor();
+  await card.first().waitFor({ timeout: 8000 }).catch(() => {});
   await page.waitForTimeout(2500);
   let seen = false;
-  for (let k = 0; k < 3 && !seen; k++) {
+  for (let k = 0; k < 2 && !seen && (await card.count()); k++) {
     seen = ((await card.getAttribute("aria-label")) ?? "").includes("Vorschläge aus Mails") || (await card.getAttribute("data-jetzt")) === "mail";
     if (!seen) {
       const box = await card.boundingBox();

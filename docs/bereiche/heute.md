@@ -15,14 +15,15 @@
   allein Wetter über Sport | Notizen über Im Haus (alle XS); dann Termine M,
   Aufgaben M, Essen S | Einkauf S. Timer nur, solange einer läuft (XS ganz
   oben). Jede Kachel öffnet ihre Seite.
-- Die Jetzt-Karte zeigt höchstens 3 Themen zum Wischen und öffnet wie jede
-  Kachel per Antippen – ohne eigenen Knopf – die Seite „Dein Tag“ (Ausnahme:
-  laufender Timer öffnet den Timer). Feste Höhe, 2 Zeilen (Zeile 1 ≤ 32
-  Zeichen, nie mitten im Wort abgeschnitten), Themen-Symbol statt Gesicht,
-  Punktesystem, nur was die Kacheln nicht zeigen. Nie
-  Temperatur, Wetter nur mit Planbezug (Tafel 60). Tagesphasen ändern nur Inhalte, nie
-  die Anordnung; Ruhe nach Feierabend ist ein eigener Schalter.
-
+- Die Jetzt-Karte (A-054) zeigt nur, was man HEUTE braucht und die Kacheln
+  nicht schon zeigen: EIN Thema, höchstens zwei zum Wischen, aus einer festen
+  Rangliste; nichts dran = gar keine Karte (kein Platzhalter, kein „Alles
+  ruhig“, keine Stimmungssätze). Antippen öffnet wie jede Kachel „Dein Tag“
+  (laufender Timer: den Timer). Zeile 1 fett, Zeile 2 Hinweis oder Knopf,
+  Texte brechen um, nie „…“. Themen-Symbol passend (Uhr, Wolke, Topf,
+  Geschenk), nie Glitzer. Nie Temperatur. Freitags 12–20 Uhr „Wochenende
+  planen?“. Tagesphasen ändern nur Inhalte, nie die Anordnung; Ruhe nach
+  Feierabend ist ein eigener Schalter.
 
 ## Erster Start (aus CLAUDE.md umgezogen)
 
@@ -84,8 +85,8 @@
   der Auswahl mit „NEU“). Regeln und Pool → `docs/bereiche/wundertuete.md`.
 
 
-Kurz: Die Startseite der App. Oben Begrüßung und die Jetzt-Karte (EIN Thema
-für den Moment), darunter die Kacheln in der einen gespeicherten Anordnung.
+Kurz: Die Startseite der App. Oben Begrüßung und die Jetzt-Karte (EIN Thema,
+das man heute braucht – sonst keine), darunter die Kacheln in der einen gespeicherten Anordnung.
 Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen.
 
 ## Wo im Code
@@ -101,15 +102,18 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
   Haushalt, `homeForHaushalt`, `fitSize`); Einheiten: `src/lib/core/homeUnits.ts`
   (`unitsOf`, `glowTile`); Raster (rein): `src/lib/heute/raster.ts` (`packe`,
   `rasterOf`, `fuelleLuecke`, `trennZeile`, `pfeilZu`, `mitLaufendemTimer`).
-- Jetzt-Karte: `src/lib/heute/jetztTopics.ts` (Punkte), abends
-  `abendThema.ts` + `abendDaten.ts` (Tafel 98), `jetztStore.ts`
-  (Speicher), `jetztCommand.ts` (Satz an/aus); Oberfläche
-  `src/components/heute/JetztCard.tsx`, Daten `useJetztTopics.ts`.
+- Jetzt-Karte: `src/lib/heute/jetztTopics.ts` (Rangliste `JETZT_RANG`,
+  `jetztThemen`, `jetztTopics`), `wochenende.ts` (freitags), `abendDaten.ts`
+  (Kita-Weg, Vorlauf), `abendThema.ts` (`abendLage` für die Kacheln),
+  `jetztStore.ts` (Speicher), `jetztCommand.ts` (Satz an/aus); Oberfläche
+  `src/components/heute/JetztCard.tsx`, Daten `useJetztTopics.ts`, Knöpfe
+  `jetztAktionen.ts` („Auf die Liste“, Wochenende).
   Leises Angebot „Kurz durchatmen?“ (A-051): eigenes Thema `durchatmen`
-  (Punkte 30, sanft, nie nachts) aus `durchatmen/angebot.ts`
-  (`durchatmenAngebot`, `durchatmenThema`; höchstens 2× am Tag, nach drei
-  Terminen am Stück oder im Nachmittagstief, abschaltbar), Antippen öffnet
-  das Fenster (`oeffneDurchatmen`). Nie als Mitteilung.
+  (Rang 70, nach „Morgen“, vor den Bausteinen; nie nachts) aus
+  `durchatmen/angebot.ts` (`durchatmenAngebot`, `durchatmenThema`; höchstens
+  2× am Tag, nach drei Terminen am Stück oder im Nachmittagstief,
+  abschaltbar), Antippen öffnet das Fenster (`oeffneDurchatmen`). Nie als
+  Mitteilung.
 - „Dein Tag“: `src/lib/heute/deinTag.ts` (Symbole, Zeilen, Übersicht,
   Öffnen), `src/components/heute/DeinTag.tsx`; Mia-Knopf beim Scrollen
   `src/lib/begleitung/knopfScroll.ts`.
@@ -136,8 +140,10 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
   zu und nie bei Wetter/Essen.
   `sanitizeHome` wirft Unbekanntes raus, ergänzt fehlende Kacheln unsichtbar
   und hält Essen + Einkauf zusammen. In der Sicherung.
-- `wasgibts.jetzt` v1 `{on, day, hidden, weights}` – an/aus, heute
-  ausgeblendete Themen, Interesse je Thema-Art (±6). In der Sicherung.
+- `wasgibts.jetzt` v1 `{on, day, hidden, weights, weekOff?}` – an/aus und
+  heute weggelegte Themen („Erledigt“, „Auf die Liste“, „Später“). `weights`
+  und `weekOff` werden seit A-054 nicht mehr geschrieben, nur noch gelesen
+  (alte Sicherungen). In der Sicherung.
 - `wasgibts.tagesablauf` v1 `{routine}` – `ruhe`, `morgenBis` (10:00),
   `feierabendAb` (20:00), `nachArbeit`, `arbeitstage` (0 = Mo … 6 = So,
   Standard alle), `kochenAuto`, `kochenMin` (20, erlaubt 5–90). Ein altes
@@ -327,91 +333,76 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
   ihn beim Hinzufügen ein.
 - Statt der Jetzt-Karte steht oben ein gestrichelter Platz (`JetztPlaceholder`).
 
-### Jetzt-Karte (Tafel 60, v0.68.0)
-- Zeigt nur, was Mia weiß und die Kacheln NICHT zeigen – seit v0.74 ohne
-  eigenen Knopf (siehe „Weniger Mia + Dein Tag“).
-  Kein Wetterbericht, keine Wiederholung, keine Zähler, kein ✕, keine
-  „Passt sich deinem Tag an“-Zeile. Feste Höhe 78 px, zwei Zeilen: Zeile 1
-  = was (höchstens 32 Zeichen, `TITLE_MAX`, gekürzt am Wortende), Zeile 2 =
-  warum. Ganze Karte antippbar; Wischen = nächstes Thema (höchstens drei,
-  kleine Punkte oben rechts, 1 → 3 und nicht weiter). „Erledigt“ (jetzt in
-  „Dein Tag“) legt das Thema mit `doneJetztTopic` für heute weg – ohne
-  weniger Interesse; eine Erinnerung gilt dann als gesehen.
-- Themen (`jetztTopics`, rein, nie leer – sonst „Alles ruhig – ich sag
-  Bescheid.“): Erinnerung (100), Timer (nur ohne Timer-Kachel), Kochschritt,
-  Pause, Gleich (Termin ≤ 15 Min mit Notiz/Ort; ohne Zusatz nur ohne
-  Termine-Kachel), Vorbereiten (Termin heute mit Notiz → „Versichertenkarte
-  einpacken?“), Packliste fürs Training heute, Wetter NUR mit Planbezug
-  (Regen zur Stunde eines Draußen-Termins/-Trainings, `isOutdoor`: „Regen um
-  17 Uhr · Fußball · lieber drinnen?“; ohne Regen Wind erst ab „Stürmisch“
-  zur Stunde des Plans, `stormForPlan` in `lib/wetter/wind.ts`: „Stürmisch ab
-  14 Uhr · Trampolin sichern?“; draußen sind jetzt auch Trampolin, Wäsche,
-  Balkon, Terrasse), Neu von der Familie (Pinnwand,
-  „Antworten“), Heimweg-Einkauf ohne Zahl („Auf dem Heimweg bei REWE?“, vor
-  dem Kochen), Kochstart (≤ 30 Min vor dem Start; ohne Essen-Kachel früher),
-  Absprache bei Abendterminen ab 18 Uhr mit Kindern („Wer bleibt bei den
-  Kindern?“, mit Notiz „Oma bleibt …“ ✓), Geburtstag, Aufgaben/Ideen nur ohne ihre Kachel,
-  Wochencheck. Selbst eingeschaltete Bausteine leise: Freizeit-Idee (Ruhe),
-  Tipp aus der Region (nur ohne Tipps-Kachel; Weiterwischen = dieses
-  Wochenende nicht mehr), kleiner Tipp. Beispiel-Tag erklärt sich.
-  Mit Haushalt (seit v0.80, Konten 3d): leise Neuigkeit von anderen
-  („Milch steht auf der Liste“ – „Hat Lisa gerade gesetzt.“, „Neu:
-  Elternabend“ – „Hat Lisa eingetragen.“), sanft, 45 Punkte, höchstens eine
-  am Tag, jede nur einmal, nur 6 Std. frisch (`newsForCard` in
-  `src/lib/konten/wer.ts`, Speicher `wasgibts.neu`).
-- Morgens (6–10 Uhr, v0.136): ein besonderer Tag heute kommt zuerst
-  (`first`, auch gegen gelernte Gewichte): „Moin! Heute hat Lisa
-  Geburtstag.“ bzw. beim eigenen Jahrestag „Moin! Heute ist euer
-  Jahrestag.“ (allein „dein“; passt Zeile 1 nicht in 32 Zeichen, gesprochen
-  kürzer „Moin! Heut is euer Hochzeitstag.“, `moinZeile`). Jahrestag heute
-  kommt aus `jahrestagHeute` (ganztägiger Termin, `anlassOf`). Die
-  Morgen-Info („Moin! Zahnarzt 9:15“) nur ohne Termine-Kachel und ohne
-  besonderen Tag – sonst ein Thema, das keine Kachel zeigt, bzw. Spruch/„Alles
-  ruhig“. Test `tests/heute/jetztMorgens.test.ts`.
-- Weggefallen: „start“ (Grad · Termin), reines „morgen“, „Ausblick“ (vX, Tafel 98), Wetter-Tipps ohne
-  Plan, „Als Nächstes“-Termin, „Alles geschafft“, Sport-Info ohne Packliste.
-- Punkte aus Dringlichkeit und Interesse (`weights`, ±5 % je Punkt;
-  Antippen +1, Weiterwischen −0,5). `calm` (Feierabend mit Ruhe oder
-  Wochenende) = nur sanfte Themen. Nachts (22–6 Uhr) nur Erinnerung, Timer,
-  Kochen, Pause, Geburtstag, Beispiel. Arbeit-Termine sind nicht sanft.
-- Abends: nichts doppelt (Tafel 98, vX). Ab Feierabend bzw. ab 19 Uhr, wenn
-  heute kein Termin und kein Essen mehr kommt (`isAbend`), zeigen die Kacheln
-  morgen (Termine „Morgen · Mi“, Essen „Morgen · Mi“ mit Bild) und die Karte
-  höchstens EIN Thema, nur was keine Kachel zeigt. Laufendes (Erinnerung,
-  Timer, Kochen, Pause) geht vor, sonst fest in dieser Reihenfolge
-  (`abendThemen`): a) Jahrestag/Geburtstag morgen („Morgen ist euer
-  Hochzeitstag.“ · „Was Schönes geplant?“, allein „dein“, nur beim eigenen
-  „Hochzeitstag“/„Jahrestag“; „Morgen hat Lisa Geburtstag.“; Herz bzw.
-  Geschenk in Rosé), b) Regen morgen 7–9 Uhr mit Plan (Kinder werktags:
-  „Jacken für die Kita raus.“ bzw. Schule; sonst Termin vor 10 Uhr: „Schirm
-  für … bereitlegen?“; Schirm), c) Termin vor 9 Uhr („Morgen 8 Uhr Zahnarzt.“
-  · „Wecker auf 7?“; Wecker), d) Essen mit Vorlauf (`essen/vorlauf.ts`:
-  Fleisch/Fisch aus dem Tiefkühler laut „Im Haus“ oder „TK-…“, Marinieren,
-  Teig über Nacht: „Morgen gibt’s Gulasch.“ · „Rindfleisch heute aus dem
-  Gefrierfach.“), e) sonst „Morgen ist ruhig.“ bzw. mit Einträgen „Für
-  morgen ist alles sortiert.“ · „Schönen Abend.“ „Erledigt“ legt ein Thema
-  weg, dann kommt das nächste. Antippen öffnet „Dein Tag“ gleich auf „Morgen
-  · Mi“. Nachts (22–6) bleibt alles wie bisher. Abends steht damit kein
-  Spruch und kein „Alles ruhig“. Tests `tests/heute/abends.test.ts`.
-- Offene Aufgaben wandern abends mit (vX). Die Regel, wann die Startseite auf
-  morgen steht, liegt an EINER Stelle: `aufMorgen` in
-  `kalender/mitwandern.ts` (6–24 Uhr; `isAbend` = dieselbe Regel ohne 22–24
-  Uhr, Eingaben über `abendLage`). Steht sie auf morgen, zeigt auch die
-  Aufgaben-Kachel „Morgen · Mi“: das Offene von heute still in derselben
-  Liste (ohne „von heute“/„von gestern“), dazu, was für morgen geplant ist
-  (`aufgabenUebersicht`, dringend bleibt vorn, S/M-Mengen und „+N weitere“
-  wie bisher). Familien-Aufgaben stehen auch im Feierabend da (früher
-  „Aufgaben machen Pause“), nur Arbeit ruht. Das ＋ der Kachel
-  trägt abends für morgen ein. „Dein Tag“ zeigt unter „Morgen · Mi“ dieselben
-  Aufgaben, die Jetzt-Karte zählt sie für „Für morgen ist alles sortiert.“
-  mit. In den Daten wird nichts verschoben; um Mitternacht rutscht alles wie
-  bisher still. Tests `tests/kalender/mitwandern.test.ts`,
-  `tests/kalender/allesHeute.test.ts`.
-- Die Reihenfolge bleibt stehen (`useStableOrder`), bis die App zurückkehrt,
-  15 Min vergehen, ein Thema wegfällt oder eines mit ≥ 90 Punkten dazukommt.
-- Tests: `tests/heute/jetztThemen.test.ts` (Tag wie Tafel 60 um 7:00, 8:10,
-  10:20, 12:40, 16:45, 17:35, 19:00, 21:00 (abends EIN Thema); nie „°“; Regen nur mit
-  Draußen-Termin; „Erledigt“), Durchklick `jetztKarte`.
+### Jetzt-Karte: nur Nutzen für heute (A-054, v0.163; vorher Tafel 60/98)
+- EIN Thema, höchstens zwei (`JETZT_MAX`), aus EINER festen Rangliste
+  (`JETZT_RANG` in `lib/heute/jetztTopics.ts`, kleiner = weiter vorn):
+  0 Beispiel-Tag (erklärt sich) · 5 Erinnerung · 10 Gleich · 20 Wetter mit
+  Folge · 30 Essen mit Folge (31 abends Vorlauf) · 40 Geburtstag/Jahrestag ·
+  45 Neu vom Haushalt (nur mit Konto) · 50 Timer läuft / Kochmodus läuft
+  (52 Pause) · 55 Wochenende planen · 60 abends „Morgen“ · 70 leise „Kurz
+  durchatmen?“ (A-051) · ab 80 selbst
+  eingeschaltete Bausteine (Mails, Tipps aus der Region, Spendentopf,
+  Freizeit-Idee, kleiner Tipp – wer sie nutzt, behält sie). Gleicher Rang:
+  das Dringendere zuerst. `jetztThemen(lage)` liefert die ganze Liste,
+  `jetztTopics` das, was die Karte zeigt. Ein neues Thema = eine Art mit
+  Rang + ein Baustein in `kandidaten` (so kam „Kurz durchatmen?“ dazu).
+- Nichts davon dran = keine Karte. Weggefallen (A-054): Spruch des Tages
+  (Satz-Pool `mia/denktmit/sprueche.ts` gelöscht), „Alles ruhig. Ich sag
+  Bescheid.“, abends „Morgen ist ruhig.“/„Für morgen ist alles sortiert.“ ·
+  „Schönen Abend.“, „Moin!“-Morgengruß und Morgen-Info, „Genießt die Zeit“,
+  Pinnwand-Neu, Heimweg-Einkauf, Kochstart, Absprache, Aufgaben/Ideen,
+  Überschneidung/Packen (die Fragen stehen weiter in „Dein Tag“),
+  Wochencheck (weiter per Mia) und der Kurz-Check „Im Haus“ (jetzt als Karte
+  von „Mia denkt mit“ unter der Jetzt-Karte, „Los geht’s“ / „Heute nicht“).
+  Gelerntes Interesse je Art gibt es nicht mehr.
+- Gleich: der nächste Termin in weniger als 60 Min (auch Training) –
+  „Gleich 10:00 Klettergerüst.“; Zeile 2 die Vorbereitung aus der Notiz
+  („Versichertenkarte einpacken?“), sonst mit Ort „Losgehen um 9:45.“ (fester
+  Vorlauf 15 Min, `LOSGEH_VORLAUF` – Wegzeiten gibt es nicht; ohne Ort keine
+  Losgehzeit), sonst beim Training die Packliste, sonst nichts.
+- Wetter mit Folge: Regen zur Stunde eines Plans von heute (Termin außer
+  Arbeit, Training) – „Ab 15 Uhr Regen.“ · „Schirm für Bastelkreis.“, draußen
+  „Fußball: lieber drinnen?“; sonst Sturm (`stormForPlan`); abends Regen
+  morgen früh mit Plan („Jacken für die Kita raus.“). Regen ohne Plan = nichts.
+- Essen mit Folge: fürs Gericht von heute ist im Haus etwas nicht da (nur mit
+  gepflegtem „Im Haus“, ohne was schon auf der Liste steht), bis zum
+  Kochstart: „Pad Thai heute Abend.“ und als Zeile 2 der Knopf „Auf die
+  Liste: Eier“ – setzt genau diese Zutaten still auf die Liste
+  (`zutatenDraufsetzen` in `einkauf/angebot/nachNehmen.ts`, über das
+  Wochenplan-Angebot, mit „für Pad Thai“), danach ist das Thema heute weg.
+  Nie „fehlt“. Abends: „Morgen gibt’s Gulasch.“ · „Rindfleisch heute aus dem
+  Gefrierfach.“ (`essen/vorlauf.ts`).
+- Geburtstag/Jahrestag heute oder morgen – nur aus dem Kalender (Stichwort
+  oder Etikett, `kalender/anlass.ts`; das Profil kennt keine Geburtstage):
+  „Heute hat Lisa Geburtstag.“ · „Vielleicht kurz anrufen?“, „Morgen hat Oma
+  Geburtstag.“ · „Noch Zeit für eine Kleinigkeit.“, „Heute ist euer
+  Hochzeitstag.“ (allein „dein“).
+- Abends ab 18 Uhr: „Morgen · Fr: 8:00 Laufen“ · „2 Termine. Wecker auf 7?“
+  (Wecker bei Terminen 5–9 Uhr); morgen nichts mit Uhrzeit = kein Thema.
+- Wochenende planen (`lib/heute/wochenende.ts`): nur freitags 12:00–20:00
+  (Zeit über `now()`). „Wochenende planen?“, Zeile 2 was schon steht („Sa
+  10:00 Volleyball steht schon.“), 2–3 Chips aus den eigenen Daten in dieser
+  Reihenfolge: Wetter („Sa sonnig: raus?“ bzw. „Sa Regen: was für drinnen?“ →
+  Mia fragt nach einer Idee), Essen („Wochenplan Sa/So füllen“ → Essen, die
+  nächsten 7 Tage), Einkauf („Großeinkauf Sa?“ ab 5 Sachen auf der Liste →
+  still eine Aufgabe „Großeinkauf“ am Samstag). „Mit Mia planen“ öffnet die
+  Bühne mit „Lass uns das Wochenende planen.“ (`openHelper`), „Später“ legt
+  sie für heute weg (`wasgibts.jetzt`). Nie Tipps aus der Region, kein „du
+  solltest“, keine Zähler. Steht Wichtigeres davor, wartet sie, bis das
+  erledigt ist (sie steht immer allein).
+- Bleibt: nachts (22–6) nur Erinnerung, Timer, Kochen, Pause und ab 22 Uhr
+  „Morgen“; im Feierabend mit Ruhe und am Wochenende nichts zu Arbeit;
+  höchstens EIN Hinweis darunter; nie Temperatur.
+- Aussehen: mindestens 78 px hoch, wächst nur, wenn Text umbrechen muss;
+  ganze Karte = EINE Fläche (Antippen), darüber nur der Knopf in Zeile 2;
+  Wischen 1 → 2 und nicht weiter. Die Reihenfolge bleibt stehen
+  (`useStableOrder`), bis die App zurückkehrt, 15 Min vergehen, ein Thema
+  wegfällt oder Erinnerung/Gleich dazukommt.
+- Tests: `tests/heute/jetztThemen.test.ts` (Rangliste mit überschriebenem
+  `now()`: Do 8:47 ohne Thema → keine Karte, Regen am Nachmittag, Termin in
+  40 Min zuerst, Fr 13 Uhr Wochenende, Fr 20:30 und Sa nie, abends „Morgen ·
+  Fr“, nachts nur Erlaubtes, nie „…“), Durchklick `jetztKarte` (SE/15
+  Pro/Pixel 7: ohne Thema weg, nie „…“, Wochenende „Später“).
 
 ### Weniger Mia + „Dein Tag“ (Tafel 66 B, 67, 68, v0.74.0)
 - Auf der Startseite genau zwei Mias: das eckige Logo (`BrandMark`, nicht
@@ -610,9 +601,8 @@ Links liegt der Kalender, rechts Essen – gewechselt wird per Tipp oder Wischen
   Seit „Einkauf neu“ (vX, Tafel 110): Laden-Zeile = Laden-Seite
   (`/einkaufsliste/laden?name=…`, `ladenHref`), „n noch ohne Laden ·
   Sortieren ›“ = Seite „Einkauf“ am Bereich „Noch ohne Laden“
-  (`/einkaufsliste#ohne-laden`), Kopf und Rest = Seite „Einkauf“; die
-  Jetzt-Karte „Auf dem Heimweg bei REWE?“ öffnet die Laden-Seite unterwegs
-  (`&unterwegs=1`).
+  (`/einkaufsliste#ohne-laden`), Kopf und Rest = Seite „Einkauf“ (die frühere
+  Jetzt-Karte „Auf dem Heimweg bei REWE?“ gibt es seit A-054 nicht mehr).
 - Tests: `tests/heute/essenKachel.test.ts` (sieben Zustände mit Bild,
   Kopfzeile, Schritt-Zeile), `tests/einkauf/kachelSymbole.test.ts` (nie ein
   Buchstabe, Variante A/C2, Kochmodus-Schritt).

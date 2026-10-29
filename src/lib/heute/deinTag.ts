@@ -11,34 +11,33 @@
 import type { DayItem } from "@/lib/kalender/model";
 import type { JetztKind, JetztTopic } from "@/lib/heute/jetztTopics";
 
-/** Linien-Symbol (lucide) je Thema – statt Mias Gesicht in der Jetzt-Karte */
-export type TopicIcon = "Umbrella" | "CalendarDays" | "ListChecks" | "ShoppingCart" | "CookingPot" | "MessageCircle" | "Timer" | "Sunrise" | "Sparkles" | "Heart" | "Gift" | "AlarmClock" | "Refrigerator";
+/** Linien-Symbol (lucide) je Thema – statt Mias Gesicht in der Jetzt-Karte; passend zum Thema, nie Glitzer (A-054) */
+export type TopicIcon = "Clock" | "CloudRain" | "CookingPot" | "Gift" | "Heart" | "Timer" | "Sunrise" | "CalendarDays" | "Bell" | "Mail" | "MapPin" | "Lightbulb" | "Wind";
 
-const ICONS: Partial<Record<JetztKind, TopicIcon>> = {
-  wetter: "Umbrella",
-  gleich: "CalendarDays",
+const ICONS: Record<JetztKind, TopicIcon> = {
+  beispiel: "CalendarDays",
+  erinnerung: "Bell",
+  gleich: "Clock",
+  wetter: "CloudRain",
+  essen: "CookingPot",
+  vorlauf: "CookingPot",
   geburtstag: "Gift",
   jahrestag: "Heart",
-  morgenwetter: "Umbrella",
-  frueh: "AlarmClock",
-  vorlauf: "CookingPot",
-  vorbereiten: "ListChecks",
-  packliste: "ListChecks",
-  aufgabe: "ListChecks",
-  einkauf: "ShoppingCart",
-  kochstart: "CookingPot",
-  kochen: "CookingPot",
-  ideen: "CookingPot",
-  pinnwand: "MessageCircle",
-  absprache: "MessageCircle",
+  familie: "Bell",
   timer: "Timer",
+  kochen: "CookingPot",
+  pause: "Sunrise",
+  wochenende: "CalendarDays",
   morgen: "Sunrise",
-  ueberschneidung: "CalendarDays",
-  packen: "ListChecks",
-  kuehlcheck: "Refrigerator",
+  durchatmen: "Wind",
+  mail: "Mail",
+  region: "MapPin",
+  spendentopf: "Heart",
+  freizeit: "Sunrise",
+  tipp: "Lightbulb",
 };
 
-export const topicIcon = (kind: JetztKind): TopicIcon => ICONS[kind] ?? "Sparkles";
+export const topicIcon = (kind: JetztKind): TopicIcon => ICONS[kind];
 
 export type DaySection = "termine" | "essen" | "pinnwand" | "aufgaben";
 
@@ -47,22 +46,15 @@ export function topicSpot(topic: Pick<JetztTopic, "id" | "kind">): { section: Da
   const key = topic.id.includes(":") ? topic.id.slice(topic.id.indexOf(":") + 1) : null;
   switch (topic.kind) {
     case "gleich":
-    case "vorbereiten":
     case "wetter":
-    case "absprache":
-    case "packliste":
     case "geburtstag":
     case "jahrestag":
-    case "frueh":
+    case "morgen":
       return { section: "termine", key };
-    case "kochstart":
+    case "essen":
+    case "vorlauf":
     case "kochen":
-    case "einkauf":
-    case "ideen":
       return { section: "essen", key: null };
-    case "pinnwand":
-      return { section: "pinnwand", key };
-    case "aufgabe":
     case "erinnerung":
       return { section: "aufgaben", key };
     default:

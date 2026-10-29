@@ -22,11 +22,8 @@ describe("Eine feste Kachel-Anordnung", () => {
 });
 
 describe("Einkauf nach Läden", () => {
-  it("Jetzt-Karte nachmittags: „Auf dem Heimweg bei REWE?“ (ohne Zahl)", () => {
-    const t = jetztTopics(base(17 * 60, { shop: { shop: "REWE", names: ["Milch", "Brot", "Butter"] } }));
-    expect(t[0].title).toBe("Auf dem Heimweg bei REWE?");
-    expect(t[0].detail).toBe("Milch, Brot, Butter");
-    expect(jetztTopics(base(10 * 60, { shop: { shop: "REWE", names: ["Milch", "Brot"] } })).some((x) => x.kind === "einkauf")).toBe(false);
+  it("A-054: kein „Auf dem Heimweg bei REWE?“ mehr in der Jetzt-Karte", () => {
+    expect(jetztTopics(base(17 * 60))).toEqual([]);
   });
 
   it("Läden gruppieren: meiste zuerst, „Egal wo“ zuletzt, feste Farbe", async () => {

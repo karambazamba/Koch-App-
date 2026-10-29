@@ -1,11 +1,11 @@
 "use client";
 
 // Mia denkt mit auf der Startseite: sammelt Muster, Mitdenken und Vorstellen
-// (Logik rein in lib/mia/denktmit), wählt die EINE Karte des Tages und den
-// Spruch für die Jetzt-Karte und führt die Knöpfe aus. Kleines erledigt sie
-// sofort mit kurzer Bestätigung (Serie, Gericht, Pinnwand, Aufgabe).
-// Der Kurz-Check „Im Haus“ (Sonntag ab 17 Uhr) ist eine dieser Karten, steht
-// aber in der Jetzt-Karte; er zählt erst, wenn er dort wirklich steht.
+// (Logik rein in lib/mia/denktmit), wählt die EINE Karte des Tages und führt
+// die Knöpfe aus. Kleines erledigt sie sofort mit kurzer Bestätigung (Serie,
+// Gericht, Pinnwand, Aufgabe). Der Kurz-Check „Im Haus“ (Sonntag ab 17 Uhr)
+// ist eine dieser Karten („Los geht’s“ / „Heute nicht“). Keinen Spruch mehr
+// in der Jetzt-Karte (A-054: dort nur, was man heute braucht).
 
 import { useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
@@ -26,16 +26,15 @@ import { changePins, createPin } from "@/lib/pinnwand";
 import { useForecast } from "@/lib/wetter/client";
 import { hoursToday, isRainy } from "@/lib/wetter/forecast";
 import { haushaltOf } from "@/lib/core/haushalt";
-import { heutigeKarte, spruchHeute, type DenktKarte, type Umfeld } from "@/lib/mia/denktmit/auswahl";
+import { heutigeKarte, type DenktKarte, type Umfeld } from "@/lib/mia/denktmit/auswahl";
 import { mitdenkTipps } from "@/lib/mia/denktmit/mitdenken";
 import { findeEssenMuster, findeMuster, ritualTag, serieAus } from "@/lib/mia/denktmit/muster";
-import { anlaesse } from "@/lib/mia/denktmit/sprueche";
-import { antworten, hinweisGezaehlt, ritualEingeplant, ritualMerken, spruchGezeigt, useDenkt, vorstellungFertig } from "@/lib/mia/denktmit/store";
+import { antworten, hinweisGezaehlt, ritualEingeplant, ritualMerken, useDenkt, vorstellungFertig } from "@/lib/mia/denktmit/store";
 import { naechsteVorstellung } from "@/lib/mia/denktmit/vorstellen";
 import type { HomeTileId } from "@/lib/core/homeLayout";
 import { useFeature } from "@/lib/core/features";
 import { usePantry } from "@/lib/vorrat/pantry";
-import { KUEHLCHECK_TITEL, kuehlCheckFaellig, useKuehlCheck } from "@/lib/vorrat/kuehlcheck";
+import { KUEHLCHECK_DETAIL, KUEHLCHECK_HREF, KUEHLCHECK_TITEL, kuehlCheckErledigt, kuehlCheckFaellig, useKuehlCheck } from "@/lib/vorrat/kuehlcheck";
 
 type Input = {
   data: HomeData;
@@ -60,12 +59,6 @@ type DenktErgebnis = {
   karte: DenktAnzeige | null;
   vorstellung: VorstellAnzeige | null;
   glow: HomeTileId | null;
-  spruch: string | null;
-  spruchGesehen: () => void;
-  /** Kurz-Check „Im Haus“ ist heute die Karte: Woche (Sonntag) für die Jetzt-Karte */
-  kuehlcheck: string | null;
-  /** Er steht in der Jetzt-Karte: als Hinweis des Tages zählen */
-  kuehlcheckGesehen: () => void;
 };
 
 export function useMiaDenkt(o: Input): DenktErgebnis {
@@ -85,7 +78,7 @@ export function useMiaDenkt(o: Input): DenktErgebnis {
   const kandidaten = useMemo((): DenktKarte[] => {
     if (!s) return [];
     const out: DenktKarte[] = [];
-    if (kuehlWoche) out.push({ art: "kuehlcheck", key: `kuehlcheck:${kuehlWoche}`, satz: KUEHLCHECK_TITEL, woche: kuehlWoche });
+    if (kuehlWoche) out.push({ art: "kuehlcheck", key: `kuehlcheck:${kuehlWoche}`, satz: `${KUEHLCHECK_TITEL} ${KUEHLCHECK_DETAIL}`, woche: kuehlWoche });
     const m = findeMuster(o.entries, today, s.antworten);
     if (m) out.push({ art: "muster", key: m.key, satz: m.satz, muster: m });
     const e = cooked ? findeEssenMuster(cooked, today, s.antworten, s.rituale, haushaltOf(profile.householdType) === "allein") : null;
@@ -118,7 +111,7 @@ export function useMiaDenkt(o: Input): DenktErgebnis {
 
   const karte = s && !o.besetzt ? heutigeKarte(kandidaten, s, umfeld) : null;
   useEffect(() => {
-    if (karte && karte.art !== "kuehlcheck") hinweisGezaehlt(karte.key, today);
+    if (karte) hinweisGezaehlt(karte.key, today);
   }, [karte?.key, today]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Essens-Rituale still einplanen (heute oder morgen, wenn dort noch nichts steht; je Tag nur einmal)
@@ -133,7 +126,6 @@ export function useMiaDenkt(o: Input): DenktErgebnis {
     }
   }, [s, today, o.demo, o.data]);
 
-  const spruch = s && !karte && !o.besetzt ? spruchHeute(s, umfeld, anlaesse({ weekday: weekdayIndex(today), month: Number(today.slice(5, 7)), feiertag: Boolean(feiertage(Number(today.slice(0, 4)))[today]), wetter: wetterAnlass(forecast?.days.find((d) => d.date === today)), vielErledigt: o.items.filter((i) => i.entry.typ === "aufgabe" && i.done).length >= 3 })) : null;
 
   const done = (text: string) => showToast({ text, seconds: 3, small: true });
   const knoepfe = (k: DenktKarte): KartenKnopf[] => {
@@ -183,8 +175,12 @@ export function useMiaDenkt(o: Input): DenktErgebnis {
             if (b.aktion === "anderes") o.onOpenFood();
           },
         }));
-      case "vorstellen":
       case "kuehlcheck":
+        return [
+          { label: "Los geht’s", onClick: () => router.push(KUEHLCHECK_HREF) },
+          { label: "Heute nicht", onClick: () => kuehlCheckErledigt(k.woche) },
+        ];
+      case "vorstellen":
         return [];
     }
   };
@@ -206,22 +202,8 @@ export function useMiaDenkt(o: Input): DenktErgebnis {
   };
 
   return {
-    karte: karte && karte.art !== "vorstellen" && karte.art !== "kuehlcheck" ? { satz: karte.satz, label: "Mitgedacht", knoepfe: knoepfe(karte) } : null,
+    karte: karte && karte.art !== "vorstellen" ? { satz: karte.satz, label: "Mitgedacht", knoepfe: knoepfe(karte) } : null,
     vorstellung,
     glow: vorstellung?.tile ?? null,
-    spruch,
-    spruchGesehen: () => spruch && spruchGezeigt(spruch, today),
-    kuehlcheck: karte?.art === "kuehlcheck" ? karte.woche : null,
-    kuehlcheckGesehen: () => karte?.art === "kuehlcheck" && hinweisGezaehlt(karte.key, today),
   };
-}
-
-/** Wetter des Tages als Anlass für den Spruch (nur die groben Fälle) */
-function wetterAnlass(d: { text: string; max: number; wet: number; sun: number } | undefined) {
-  if (!d) return null;
-  if (/schnee/i.test(d.text)) return "schnee" as const;
-  if (d.wet >= 3) return "regen" as const;
-  if (d.max >= 25) return "warm" as const;
-  if (d.max <= 3) return "kalt" as const;
-  return d.sun >= 6 ? ("sonne" as const) : null;
 }

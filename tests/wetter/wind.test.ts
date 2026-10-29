@@ -132,6 +132,8 @@ describe("Jetzt-Karte: Wind nur ab „Stürmisch“ und nur mit Planbezug", () =
     expect(stormForPlan(hs, D, 10, plan("Wäsche aufhängen"))?.detail).toBe("Wäsche lieber drinnen trocknen?");
     expect(stormForPlan(hs, D, 10, plan("Mit dem Rad zur Oma"))?.detail).toBe("Heute lieber ohne Rad?");
     expect(stormForPlan(hs, D, 10, plan("Fußball Mathis"))?.detail).toBe("Fußball Mathis lieber drinnen?");
+    // A-054: langer Titel nie mit „…“ gekürzt
+    expect(stormForPlan(hs, D, 10, plan("Kindergeburtstag im Stadtpark mit allen"))?.detail).toBe("Kindergeburtstag im Stadtpark mit allen lieber drinnen?");
   });
 
   it("Sturm/Orkan mit eigenem Wort; ab jetzt gerechnet", () => {

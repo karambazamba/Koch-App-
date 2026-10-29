@@ -113,10 +113,10 @@ describe("Anleitung je Postfach", () => {
 
 describe("Jetzt-Karte: Vorschläge aus Mails", () => {
   const base = { today: "2026-10-21", calm: false, upcoming: [], tomorrow: { label: "Morgen · Do", date: "2026-10-22", items: [] }, urgent: [], dueToday: [], pin: null, planWeather: null, dish: null, birthdays: [], sport: null, shop: null, timer: null, cookingStep: null, reminder: null, pause: null, dinnerFree: false, leisure: null, tip: null, region: null, kids: false, weekCheck: null, demo: false, tiles: [], weights: {}, hidden: [] };
-  it("tagsüber ein Thema mit „Öffnen“ → /mails, nachts nicht", () => {
+  it("tagsüber ein Thema (Baustein, ganz hinten in der Rangliste) → /mails, nachts nicht", () => {
     const mail = { id: "m1:2", title: "2 Vorschläge aus Mails", detail: "Laternenumzug" };
     const day = jetztTopics({ ...base, minutes: 10 * 60, mail });
-    expect(day[0]).toMatchObject({ kind: "mail", title: "2 Vorschläge aus Mails", target: { href: "/mails" }, button: "Öffnen" });
+    expect(day[0]).toMatchObject({ kind: "mail", title: "2 Vorschläge aus Mails", target: { href: "/mails" } });
     expect(jetztTopics({ ...base, minutes: 23 * 60, mail }).some((t) => t.kind === "mail")).toBe(false);
   });
 });

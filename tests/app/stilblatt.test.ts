@@ -77,12 +77,12 @@ describe("Ohne Druck: Sport ohne Zähler und Serien", () => {
     expect(celebrationText("Felix")).toBe("Stark, Felix! Dein Wochenziel ist geschafft.");
   });
 
-  it("Jetzt-Karte: Sport nur als Packliste fürs heute geplante Training, ohne „noch N“", () => {
+  it("Jetzt-Karte: Sport nur als Packliste kurz vor dem Training (Gleich-Hinweis), ohne „noch N“", () => {
     const sport = { key: "s", title: "Laufen", time: "18:00", pack: ["Laufschuhe", "Kopfhörer"] };
-    const t = jetztTopics(jetztInput(10 * 60, { sport })).find((x) => x.kind === "packliste");
-    expect(t?.title).toBe("Laufschuhe einpacken?");
+    const t = jetztTopics(jetztInput(17 * 60 + 20, { sport })).find((x) => x.kind === "gleich");
+    expect(t).toMatchObject({ title: "Gleich 18:00 Laufen.", detail: "Laufschuhe einpacken?" });
     expect(t?.detail).not.toMatch(/noch \d|\d+ von/);
-    expect(jetztTopics(jetztInput(10 * 60)).some((x) => x.kind === "packliste")).toBe(false);
+    expect(jetztTopics(jetztInput(10 * 60, { sport }))).toEqual([]);
   });
 });
 
@@ -117,10 +117,10 @@ describe("v0.31: Kalender, Essen, Rezepte", () => {
     expect(dishTone("Shakshuka", "vegetarisch")).toMatch(/^#[0-9A-F]{6}$/i);
   });
 
-  it("„auf die Liste“ statt „noch:“ – auch in der Jetzt-Karte", () => {
-    const t = jetztTopics(jetztInput(17 * 60 + 40, { dish: { name: "Pasta", clock: "18:30", minutes: 25, ready: false, missing: ["Basilikum"] } }))[0];
-    expect(t.kind).toBe("kochstart");
-    expect(t.detail).toBe("auf die Liste: Basilikum");
+  it("„Auf die Liste“ statt „noch:“ – auch in der Jetzt-Karte (Knopf, A-054)", () => {
+    const t = jetztTopics(jetztInput(15 * 60, { dish: { name: "Pasta", clock: "18:30", minutes: 25, ready: false, missing: ["Basilikum"], liste: ["Basilikum"] } }))[0];
+    expect(t.kind).toBe("essen");
+    expect(t.aktion?.label).toBe("Auf die Liste: Basilikum");
   });
 });
 

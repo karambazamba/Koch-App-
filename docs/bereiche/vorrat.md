@@ -130,9 +130,9 @@ weiter Vorrat (`src/lib/vorrat/`, `/vorrat`, `wasgibts.vorrat`).
 
 ## Kurz-Check
 
-Einmal pro Woche statt Pflegen: Sonntag ab 17 Uhr steht in der Jetzt-Karte
-„Kurzer Kühlschrank-Check?“ · „20 Sekunden.“ (Symbol Kühlschrank, Knopf
-„Öffnen“; abends, wenn die Karte nur EIN Thema zeigt, vor „Morgen ist ruhig.“).
+Einmal pro Woche statt Pflegen: Sonntag ab 17 Uhr fragt Mia unter der
+Jetzt-Karte „Kurzer Kühlschrank-Check? 20 Sekunden.“ mit „Los geht’s“ und
+„Heute nicht“ (seit A-054 nicht mehr in der Jetzt-Karte selbst).
 
 - **Wann** (`src/lib/vorrat/kuehlcheck.ts`, `kuehlCheckFaellig`): Sonntag ab
   17:00 (Europe/Berlin über `now()`), Baustein „Im Haus“ an, mindestens eine
@@ -144,9 +144,9 @@ Einmal pro Woche statt Pflegen: Sonntag ab 17 Uhr steht in der Jetzt-Karte
   Beispiel-Tag, nicht bei Regler „Ruhig“, nicht wenn heute schon eine Karte
   stand (bei „Gesprächig“ bis zwei) und nicht, wenn ein anderer Hinweis
   unter der Jetzt-Karte steht. Gewählt in `useMiaDenkt` (zuerst unter den
-  Kandidaten), angezeigt in der Jetzt-Karte (`kuehlCheck` in
-  `jetztTopics`/`abendThema`), gezählt (`hinweisGezaehlt`) erst, wenn er dort
-  wirklich steht (`TodayPage`). Antippen öffnet die Seite.
+  Kandidaten), angezeigt als `MiaKarte` unter der Jetzt-Karte und gezählt
+  wie jede Karte (`hinweisGezaehlt`). „Los geht’s“ öffnet die Seite, „Heute
+  nicht“ legt die Woche weg.
 - **Seite** `/vorrat/check` (`src/components/vorrat/KuehlCheck.tsx`,
   Bereich wie `/vorrat`, Zurück ohne Verlauf zu „Im Haus“): ein Satz, alle
   Sachen, die da sind, als Kacheln (`checkSachen`: Bald aufbrauchen zuerst,
@@ -184,7 +184,7 @@ Einmal pro Woche statt Pflegen: Sonntag ab 17 Uhr steht in der Jetzt-Karte
   Mia stellt es einmal vor. Übernahme für 1.0: `tests/core/launch.test.ts`.
 - `tests/vorrat/kuehlcheck.test.ts` – Kurz-Check: Sonntag 16:59/17:00,
   Samstag, Baustein, leer, einmal pro Woche, Nacht/Pause/Ruhe/Beispiel,
-  „Ruhig“, zählt als der eine Hinweis, Jetzt-Karte (auch abends), Seite
+  „Ruhig“, zählt als der eine Hinweis, Karte unter der Jetzt-Karte, Seite
   (Kacheln, „Fertig · 3 weg“, genau die markierten, Rückgängig), Speicher.
 - `tests/vorrat/reinsprechen.test.ts` – Satz → rein/raus (auch „gar nicht
   im Haus“, „kein … mehr“), nie Satzteile als Sache, Vorschlag und „Ändern“,

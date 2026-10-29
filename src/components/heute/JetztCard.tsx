@@ -1,28 +1,32 @@
 "use client";
 
-// Jetzt-Karte (Tafel 60/66 B): oben auf "Heute", volle Breite, feste Höhe
-// (zwei Zeilen, wird nie größer), Pfirsich-Verlauf. Links das Symbol des
-// Themas in einem weißen Kreis (46 px, Orange – Mia selbst steht nur als Logo
-// und als Knopf unten rechts auf der Startseite), Zeile 1 fett ohne Emoji =
-// was, Zeile 2 in Dunkelorange = warum. Kein Knopf: die ganze Karte öffnet
-// wie jede Kachel „Dein Tag“ (läuft ein Timer: den Timer); nach links wischen
-// = nächstes Thema (höchstens drei, kleine Punkte oben rechts).
-// Die Reihenfolge der Themen bleibt stehen, bis die App wieder geöffnet wird,
-// 15 Minuten vergehen oder etwas sehr Dringendes dazukommt – nichts springt.
-// Später Geladenes (Wetter, Tipps) kommt hinten dazu, solange Platz ist.
+// Jetzt-Karte (Tafel 60/66 B, A-054): oben auf "Heute", volle Breite,
+// Pfirsich-Verlauf. Nur, was man heute braucht – EIN Thema, höchstens zwei
+// (Rangliste in `lib/heute/jetztTopics.ts`); nichts dran = gar keine Karte.
+// Links das Symbol des Themas in einem weißen Kreis (46 px, Orange; Uhr,
+// Wolke, Topf, Geschenk – nie Glitzer), Zeile 1 fett = was, Zeile 2 =
+// Hinweis oder ein Knopf („Auf die Liste: Eier“). Texte brechen um, nie abgeschnitten;
+// die Karte ist mindestens 78 px hoch. Antippen öffnet wie jede Kachel „Dein
+// Tag“ (läuft ein Timer: den Timer); nach links wischen = nächstes Thema.
+// Freitags 12–20 Uhr die Wochenende-Karte: Vorschläge als Chips, „Mit Mia
+// planen“ und „Später“. Die Reihenfolge bleibt stehen, bis die App wieder
+// geöffnet wird, 15 Minuten vergehen oder etwas sehr Dringendes dazukommt.
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { AlarmClock, CalendarDays, CookingPot, Gift, Heart, ListChecks, MessageCircle, Refrigerator, ShoppingCart, Sparkles, Sunrise, Timer, Umbrella, type LucideIcon } from "lucide-react";
+import { Bell, CalendarDays, Clock, CloudRain, CookingPot, Gift, Heart, Lightbulb, Mail, MapPin, Sunrise, Timer, Wind, type LucideIcon } from "lucide-react";
 import type { JetztTopic } from "@/lib/heute/jetztTopics";
+import type { WochenendChip } from "@/lib/heute/wochenende";
 import { topicIcon, type TopicIcon } from "@/lib/heute/deinTag";
 import { withoutEmoji } from "@/lib/core/text";
+import { buttonClass, chipClass } from "@/components/ui/styles";
 
 const ROSE = new Set<TopicIcon>(["Heart", "Gift"]);
-const ICON: Record<TopicIcon, LucideIcon> = { Umbrella, CalendarDays, ListChecks, ShoppingCart, CookingPot, MessageCircle, Timer, Sunrise, Sparkles, Heart, Gift, AlarmClock, Refrigerator };
+const ICON: Record<TopicIcon, LucideIcon> = { Clock, CloudRain, CookingPot, Gift, Heart, Timer, Sunrise, CalendarDays, Bell, Mail, MapPin, Lightbulb, Wind };
 
 const REFRESH_MS = 15 * 60_000;
-const URGENT = 90;
-const MAX_TOPICS = 3;
+/** Rang bis hier (Erinnerung, Gleich) gilt als sehr dringend */
+const URGENT = 10;
+const MAX_TOPICS = 2;
 
 /** Reihenfolge einfrieren: neu nur beim Zurückkehren, alle 15 Min, bei Wegfall oder sehr Dringendem */
 function useStableOrder(topics: JetztTopic[]): string[] {
@@ -43,7 +47,7 @@ function useStableOrder(topics: JetztTopic[]): string[] {
     };
   }, []);
   const missing = order.some((id) => !ids.includes(id)) || !order.length;
-  const urgentNew = topics.some((t) => t.score >= URGENT && !order.includes(t.id));
+  const urgentNew = topics.some((t) => t.rang <= URGENT + 1 && !order.includes(t.id));
   if ((missing || urgentNew) && ids.join("|") !== order.join("|")) {
     setOrder(ids);
     return ids;
@@ -58,17 +62,63 @@ function useStableOrder(topics: JetztTopic[]): string[] {
   return order;
 }
 
+/** Was die Wochenende-Karte kann (Vorschlag, „Mit Mia planen“, „Später“) */
+export type WochenendAktionen = { onChip: (chip: WochenendChip) => void; onPlan: () => void; onSpaeter: (t: JetztTopic) => void };
+
+/** Wochenende planen? (nur freitags 12–20 Uhr): Zeile 1, was schon steht, 2–3 Vorschläge, zwei Knöpfe */
+function WochenendKarte({ topic, name, aktionen }: { topic: JetztTopic; name: string; aktionen: WochenendAktionen }) {
+  return (
+    <section aria-label={`${name}: Jetzt`} aria-roledescription="Jetzt-Karte" data-no-swipe data-jetzt="wochenende" className="flex shrink-0 flex-col gap-2.5 rounded-card bg-linear-to-br from-jetzt-from to-jetzt-to px-3 py-3">
+      <div className="flex items-center gap-3">
+        <span className="flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-full bg-surface text-accent shadow-card" data-thema={topicIcon(topic.kind)}>
+          <CalendarDays className="h-[22px] w-[22px]" strokeWidth={2} aria-hidden />
+        </span>
+        <span className="flex min-w-0 flex-1 flex-col" role="status">
+          <span className="break-words text-[15.5px] font-extrabold leading-snug text-ink">{topic.title}</span>
+          {topic.detail && (
+            <span className="break-words text-[13px] font-semibold leading-snug text-accent-strong">
+              {withoutEmoji(topic.detail)}
+            </span>
+          )}
+        </span>
+      </div>
+      {Boolean(topic.chips?.length) && (
+        <div className="flex flex-wrap gap-1.5" data-chips>
+          {topic.chips!.map((c) => (
+            <button key={c.id} type="button" onClick={() => aktionen.onChip(c)} className={chipClass(false, "vorschlag")} data-chip={c.id}>
+              {c.label}
+            </button>
+          ))}
+        </div>
+      )}
+      <div className="flex gap-2">
+        <button type="button" onClick={aktionen.onPlan} className={buttonClass("primary", "sm")}>
+          Mit {name} planen
+        </button>
+        <button type="button" onClick={() => aktionen.onSpaeter(topic)} className={buttonClass("ghost", "sm")}>
+          Später
+        </button>
+      </div>
+    </section>
+  );
+}
+
 export function JetztCard({
   topics,
   name,
   onOpen,
   onSkip,
+  onAktion,
+  wochenende,
   arrive = null,
 }: {
   topics: JetztTopic[];
   name: string;
   onOpen: (t: JetztTopic) => void;
   onSkip: (t: JetztTopic) => void;
+  /** Knopf in Zeile 2 („Auf die Liste: Eier“) */
+  onAktion: (t: JetztTopic) => void;
+  wochenende: WochenendAktionen;
   /** Vom Hallo-Bildschirm: Mia fliegt von dort hierher, der erste Satz tippt sich ein */
   arrive?: { x: number; y: number; size: number } | null;
 }) {
@@ -108,9 +158,10 @@ export function JetztCard({
     return () => window.clearTimeout(t);
   }, [typed, fullTitle.length]);
   if (!topic) return null;
+  if (topic.kind === "wochenende") return <WochenendKarte topic={topic} name={name} aktionen={wochenende} />;
   const Icon = ICON[topicIcon(topic.kind)];
   const next = (dir: 1 | -1) => {
-    // 1 → 3 und nicht weiter (kein Kreisel)
+    // 1 → 2 und nicht weiter (kein Kreisel)
     const to = i + dir;
     if (to < 0 || to >= shown.length) return;
     if (dir === 1) onSkip(topic);
@@ -122,7 +173,7 @@ export function JetztCard({
       aria-roledescription="Jetzt-Karte"
       data-no-swipe
       data-jetzt={topic.kind}
-      className="relative h-[78px] shrink-0 overflow-hidden rounded-card bg-linear-to-br from-jetzt-from to-jetzt-to"
+      className="relative min-h-[78px] shrink-0 rounded-card bg-linear-to-br from-jetzt-from to-jetzt-to"
       onTouchStart={(e) => {
         start.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
         swiped.current = false;
@@ -141,6 +192,7 @@ export function JetztCard({
         }
       }}
     >
+      {/* Die ganze Karte ist EINE Fläche (wie jede Kachel); nur der Knopf in Zeile 2 liegt darüber */}
       <button
         type="button"
         onClick={() => {
@@ -151,17 +203,29 @@ export function JetztCard({
           onOpen(topic);
         }}
         aria-label={`${fullTitle}${topic.detail ? ` – ${withoutEmoji(topic.detail)}` : ""}. ${topic.kind === "timer" ? "Timer öffnen" : "Dein Tag öffnen"}`}
-        className="flex h-full w-full items-center gap-3 pl-3 pr-8 text-left"
-      >
+        className="absolute inset-0 rounded-card"
+      />
+      <div className="pointer-events-none relative flex min-h-[78px] items-center gap-3 py-2.5 pl-3 pr-8">
         <span ref={face} className="flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-full bg-surface text-accent shadow-card" data-thema={topicIcon(topic.kind)}>
           {/* Besondere Tage (Herz, Geschenk) in Rosé – sonst Orange */}
           <Icon className={`h-[22px] w-[22px] ${ROSE.has(topicIcon(topic.kind)) ? "text-rosee" : ""}`} strokeWidth={2} aria-hidden />
         </span>
-        <span key={topic.id} className="flex min-w-0 flex-1 flex-col" style={{ animation: "jetzt-in 0.35s ease-out" }} role="status">
-          <span className="line-clamp-1 break-words text-[15.5px] font-extrabold leading-snug text-ink">{typed >= 0 ? fullTitle.slice(0, typed) || "\u00a0" : fullTitle}</span>
-          {topic.detail && <span className="line-clamp-1 break-words text-[13px] font-semibold leading-snug text-accent-strong">{withoutEmoji(topic.detail)}</span>}
+        <span key={topic.id} className="flex min-w-0 flex-1 flex-col items-start" style={{ animation: "jetzt-in 0.35s ease-out" }} role="status">
+          <span className="break-words text-[15.5px] font-extrabold leading-snug text-ink">
+            {typed >= 0 ? fullTitle.slice(0, typed) || "\u00a0" : fullTitle}
+          </span>
+          {topic.detail && (
+            <span className="break-words text-[13px] font-semibold leading-snug text-accent-strong">
+              {withoutEmoji(topic.detail)}
+            </span>
+          )}
+          {topic.aktion && (
+            <button type="button" onClick={() => onAktion(topic)} className="hit pointer-events-auto mt-1 inline-flex min-h-8 items-center rounded-full bg-surface px-3 py-1 text-left text-[13px] font-bold leading-tight text-accent-strong shadow-card active:scale-95" data-aktion={topic.aktion.art}>
+              {topic.aktion.label}
+            </button>
+          )}
         </span>
-      </button>
+      </div>
       {shown.length > 1 && (
         <span className="pointer-events-none absolute right-3.5 top-1.5 flex gap-1 text-jetzt-hint" aria-hidden>
           {shown.map((t, n) => (

@@ -1,5 +1,7 @@
 // Kurz-Check „Im Haus“ (Tafel 102, Punkt 3): einmal pro Woche, Sonntag ab
-// 17 Uhr, fragt die Jetzt-Karte „Kurzer Kühlschrank-Check?“ · „20 Sekunden.“
+// 17 Uhr, fragt Mia „Kurzer Kühlschrank-Check? 20 Sekunden.“ – seit A-054
+// unter der Jetzt-Karte als Karte von „Mia denkt mit“ („Los geht’s“ / „Heute
+// nicht“), nicht mehr in der Jetzt-Karte selbst.
 // Das Angebot läuft als Karte von „Mia denkt mit“ (`mia/denktmit/auswahl.ts`,
 // Art „kuehlcheck“) und zählt damit als der EINE ungefragte Hinweis des Tages;
 // es gelten dieselben Regeln (nie 22–7 Uhr, nicht in Pause/Ruhe, nicht im
@@ -15,11 +17,10 @@ import { useExternalStore } from "@/lib/core/useExternalStore";
 import { weekdayIndex } from "@/lib/kalender/model";
 import { houseGroups } from "@/lib/vorrat/imHaus";
 import { loadPantryAll, replacePantry, type PantryItem } from "@/lib/vorrat/pantry";
-import type { JetztTopic } from "@/lib/heute/jetztTopics";
 
 export const KUEHLCHECK_TITEL = "Kurzer Kühlschrank-Check?";
 export const KUEHLCHECK_DETAIL = "20 Sekunden.";
-const KUEHLCHECK_HREF = "/vorrat/check";
+export const KUEHLCHECK_HREF = "/vorrat/check";
 /** Ab dieser Uhrzeit am Sonntag (Minuten) */
 const KUEHLCHECK_AB = 17 * 60;
 
@@ -30,9 +31,6 @@ export function kuehlCheckWoche(today: string, minutes: number): string | null {
 
 /** Woche, die die Seite erledigt: der Sonntag heute bzw. der letzte davor */
 export const sonntagVon = (today: string) => addDays(today, -((weekdayIndex(today) + 1) % 7));
-
-/** Als Thema der Jetzt-Karte (tagsüber unter den Themen, abends vor „Morgen ist ruhig.“) */
-export const kuehlThema = (woche: string): JetztTopic => ({ id: `kuehlcheck:${woche}`, kind: "kuehlcheck", title: KUEHLCHECK_TITEL, detail: KUEHLCHECK_DETAIL, score: 48, target: { href: KUEHLCHECK_HREF }, button: "Öffnen" });
 
 /**
  * Steht der Check zur Wahl? Liefert die Woche oder null. Die Ruhe-Regeln

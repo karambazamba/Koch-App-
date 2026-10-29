@@ -1,8 +1,8 @@
 // Mia denkt mit: was sie sich merkt (Speicher-Verzeichnis „wasgibts.miadenkt“).
 // Wie gesprächig, welche Kachel schon vorgestellt (Später-Zähler), welche
 // Seite schon besucht, Antworten auf Muster- und Mitdenken-Fragen (jede Frage
-// nur einmal), Essens-Rituale, gezeigte Hinweise je Tag und die Sprüche der
-// letzten 30 Tage. Alles einzeln löschbar („Was Mia sich merkt“).
+// nur einmal), Essens-Rituale und gezeigte Hinweise je Tag (alte Sprüche
+// werden nur noch gelesen, A-054). Alles einzeln löschbar („Was Mia sich merkt“).
 
 import { addDays } from "@/lib/core/now";
 import { createLocalStore } from "@/lib/core/localStore";
@@ -28,7 +28,7 @@ export type DenktState = {
   eingeplant: string[];
   /** Ungefragte Hinweise je Tag: welche standen (nur die letzten 7 Tage) */
   tage: Record<string, string[]>;
-  /** Sprüche der letzten 30 Tage */
+  /** Sprüche der letzten 30 Tage – seit A-054 kommt keiner mehr dazu; bleibt nur, damit alte Daten und Sicherungen gelesen werden */
   sprueche: { text: string; date: string }[];
 };
 
@@ -105,14 +105,6 @@ export const hinweisGezaehlt = (key: string, today: string) =>
     const cut = addDays(today, -7);
     const tage = Object.fromEntries(Object.entries(s.tage).filter(([d]) => d > cut));
     return { ...s, tage: { ...tage, [today]: [...(tage[today] ?? []), key] } };
-  });
-
-/** Spruch für heute festhalten (einmal am Tag; älter als 30 Tage fällt weg) */
-export const spruchGezeigt = (text: string, today: string) =>
-  change((s) => {
-    if (s.sprueche.some((x) => x.date === today)) return s;
-    const cut = addDays(today, -30);
-    return { ...s, sprueche: [...s.sprueche.filter((x) => x.date > cut), { text, date: today }] };
   });
 
 /** „Was Mia sich merkt“: einen Eintrag vergessen */

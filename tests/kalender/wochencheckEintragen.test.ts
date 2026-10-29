@@ -4,12 +4,12 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { at, fakeWindow, jetztInput, noBrowser } from "../helpers";
 import { createEntry } from "@/lib/core/entries";
 import { sanitizeEntry, type CalendarEntry } from "@/lib/kalender/model";
-import { isWeekCheckRequest, itemFromEntry, weekCheckKey, weekEntries, type WeekItem } from "@/lib/kalender/wochencheck";
+import { isWeekCheckRequest, itemFromEntry, weekEntries, type WeekItem } from "@/lib/kalender/wochencheck";
 import type { Room } from "@/lib/core/entries";
 import { stripStopWord } from "@/lib/begleitung/useSpeechInput";
 import { isWeekCheck } from "@/lib/begleitung/modellwahl";
 import { jetztTopics } from "@/lib/heute/jetztTopics";
-import { loadJetzt, weekCheckDone } from "@/lib/heute/jetztStore";
+import { loadJetzt } from "@/lib/heute/jetztStore";
 import { kontext, rufe } from "../begleitung/werkzeugKontext";
 import { ask, context } from "../begleitung/testmodusHilfen";
 
@@ -116,26 +116,11 @@ describe("Einstiege", () => {
     for (const t of ["Was gibt’s diese Woche?", "Wochenplan machen"]) expect(isWeekCheckRequest(t)).toBe(false);
   });
 
-  it("Jetzt-Karte: Montag ganztags, Sonntag erst ab 17 Uhr (für die neue Woche)", () => {
-    expect(weekCheckKey("2026-10-26", 8 * 60)).toBe("2026-10-26");
-    expect(weekCheckKey("2026-10-25", 16 * 60)).toBeNull();
-    expect(weekCheckKey("2026-10-25", 17 * 60)).toBe("2026-10-26");
-    expect(weekCheckKey("2026-10-27", 10 * 60)).toBeNull();
-  });
-
-  it("Thema „Kurzer Wochencheck?“ – nicht nachts, ✕ = diese Woche nicht mehr", () => {
-    const base = jetztInput(600, { today: "2026-10-26", tomorrow: { label: "Morgen · Di", date: "2026-10-27", items: [] } });
-    const t = jetztTopics({ ...base, weekCheck: "2026-10-26" })[0];
-    expect(t).toMatchObject({ kind: "wochencheck", title: "Kurzer Wochencheck?", detail: "Sag einfach alles, ich sortiere.", target: { action: "wochencheck" } });
-    expect(jetztTopics({ ...base, weekCheck: "2026-10-26", minutes: 23 * 60 }).some((x) => x.kind === "wochencheck")).toBe(false);
-
-    fakeWindow({ "wasgibts.jetzt": JSON.stringify({ version: 1, on: true, day: "", hidden: [], weights: {}, weekOff: 3 }) });
+  it("A-054: der Wochencheck steht nicht mehr in der Jetzt-Karte; altes „weekOff“ bleibt lesbar", () => {
+    expect(jetztTopics(jetztInput(600, { today: "2026-10-26", tomorrow: { label: "Morgen · Di", date: "2026-10-27", items: [] } }))).toEqual([]);
+    fakeWindow({ "wasgibts.jetzt": JSON.stringify({ version: 1, on: true, day: "", hidden: [], weights: {}, weekOff: "2026-10-26" }) });
     try {
-      expect(loadJetzt().weekOff).toBeUndefined();
-      const undo = weekCheckDone("2026-10-26");
       expect(loadJetzt().weekOff).toBe("2026-10-26");
-      undo();
-      expect(loadJetzt().weekOff).toBeUndefined();
     } finally {
       noBrowser();
     }

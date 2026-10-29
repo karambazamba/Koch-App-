@@ -44,11 +44,11 @@ export function miaKnopfUeberText() {
  * (Notiz, Aufgabe, Termin, Zettel, Timer-Name), markiert mit `data-freitext`.
  * Liefert je Fund „Kachel: Text (Grund)“.
  */
-export function abgeschnitteneTexte() {
+export function abgeschnitteneTexte(sel = "[data-unit]") {
   const out = [];
   const panel = document.querySelector("[role=tabpanel]:not([inert])") ?? document;
-  for (const tile of panel.querySelectorAll("[data-unit]")) {
-    const name = tile.getAttribute("data-tile") ?? "?";
+  for (const tile of panel.querySelectorAll(sel)) {
+    const name = tile.getAttribute("data-tile") ?? (tile.hasAttribute("data-jetzt") ? `Jetzt-Karte (${tile.getAttribute("data-jetzt")})` : "?");
     const walker = document.createTreeWalker(tile, NodeFilter.SHOW_TEXT);
     for (let node = walker.nextNode(); node; node = walker.nextNode()) {
       const text = node.textContent.replace(/\s+/g, " ").trim();
