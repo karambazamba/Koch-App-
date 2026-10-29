@@ -17,7 +17,7 @@ import { toIsoDate, todayIso, useMinutes, useToday } from "@/lib/core/now";
 import { useHaushalt } from "@/lib/einstellungen/useHaushalt";
 import { useEntries } from "@/lib/kalender/store";
 import { filterChips, type Filter } from "@/lib/region/kategorien";
-import { nachTagen, tagTitel, type RegionEvent, type Reiter } from "@/lib/region/model";
+import { hatEintraege14Tage, nachTagen, tagTitel, type RegionEvent, type Reiter } from "@/lib/region/model";
 import { wohnortName } from "@/lib/region/orte";
 import { inDenKalender, istEingetragen, useWasLosEinstellungen, useWasLosListe } from "@/lib/region/client";
 import { Eingetragen, Quellenzeile, WasLosFahne, WasLosZeile } from "@/components/region/WasLosTeile";
@@ -28,6 +28,9 @@ const REITER: { value: Reiter; label: string }[] = [
   { value: "wochenende", label: "Wochenende" },
   { value: "zwei", label: "2 Wochen" },
 ];
+
+/** Gar nichts in den nächsten 14 Tagen im Umkreis */
+const NICHTS_IN_DER_NAEHE = "Gerade nichts in deiner Nähe.";
 
 const LEER: Record<Reiter, string> = {
   heute: "Heute ist nichts eingetragen. Schau mal aufs Wochenende.",
@@ -86,7 +89,8 @@ export function WasLosFenster({ onClose, start = "heute" }: { onClose: () => voi
             <div className="h-40 animate-pulse rounded-card bg-fill" aria-hidden />
           ) : gruppen.length === 0 ? (
             <p className="rounded-card bg-fill px-4 py-5 text-[15px] text-muted" data-leer>
-              {filter !== "alles" && reiter !== "heute" ? "Dazu ist gerade nichts eingetragen." : LEER[reiter]}
+              {/* Baustein an, aber in 14 Tagen nichts im Umkreis (A-063): freundlich statt Kreis verstecken */}
+              {!hatEintraege14Tage(liste.events, heute, minutes ?? 0) ? NICHTS_IN_DER_NAEHE : filter !== "alles" && reiter !== "heute" ? "Dazu ist gerade nichts eingetragen." : LEER[reiter]}
             </p>
           ) : (
             gruppen.map((g) => (

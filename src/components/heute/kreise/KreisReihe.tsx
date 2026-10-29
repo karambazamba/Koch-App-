@@ -48,7 +48,7 @@ export function KreisReihe({ entries, today, minutes, me, sportFarbe, beispiel =
   const pauseOn = useFeature("durchatmen");
   // Pause öffnet das Durchatmen-Fenster über seinen Gastgeber (im Layout) – der Kreis leuchtet, solange es offen ist
   const atem = useDurchatmenZustand();
-  // „Was los?“ (A-055): Quelle an, Baustein an und etwas in den nächsten 14 Tagen im Umkreis
+  // „Was los?“ (A-055, A-063): Quelle an und Baustein an – auch ohne Einträge (dann sagt das Fenster es)
   const wasLos = useWasLosSichtbar();
   const sport = useSport();
   const timers = useTimers();

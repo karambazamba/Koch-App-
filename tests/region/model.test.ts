@@ -83,11 +83,12 @@ describe("Umkreis, Sichtbarkeit, Wochenend-Tipps", () => {
     expect(hatEintraege14Tage(liste, MI)).toBe(true);
     expect(hatEintraege14Tage([ev({ id: "spaet", datum: "2026-11-20" })], MI)).toBe(false);
     expect(hatEintraege14Tage([], MI)).toBe(false);
-    expect(wasLosSichtbar({ quelle: "kreisoh", baustein: true, events: liste, heute: MI })).toBe(true);
-    expect(wasLosSichtbar({ quelle: "aus", baustein: true, events: liste, heute: MI })).toBe(false);
-    expect(wasLosSichtbar({ quelle: "kreisoh", baustein: false, events: liste, heute: MI })).toBe(false);
-    expect(wasLosSichtbar({ quelle: undefined, baustein: true, events: liste, heute: MI })).toBe(false);
-    expect(wasLosSichtbar({ quelle: "kreisoh", baustein: true, events: [], heute: MI })).toBe(false);
+    expect(wasLosSichtbar({ quelle: "kreisoh", baustein: true })).toBe(true);
+    expect(wasLosSichtbar({ quelle: "aus", baustein: true })).toBe(false);
+    expect(wasLosSichtbar({ quelle: "kreisoh", baustein: false })).toBe(false);
+    expect(wasLosSichtbar({ quelle: undefined, baustein: true })).toBe(false);
+    // A-063: Baustein an → Kreis immer da, auch ohne Einträge (das Fenster sagt „Gerade nichts in deiner Nähe“)
+    expect(wasLosSichtbar({ quelle: "kreisoh", baustein: true })).toBe(true);
   });
 
   it("wochenendTipps: höchstens 2, Familie „für Kinder“ zuerst, sonst draußen/Markt", () => {
