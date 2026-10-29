@@ -9,7 +9,16 @@
 
 import { useLayoutEffect, type RefObject } from "react";
 
-const passt = (box: HTMLElement) => box.scrollHeight <= box.clientHeight + 1 && box.scrollWidth <= box.clientWidth + 1;
+/** Eine Zeile (Kopf): nichts ragt seitlich heraus */
+const passtBreit = (box: HTMLElement) => box.scrollWidth <= box.clientWidth;
+
+/** Ganz zu sehen: nichts ragt aus der Fläche (gerundete scroll-Werte reichen nicht, ein halbes Pixel schneidet schon an) */
+const passt = (box: HTMLElement) => {
+  if (box.scrollWidth > box.clientWidth) return false;
+  const b = box.getBoundingClientRect();
+  const inhalt = box.firstElementChild?.getBoundingClientRect();
+  return !inhalt || (inhalt.bottom <= b.bottom && inhalt.right <= b.right + 0.5);
+};
 
 /** Messen bei jeder Änderung der Fläche und sobald die Schrift geladen ist */
 function beobachten(box: HTMLElement, messen: () => void) {
@@ -64,10 +73,10 @@ export function useNameEinpassen(box: RefObject<HTMLElement | null>, key: string
     return beobachten(b, () => {
       voll.hidden = false;
       kurz.hidden = true;
-      if (passt(b)) return;
+      if (passtBreit(b)) return;
       voll.hidden = true;
       kurz.hidden = false;
-      if (passt(b)) return;
+      if (passtBreit(b)) return;
       // Auch die Kurzform passt nicht (Rückseite mit Teilen auf ganz schmalen Handys): nur das Symbol
       kurz.hidden = true;
     });
