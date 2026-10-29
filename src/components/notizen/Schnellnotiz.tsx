@@ -26,8 +26,8 @@ export function QuickNoteCard() {
     setText("");
   };
   return (
-    <section className={`${CARD} flex flex-col gap-2 p-3`} aria-label="Schnell was aufschreiben" data-schnellfeld>
-      <MehrzeilenFeld value={text} onChange={setText} label="Schnell was aufschreiben" placeholder="Schnell was aufschreiben …" className="border-0 bg-fill" />
+    <section className={`${CARD} flex flex-col gap-2 p-3`} aria-label="Schnell notieren" data-schnellfeld>
+      <MehrzeilenFeld value={text} onChange={setText} label="Schnell notieren" placeholder="Schnell notieren …" className="border-0 bg-fill" />
       <div className="flex min-h-11 items-center justify-between gap-2 px-1">
         <span className="text-[13px] text-faint">Return = neue Zeile</span>
         {ready && (

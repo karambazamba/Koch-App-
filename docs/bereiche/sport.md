@@ -126,8 +126,14 @@ nicht beim Server; Server-Push sieht ihn nicht).
 Kachel `sport` (Größen XS/S/M im festen Raster, Standard XS, Pastell-Flieder;
 Standard nur bei „allein“, Tafel 119), Plus = „Training eintragen“, die
 ganze Kachel = `/sport`, kein Wasserzeichen (die Stempel sind das Bild):
-- XS: EINE Zeile („Morgen · Do 8:00 · Laufen“, geschafft „Woche geschafft“,
-  sonst „Diese Woche frei“).
+- XS (A-048, Tafel 135): zwei kleine Stempel (30 px, `xsFelder`: bei mehr
+  Feldern die letzten zwei Stempel) links, rechts zwei Zeilen (`xsZeilen`):
+  „Heute“ / „8:00 · Laufen“ (morgen „Morgen“ / „Do 8:00 · Laufen“, vorgelesen
+  „Morgen · Do 8:00 · Laufen“), geschafft „Geschafft.“ / „Diese Woche“, ohne
+  Plan „Mo war“ / „Laufen.“, leer „Diese Woche“ / „noch frei.“, Beispiel
+  „2 von 3“ / „diese Woche“. Ganz schmal (unter 320 px) ohne Stempel. Kein
+  Wasserzeichen. Fehler „8:00 ·Laufen“ (Leerzeichen am Ende eines flex-Kinds
+  fiel weg) behoben: Teile mit Abstand (`gap`).
 - S: „SPORT“ + Plus, die Felder der Woche nebeneinander (54 px; ab 3 Feldern
   34 px), darunter groß „Do · 8:00“, klein der Titel. Geschafft: Kachel grün,
   „Geschafft.“ / „Diese Woche“. Leer: gestrichelte Felder + „Diese Woche ist

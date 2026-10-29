@@ -51,7 +51,7 @@ export function nextLine(item: Pick<DayItem, "date" | "time" | "end" | "title">,
 }
 
 /** „Sa 18:00“ / „Heute 18:00“ / „Morgen · Do 18:30“ */
-export function whenLabel(item: Pick<DayItem, "date" | "time">, today: string): string {
+function whenLabel(item: Pick<DayItem, "date" | "time">, today: string): string {
   const day = item.date === today ? "Heute" : item.date === addDays(today, 1) ? tomorrowLabel(item.date) : weekdayShort(item.date);
   return `${day}${item.time ? ` ${clockLabel(item.time)}` : ""}`;
 }

@@ -323,7 +323,7 @@
   /* Look „Schlicht“: weiße Kacheln mit feinem Rand, Innen-Kärtchen sehr hell */
   --app-schlicht-inner: #f9f6f1;
   /* Wasserzeichen der Kacheln (Tafel 124 A/125): Deckkraft im Kachel-Akzent; „frei“ = Text ohne weißes Kärtchen */
-  --app-wasserzeichen: 0.125; --app-wasserzeichen-frei: 0.09;
+  --app-wasserzeichen: 0.125; --app-wasserzeichen-frei: 0.09; --app-wasserzeichen-xs: 0.11;
   --app-karamba: #d6336c;
   /* Tipps aus der Region: Lila (nie für Termine) */
   --app-tipp: #8a63d2;
@@ -483,7 +483,7 @@
   --app-szene-sonne: #e8b443; --app-szene-tropfen: #9fb2cc; --app-szene-mond: #e8d58f; --app-szene-wolke-schlicht: #454d5b;
  
   --app-schlicht-inner: #1d2024;
-  --app-wasserzeichen: 0.1; --app-wasserzeichen-frei: 0.08;
+  --app-wasserzeichen: 0.1; --app-wasserzeichen-frei: 0.08; --app-wasserzeichen-xs: 0.1;
   --app-jetzt-from: #3b2a1f;
   --app-jetzt-to: #2b211b;
   --app-jetzt-hint: #c9a088;
@@ -639,7 +639,7 @@
     --app-szene-sonne: #e8b443; --app-szene-tropfen: #9fb2cc; --app-szene-mond: #e8d58f; --app-szene-wolke-schlicht: #454d5b;
    
     --app-schlicht-inner: #1d2024;
-    --app-wasserzeichen: 0.1; --app-wasserzeichen-frei: 0.08;
+    --app-wasserzeichen: 0.1; --app-wasserzeichen-frei: 0.08; --app-wasserzeichen-xs: 0.1;
     --app-jetzt-from: #3b2a1f;
     --app-jetzt-to: #2b211b;
     --app-jetzt-hint: #c9a088;
@@ -1127,6 +1127,8 @@ body {
    Farbe = Kachel-Akzent (folgt data-tone/data-farbe); im Look „Schlicht“ keins. */
 .kachel-wasserzeichen { color: var(--tile-ac); opacity: var(--app-wasserzeichen); }
 .kachel-wasserzeichen[data-art="frei"] { opacity: var(--app-wasserzeichen-frei); }
+/* XS (A-048, Tafel 135): klein, rechts angeschnitten, 10–11 % */
+.kachel-wasserzeichen[data-art="xs"] { opacity: var(--app-wasserzeichen-xs); }
 [data-look="schlicht"] .kachel-wasserzeichen { display: none; }
 /* Leiser Text über dem Wasserzeichen (grau, orange) bekommt die Kachel-Fläche als
    enge Freistellung: sein Kontrast bleibt genau wie ohne Wasserzeichen. */

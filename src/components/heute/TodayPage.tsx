@@ -418,7 +418,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
   /** Ganze Kachel = Seite (Termine öffnet den Kalender, er steht auf „Heute“) */
   const tileHref = (id: HomeTileId): string | null => TILE_PAGE[id] ?? null;
 
-  const renderTile = (tile: HomeTile, half: boolean, edit: boolean) => {
+  const renderTile = (tile: HomeTile, half: boolean, edit: boolean, inhalt: boolean) => {
     switch (tile.id) {
       case "termine":
         if (demoDay.termine) return <TermineSection rows={demoDay.termine.map((item) => ({ item, state: null }))} href={TILE_PAGE.termine!} today={data.todayIso} size={tile.size} half={half} demo={demoProps} />;
@@ -440,7 +440,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
           );
         return <FoodTile data={data} dish={dish} over={over} dishClock={dishClock} onOpen={onOpenFood} size={tile.size} hat={hat && !edit ? { quiet: cookingNow } : null} />;
       case "einkauf":
-        return <ShoppingTile half={half} size={tile.size} demo={demoDay.tiles.includes("einkauf")} />;
+        return <ShoppingTile half={half} size={tile.size} inhalt={inhalt} demo={demoDay.tiles.includes("einkauf")} />;
       case "notizen":
         return <NotesTile size={tile.size} demo={demoDay.tiles.includes("notizen")} />;
       case "vorrat":

@@ -58,15 +58,16 @@ export function TimerTile({ size = "M" }: { size?: TileSize }) {
     const left = main ? (isExpired(main, nowMs) ? "fertig" : formatLeft(leftMs(main, nowMs))) : sw ? formatLeft(stopwatchMs(sw, nowMs)) : null;
     return (
       <>
-        <section className={`${TILE} flex h-full flex-col justify-between overflow-hidden px-3 py-2.5`} aria-label="Timer" data-groesse="XS">
+        <section className={`${TILE} isolate flex h-full flex-col justify-between overflow-hidden px-3 py-2.5`} aria-label="Timer" data-groesse="XS">
+          <KachelWasserzeichen kachel="timer" size="XS" />
           <button type="button" onClick={() => (main || sw ? setOpen(true) : setCustom(10))} className="flex min-w-0 flex-1 flex-col items-start justify-between text-left">
             <span className={`flex items-center gap-1.5 ${TILE_LABEL}`}>
               <TimerIcon className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
-              Timer
+              <span className="kachel-frei">Timer</span>
             </span>
-            <span className="flex w-full min-w-0 items-baseline gap-1.5 text-[15px] font-bold leading-tight" role={main ? "timer" : undefined}>
-              {main && <span className="min-w-0 truncate" data-freitext>{main.name} ·</span>}
-              <span className="shrink-0 tabular-nums">{left ?? "Timer starten"}</span>
+            <span className="flex w-full min-w-0 items-baseline gap-1.5 pr-10 text-[15px] font-bold leading-tight @max-[320px]:pr-0" role={main ? "timer" : undefined}>
+              {main && <span className="kachel-frei min-w-0 truncate" data-freitext>{main.name} ·</span>}
+              <span className="kachel-frei shrink-0 tabular-nums">{left ?? "Timer starten"}</span>
             </span>
           </button>
         </section>

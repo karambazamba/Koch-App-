@@ -19,19 +19,22 @@ Grundregeln stehen in CLAUDE.md, Abschnitt 7.
   dem Ton; Wetter und Essen ohne Auswahl; gespeichert pro Person in der
   Startseiten-Anordnung (`farbe`, `data-farbe`), bei „Schlicht“ nur für
   Überschrift/Symbol.
-- Wasserzeichen (Tafel 124 A/125, `ui/KachelWasserzeichen`): jede Kachel ohne
-  eigenes Bild in S/M, lucide-Linie (Strich 1,3) im Kachel-Akzent der
-  gewählten Farbe, 150 px, unten rechts 30 px angeschnitten, −8° gedreht,
+- Wasserzeichen (Tafel 124 A/125, `ui/KachelWasserzeichen`; A-048/Tafel 135:
+  alle Größen): jede Kachel ohne eigenes Bild, lucide-Linie (Strich 1,3) im
+  Kachel-Akzent der gewählten Farbe, S/M 150 px (höchstens Kachelhöhe − 10 px),
+  XS 110 px (rechts 50/unten 34 px angeschnitten, 11 %, dunkel 10 %, nie über
+  Text), unten rechts 30 px angeschnitten, −8° gedreht,
   hinter Inhalt und weißen Kärtchen (Kachel `isolate`, Zeichen z −1),
   `aria-hidden`, nicht antippbar. Deckkraft hell 12,5 %, dunkel 10 %; mit
   freiem Text (nicht auf weißem Kärtchen) 9 %/8 %. Nie bei Wetter, Essen,
-  Pinnwand, Spendentopf, Jetzt-Karte, XS und „Schlicht“. Neue Kachel braucht
+  Pinnwand, Spendentopf, Sport (Stempel), Jetzt-Karte und „Schlicht“. Neue Kachel braucht
   ein Symbol (Tabelle + Test).
 
 - Startseiten-Raster (Tafel 118, A-023): 2 Spalten, Abstand 8 px, Grund-Zeile
   = halbe S-Höhe aus der Board-Breite (`ZEILE_CSS`, `container-type:
   inline-size`), XS = halb breit + halb hoch, S = halb breit + quadratisch,
-  M = ganz breit + so hoch wie S; Höhe nie vom Inhalt; Bearbeiten = gleiche
+  M = ganz breit + so hoch wie S; Höhe nie vom Inhalt – außer Listen-Reihen
+  (Termine, Aufgaben, Einkauf, Notizen: Kopf + 1–3 Zeilen bzw. ein Satz + 14 px, A-048); Bearbeiten = gleiche
   Flächen (Knöpfe in der Kachel). Details `docs/bereiche/heute.md`.
 - Wetter-Kachel mit Himmel (Tafel 120): Hintergrund wie bisher
   `--app-sky-*`, rechts oben eine kleine, leicht angeschnittene, stille

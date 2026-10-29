@@ -37,7 +37,7 @@ import { useCooking } from "@/lib/essen/kochSession";
 import { TagFenster } from "@/components/essen/sieben/TagFenster";
 import { OhneRezeptSheet } from "@/components/essen/OhneRezeptSheet";
 import { DEMO_SHOPS, clearDemoTile } from "@/lib/core/demo";
-import { ohneLadenZeile, shopTone, tileRows, type TileRows } from "@/lib/einkauf/shopGroups";
+import { kachelLaeden, ohneLadenZeile, shopTone, tileRows, type TileRows } from "@/lib/einkauf/shopGroups";
 import { useMeineLaeden } from "@/lib/einkauf/meineLaeden";
 import { ladenHref } from "@/lib/einkauf/seite/karten";
 import { useNotes } from "@/lib/notizen";
@@ -53,8 +53,10 @@ import { KachelWasserzeichen } from "@/components/ui/KachelWasserzeichen";
 import { leuchtSchluessel } from "@/lib/heute/aufleuchten";
 
 const HALF = `${TILE} flex h-full flex-col overflow-hidden p-3`;
-/** XS: Kopf oben, EINE Zeile unten */
+/** XS: Kopf oben, EINE Zeile unten (mit kleinem Wasserzeichen: dazu `isolate`, A-048) */
 const XS_BOX = `${TILE} flex h-full flex-col justify-between overflow-hidden px-3 py-2.5`;
+/** Leertext der Notizen – überall gleich (A-048, Tafel 140), endet absichtlich auf „ …“ (`data-platzhalter-text`, A-045 nimmt ihn aus) */
+const NOTIZ_LEERTEXT = "Schnell notieren\u00a0…";
 /**
  * XS: EINE Zeile; frei Eingegebenes darin kürzt sich selbst (`truncate` + `data-freitext`), alles andere ist so kurz, dass es passt (A-045).
  * Die Zeile ist ganz tippbar (`data-zeile`) und darum mindestens 30 px hoch – 26 px Kopf + 30 px Zeile passen auch auf dem iPhone SE in XS.
@@ -234,8 +236,13 @@ function ShoppingHead({ more }: { more: number }) {
 const DEMO_ITEMS = DEMO_SHOPS.flatMap((g) => g.names.map((name) => ({ name, shop: g.shop })));
 const DEMO_ORDER = DEMO_SHOPS.map((g) => g.shop);
 
-/** EINKAUF – je Laden eine Zeile (S/M: höchstens 3, mit „ohne Laden“-Zeile 2; der Rest als „+N“ im Kopf). „+“ = Schnell-Eintrag */
-export function ShoppingTile({ size = "S", demo = false }: { half: boolean; size?: TileSize; demo?: boolean }) {
+/**
+ * EINKAUF – je Laden eine Zeile: bis zu 3 Läden (die mit den meisten Sachen
+ * zuerst), „+N“ im Kopf erst ab dem 4. Laden, darunter „n ohne Laden ·
+ * Sortieren ›“ (A-048, Tafel 135). Höhe = Inhalt (`inhalt`); nur in einer
+ * festen Reihe mit „ohne Laden“-Zeile 2 Läden. „+“ = Schnell-Eintrag.
+ */
+export function ShoppingTile({ size = "S", demo = false, inhalt = true }: { half: boolean; size?: TileSize; demo?: boolean; inhalt?: boolean }) {
   const shopping = useWeekShoppingList("planning");
   const laeden = useMeineLaeden();
   // "Jetzt mitnehmen" und selbst Eingetragenes zuerst, dann Zutaten aus Gerichten
@@ -250,9 +257,9 @@ export function ShoppingTile({ size = "S", demo = false }: { half: boolean; size
   if (!shopping) return <section className={`${HALF} animate-pulse`} aria-label="Einkaufsliste" />;
   const showDemo = demo && !hasOwn;
   const myShops = laeden?.myShops ?? [];
-  // Feste Fläche: drei Laden-Zeilen – kommt die Zeile „ohne Laden“ bzw. „Liste“ dazu, zwei
+  // Bis zu drei Laden-Zeilen (A-048) – nur ohne „Meine Läden“ bzw. in einer festen Reihe zwei, wenn „ohne Laden“/„Liste“ dazukommt
   const ohneDa = !showDemo && open.some((i) => !i.shop.trim() && !i.anywhere);
-  const rows = showDemo ? tileRows(DEMO_ITEMS, DEMO_ORDER, 3) : tileRows(open, myShops, ohneDa ? 2 : 3);
+  const rows = showDemo ? tileRows(DEMO_ITEMS, DEMO_ORDER, 3) : tileRows(open, myShops, kachelLaeden({ mine: myShops.length > 0, ohneDa, inhalt }));
   // Nichts zu kaufen: freundlicher Satz statt lauter Nullen
   const empty = !showDemo && open.length === 0;
   // Wasserzeichen: leiser, sobald Text ohne eigene Fläche dasteht (leere Liste, „ohne Laden“)
@@ -260,12 +267,13 @@ export function ShoppingTile({ size = "S", demo = false }: { half: boolean; size
   // Der Plus-Knopf steht neben der <section>: sein Fenster („Mehr Details“) darf nicht in der Ebene der Kachel (isolate) gefangen sein
   return (
     <div className="relative h-full min-h-0 min-w-0" data-einkauf-kachel>
-      <section className={`${HALF} isolate`} aria-label={showDemo ? "Einkaufsliste · Beispiel" : "Einkaufsliste"} data-groesse={size}>
+      <section className={`${HALF} isolate pb-3.5`} aria-label={showDemo ? "Einkaufsliste · Beispiel" : "Einkaufsliste"} data-groesse={size}>
         <KachelWasserzeichen kachel="einkauf" size={size} frei={frei} />
         <ShoppingHead more={rows.restZahl} />
         {empty ? (
-          <Link href="/einkaufsliste" className="mt-1 flex-1 text-[14px] font-semibold leading-snug text-muted">
-            <span className="kachel-frei">Liste ist leer. Sag mir einfach, was ihr braucht.</span>
+          // Leer: Kopf + EIN freundlicher Satz in einer Zeile (A-048), darunter 14 px
+          <Link href="/einkaufsliste" className="mt-1 flex min-h-[30px] items-center whitespace-nowrap text-[14px] font-semibold leading-snug text-muted @max-[320px]:text-[12.5px]" data-zeile data-einkauf-leer>
+            <span className="kachel-frei">Was braucht ihr?</span>
           </Link>
         ) : (
           <ShopRows {...rows} mine={showDemo || myShops.length > 0} products={shopping.settings.products} demo={showDemo} />
@@ -286,7 +294,8 @@ function KleinKopf({ icon: Icon, label, href, more = 0, knopf }: { icon: typeof 
     <div className="flex h-[26px] items-center gap-2">
       <Link href={href} className={`hit flex h-[26px] min-w-0 items-center ${HALF_LABEL}`} aria-label={`${label} öffnen`}>
         <Icon className="h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden />
-        <span className="whitespace-nowrap">{label}</span>
+        {/* Freigestellt: das kleine Wasserzeichen in XS (A-048) reicht auf schmalen Geräten bis an den Kopf */}
+        <span className="kachel-frei whitespace-nowrap">{label}</span>
       </Link>
       <span className="flex-1" />
       {more > 0 && (
@@ -301,7 +310,7 @@ function KleinKopf({ icon: Icon, label, href, more = 0, knopf }: { icon: typeof 
 
 /**
  * NOTIZEN je Größe (Raster): XS = EINE Zeile (neueste bzw. angeheftete Notiz,
- * sonst „Schnell notieren.“), S und M = bis 3 Zeilen „Titel · Anfang“
+ * sonst „Schnell notieren …“ wie überall), S und M = bis 3 Zeilen „Titel · Anfang“
  * (angeheftete zuerst), der Rest als „+N“. Kopf = Notizen-Seite, Zeile =
  * genau diese Notiz, Stift = Schnellnotiz. Beispiel-Tag: „WLAN: Tohuus2026“.
  */
@@ -321,24 +330,26 @@ export function NotesTile({ size = "XS", demo = false }: { size?: TileSize; demo
   if (size === "XS") {
     const top = rows[0];
     return (
-      <section className={XS_BOX} aria-label={showDemo ? "Notizen · Beispiel" : "Notizen"} data-notizen-groesse={size} data-groesse={size}>
+      <section className={`${XS_BOX} isolate`} aria-label={showDemo ? "Notizen · Beispiel" : "Notizen"} data-notizen-groesse={size} data-groesse={size}>
+        <KachelWasserzeichen kachel="notizen" size={size} />
         <KleinKopf icon={StickyNote} label="Notizen" href="/notizen" knopf={pen} />
         {top ? (
-          <Link href={href(top.id)} className={`${XS_LINE} gap-1`} data-zeile data-notiz-zeile>
+          // Rechts Platz für das kleine Wasserzeichen (A-048): der Titel kürzt sich davor
+          <Link href={href(top.id)} className={`${XS_LINE} gap-1 pr-7 @max-[320px]:pr-0`} data-zeile data-notiz-zeile>
             {top.pinned && <Pin className="h-3 w-3 shrink-0 text-tile-accent" strokeWidth={2.25} aria-hidden />}
-            <span className="truncate" data-freitext>{top.title}</span>
+            <span className="kachel-frei truncate" data-freitext>{top.title}</span>
           </Link>
         ) : (
-          <button type="button" onClick={() => openQuick({ kind: "notiz" })} className={`${XS_LINE} gap-1 text-left text-muted`} data-zeile>
-            <PenLine className="h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden />
-            <span className="whitespace-nowrap">Schnell notieren.</span>
+          // Derselbe Leertext wie in S/M und auf der Notizen-Seite (Tafel 140), ohne Stift im Text – der Stift ist der Knopf oben rechts
+          <button type="button" onClick={() => openQuick({ kind: "notiz" })} className="flex min-h-[30px] min-w-0 items-center pr-8 text-left text-[13px] font-semibold leading-[1.2] text-muted @max-[320px]:pr-0" data-zeile>
+            <span className="kachel-frei" data-platzhalter-text>{NOTIZ_LEERTEXT}</span>
           </button>
         )}
       </section>
     );
   }
   return (
-    <section className={`${HALF} isolate gap-1`} aria-label={showDemo ? "Notizen · Beispiel" : "Notizen"} data-notizen-groesse={size} data-groesse={size}>
+    <section className={`${HALF} isolate gap-1 pb-3.5`} aria-label={showDemo ? "Notizen · Beispiel" : "Notizen"} data-notizen-groesse={size} data-groesse={size}>
       <KachelWasserzeichen kachel="notizen" size={size} frei />
       <KleinKopf icon={StickyNote} label="Notizen" href="/notizen" more={more} knopf={pen} />
       {rows.length ? (
@@ -356,8 +367,8 @@ export function NotesTile({ size = "XS", demo = false }: { size?: TileSize; demo
           ))}
         </ul>
       ) : (
-        <button type="button" onClick={() => openQuick({ kind: "notiz" })} className="flex min-h-11 items-center text-left text-[13.5px] text-muted">
-          <span className="kachel-frei">Schnell was aufschreiben.</span>
+        <button type="button" onClick={() => openQuick({ kind: "notiz" })} className="flex min-h-[30px] items-center whitespace-nowrap text-left text-[13.5px] text-muted" data-zeile>
+          <span className="kachel-frei" data-platzhalter-text>{NOTIZ_LEERTEXT}</span>
         </button>
       )}
     </section>
@@ -388,17 +399,18 @@ export function PantryTile({ size = "XS", demo = false }: { size?: TileSize; dem
     const schild = showDemo ? DEMO_HAUS.badge : first?.badge?.text;
     const warm = showDemo || first?.badge?.tone === "orange";
     return (
-      <section className={XS_BOX} aria-label={showDemo ? "Im Haus · Beispiel" : "Im Haus"} data-groesse={size}>
+      <section className={`${XS_BOX} isolate`} aria-label={showDemo ? "Im Haus · Beispiel" : "Im Haus"} data-groesse={size}>
+        <KachelWasserzeichen kachel="vorrat" size={size} />
         <KleinKopf icon={Refrigerator} label="Im Haus" href="/vorrat" />
         <Link href="/vorrat" className={`flex min-h-[30px] min-w-0 items-center overflow-hidden text-[15px] font-bold leading-tight ${name ? "flex-wrap gap-x-1.5" : "text-muted"}`} data-zeile>
           {name ? (
             <>
-              <span className="min-w-0 break-words">{name}</span>
+              <span className="kachel-frei min-w-0 break-words">{name}</span>
               {/* Schild wie in S (10,5 px, Tafel 133) – braucht kaum Platz neben dem Namen */}
               {schild && <span className={`whitespace-nowrap rounded-full px-1.5 text-[10.5px] font-bold leading-[16px] ${warm ? "bg-accent-soft text-accent-strong" : "bg-warn-soft text-warn-ink"}`}>{schild}</span>}
             </>
           ) : (
-            "Was ist da?"
+            <span className="kachel-frei">Was ist da?</span>
           )}
         </Link>
       </section>

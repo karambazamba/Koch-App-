@@ -102,7 +102,7 @@ Sammel-Schnellnotiz wird in einzelne Notizen geteilt.
   „Titel · Anfang“, L = bis 5; Listen als „1 von 3 erledigt“. Antippen einer
   Zeile öffnet genau diese Notiz, der Kopf die Seite, der Stift die
   Schnelleingabe „Neue Notiz“ (mehrzeilig, erste Zeile = Titel). Leer:
-  „Schnell was aufschreiben …“.
+  „Schnell notieren …“.
 
 ## Begleitung (Mia)
 

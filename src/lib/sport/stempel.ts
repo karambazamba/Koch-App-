@@ -150,3 +150,47 @@ export const zielFrageFaellig = (state: SportState) => !state.zielGefragt && sta
 
 /** Text der Ziel-Frage (Tafel 132) */
 export const ZIEL_FRAGE = "Wie oft willst du Sport machen? Pro Woche. Dann sag ich dir, wenn die Woche geschafft ist.";
+
+// --- Kachel XS (A-048, Tafel 135) -----------------------------------------------------------
+
+/** Ein Feld der XS-Kachel: wie `Feld`, Stempel ohne Training (der Beispiel-Tag hat keins) */
+export type XsFeld = { art: "stempel"; stempel: Stempel } | Exclude<Feld, { art: "stempel" }>;
+
+/**
+ * XS = zwei kleine Felder links, rechts zwei kurze Zeilen. Bei mehr als zwei
+ * Feldern: die letzten zwei Stempel, sonst die ersten zwei Felder (Stempel
+ * vor geplant vor frei – wie auf der Karte).
+ */
+export function xsFelder(felder: Feld[]): XsFeld[] {
+  const stempel = felder.filter((f) => f.art === "stempel");
+  const zwei = felder.length <= 2 ? felder : stempel.length >= 2 ? stempel.slice(-2) : felder.slice(0, 2);
+  return zwei.map((f) => (f.art === "stempel" ? { art: "stempel", stempel: f.stempel } : f));
+}
+
+/** Beispiel-Tag (allein): zwei Stempel, „2 von 3“ / „diese Woche“ */
+export const XS_BEISPIEL: XsFeld[] = [
+  { art: "stempel", stempel: { id: "beispiel-1", sport: "laufen", label: "Laufen", date: "", tag: "MO", dreh: -6 } },
+  { art: "stempel", stempel: { id: "beispiel-2", sport: "rad", label: "Rad", date: "", tag: "MI", dreh: 5 } },
+];
+
+/**
+ * Die zwei Zeilen rechts neben den Feldern (XS): oben fett der Tag („Heute“,
+ * „Morgen“, „Do“), unten Uhrzeit und Titel („8:00 · Laufen“, morgen „Do 8:00 ·
+ * Laufen“ – der nächste Tag immer mit Wochentag). `vorlesen` = ein Satz
+ * („Heute 8:00 · Laufen“, nie „8:00 ·Laufen“). `freitext`: `unten` ist der
+ * Termin-Titel (darf sich kürzen).
+ */
+export function xsZeilen(karte: Pick<Stempelkarte, "geschafft" | "zuletzt">, next: Pick<DayItem, "date" | "time" | "title"> | null, today: string, beispiel = false): { oben: string; zeit: string | null; unten: string; vorlesen: string; freitext: boolean } {
+  const z = (oben: string, unten: string) => ({ oben, zeit: null, unten, vorlesen: `${oben} ${unten}`, freitext: false });
+  if (beispiel) return z("2 von 3", "diese Woche");
+  if (karte.geschafft) return z("Geschafft.", "Diese Woche");
+  if (next) {
+    const morgen = next.date === addDays(today, 1);
+    const oben = next.date === today ? "Heute" : morgen ? "Morgen" : weekdayShort(next.date);
+    const uhr = next.time ? clockLabel(next.time) : null;
+    const zeit = morgen ? [weekdayShort(next.date), uhr].filter(Boolean).join(" ") : uhr;
+    return { oben, zeit, unten: next.title, vorlesen: [`${morgen ? "Morgen ·" : oben}${zeit ? ` ${zeit}` : ""}`, next.title].join(" · "), freitext: true };
+  }
+  if (karte.zuletzt) return z(`${tagWort(karte.zuletzt.data.date, today)} war`, `${trainingLabel(karte.zuletzt)}.`);
+  return z("Diese Woche", "noch frei.");
+}
