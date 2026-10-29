@@ -17,6 +17,7 @@ import { NOTE_TOOLS } from "@/lib/begleitung/noteTools";
 import { DAY_TOOLS } from "@/lib/begleitung/dayTools";
 import { HOUSEHOLD_TOOLS } from "@/lib/begleitung/householdTools";
 import { TIP_TOOLS } from "@/lib/begleitung/tipTools";
+import { WAS_LOS_TOOLS } from "@/lib/begleitung/wasLosTools";
 import { WISH_TOOL } from "@/lib/begleitung/wishTools";
 import { WUNDERTUETE_TOOLS } from "@/lib/begleitung/wundertueteTools";
 
@@ -35,6 +36,6 @@ const FOOD_TOOLS: BegleitungTool[] = [
   PLAN_TOOLS.wunsch_merken,
 ];
 
-for (const tool of [...FOOD_TOOLS, ...CALENDAR_TOOLS, ...NOTE_TOOLS, ...HOME_TOOLS, ...MAIL_TOOLS, ...DAY_TOOLS, ...HOUSEHOLD_TOOLS, ...TIP_TOOLS, WISH_TOOL, SHOPPING_TOOLS.laden_regel, SHOPPING_TOOLS.laeden_anzeigen, ...WUNDERTUETE_TOOLS]) registerTool(tool);
+for (const tool of [...FOOD_TOOLS, ...CALENDAR_TOOLS, ...NOTE_TOOLS, ...HOME_TOOLS, ...MAIL_TOOLS, ...DAY_TOOLS, ...HOUSEHOLD_TOOLS, ...TIP_TOOLS, ...WAS_LOS_TOOLS, WISH_TOOL, SHOPPING_TOOLS.laden_regel, SHOPPING_TOOLS.laeden_anzeigen, ...WUNDERTUETE_TOOLS]) registerTool(tool);
 
 export { toolDefinitions, runRegisteredTool } from "@/lib/begleitung/registry";

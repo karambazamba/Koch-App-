@@ -1,23 +1,206 @@
-# Tipps aus der Region
+# „Was los?“ (früher „Tipps aus der Region“)
 
 ## Feste Regeln (aus CLAUDE.md umgezogen)
 
-- **Tipps aus der Region:** keine Termine, eigene lila Ebene, bis jemand
-  „Übernehmen“ tippt. Kein GPS. KARAMBA nie bevorzugt (nur bei gleicher
-  Uhrzeit zuerst, höchstens eine pro Woche in der Kachel), sichtbar „von
-  KARAMBA Eis“. Nur offene Lizenzen (CC0/CC BY/CC BY-SA). `TIPS_SOURCE` off/demo/
-  tldb, Zugang nie im Code. → `docs/bereiche/tipps.md`
+- **„Was los?“ (A-055):** Veranstaltungen aus dem öffentlichen Kalender des
+  Kreises Ostholstein. Sind KEINE Termine, bis jemand „In den Kalender“
+  tippt (dann ein normaler Familientermin mit Link zur Quelle). Kein GPS:
+  Wohnort = eigener Ort oder Wetter-Ort. Quelle immer sichtbar, „ohne
+  Gewähr“. Nur Server holt (nie pro Person, keine Nutzerdaten an den Kreis).
+  Übernommen werden nur ID, Titel, Datum, Uhrzeit, Ort (Text), Link,
+  Kategorien – keine Beschreibungen, keine Bilder. Beispieldaten nur im
+  Testbetrieb, nie in Produktion. Not-Schalter `REGION_TIPPS_QUELLE=aus`.
 - **Name KARAMBA:** immer „KARAMBA Eis“, nie nur „KARAMBA“ (Verwechslung
   mit einem Online-Casino) – in allen Texten (Tipps „von KARAMBA Eis“,
   Spendentopf, Mails, „Über Mia“, Hallo-Bildschirm „Gemacht in Eutin von
   KARAMBA Eis“). Test in `tests/app/regeln.test.ts`.
+- Die alte lila Tipps-Ebene (Kachel „Tipps“, `/tipps`, Kalender-Ebene,
+  Jetzt-Tipp, `tipps_suchen`, Gemerkt, KARAMBA-Aktionen, nur offene
+  Lizenzen) ist versteckt, nicht gelöscht (`tipps/alt.ts` `ALTE_TIPPS`).
 
+Kurz: Ein Fenster „Was ist los in <Wohnort>?“ mit Heute · Wochenende ·
+2 Wochen (Tafel 142), Kalender-Knopf trägt sofort ein, Detail mit „In den
+Kalender“, „An die Pinnwand“ und Originallink. Mia antwortet auf „Was ist
+los?“ aus denselben Daten. Den Mini-Kreis „Was los?“ auf der Startseite
+(Tafel 143) baut Paket A (A-050) und bindet das Fenster an.
+
+## Stand des Parsers (WICHTIG)
+
+- Parser wartet auf Freigabe von www.kreis-oh.de in der Netz-Regel der
+  Arbeitsumgebung bzw. auf gespeicherte Beispielseiten unter
+  `tests/fixtures/kreis-oh/` (Liste `ofs_1=0` und `ofs_1=25`, 2–3
+  Detailseiten, robots.txt). Felix hat die Domains am 29.10. freigegeben;
+  bis zum Ende von A-055 wirkte die Freigabe in der Arbeitsumgebung noch
+  nicht (Proxy 403).
+- Bis dahin: `parseListe` und `parseDetail` (`region/kreisOh/parser.ts`)
+  liefern sicher NICHTS, `PARSER_BEREIT = false` → der Lauf ruft den Kreis
+  gar nicht erst ab (Status „wartet“). Folge: 0 Treffer → vorhandene Daten
+  bleiben bis zu ihrem Ablauf, „Für Entwickler“ zeigt „Was los?: Quelle
+  liefert nichts (Parser wartet auf echte Beispielseiten)“, der Kreis bleibt
+  ausgeblendet (`wasLosSichtbar` = false). Nutzer sehen nie etwas Kaputtes.
+- Schon fertig und getestet (unabhängig vom HTML): ID aus `FID=3906.<id>.1`
+  (`idAusLink`), Blättern über `ofs_1` (25 je Seite, höchstens 12 Seiten,
+  Schluss nach dem Zeitraum), robots.txt (`kreisOh/robots.ts`), 1 Anfrage pro
+  Sekunde bzw. Crawl-delay, User-Agent „Mia-App (mia.karamba-eis.de)“,
+  Detailseite nur bei fehlender Uhrzeit/Ort (höchstens 60), Datum/Uhrzeit
+  (`region/zeit.ts`), Ort (`region/orte.ts`), Kategorie
+  (`region/kategorien.ts`).
+- Noch zu klären an echten Seiten: der Ort-Filter des Formulars (falls
+  nutzbar, in `listenUrl` einbauen; sonst bleibt die Ort-Erkennung aus dem
+  Text), wo „weiter“ steht, ob die Liste Uhrzeit und Ort schon enthält.
+- Danach: Fixtures speichern, `parseListe`/`parseDetail` daran bauen,
+  `PARSER_BEREIT = true`, Tests mit den Fixtures, einmal live gegenprüfen.
+
+## Wo im Code
+
+- Rein: `src/lib/region/model.ts` (`RegionEvent`, `sanitizeEvent`,
+  `nachTagen`, `reiterZeitraum`, `wochenendeVon`, `imUmkreis`,
+  `hatEintraege14Tage`, `wasLosSichtbar`, `wochenendTipps`, `pinnwandZettel`,
+  `terminDaten`, `quellenHinweis`), `orte.ts` (Orte, `erkenneOrt`,
+  `inOstholstein`, `orteImUmkreis`), `kategorien.ts`, `zeit.ts`, `frage.ts`
+  (`wasLosFrage`, `wasLosTreffer`), `sperrliste.ts`, `demo.ts`
+  (Beispieldaten, nur Testbetrieb). Sortierregeln `WAS_LOS`, `WAS_LOS_TIPPS`
+  in `core/sort.ts`.
+- Kreis: `src/lib/region/kreisOh/` – `parser.ts` (wartet), `abruf.ts`
+  (`holeKreisOh`, `zuEvent`, `listenUrl`, `kreisHolen`), `robots.ts`.
+- Server: `src/lib/region/server.ts` (`regionQuelle`, `supabaseSpeicher`,
+  `aktualisiereRegion`, `ladeRegion`). Routen `src/app/api/region/route.ts`
+  (öffentlich, `Cache-Control: public, max-age=3600`) und
+  `src/app/api/region/aktualisieren/route.ts` (Cron, `CRON_SECRET`).
+- App: `src/lib/region/client.ts` (`useWasLosDaten`, `useWasLosListe`,
+  `useWasLosAn`, `setWasLos`, `useWasLosSichtbar`, `inDenKalender`,
+  `anDiePinnwand`, `wasLosFreischalten`, `wasLosKontext`).
+- Oberfläche: `src/components/region/` – `WasLosFenster`, `WasLosDetail`,
+  `WasLosTeile` (Zeile, Fahne, Ergebnis-Karte, Quelle), `WasLosKarten`
+  (Chat), `WasLosEinstellungen` (`/profil/regiontipps`), `WasLosStatus`
+  („Für Entwickler“).
+- Mia: `src/lib/begleitung/wasLosTools.ts` (`was_los`), Prüfstand
+  `begleitung/pruefstand/wasLos.ts` (10 Sätze).
+- Datenbank: `supabase/migrations/20261110120000_region_events.sql`
+  (`region_events`, `region_status`), Test Abschnitt 8 in
+  `tests/datenbank/sicherheit.test.sql`.
+
+## Daten und Speicher
+
+| Wo | Schlüssel/Tabelle | Inhalt |
+|---|---|---|
+| Server | `region_events` | id (`kreisoh-<FID>`), titel, datum, bis_datum, letzter_tag, beginn, ende, ganztags, ort, gemeinde, link, kategorien, aktualisiert |
+| Server | `region_status` | eine Zeile: lauf, treffer, grund (ok/leer/fehler/robots/wartet) |
+| Gerät | `wasgibts.regiontipps` v2 | neu: `umkreis` (5/15/30, Standard 15; aus v1: ≤5 → 5, ≤20 → 15, sonst 30), `kategorienAus`; `ort` = Wohnort; `uebernommen` = Veranstaltung → Termin; alte Felder bleiben |
+| Gerät | `wasgibts.funktionen` v7 | neu: `aus` = selbst ausgeschaltete Bausteine (damit „Was los?“ in Ostholstein aus bleibt) |
+
+RLS: anon und authenticated nur SELECT, schreiben nur service role (geheimer
+Schlüssel nur in der Cron-Route). Die Tabelle hat keinen Personenbezug.
+
+## So verhält es sich
+
+- Baustein `regiontipps` heißt „Was los?“, nicht mehr in `LAUNCH_AUS`.
+  Standard an, wenn der Wohnort in Ostholstein liegt (`inOstholstein`:
+  Ortsname, Ortsteil oder PLZ), sonst aus. Selbst ausgeschaltet bleibt aus.
+  „Mehr Funktionen“ zeigt ihn nur mit laufender Quelle.
+- Cron täglich 5:00 Berlin (`vercel.json`: 3:00 und 4:00 UTC, die Route läuft
+  nur, wenn es in Berlin 5 Uhr ist; `?jetzt=1` sofort). Zeitraum heute bis
+  +14 Tage. Schreibt, löscht Abgelaufenes (`letzter_tag` vor heute) und
+  Gesperrtes (`sperrliste.ts` + `REGION_TIPPS_SPERRE`). 0 Treffer oder
+  Fehler: nichts überschreiben, Status sagt es.
+- Schalter `REGION_TIPPS_QUELLE`: `aus` = kein Abruf, `/api/region` liefert
+  `{ quelle: "aus" }`, nirgends etwas zu sehen; `demo` (oder
+  `TIPS_SOURCE=demo`) = Beispieldaten, nur wenn `VERCEL_ENV` nicht
+  `production` ist; sonst Kreis.
+- Umkreis: feste Liste für Eutin (5 km: Eutin, Malente; 15 km: Eutin,
+  Bad Malente-Gremsmühlen, Süsel, Scharbeutz, Ahrensbök, Schönwalde,
+  Kasseedorf, Stockelsdorf), andere Wohnorte nach Luftlinie. Einträge ohne
+  erkannte Gemeinde erst bei 30 km.
+- Fenster (Tafel 142/2–3): Kopf mit blauer Fahne, „Was ist los in Eutin?“,
+  „Veranstaltungen · bis 15 km“, ✕. Reiter Heute · Wochenende (Fr ab 15 Uhr
+  bis So) · 2 Wochen. Filter-Chips nur bei Wochenende/2 Wochen: Alles · Für
+  Kinder · Kultur · Draußen · Märkte (Familie: „Für Kinder“ zuerst, sonst
+  hinten; ausgeschaltete Kategorien fehlen). Liste nach Tagen
+  („HEUTE · MI 21. OKT“), jeder Eintrag einmal; links Uhrzeit bzw.
+  „ganztags“, Titel ganz (nie „…“), Ort, „bis …“ bei Mehrtägigem, Schild
+  „für Kinder“, rechts Kalender-Knopf → sofort Familientermin, Ergebnis-Karte
+  „Eingetragen“ mit Rückgängig (10 s), danach Häkchen. Heute schon Vorbeies
+  fällt still weg. Leer: „Heute ist nichts eingetragen. Schau mal aufs
+  Wochenende.“ Unten „Quelle: Kreis Ostholstein · kreis-oh.de ›“.
+- Detail (Tafel 142/4): „SA 24. OKT · 17:00“, Titel groß, Ort, „In den
+  Kalender“ (orange), „An die Pinnwand“ (Zettel „Sa 17:00
+  Nachtwächter-Rundgang · Wer kommt mit?“, Vorschau „Auf der Pinnwand sieht
+  die Familie:“), „Mehr beim Kreis Ostholstein ›“, „Angaben vom Kreis
+  Ostholstein, ohne Gewähr“.
+- Einstellungen → „Was los?“ (`/profil/regiontipps`, Zeile nur wenn an):
+  an/aus, Wohnort, Umkreis 5/15/30, Kategorien, „Anzeigen“ (Test-Einstieg bis
+  zum Mini-Kreis).
+- Jetzt-Karte freitags: `wochenendTipps(events, haushalt, heute, jetzt)` →
+  höchstens 2 (Familie: für Kinder zuerst, dann draußen/Markt, früher vor
+  später). A-054 hängt das in `jetztThemen` ein; die Jetzt-Karte selbst ist
+  unverändert.
+
+## Paket A: Mini-Kreis anbinden
+
+```tsx
+import { useWasLosSichtbar } from "@/lib/region/client";
+import { WasLosFenster } from "@/components/region/WasLosFenster";
+import { WasLosFahne } from "@/components/region/WasLosTeile";
+
+const sichtbar = useWasLosSichtbar(); // Quelle an + Baustein an + etwas in 14 Tagen im Umkreis
+{sichtbar && <Kreis icon={<WasLosFahne />} label="Was los?" onClick={() => setOffen(true)} />}
+{offen && <WasLosFenster onClose={() => setOffen(false)} />}
+```
+
+Rein (ohne Hook): `wasLosSichtbar({ quelle, baustein, events, heute })`,
+`hatEintraege14Tage(events, heute)` aus `region/model.ts`. Unter dem Kreis
+nur „Was los?“ – keine Zahl, kein Tipp, keine Uhrzeit (Tafel 143).
+
+## Begleitung (Mia)
+
+- Mit KI: Werkzeug `was_los` (nur wenn `REGION_TIPPS_QUELLE ≠ aus`). Die
+  Engine lädt die Veranstaltungen vorab, wenn `wasLosFrage` passt oder lose
+  Wörter („los“, „Veranstaltung“, „Markt“ …) vorkommen. Antwort nur aus den
+  Treffern (höchstens 3), als Karten mit „In den Kalender“, Quelle genannt.
+  Kontext `wasLos` (Wohnort, Umkreis, Kategorien). Nutzt Mia es bei
+  ausgeschaltetem Baustein, schaltet `wasLosFreischalten` ihn an und sie
+  sagt, wo es steht.
+- Ohne KI: dieselbe Erkennung als Regel in `localRules.ts`.
+- Prüfstand: 10 Sätze („Was ist los?“, „Was ist heute in Eutin los?“, „Was
+  können wir am Wochenende mit den Kindern machen?“ …), geprüft mit den
+  Beispieldaten; Testmodell 100 %.
+
+## Tests
+
+- `tests/region/text.test.ts` – Ort, Kategorie, Zeitformate („bis“,
+  ganztags, „10:00 – 12:00 Uhr“, „ganztägig“).
+- `tests/region/model.test.ts` – Reiter, Wochenende, Umkreis, Sichtbarkeit,
+  Wochenend-Tipps, Zettel, Termin, Hinweis.
+- `tests/region/kreisOh.test.ts` – Parser leer, ID, Blättern, robots.txt,
+  Höflichkeit, Fehler.
+- `tests/region/server.test.ts` – Schalter, Lauf (schreibt/löscht, 0 Treffer
+  → alte Daten bleiben), Liste 1 Std., Routen, vercel.json.
+- `tests/region/client.test.ts` – Baustein, Einstellungen v2, Laden,
+  Kalender, Pinnwand.
+- `tests/region/mia.test.ts` – Fragen, Treffer, Prüfstand im Testmodus.
+- Durchklick `wasLos` (`e2e/ablaeufe/waslos.mjs`).
+
+## Alte Tipps-Ebene (versteckt seit A-055)
+
+Was nicht mehr passt, ist versteckt, nicht gelöscht: `ALTE_TIPPS = false`
+(`tipps/alt.ts`) schaltet `tipsMode()` (Server) und die Quelle in der App auf
+„off“. Damit sind Kachel „Tipps“, `/tipps` (zeigt „gibt es hier noch
+nicht“), Kalender-Ebene, Jetzt-Tipp, `tipps_suchen`, „Gemerkt“ und die
+KARAMBA-Kennzeichnung unsichtbar. Gespeicherte Merker und übernommene
+Termine bleiben; der Link im Termin („Mehr dazu“) bleibt und wird von
+„Was los?“ genauso gesetzt. Spendentopf: keine Kopplung mehr nötig – „Was
+los?“ nutzt nur die Ostholstein-PLZ aus `spendentopf/regions.ts` zur
+Erkennung des Wohnorts. Die alten Einstellungen „Tipps aus der Region“ sind
+in „Was los?“ aufgegangen (Ort = Wohnort, km → Umkreis). Alte Tests schalten
+die Ebene per `vi.mock("@/lib/tipps/alt")` ein.
+
+### Frühere Beschreibung
 
 Kurz: Veranstaltungen in der Nähe (Märkte, Kinderkino, Konzerte …) als eigene
 lila Ebene – Kachel, Seite `/tipps`, Kalender, Jetzt-Karte und Antworten der
 Begleitung (Standard Mia). Ein Tipp wird erst durch Antippen zum Termin.
 
-## FESTE REGELN
+### FESTE REGELN
 
 - Tipps sind KEINE Termine. Erst „In unseren Kalender“ bzw. „Übernehmen“ legt
   einen normalen Familientermin an (`takeTip`).
@@ -34,7 +217,7 @@ Begleitung (Standard Mia). Ein Tipp wird erst durch Antippen zum Termin.
   erkennbar.
 - Keine Zähler, keine roten Markierungen.
 
-## Wo im Code
+### Wo im Code
 
 - Modell (rein): `src/lib/tipps/model.ts` (`Tip`, `TipView`, `nearTips`,
   `sortTips`, `rangeFor`, `tileTitle`, `tileTips`, `jetztTip`, `weekendKey`,
@@ -56,7 +239,7 @@ Begleitung (Standard Mia). Ein Tipp wird erst durch Antippen zum Termin.
   `CalendarTips`, `TipCards`, `TipSettingsView`, `TipBits`.
 - Begleitung: `src/lib/begleitung/tipTools.ts` (`tipps_suchen`).
 
-## Daten und Speicher
+### Daten und Speicher
 
 | Schlüssel | Version | Inhalt | Sicherung |
 |---|---|---|---|
@@ -70,7 +253,7 @@ Begleitung (Standard Mia). Ein Tipp wird erst durch Antippen zum Termin.
   Arbeitsspeicher der App. `Tip` hat die Spalten der späteren
   Supabase-Tabelle `tips`.
 
-## So verhält es sich
+### So verhält es sich
 
 Schalter `TIPS_SOURCE` (Vercel):
 - `off` (Standard): `/api/tipps` liefert nur `{ source: "off" }`. Nirgends
@@ -132,7 +315,7 @@ vor fern. ✕ = an diesem Wochenende nicht mehr (`jetztAus`). Nicht nachts.
 Einstellungen → Startseite → „Tipps aus der Region“ (`TipSettingsView`): Ort,
 Umkreis, „Tipps im Kalender zeigen“.
 
-## Begleitung (Mia)
+### Begleitung (Mia)
 
 - Mit KI: `tipps_suchen` (nur wenn `tipsMode() !== "off"`). Die Tipps holt
   `engine.ts` vorab, wenn `tipQuestion` passt. Antwort nur aus den Treffern
@@ -145,7 +328,7 @@ Umkreis, „Tipps im Kalender zeigen“.
 - Nutzt sie Tipps, schaltet `unlockTips` Baustein und Kachel frei und sie
   sagt, wo sie stehen.
 
-## Tests
+### Tests
 
 - `tests/tipps/tippsModell.test.ts` – Lizenzen, Zeiträume, Kachel und
   Jetzt-Karte, Filter/Etiketten/Icons, Fragen.

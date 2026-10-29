@@ -6,6 +6,9 @@ import { memoryStorage } from "../helpers";
 import { demoTips } from "@/lib/tipps/sources/demo";
 import { nearTips, type TipView } from "@/lib/tipps/model";
 
+// Alte Tipps-Ebene ist seit A-055 versteckt (nicht gelöscht) – hier eingeschaltet geprüft
+vi.mock("@/lib/tipps/alt", () => ({ ALTE_TIPPS: true }));
+
 const effects: (() => void)[] = [];
 vi.mock("react", () => ({
   useState: (init: unknown) => [typeof init === "function" ? (init as () => unknown)() : init, () => {}],
@@ -45,7 +48,7 @@ afterEach(() => {
 
 describe("Einstellungen", () => {
   it("Standard: Wetter-Ort, 20 km, im Kalender an", () => {
-    expect(client.useTipSettings()).toEqual({ version: 1, ort: null, km: 20, kalender: true, gemerkt: [], uebernommen: {}, jetztAus: null });
+    expect(client.useTipSettings()).toEqual({ version: 2, ort: null, km: 20, kalender: true, gemerkt: [], uebernommen: {}, jetztAus: null, umkreis: 15, kategorienAus: [] });
     expect(client.tipContext()).toEqual({ ort: "Eutin", km: 20 });
     local.setItem("wasgibts.wetterort", JSON.stringify({ version: 1, city: "Plön" }));
     expect(client.tipContext().ort).toBe("Plön");
@@ -67,10 +70,13 @@ describe("Einstellungen", () => {
   });
 
   it("falsche Version, leerer Ort, kaputte Listen → Standard bzw. leer", () => {
-    local.setItem("wasgibts.regiontipps", JSON.stringify({ version: 2, km: 5 }));
+    local.setItem("wasgibts.regiontipps", JSON.stringify({ version: 3, km: 5 }));
     expect(client.useTipSettings().km).toBe(20);
     local.setItem("wasgibts.regiontipps", JSON.stringify({ version: 1, ort: "  ", km: 40, gemerkt: "x", uebernommen: null, jetztAus: 3 }));
-    expect(client.useTipSettings()).toEqual({ version: 1, ort: null, km: 40, kalender: true, gemerkt: [], uebernommen: {}, jetztAus: null });
+    expect(client.useTipSettings()).toEqual({ version: 2, ort: null, km: 40, kalender: true, gemerkt: [], uebernommen: {}, jetztAus: null, umkreis: 30, kategorienAus: [] });
+    // v2 („Was los?“): Umkreis und Kategorien werden geprüft
+    local.setItem("wasgibts.regiontipps", JSON.stringify({ version: 2, km: 10, umkreis: 7, kategorienAus: ["markt", "werbung", 3] }));
+    expect(client.useTipSettings()).toMatchObject({ km: 10, umkreis: 15, kategorienAus: ["markt"] });
   });
 
   it("Merken an/aus und Jetzt-Karte fürs Wochenende aus", () => {
@@ -179,8 +185,8 @@ describe("Aktionen", () => {
     expect(e.data).toMatchObject({ title: t.titel, date: "2026-10-24", start: "15:00", place: "Stadtbibliothek, Schloßplatz 4, Eutin", reminder: "60", who: ["Lisa"], note: "aus Tipps", link: "https://example.org/kino" });
     expect(e.data.end).toBeUndefined();
     expect(read("wasgibts.regiontipps").uebernommen).toEqual({ [t.id]: id });
-    // Launch 1.0: Tipps bleiben ein ausgeblendeter Baustein
-    expect(read("wasgibts.funktionen")?.on ?? []).not.toContain("regiontipps");
+    // Seit A-055 („Was los?“) ist der Baustein nicht mehr für 1.0 ausgeblendet: wer übernimmt, hat ihn an
+    expect(read("wasgibts.funktionen")?.on ?? []).toContain("regiontipps");
     expect(client.isTaken(t.id)).toBe(true);
     expect([...client.takenIds(client.useTipSettings(), entries)]).toEqual([t.id]);
     expect(client.takenIds(client.useTipSettings(), undefined).size).toBe(0);
@@ -224,9 +230,9 @@ describe("Aktionen", () => {
     expect(read("wasgibts.pinnwand").messages).toHaveLength(0);
   });
 
-  it("Launch 1.0: Mia schaltet die Tipps nicht frei (Baustein und Kachel bleiben aus)", async () => {
+  it("alte Ebene eingeschaltet: Mia schaltet Baustein und Kachel frei und sagt, wo", async () => {
+    expect(client.unlockTips()).toBe("„Was los?“ findest du in den Einstellungen.");
+    expect(read("wasgibts.funktionen")?.on ?? []).toContain("regiontipps");
     expect(client.unlockTips()).toBeNull();
-    expect(read("wasgibts.funktionen")?.on ?? []).not.toContain("regiontipps");
-    expect(read("wasgibts.startseite")?.tiles?.find((t: { id: string }) => t.id === "tipps")?.visible ?? false).toBe(false);
   });
 });

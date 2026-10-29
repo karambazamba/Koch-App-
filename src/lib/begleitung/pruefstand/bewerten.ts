@@ -110,6 +110,8 @@ export function bewerte(satz: PruefSatz, reply: AssistantReply, ms: number): Pru
   const einkauf = reply.ops.flatMap((op) => (op.type === "add_shopping" ? [op] : []));
   if (satz.anzahl !== undefined && einkauf.length !== satz.anzahl) gruende.push(`${einkauf.length} statt ${satz.anzahl} Sachen (${einkauf.map((op) => op.name).join(", ") || "keine"})`);
   if (satz.menge && !einkauf.some((op) => op.amount.trim().startsWith(satz.menge!))) gruende.push(`Menge ${satz.menge} nicht übernommen`);
+  if (satz.waslos === true && !reply.waslos?.length) gruende.push("keine Veranstaltungs-Karten");
+  if (satz.waslos === false && reply.waslos?.length) gruende.push("Veranstaltungen, obwohl keine passen");
   if (satz.nennt && !reply.reply.toLowerCase().includes(satz.nennt.toLowerCase())) gruende.push(`nennt ${satz.nennt} nicht`);
   if (satz.nenntNie && reply.reply.toLowerCase().includes(satz.nenntNie.toLowerCase())) gruende.push(`nennt ${satz.nenntNie} (zu alt)`);
   const max = satz.max ?? 2;

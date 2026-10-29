@@ -101,7 +101,7 @@ export async function POST(request: Request) {
         const result = await runAssistant(req, create, model, { onText, onRound: () => send({ t: "round" }) });
         void recordWishes(result.wishes, req.today);
         const zeit = { token, gesamt: Math.round(performance.now() - eingang) };
-        send({ t: "done", reply: result.reply, ops: result.ops, mail: result.mail, chips: result.chips, tips: result.tips, usage: result.usage, zeit });
+        send({ t: "done", reply: result.reply, ops: result.ops, mail: result.mail, chips: result.chips, tips: result.tips, waslos: result.waslos, usage: result.usage, zeit });
       } catch (e) {
         send({ t: "error", error: errorCode(e) });
       } finally {

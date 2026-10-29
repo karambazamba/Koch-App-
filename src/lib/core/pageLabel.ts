@@ -30,7 +30,7 @@ const PAGES: Record<string, string> = {
   "/pinnwand": "Pinnwand",
   "/spendentopf": "Spendentopf",
   "/tipps": "Tipps",
-  "/profil/regiontipps": "Tipps aus der Region",
+  "/profil/regiontipps": "Was los?",
 };
 
 const TABS: Record<string, string> = { kalender: "Kalender", woche: "Kalender", essen: "Essen" };

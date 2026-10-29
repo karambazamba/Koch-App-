@@ -5,6 +5,7 @@ import type { MailDraft } from "@/lib/begleitung/mail";
 import type { StimmeStatus } from "@/lib/begleitung/stimmeProtokoll";
 import type { TipView } from "@/lib/tipps/model";
 import type { Forecast } from "@/lib/wetter/forecast";
+import type { RegionEvent, WasLosKarte } from "@/lib/region/model";
 
 export type ChatTurn = { role: "user" | "assistant"; text: string };
 
@@ -33,6 +34,8 @@ export type AssistantRequest = {
   sofort?: string;
   /** Nur Prüfstand (nie aus der App): feste Vorhersage statt Abruf */
   forecast?: Forecast | null;
+  /** Nur Prüfstand (nie aus der App): feste Veranstaltungen statt Abruf („Was los?“) */
+  regionEvents?: RegionEvent[] | null;
 };
 
 /**
@@ -43,7 +46,7 @@ export type AssistantRequest = {
 export type StreamEvent =
   | { t: "text"; d: string }
   | { t: "round" }
-  | { t: "done"; reply: string; ops: ChangeOp[]; mail?: MailDraft; chips?: string[]; tips?: TipView[]; usage?: AssistantUsage; zeit?: ServerZeit }
+  | { t: "done"; reply: string; ops: ChangeOp[]; mail?: MailDraft; chips?: string[]; tips?: TipView[]; waslos?: WasLosKarte[]; usage?: AssistantUsage; zeit?: ServerZeit }
   | { t: "error"; error: AssistantErrorCode };
 
 /** Zeiten auf dem Server in ms ab Eingang der Anfrage (nur Zahlen, fürs Tempo unter „Für Entwickler“): erstes Wort des Modells, fertig */
@@ -61,6 +64,8 @@ export type AssistantReply = {
   mail?: MailDraft;
   /** Tipps aus der Region als Karten unter der Antwort */
   tips?: TipView[];
+  /** „Was los?“: bis zu 3 Veranstaltungen als Karten (mit „In den Kalender“) */
+  waslos?: WasLosKarte[];
   /** Antwort-Knöpfe (z. B. "Zusagen", "Absagen", "Nachfragen") */
   chips?: string[];
   /** Nur Server: „Kann ich noch nicht“-Wünsche (werden anonym gezählt, nie an die App geschickt) */

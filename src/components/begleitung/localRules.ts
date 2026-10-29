@@ -20,6 +20,9 @@ import { windAnswer, type Wind } from "@/lib/wetter/wind";
 import { allShops, loadShoppingSettings } from "@/lib/einkauf/shoppingList";
 import { shopModeHref, shopModeRequest } from "@/lib/einkauf/shopMode";
 import { tipQuestion } from "@/lib/tipps/question";
+import { wasLosFrage, wasLosTreffer } from "@/lib/region/frage";
+import { orteImUmkreis } from "@/lib/region/orte";
+import { jetztMinuten, ladeWasLos, wasLosFreischalten, wasLosKontext } from "@/lib/region/client";
 import { answerTips } from "@/lib/tipps/model";
 import { knownTipsMode, loadTipsWindow, unlockTips } from "@/lib/tipps/client";
 import { loadPlace, refreshForecast } from "@/lib/wetter/client";
@@ -190,6 +193,24 @@ export function boardRule(ctx: RuleContext, t: string): boolean {
       ...activeMemos(loadMemos(), nowMs).map((m) => ({ at: m.erstellt, who: m.data.author, line: `Sprachnachricht (${formatDauer(m.data.dauer)})` })),
     ].sort((a, b) => b.at.localeCompare(a.at));
     say(items.length ? `Auf der Pinnwand: ${items.slice(0, 4).map((m) => `${m.who === me ? "Du" : m.who}: ${m.line}`).join(" · ")}` : "Auf der Pinnwand steht gerade nichts.");
+    return true;
+  }
+  const wasLosAsk = wasLosFrage(t, toIsoDate(today));
+  if (wasLosAsk) {
+    setInput("");
+    setChat((c) => ({ ...c, turns: [...c.turns, { role: "user", text: t, local: true }] }));
+    void ladeWasLos(toIsoDate(today)).then((res) => {
+      const k = wasLosKontext();
+      const lage = { orte: orteImUmkreis(k.ort, k.umkreis), umkreis: k.umkreis, kategorienAus: k.kategorienAus, heute: toIsoDate(today), jetzt: jetztMinuten() };
+      const hits = res.quelle === "aus" ? [] : wasLosTreffer(res.events, wasLosAsk, lage);
+      const where = hits.length ? wasLosFreischalten() : null;
+      const text = res.failed
+        ? "Komm grad nicht an die Veranstaltungen. Gleich nochmal?"
+        : hits.length
+          ? `${wasLosAsk.label.replace(/^./, (x) => x.toUpperCase())}: ${hits.length === 1 ? "eine Sache" : "ein paar Sachen"}. Quelle: Kreis Ostholstein.${where ? `\n${where}` : ""}`
+          : `Für ${wasLosAsk.label} ist grad nichts eingetragen.`;
+      setChat((c) => ({ ...c, turns: [...c.turns, { role: "assistant", text, local: true, ...(hits.length ? { waslos: hits } : {}) }] }));
+    });
     return true;
   }
   const tipAsk = knownTipsMode() && knownTipsMode() !== "off" ? tipQuestion(t, toIsoDate(today)) : null;

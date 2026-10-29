@@ -17,11 +17,15 @@ import { changePins } from "@/lib/pinnwand/store";
 import { addPin, createPin } from "@/lib/pinnwand/model";
 import { loadPlace, usePlace } from "@/lib/wetter/client";
 import { pinboardText, TIP_RADII, tipDate, tipTime, type TipRadius, type TipView } from "@/lib/tipps/model";
+import { KATEGORIEN, type Kategorie } from "@/lib/region/kategorien";
+import { STANDARD_UMKREIS, UMKREISE, type Umkreis } from "@/lib/region/orte";
+import { ALTE_TIPPS } from "@/lib/tipps/alt";
 
 export type TipsMode = "off" | "demo" | "tldb";
 
 type TipSettings = {
-  version: 1;
+  /** v2: „Was los?“ (A-055) – Umkreis 5/15/30 und Kategorien aus; alte Felder bleiben */
+  version: 2;
   /** Eigener Ort (sonst der Wetter-Ort) */
   ort: string | null;
   km: TipRadius;
@@ -32,28 +36,40 @@ type TipSettings = {
   uebernommen: Record<string, string>;
   /** Wochenende (Samstag), an dem die Jetzt-Karte keinen Tipp mehr zeigt */
   jetztAus: string | null;
+  /** „Was los?“: Umkreis um den Wohnort */
+  umkreis: Umkreis;
+  /** „Was los?“: ausgeschaltete Kategorien */
+  kategorienAus: Kategorie[];
 };
 
-const DEFAULTS: TipSettings = { version: 1, ort: null, km: 20, kalender: true, gemerkt: [], uebernommen: {}, jetztAus: null };
+const DEFAULTS: TipSettings = { version: 2, ort: null, km: 20, kalender: true, gemerkt: [], uebernommen: {}, jetztAus: null, umkreis: STANDARD_UMKREIS, kategorienAus: [] };
+
+/** Alter Umkreis (5/10/20/40) → „Was los?“ (5/15/30) */
+const umkreisAus = (km: TipRadius): Umkreis => (km <= 5 ? 5 : km <= 20 ? 15 : 30);
 
 function migrateTipSettings(raw: unknown): TipSettings | null {
   if (!raw || typeof raw !== "object") return null;
-  const r = raw as Partial<TipSettings>;
-  if (r.version !== 1) return null;
+  const r = raw as Omit<Partial<TipSettings>, "version"> & { version?: number };
+  if (r.version !== 1 && r.version !== 2) return null;
   const strings = (v: unknown) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : []);
+  const km = TIP_RADII.includes(r.km as TipRadius) ? (r.km as TipRadius) : 20;
   return {
-    version: 1,
+    version: 2,
     ort: typeof r.ort === "string" && r.ort.trim() ? r.ort.trim().slice(0, 60) : null,
-    km: TIP_RADII.includes(r.km as TipRadius) ? (r.km as TipRadius) : 20,
+    km,
     kalender: r.kalender !== false,
     gemerkt: strings(r.gemerkt).slice(-100),
     uebernommen: r.uebernommen && typeof r.uebernommen === "object" ? Object.fromEntries(Object.entries(r.uebernommen).filter(([, v]) => typeof v === "string")) : {},
     jetztAus: typeof r.jetztAus === "string" ? r.jetztAus : null,
+    umkreis: r.version === 2 && UMKREISE.includes(r.umkreis as Umkreis) ? (r.umkreis as Umkreis) : r.version === 1 ? umkreisAus(km) : STANDARD_UMKREIS,
+    kategorienAus: strings(r.kategorienAus).filter((k): k is Kategorie => KATEGORIEN.includes(k as Kategorie)),
   };
 }
 
 const store = createLocalStore("wasgibts.regiontipps", migrateTipSettings);
 const loadSettings = () => store.load() ?? DEFAULTS;
+/** Einstellungen außerhalb von React (auch für „Was los?“) */
+export const loadTipSettings = loadSettings;
 
 export function changeTipSettings(change: (s: TipSettings) => TipSettings) {
   store.save(change(loadSettings()));
@@ -78,6 +94,12 @@ const modeListeners = new Set<() => void>();
 
 function askMode() {
   if (modePromise) return;
+  // Alte Tipps-Ebene versteckt (A-055): gar nicht erst fragen
+  if (!ALTE_TIPPS) {
+    mode = "off";
+    modePromise = Promise.resolve().then(() => modeListeners.forEach((l) => l()));
+    return;
+  }
   modePromise = fetch("/api/tipps?nurquelle=1")
     .then((r) => r.json())
     .then((d: { source?: string }) => {
@@ -235,8 +257,8 @@ export const hideJetztTipWeekend = (key: string) => changeTipSettings((s) => ({ 
 
 /** Lotte nutzt die Tipps: Baustein + Kachel an; liefert den Satz, wo sie stehen (nur beim ersten Mal) */
 export function unlockTips(): string | null {
-  // Launch 1.0: Tipps ausgeblendet – Mia schaltet sie nicht frei
-  if (featureOn("regiontipps") || !unlockFeature("regiontipps")) return null;
+  // Alte Tipps-Ebene versteckt (A-055): keine alte Kachel mehr freischalten
+  if (!ALTE_TIPPS || featureOn("regiontipps") || !unlockFeature("regiontipps")) return null;
   unlockHomeTile("tipps");
   return TIPS_BAUSTEIN.where;
 }

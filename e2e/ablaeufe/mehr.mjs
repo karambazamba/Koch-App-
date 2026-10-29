@@ -1,4 +1,4 @@
-// Spendentopf, Tipps (Demo), Einstellungen
+// Spendentopf, alte Tipps-Seite (versteckt), Einstellungen
 import { BASE, hello, seedFamily } from "../lib.mjs";
 
 const family = async (page, path) => {
@@ -44,10 +44,10 @@ export const spendentopf = async (page, check) => {
   check((await page.evaluate(() => JSON.parse(localStorage.getItem("wasgibts.spendentopf")).pledge?.betrag)) === 10, "Rückgängig holt sie zurück");
 };
 
+// Alte Tipps-Seite (/tipps) ist seit A-055 versteckt – „Was los?“ prüft `wasLos` (waslos.mjs)
 export const tipps = async (page, check) => {
   await family(page, "/tipps");
-  check(await page.getByText(/Eutin \+ 20 km/).isVisible(), "Ort-Chip „Eutin + 20 km“");
-  check((await page.locator("main section[aria-label*='Oktober']").count()) > 0, "Tipps nach Tag gruppiert");
+  check(await page.getByText("Tipps aus der Region gibt es hier noch nicht.").isVisible(), "alte Tipps-Seite zeigt nur den ruhigen Satz");
 };
 
 export const einstellungen = async (page, check) => {

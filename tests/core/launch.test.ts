@@ -9,9 +9,9 @@ beforeEach(() => vi.resetModules());
 afterEach(() => noBrowser());
 
 describe("Launch-Schnitt", () => {
-  it("ausgeblendet: Mails, Tipps aus der Region, Spendentopf – Notizen, Sport, Wochenplan und Im Haus gehören zu 1.0", async () => {
+  it("ausgeblendet: Mails, Spendentopf („Was los?“ seit A-055 drin) – Notizen, Sport, Wochenplan und Im Haus gehören zu 1.0", async () => {
     const { LAUNCH_AUS, launchSichtbar } = await import("@/lib/core/features");
-    expect([...LAUNCH_AUS].sort()).toEqual(["mails", "regiontipps", "spendentopf"]);
+    expect([...LAUNCH_AUS].sort()).toEqual(["mails", "spendentopf"]);
     expect(launchSichtbar("notizen", [])).toBe(true);
     expect(launchSichtbar("sport", [])).toBe(true);
     expect(launchSichtbar("wochenplan", [])).toBe(true);
@@ -49,7 +49,7 @@ describe("Launch-Schnitt", () => {
     f.setFeature("sport", false);
     f.launchUebernahme();
     expect(f.featureOn("sport")).toBe(false);
-    expect(JSON.parse(w.localStorage.getItem("wasgibts.funktionen")!)).toMatchObject({ version: 7, launch: true, imHaus: true });
+    expect(JSON.parse(w.localStorage.getItem("wasgibts.funktionen")!)).toMatchObject({ version: 8, launch: true, imHaus: true });
   });
 
   it("neue Nutzer starten ohne die ausgeblendeten Bausteine, mit Notizen", async () => {
@@ -69,7 +69,7 @@ describe("Launch-Schnitt", () => {
     const f = await import("@/lib/core/features");
     expect(f.featureOn("notizen") && f.featureOn("rezepte")).toBe(true);
     f.setFeature("notizen", false);
-    expect(JSON.parse(w.localStorage.getItem("wasgibts.funktionen")!)).toEqual({ version: 7, on: ["rezepte", "pinnwand", "durchatmen"], launch: true, imHaus: false });
+    expect(JSON.parse(w.localStorage.getItem("wasgibts.funktionen")!)).toEqual({ version: 8, on: ["rezepte", "pinnwand", "durchatmen"], launch: true, imHaus: false, aus: ["notizen"] });
     vi.resetModules();
     const again = await import("@/lib/core/features");
     expect(again.featureOn("notizen")).toBe(false);
@@ -97,7 +97,7 @@ describe("Launch-Schnitt", () => {
     const f = await import("@/lib/core/features");
     f.launchUebernahme();
     expect(JSON.parse(w.localStorage.getItem("wasgibts.startseite")!).tiles[0]).toMatchObject({ id: "vorrat", visible: true, size: "M" });
-    expect(JSON.parse(w.localStorage.getItem("wasgibts.funktionen")!)).toEqual({ version: 7, on: ["notizen", "vorrat", "pinnwand", "durchatmen"], launch: true, imHaus: true });
+    expect(JSON.parse(w.localStorage.getItem("wasgibts.funktionen")!)).toEqual({ version: 8, on: ["notizen", "vorrat", "pinnwand", "durchatmen"], launch: true, imHaus: true, aus: [] });
   });
 
   it("alte Bausteine (v2) bleiben erhalten", async () => {

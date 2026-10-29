@@ -26,7 +26,7 @@ Bei Widersprüchen gilt der neuere Auftrag. Gemergt wird in dieser Reihenfolge, 
 | P6 | Ergebnis-Karten | A-037 (Tafel 126) | fertig v0.151 |
 | P7 | Sport-Seite | A-044 Stempelkarte (Tafel 132) | fertig v0.153 |
 | P8 | Durchatmen, Rätsel, Wundertüte | A-051 Durchatmen + Stimme/Klang (Tafel 138/139), A-052 Rätsel + Wundertüte | A-051 fertig v0.159; A-052 fertig v0.160 |
-| P9 | Was los? | A-055 (Tafel 142) | in Arbeit, Ziel v0.162; Parser wartet auf Freigabe von www.kreis-oh.de |
+| P9 | Was los? | A-055 (Tafel 142) | fertig v0.167, Parser wartet (www.kreis-oh.de aus der Arbeitsumgebung nicht erreichbar; Beispielseiten unter tests/fixtures/kreis-oh/ fehlen) |
 | P10 | Volle Prüfung | A-053 | zurückgestellt (später, auf Zuruf) |
 
 Ersetzt und nicht mehr gebaut: Essen-Kachel Tafel 121/122/133 → Tafel 134 (Rezeptseite/Kochmodus aus 122 bleiben); Sport Tafel 129/130/131 → Tafel 132 + Mini-Kreis Sport; Startseite Tafel 136 und Teil 1–2 von Tafel 137 → Tafel 143 (Fenster aus 137 bleiben); A-049 → A-052; „Tipps aus der Region“ → „Was los?“ (A-055); Füllsätze der Jetzt-Karte → A-054.
@@ -184,7 +184,7 @@ Ersetzt und nicht mehr gebaut: Essen-Kachel Tafel 121/122/133 → Tafel 134 (Rez
 | A-052 | Rätsel als eigener Bereich + Wundertüte (Witze, „Platt för Plietsche“, Angeberwissen), „Noch eine ›“, nie doppelt im Haushalt, KI-Nachschub nur Witze/Rätsel | `tafel-137.png` (Bild 4), `tafel-140.png` | fertig v0.160 (Rätsel-Paket 001: 91 Rätsel; Mini-Kreis bindet das Fenster an) |
 | A-053 | Gesamtauftrag Teil 7: Tests gesamt + volle Prüfung | – | zurückgestellt (später, auf Zuruf) |
 | A-054 | SOFORT: Jetzt-Karte nur mit Nutzen für heute (Rangliste, keine Füllsätze, sonst ausblenden), Wochenende planen nur freitags 12–20 Uhr | – | fertig v0.163 |
-| A-055 | „Was los?“ – Veranstaltungen Kreis Ostholstein (Tabelle region_events, Cron 5:00, Fenster Heute · Wochenende · 2 Wochen, Kalender/Pinnwand, Quelle sichtbar; ersetzt „Tipps aus der Region“) | `tafel-142.png` | in Arbeit (Ziel v0.162; Parser wartet auf Freigabe von www.kreis-oh.de) |
+| A-055 | „Was los?“ – Veranstaltungen Kreis Ostholstein (Tabelle region_events, Cron 5:00, Fenster Heute · Wochenende · 2 Wochen, Kalender/Pinnwand, Quelle sichtbar; ersetzt „Tipps aus der Region“) | `tafel-142.png` | fertig v0.167, Parser wartet (Wortlaut `docs/auftraege/A-055-was-los.md`). Parser wartet auf Freigabe von www.kreis-oh.de in der Netz-Regel der Arbeitsumgebung bzw. auf gespeicherte Beispielseiten unter tests/fixtures/kreis-oh/; bis dahin liefert der Kreis nichts, „Was los?: Quelle liefert nichts“ in „Für Entwickler“, Mini-Kreis bleibt aus. Kreis oben über `useWasLosSichtbar`, Freitags-Karte über `wochenendTipps` |
 | A-056 | SOFORT (Vorrang): „Mia hört von Anfang an und versteht mehrere Sachen“ – Mikro sofort beim Antippen mit Ringpuffer (≥ 5 s), Schlüssel vorgewärmt, Ring erst bei echtem Ton, Zeiten im Mikro-Protokoll; Sofort-Weg nur bei genau EINER Sache, Füllwörter weg, Aufzählungen getrennt (KI und Regel-Notlösung), ein Rückgängig für alle; „Nur für dich. Tippen zum Ändern.“; ≥ 30 Prüfstand-Sätze (Wortlaut `docs/auftraege/A-056-mia-hoert-sofort.md`) | – | fertig v0.157 |
 | A-057 | Kleinkram von Felix: Die eingebauten Rezepte („k:…“) liefern der Einkaufsliste ihre Zutaten – Wochenplan-Angebot „Für deinen Wochenplan“ und „Nehmen“ (Namen, Mengen nur als Hinweis, Grundsachen blass/ausgenommen, „im Haus“ nicht, gleiche Zutat aus zwei Gerichten = eine Zeile mit „wofür“; `einkauf/angebot/rezeptZutaten.ts`) | – | fertig v0.162 |
 

@@ -6,6 +6,7 @@
 // mit Supabase landen die Daten später in der Tabelle `tips`.
 
 import { berlinTime } from "@/lib/core/now";
+import { ALTE_TIPPS } from "@/lib/tipps/alt";
 import { geocode, weatherMock } from "@/lib/wetter/server";
 import { nearTips, type Tip, type TipView } from "@/lib/tipps/model";
 import { DemoTipSource } from "@/lib/tipps/sources/demo";
@@ -15,6 +16,8 @@ import { SCHLESWIG_HOLSTEIN, type TipSource } from "@/lib/tipps/sources/types";
 export type TipsMode = "off" | "demo" | "tldb";
 
 export function tipsMode(): TipsMode {
+  // Alte Tipps-Ebene versteckt (A-055, „Was los?“ ersetzt sie) – nicht gelöscht
+  if (!ALTE_TIPPS) return "off";
   const v = (process.env.TIPS_SOURCE ?? "off").trim().toLowerCase();
   return v === "demo" || v === "tldb" ? v : "off";
 }

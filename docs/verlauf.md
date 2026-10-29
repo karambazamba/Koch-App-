@@ -6,6 +6,24 @@ ist inzwischen anders. Den aktuellen Stand je Bereich beschreibt
 `docs/bereiche/<bereich>.md`, die festen Regeln stehen in `CLAUDE.md`.
 Ältere Pfadangaben meinen die Orte vor dem Umzug (siehe CLAUDE.md, „Ordner“).
 
+## „Was los?“ (A-055, v0.163.0)
+
+- Auftrag A-055 (Tafel 142, Wortlaut `docs/auftraege/A-055-was-los.md`):
+  Baustein „Tipps aus der Region“ heißt „Was los?“ (Schlüssel `regiontipps`
+  bleibt), raus aus `LAUNCH_AUS`, Standard an für Wohnorte in Ostholstein
+  (Bausteine v7 mit `aus` = selbst ausgeschaltet).
+- Neuer Bereich `region`: Orte/Umkreis, Kategorien, Zeitformate, Modell,
+  Kreis-Abruf (`region/kreisOh/`, Parser wartet auf echte Beispielseiten –
+  www.kreis-oh.de war aus der Arbeitsumgebung gesperrt), Server mit
+  Supabase-Tabelle `region_events` + `region_status`, Cron 5:00 Berlin,
+  Not-Schalter `REGION_TIPPS_QUELLE`, Sperrliste, öffentliche Route
+  `/api/region` (1 Std.).
+- Fenster „Was ist los in <Wohnort>?“, Detail mit Kalender/Pinnwand/Link,
+  Einstellungen „Was los?“ (Umkreis 5/15/30, Kategorien; `wasgibts.regiontipps`
+  v2), „Für Entwickler“ mit „Quelle liefert nichts“, Mia-Werkzeug `was_los`
+  mit 10 Prüfstand-Sätzen, `wochenendTipps` für die Freitags-Karte.
+- Alte lila Tipps-Ebene versteckt (`tipps/alt.ts`), nicht gelöscht.
+
 ## Startseite neu: Mini-Kreise, Fenster, Einkauf M, Korkrahmen (A-050, v0.166.0)
 
 - Auftrag A-050 (Paket P4, Tafeln 137, 140, 141, 143; Wortlaut

@@ -23,7 +23,7 @@ describe("Bausteine an und aus", () => {
     expect(setFeature("rezepte", true)).toBe(true);
     expect(setFeature("rezepte", true)).toBe(false);
     expect(featureOn("rezepte")).toBe(true);
-    expect(JSON.parse(win.localStorage.getItem(KEY)!)).toEqual({ version: 7, on: ["notizen", "vorrat", "pinnwand", "wundertuete", "durchatmen", "rezepte"], launch: false, imHaus: false });
+    expect(JSON.parse(win.localStorage.getItem(KEY)!)).toEqual({ version: 8, on: ["notizen", "vorrat", "pinnwand", "wundertuete", "durchatmen", "rezepte"], launch: false, imHaus: false, aus: [] });
     expect(setFeature("rezepte", false)).toBe(true);
     expect(featureOn("rezepte")).toBe(false);
     expect(setFeature("rezepte", false)).toBe(false);
@@ -46,13 +46,15 @@ describe("Bausteine an und aus", () => {
     expect(unlockFeature("rezepte")).toBe(false);
   });
 
-  it("jeder Baustein hat Name, Satz und Ort; Tipps aus der Region nicht in der Liste", async () => {
+  it("jeder Baustein hat Name, Satz und Ort; „Was los?“ nicht in der Liste, aber findbar (Mia schaltet es)", async () => {
     const { BAUSTEINE, bausteinOf, TIPS_BAUSTEIN } = await load();
     for (const b of BAUSTEINE) {
       expect(b.name && b.text && b.where && b.icon).toBeTruthy();
       expect(bausteinOf(b.feature)).toBe(b);
     }
-    expect(bausteinOf("regiontipps")).toBeUndefined();
+    expect(BAUSTEINE.some((b) => b.feature === "regiontipps")).toBe(false);
+    expect(bausteinOf("regiontipps")).toBe(TIPS_BAUSTEIN);
+    expect(TIPS_BAUSTEIN.name).toBe("Was los?");
     expect(TIPS_BAUSTEIN.feature).toBe("regiontipps");
     expect(bausteinOf("modi")).toBeUndefined();
   });
@@ -76,7 +78,7 @@ describe("Bausteine: Migration", () => {
   it("v1 ohne alten Test-Schalter: freigeschaltete bleiben (+ Notizen, Pinnwand), wird als v7 zurückgeschrieben (+ Durchatmen)", async () => {
     const { win, featureOn } = await load({ [KEY]: JSON.stringify({ version: 1, legacy: false, unlocked: ["wochenplan", "nix"] }) });
     expect(featureOn("wochenplan")).toBe(true);
-    expect(JSON.parse(win.localStorage.getItem(KEY)!)).toEqual({ version: 7, on: ["wochenplan", "notizen", "pinnwand", "durchatmen"], launch: false, imHaus: false });
+    expect(JSON.parse(win.localStorage.getItem(KEY)!)).toEqual({ version: 8, on: ["wochenplan", "notizen", "pinnwand", "durchatmen"], launch: false, imHaus: false, aus: [] });
     const { featureOn: on2 } = await load({ [KEY]: JSON.stringify({ version: 1 }) });
     expect(on2("wochenplan")).toBe(false);
   });

@@ -1,4 +1,4 @@
-# Anbieter (Stand v0.98)
+# Anbieter (Stand v0.163)
 
 Was gelistet ist, wird wirklich genutzt (geprüft im Code). „bitte prüfen“ =
 Felix klärt; nichts davon ist hier erfunden.
@@ -16,7 +16,8 @@ Felix klärt; nichts davon ist hier erfunden.
 | Open-Meteo | Wetter-Ersatz, Ortssuche | Ortsname | Schweiz/EU | nein |
 | OpenStreetMap Nominatim | Ort aus Standort (nur bei „Meinen Standort verwenden“) | auf 2 Nachkommastellen gerundete Koordinaten (≈1 km) | Großbritannien/EU (OSMF) | nein; Nutzungsregeln beachten. Bleibt, weil Open-Meteo keine Rückwärtssuche hat |
 | Kalender-Abo-Quellen (Apple iCloud, Google, Outlook, Todoist) | fremde Termine anzeigen | der geheime Link (Abruf über unseren Server) | Anbieter der Person | nein (die Person nutzt ihren eigenen Dienst) |
-| Tipps-Quelle (Tourismus-Kalender SH, `TIPS_SOURCE`) | Tipps aus der Region | keine Personendaten | Deutschland | nein |
+| Kreis Ostholstein (öffentlicher Veranstaltungskalender, www.kreis-oh.de) | „Was los?“: Veranstaltungen in der Umgebung (A-055). Unser Server holt die Liste einmal täglich um 5 Uhr allgemein ab (Vercel-Cron, User-Agent „Mia-App (mia.karamba-eis.de)“, robots.txt, höchstens 1 Anfrage pro Sekunde); die App lädt nur von unserem Server | keine Nutzerdaten an den Kreis – nur die Anfrage unseres Servers (Frankfurt) | Deutschland | nein (öffentliche Quelle; Angaben ohne Gewähr, Sperrliste für einzelne Einträge) |
+| Tipps-Quelle (Tourismus-Kalender SH, `TIPS_SOURCE`) | alte Tipps-Ebene, seit A-055 versteckt | keine Personendaten | Deutschland | nein |
 | Browser-Spracherkennung | Sprechen statt tippen (ohne ElevenLabs bzw. als Ersatz) | gesprochener Ton | Chrome/Android → Google; Safari/iOS → Apple (teils auf dem Gerät) | nein, aber in der Datenschutzerklärung nennen |
 | Browser-Vorlesen | Mia liest vor („Stimme des Handys“ bzw. als Ersatz) | Text | meist auf dem Gerät (Systemstimmen) | nein |
 | Web-Push (Apple, Google, Mozilla) | Erinnerungen | verschlüsselter Inhalt | USA | nein, in der Datenschutzerklärung nennen |

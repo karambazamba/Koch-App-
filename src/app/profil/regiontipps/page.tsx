@@ -1,7 +1,7 @@
-import { TipSettingsView } from "@/components/tipps/TipSettingsView";
+import { WasLosEinstellungen } from "@/components/region/WasLosEinstellungen";
 
-export const metadata = { title: "Tipps aus der Region" };
+export const metadata = { title: "Was los?" };
 
 export default function Page() {
-  return <TipSettingsView />;
+  return <WasLosEinstellungen />;
 }

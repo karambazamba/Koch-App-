@@ -8,6 +8,7 @@
 // ich geschafft?“ mit Abgehaktem von vor 2 und vor 16 Stunden). Wetter:
 // feste Test-Vorhersage statt Abruf.
 
+import { demoEvents } from "@/lib/region/demo";
 import { createEntry } from "@/lib/core/entries";
 import { createEmptyProfile, createPerson } from "@/lib/einstellungen/profile";
 import { applyOps, type AssistantData, type ChangeOp } from "@/lib/begleitung/ops";
@@ -66,3 +67,6 @@ export function pruefHaushalt(lage: Lage[] = []): AssistantData {
 
 /** Feste Test-Vorhersage für Wetterfragen (Regen ab Nachmittag) */
 export const pruefWetter = (): Forecast => mockForecast("Eutin", "regen", PRUEF_HEUTE);
+
+/** „Was los?“: feste Veranstaltungen um Eutin (Beispieldaten, nur Prüfstand/Testbetrieb) */
+export const pruefVeranstaltungen = () => demoEvents(PRUEF_HEUTE);

@@ -287,5 +287,5 @@ function personsSummary(profile: HouseholdProfile): string {
 /** Launch 1.0: was es (noch) nicht gibt – nicht anbieten, nicht einschalten @public für Tests */
 export function launchLine(on: string[]): string {
   const aus = BAUSTEINE.filter((b) => LAUNCH_AUS.includes(b.feature) && !on.includes(b.feature)).map((b) => b.name);
-  return aus.length ? `Gibt es in dieser Version noch nicht (nicht anbieten, nicht einschalten, auf Nachfrage nur „Kommt bald.“; Werkzeuge dafür antworten ebenso): ${aus.join(", ")}, Tipps aus der Region. „Unsere Rezepte“ gehört zu Essen und darf eingeschaltet werden (kurz sagen, wo).` : "";
+  return aus.length ? `Gibt es in dieser Version noch nicht (nicht anbieten, nicht einschalten, auf Nachfrage nur „Kommt bald.“; Werkzeuge dafür antworten ebenso): ${aus.join(", ")}. „Unsere Rezepte“ gehört zu Essen und darf eingeschaltet werden (kurz sagen, wo).` : "";
 }

@@ -44,6 +44,8 @@
   --color-warn-ink: var(--app-warn-ink);
   --color-work: var(--app-work);
   --color-work-soft: var(--app-work-soft);
+  --color-waslos: var(--app-waslos);
+  --color-waslos-soft: var(--app-waslos-soft);
   /* Raum „Ich“ (nur ich, grau, A-034) */
   --color-ich: var(--app-ich);
   --color-ich-soft: var(--app-ich-soft);
@@ -197,6 +199,8 @@
   --app-warn-ink: #6f5300;
   --app-work: #4c6fd9;
   --app-work-soft: #e8edfb;
+  --app-waslos: #2f5bc0;
+  --app-waslos-soft: #e6ecfa;
   --app-ich: #5c6168;
   --app-ich-soft: #eceef1;
   --app-danger: #c8372d;
@@ -381,6 +385,8 @@
   --app-warn-ink: #f0d27a;
   --app-work: #7f9bf0;
   --app-work-soft: #232b40;
+  --app-waslos: #8fa8ee;
+  --app-waslos-soft: #232b40;
   --app-ich: #b9bec6;
   --app-ich-soft: #2b2f35;
   --app-danger: #ff8f86;
@@ -541,6 +547,8 @@
     --app-warn-ink: #f0d27a;
     --app-work: #7f9bf0;
     --app-work-soft: #232b40;
+    --app-waslos: #8fa8ee;
+    --app-waslos-soft: #232b40;
     --app-ich: #b9bec6;
     --app-ich-soft: #2b2f35;
     --app-danger: #ff8f86;

@@ -20,6 +20,7 @@ import { MailCard } from "@/components/begleitung/MailCard";
 import { MarketBoard, type MarketTarget } from "@/components/begleitung/MarketBoard";
 import { BakingBoard } from "@/components/begleitung/BakingBoard";
 import { TipCards } from "@/components/tipps/TipCards";
+import { WasLosKarten } from "@/components/region/WasLosKarten";
 import { RezeptLinkKarte } from "@/components/essen/rezeptLink/RezeptLinkKarte";
 import { BegleitungAvatar } from "@/components/begleitung/BegleitungAvatar";
 import { EintragErgebnis, ErgebnisKarten } from "@/components/begleitung/ErgebnisKarten";
@@ -98,6 +99,7 @@ export function ChatTurnItem({ turn, lead = false, last, data, showBases, mailAc
           />
         )}
         {turn.tips?.length ? <TipCards tips={turn.tips} /> : null}
+        {turn.waslos?.length ? <WasLosKarten karten={turn.waslos} /> : null}
         {turn.rezept && <RezeptLinkKarte rezept={turn.rezept} />}
         {turn.chips && last && (
           <div className="flex flex-wrap gap-2" aria-label="Antworten">

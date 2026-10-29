@@ -26,3 +26,7 @@ Vor jedem PR alles grün:
   und `npm run knoepfe` (jeden Knopf antippen: passiert etwas?).
 - Testmodus ohne KI: `KUECHENHELFER_MOCK=1`, `WETTER_MOCK=1`,
   `TIPS_SOURCE=demo`, `KONTEN_TEST=1` (Test-Backend für Konten).
+  `TIPS_SOURCE=demo` (oder `REGION_TIPPS_QUELLE=demo`) liefert seit A-055 die
+  Beispieldaten für „Was los?“ (Herbstmarkt, Nachtwächter-Rundgang,
+  Laternenbasteln, Wochenmarkt …, `region/demo.ts`) – nie mit
+  `VERCEL_ENV=production`. Die alte Tipps-Ebene bleibt dabei versteckt.

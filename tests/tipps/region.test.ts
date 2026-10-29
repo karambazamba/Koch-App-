@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { answerTips, distanceKm, isKaramba, jetztTip, nearTips, openLicense, pinboardText, rangeFor, rememberedTips, sortTips, tileTips, tileTitle, weekendKey, type TipView } from "@/lib/tipps/model";
 import { filtersOf, tipTags } from "@/lib/tipps/categories";
 import { tipQuestion } from "@/lib/tipps/question";
@@ -7,6 +7,9 @@ import { SCHLESWIG_HOLSTEIN } from "@/lib/tipps/sources/types";
 import { TldbTipSource } from "@/lib/tipps/sources/tldb";
 import { tipsMode, tipsNear } from "@/lib/tipps/server";
 import { sanitizeEntry, terminExtras } from "@/lib/kalender/model";
+
+// Alte Tipps-Ebene ist seit A-055 versteckt (nicht gelöscht) – hier eingeschaltet geprüft
+vi.mock("@/lib/tipps/alt", () => ({ ALTE_TIPPS: true }));
 
 const EUTIN = { lat: 54.1376, lng: 10.6181 };
 const WED = "2026-10-21"; // Mittwoch

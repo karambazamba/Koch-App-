@@ -80,8 +80,8 @@ anfangen).
   Anrede → `/profil/kuechenhelfer`).
 - Gruppe „Startseite“: Startseite bearbeiten (öffnet den Bearbeiten-Modus
   auf der Startseite), Tagesablauf (Wert „Jetzt-Karte an/aus“), Wetter-Ort
-  und Sport nur mit sichtbarer Kachel, Tipps aus der Region nur mit Quelle +
-  Baustein, „Mehr Funktionen – Was {Name} noch kann“.
+  und Sport nur mit sichtbarer Kachel, „Was los?“ (Wohnort + Umkreis) nur mit
+  Quelle + Baustein, „Mehr Funktionen – Was {Name} noch kann“.
 - Gruppe „Essen“ nur mit passendem Baustein: Kochstil, Essen & Vorlieben
   (Kochstil), Feste Tage (Wochenplan), Rezepte, Vorrat.
 - Darstellung: Automatisch · Hell · Dunkel (`DarstellungGroup`, setzt
@@ -155,8 +155,8 @@ anfangen).
 
 - `BAUSTEINE`: Wochenplan, Vorrat & Tiefkühler, Rezepte, Backen mit Timern,
   Spontan-Ideen, Tipps, Wochenend-Ideen, Kochstil & Vorlieben – je Icon, Name,
-  Satz, `where`. `TIPS_BAUSTEIN` (Tipps aus der Region) nur, wenn eine Quelle
-  läuft. `modi` und `ideen` sind Features ohne eigene Zeile (`ideen` kommt
+  Satz, `where`. `TIPS_BAUSTEIN` („Was los?“, A-055) nur, wenn die Quelle
+  an ist; Schalter über `setWasLos` (Standard an in Ostholstein, aus bleibt aus). `modi` und `ideen` sind Features ohne eigene Zeile (`ideen` kommt
   mit `spontan`).
 - An/Aus mit Meldung (`where` bzw. „… ist aus – die Daten bleiben.“) und
   „Rückgängig“. Aus heißt nur ausgeblendet.

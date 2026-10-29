@@ -549,6 +549,11 @@ function mockModelEinzeln(): CreateMessage {
     }
 
     // Tipps gelesen → kurz, ehrlich, mit Frage
+    if (prevUses.some((u) => u.name === "was_los")) {
+      const found = String(resultFor("was_los") ?? "");
+      const titel = found.split("\n").slice(1).map((z) => z.replace(/^- /, "").split(" · ")[0]);
+      return text(found.startsWith("Treffer") ? `${titel.length > 1 ? `${titel.slice(0, -1).join(", ")} und ${titel[titel.length - 1]}` : titel[0]}. Quelle: Kreis Ostholstein. (Testmodus)` : "Da ist grad nichts eingetragen. (Testmodus)");
+    }
     if (prevUses.some((u) => u.name === "tipps_suchen")) {
       const found = String(resultFor("tipps_suchen") ?? "");
       return text(found.startsWith("Treffer") ? "Da wär was in eurer Nähe. Soll ich einen davon eintragen? (Testmodus)" : "Hab in eurer Nähe grad nix gefunden. (Testmodus)");

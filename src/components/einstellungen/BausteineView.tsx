@@ -5,12 +5,12 @@
 // Design ein (Essen-Seite, Kachel auf Heute, Satz oben auf Heute); aus heißt
 // nur ausgeblendet – Daten bleiben.
 
-import { BookOpen, Cake, CalendarDays, CalendarPlus, Carrot, ChefHat, Dumbbell, Gift, HandCoins, Lightbulb, Mail, MapPin, MessageCircle, Pin, Refrigerator, StickyNote, Sun, Wind, type LucideIcon } from "lucide-react";
+import { BookOpen, Cake, CalendarDays, CalendarPlus, Carrot, ChefHat, Dumbbell, Flag, Gift, HandCoins, Lightbulb, Mail, MapPin, MessageCircle, Pin, Refrigerator, StickyNote, Sun, Wind, type LucideIcon } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { CARD, PAGE_MAIN } from "@/components/ui/styles";
 import { BAUSTEINE, TIPS_BAUSTEIN, launchSichtbar, setFeature, useBausteine, type Baustein } from "@/lib/core/features";
 import { unlockHomeTile } from "@/lib/core/homeLayout";
-import { useTipsMode } from "@/lib/tipps/client";
+import { setWasLos, useWasLosAn, useWasLosDaten } from "@/lib/region/client";
 import { showToast } from "@/lib/core/toast";
 import { pushUndo } from "@/lib/core/undo";
 import { helperName } from "@/lib/einstellungen/profile";
@@ -33,6 +33,7 @@ const BAUSTEIN_ICONS: Record<string, LucideIcon> = {
   chef: ChefHat,
   message: MessageCircle,
   map: MapPin,
+  flag: Flag,
   mail: Mail,
   gift: Gift,
   wind: Wind,
@@ -40,13 +41,14 @@ const BAUSTEIN_ICONS: Record<string, LucideIcon> = {
 
 /** Baustein schalten – mit Hinweis, wo er steht, und Rückgängig */
 function toggleBaustein(b: Baustein, on: boolean) {
-  if (!setFeature(b.feature, on)) return;
-  // Tipps aus der Region, Wundertüte: eingeschaltet kommt die Kachel auf die Startseite
-  if (on && b.feature === "regiontipps") unlockHomeTile("tipps");
+  // „Was los?“ (Standard je Wohnort): aus bleibt aus, auch in Ostholstein
+  const schalten = (an: boolean) => (b.feature === "regiontipps" ? setWasLos(an) : setFeature(b.feature, an));
+  if (!schalten(on)) return;
+  // Wundertüte: eingeschaltet kommt die Kachel auf die Startseite
   if (on && b.feature === "wundertuete") unlockHomeTile("wundertuete");
   showToast({
     text: on ? b.where : `${b.name} ist aus – die Daten bleiben.`,
-    undo: pushUndo(`${b.name} ${on ? "an" : "aus"}`, () => setFeature(b.feature, !on)),
+    undo: pushUndo(`${b.name} ${on ? "an" : "aus"}`, () => schalten(!on)),
     undoneText: "Rückgängig gemacht.",
   });
 }
@@ -55,9 +57,10 @@ export function BausteineView() {
   const on = useBausteine();
   const profile = useProfile();
   const name = helperName(profile);
-  const tipsMode = useTipsMode();
-  // Launch 1.0: Ausgeblendetes nur, wenn es schon an ist (zum Ausschalten)
-  const list = (tipsMode && tipsMode !== "off" ? [...BAUSTEINE, TIPS_BAUSTEIN] : BAUSTEINE).filter((b) => launchSichtbar(b.feature, on ?? []));
+  const wasLos = useWasLosDaten();
+  const wasLosAn = useWasLosAn();
+  // Launch 1.0: Ausgeblendetes nur, wenn es schon an ist (zum Ausschalten); „Was los?“ nur mit laufender Quelle
+  const list = (wasLos && wasLos.quelle !== "aus" ? [...BAUSTEINE, TIPS_BAUSTEIN] : BAUSTEINE).filter((b) => launchSichtbar(b.feature, on ?? []));
   return (
     <div className="mx-auto flex w-full max-w-lg flex-1 flex-col">
       <PageHeader title="Mehr Funktionen" backHref="/profil" />
@@ -66,7 +69,7 @@ export function BausteineView() {
         <ul className={`${CARD} flex flex-col divide-y divide-line overflow-hidden`} aria-label="Mehr Funktionen">
           {list.map((b) => {
             const Icon = BAUSTEIN_ICONS[b.icon] ?? Lightbulb;
-            const active = Boolean(on?.includes(b.feature));
+            const active = b.feature === "regiontipps" ? Boolean(wasLosAn) : Boolean(on?.includes(b.feature));
             const titel = b.feature === "wundertuete" ? wundertueteName(name) : b.name;
             return (
               <li key={b.feature}>

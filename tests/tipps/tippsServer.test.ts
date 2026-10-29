@@ -7,6 +7,9 @@ import { TldbTipSource, toTip } from "@/lib/tipps/sources/tldb";
 import { SCHLESWIG_HOLSTEIN } from "@/lib/tipps/sources/types";
 import { openLicense } from "@/lib/tipps/model";
 
+// Alte Tipps-Ebene ist seit A-055 versteckt (nicht gelöscht) – hier eingeschaltet geprüft
+vi.mock("@/lib/tipps/alt", () => ({ ALTE_TIPPS: true }));
+
 type Server = typeof import("@/lib/tipps/server");
 let server: Server;
 /** Demo-Quelle aus derselben Modul-Runde wie der Server (zum Mitzählen der Abrufe) */

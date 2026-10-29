@@ -11,6 +11,7 @@ import type { Room } from "@/lib/core/entries";
 import type { Lage } from "@/lib/begleitung/pruefstand/haushalt";
 import { RAUM_SAETZE } from "@/lib/begleitung/pruefstand/raeume";
 import { AUFZAEHL_SAETZE } from "@/lib/begleitung/pruefstand/aufzaehlung";
+import { WAS_LOS_SAETZE } from "@/lib/begleitung/pruefstand/wasLos";
 
 export type PruefSatz = {
   text: string;
@@ -55,6 +56,8 @@ export type PruefSatz = {
   aufgaben?: number;
   /** Diese Titel kommen genau so vor (ohne Füll-/Steuerwörter, erster Buchstabe groß, A-056) */
   titel?: string[];
+  /** „Was los?“ (A-055): Antwort zeigt Veranstaltungs-Karten (true) bzw. keine (false) */
+  waslos?: boolean;
 };
 
 const S = (text: string, ops: string[], extra: Omit<PruefSatz, "text" | "ops"> = {}): PruefSatz => ({ text, ops, ...extra });
@@ -162,6 +165,8 @@ export const PRUEFSAETZE: PruefSatz[] = [
   S("Häng dauerhaft an die Pinnwand: Müll ist immer dienstags", ["add_pin"]),
   S("Merk dir für mich die PIN vom Fahrradschloss: 4711", ["upsert_note"]),
   // Raum-Wahl Familie · Ich · Arbeit (A-034, `raeume.ts`): Termine und Aufgaben, Raum geprüft
+  // „Was los?“ (A-055): Antwort aus den Veranstaltungen, mit Karten und Quelle, ohne Aktion
+  ...WAS_LOS_SAETZE.map(({ text, waslos, nennt, nenntNie }) => S(text, ANTWORT, { waslos, max: 3, ...(nennt ? { nennt } : {}), ...(nenntNie ? { nenntNie } : {}) })),
   ...RAUM_SAETZE.map(({ text, raum, datum, zeit, person }) => S(text, TERMIN, { raum, ...(datum ? { datum } : {}), ...(zeit ? { zeit } : {}), ...(person ? { person } : {}) })),
   // Ecke „Nur für mich“ (Tafel 123): ausdrücklich gesagt = privat, sonst für alle
   S("Häng nur für mich an die Pinnwand: Geschenk für Lisa besorgen", ["add_pin"], { privat: true }),

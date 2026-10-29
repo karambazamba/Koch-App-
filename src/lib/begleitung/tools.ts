@@ -5,6 +5,8 @@
 // selbst stehen je Bereich in eigenen Dateien (planTools, cookbookTools,
 // shoppingTools, pantryTools, calendarTools …), angemeldet in toolset.ts.
 
+import type { RegionEvent, WasLosKarte } from "@/lib/region/model";
+import type { WasLosLage } from "@/lib/region/frage";
 import type { Forecast } from "@/lib/wetter/forecast";
 import type { TipView } from "@/lib/tipps/model";
 import type { MailDraft } from "@/lib/begleitung/mail";
@@ -42,6 +44,12 @@ export type ToolContext = {
   regionTips?: TipView[] | null;
   /** Bis zu 3 Tipps als Karten unter der Antwort (`tipps_suchen`) */
   tipCards?: TipView[];
+  /** „Was los?“: Veranstaltungen (vorab geholt, wenn danach gefragt wird; null = Quelle aus) */
+  regionEvents?: RegionEvent[] | null;
+  /** „Was los?“: Wohnort-Umkreis und Kategorien für `was_los` */
+  wasLosLage?: WasLosLage;
+  /** „Was los?“: bis zu 3 Karten unter der Antwort */
+  wasLosCards?: WasLosKarte[];
   /** „Kann ich noch nicht“: Wünsche, die der Server anonym zählt */
   wishes?: string[];
 };
