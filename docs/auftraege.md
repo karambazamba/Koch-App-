@@ -10,7 +10,7 @@ Status: offen · in Arbeit · fertig vX.Y · zurückgestellt (Grund)
 
 - **Fertig:** v0.157 Mia hört von Anfang an (A-056) · v0.158 Startseite kompakter (A-048) · v0.159 Durchatmen (A-051) · v0.160 Rätsel + Wundertüte (A-052) · v0.161 Eingebaute Rezepte liefern Zutaten (A-057) · v0.162 Kaputt-Fixes: Notizen-Kachel, Wundertüte zum Umdrehen, Menü erstes Tippen, Wischen unten (A-059) · v0.163 Jetzt-Karte nur mit Nutzen (A-054) · v0.164 Durchatmen ohne Roboterstimme (A-061) · v0.165 Notizen-Vorschau + Mia-Zubehör (A-060/A-058) · v0.166 Startseite neu mit Mini-Kreisen (A-050) · v0.167 „Was los?“ (A-055, Parser wartet).
 - **Zurückgestellt:** A-053 volle Prüfung (auf Zuruf) · Parser „Was los?“ (wartet, bis `www.kreis-oh.de` aus der Arbeitsumgebung erreichbar ist; bis dahin bleibt der Kreis ausgeblendet) · A-039 Wundertüte nachfüllen (monatlich).
-- **Kleine offene Punkte:** Fenster mit ✕ schließen und binnen ~300 ms wieder öffnen → geht gleich wieder zu (Wettlauf in `fensterVerlauf`) · `tests/core/abfragen.test.ts` einmal uhrzeitabhängig rot · alte App-Stände kennen den Raum „Ich“ nicht.
+- **Kleine offene Punkte:** `tests/core/abfragen.test.ts` einmal uhrzeitabhängig rot · alte App-Stände kennen den Raum „Ich“ nicht.
 - **5 Dinge zum Ausprobieren:**
   1. Mia antippen und sofort lossprechen: „Milch, Eier und Butter auf die Liste“ → drei Sachen.
   2. Sport-Kreis oben antippen → Tag wählen → „Sa 10:00 … planen“ → Termin im Kalender.

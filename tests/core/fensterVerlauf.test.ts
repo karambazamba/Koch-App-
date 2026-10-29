@@ -172,4 +172,56 @@ describe("Fenster im Verlauf", () => {
     v.danach(weiter);
     expect(weiter).toHaveBeenCalledOnce();
   });
+
+  // Offener Punkt (v0.168): ✕ und binnen ~300 ms wieder öffnen → ging gleich
+  // wieder zu. Das Schließen darf ein neues Öffnen nie treffen.
+  describe("✕ und gleich wieder öffnen: bleibt offen", () => {
+    for (const ms of [0, 100, 299, 300, 301, 350, 600]) {
+      it(`nach ${ms} ms`, () => {
+        const { win, history, ids, fertig } = fakeWin();
+        const v = fensterVerlauf(win);
+        v.oeffne(() => {})();
+        vi.advanceTimersByTime(ms);
+        const zu = vi.fn();
+        v.oeffne(zu);
+        fertig();
+        expect(zu).not.toHaveBeenCalled();
+        expect(ids()).toHaveLength(1);
+        // Zurück schließt es weiterhin
+        history.back();
+        fertig();
+        expect(zu).toHaveBeenCalledOnce();
+      });
+    }
+
+    it("kommt das popstate des Entfernens erst spät (nach dem Warten), bleibt das neue Fenster offen", () => {
+      const { win, history, ids, fertig } = fakeWin();
+      const v = fensterVerlauf(win);
+      v.oeffne(() => {})();
+      vi.advanceTimersByTime(300); // Entfernen unterwegs
+      const zu = vi.fn();
+      v.oeffne(zu);
+      vi.advanceTimersByTime(1000); // Warten vorbei, das Fenster legt seinen Eintrag an
+      fertig(); // erst jetzt kommt das popstate des Entfernens
+      expect(zu).not.toHaveBeenCalled();
+      // Zurück schließt es trotzdem mit einem Mal
+      expect(ids()).toHaveLength(1);
+      history.back();
+      fertig();
+      expect(zu).toHaveBeenCalledOnce();
+    });
+
+    it("Auswahl geht selbst zurück und gleich öffnet ein neues Fenster: bleibt offen", () => {
+      const { win, ids, fertig } = fakeWin();
+      const v = fensterVerlauf(win);
+      const schliessen = v.oeffne(() => {});
+      v.zurueck(); // z. B. eine Ebene zurück, kurz vor dem Schließen
+      schliessen();
+      const zu = vi.fn();
+      v.oeffne(zu);
+      fertig();
+      expect(zu).not.toHaveBeenCalled();
+      expect(ids()).toHaveLength(1);
+    });
+  });
 });
