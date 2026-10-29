@@ -6,6 +6,42 @@ liegen in `docs/tafeln/` (siehe dort, welche fehlen).
 
 Status: offen · in Arbeit · fertig vX.Y · zurückgestellt (Grund)
 
+## Morgen früh (Nachtschicht 28./29.10.)
+
+- **Fertig und auf `main` (in Merge-Reihenfolge):**
+  - v0.147 Erledigte Aufgaben nur 12 h (A-043)
+  - v0.148 Familie verbinden + Namen statt Mail (A-042)
+  - v0.149 Einladungsseite ohne Leiste (Ursache des roten Konto-Durchklicks)
+  - v0.150 Essen-Kachel final + nichts abgeschnitten (A-045, A-046, Tafel 133/134)
+  - v0.151 Familie · Ich · Arbeit, Termin-Räume, Ergebnis-Karten + Aufleuchten (A-020, A-021, A-034, A-037)
+  - v0.152 Pinnwand Teil 1 + 2 (A-028, Tafel 123 neu)
+  - v0.153 Raster XS · S · M, Wasserzeichen, Sport-Stempelkarte (A-023, A-029, A-036, A-044, Tafel 118–120/124/125/132)
+  - v0.154 Einkaufsliste nur mit Namen + Wochenplan-Angebot + Abhaken/Merken (A-040, A-041, Tafel 127/128)
+  - v0.155 Prüfen-Fehler im Raster (A-047)
+  - v0.156 Mias Wundertüte (A-022, Tafel 116)
+- **Volle Prüfung auf v0.156:**
+  - grün: `npm test` (3508), tsc, eslint, knip, Datenbank, Build, Schlüssel-Suche
+  - kompletter Durchklick: 145 Abläufe × 2 Geräte, alles ok
+  - `pruefen`: 708 Seiten, alles ok
+  - Bilder: Das Skript war seit v0.151 kaputt (verwaister Import) und ist repariert. 119 von 234 Bildern weichen ab, alle durch die gewollten Änderungen der Nacht (Raster, Essen-Kachel, Räume, Pinnwand, Wundertüte). Stichprobe angesehen, neue Basis gesetzt.
+  - Prüfstand: braucht die KI, deshalb nur über „Für Entwickler“ in der App
+- **Vercel:** Die Production-Deployments kann ich von hier nicht prüfen (kein Zugriff auf Vercel). Bitte im Vercel-Dashboard nachsehen, ob „Production“ auf v0.156 steht.
+- **Wartet, und warum:**
+  - A-039 Wundertüte nachfüllen: Monatsauftrag, erst nach A-022
+  - A-032 Im-Haus-/Essen-Kachel: Entscheidung liegt bei Felix
+  - Text/Tafel nie angekommen: Auftragstext A-040 (nach Tafel 127 gebaut), Bilder 1/2 zu A-042, Tafeln 129/130 (durch 132 ersetzt)
+- **Offen, klein (notiert, nicht gebaut):**
+  - Die Jetzt-Karte kürzt noch mit „…“ („Neu auf der Pinnwand · …“).
+  - Eingebaute Rezepte (Wok-Nudeln usw.) liefern der Einkaufsliste keine Plan-Zutaten; „Nehmen“ nimmt ersatzweise die Vorschau.
+  - `tests/core/abfragen.test.ts` war einmal um 00:41 UTC rot, später wieder grün (hängt wohl an der Uhrzeit).
+  - Alte App-Stände kennen den Raum „Ich“ nicht. Prüfen, dass sie nichts falsch hochladen.
+- **5 Dinge zuerst am Handy ausprobieren:**
+  1. Neue Aufgabe mit ＋: Chips „Familie · Ich · Arbeit“ wählen. Danach lange auf die Zeile drücken: „Nur ich“ zeigt ein Schloss.
+  2. Startseite lange drücken: Größen XS · S · M probieren. Nichts darf abgeschnitten sein, nirgends „…“.
+  3. Essen-Kachel antippen: Vorschau → „Nehmen“ → unten „Auf die Liste: …?“ → „Alle dazu“. Danach auf der Einkaufsliste abhaken: erscheint „Im Wagen ⌄“?
+  4. Pinnwand-Zettel lange drücken: Groß / Nach oben / Nur für mich. Dann abhaken: steht er 1 s, bevor er ins Archiv geht?
+  5. Familie einladen: Link schicken. Auf dem zweiten Handy ohne Leiste beitreten. Steht der Name statt der Mail bei „erledigt von …“?
+
 ## Zusammenfassung (Paket 28.10.)
 
 - **Fertig:** Im Haus reinsprechen (v0.135), Windsack/Hinweis-Stil/Jetzt-Karte
