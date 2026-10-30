@@ -6,6 +6,14 @@ ist inzwischen anders. Den aktuellen Stand je Bereich beschreibt
 `docs/bereiche/<bereich>.md`, die festen Regeln stehen in `CLAUDE.md`.
 Ältere Pfadangaben meinen die Orte vor dem Umzug (siehe CLAUDE.md, „Ordner“).
 
+## Anmelde-Fehler mit genauem Satz (A-069 Nachtrag, v0.178.0)
+
+- „Ich konnte dieses Handy nicht anmelden“ wird genauer: Server-Schlüssel
+  fehlt in Vercel, Schlüssel ungültig, Migration fehlt, Apple/Google lehnen
+  ab, Konto abgelaufen, Haushalt/RLS lehnt ab. Code und Zeit bleiben auf dem
+  Gerät (`wasgibts.pushanmeldung`); „Für Entwickler“ zeigt den letzten Code
+  und ob die Migration `20261112120000_push_zuverlaessig` gelaufen ist.
+
 ## Erinnerungen bei geschlossener App zuverlässig (A-069, v0.177.0)
 
 - Server-Versand nachprüfbar: jeder Lauf und jeder Versand wird mit

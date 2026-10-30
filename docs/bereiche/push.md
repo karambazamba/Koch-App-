@@ -115,6 +115,22 @@ Nichts geht verloren.
 - Antippen einer Erinnerung öffnet den Termin selbst (`/tag?datum=…&eintrag=…`).
 - Verpasst ein Lauf die Minute, kommt die Erinnerung bis 5 Min danach noch.
 
+### Anmelde-Fehler je Ursache (v0.178)
+
+Klappt die Anmeldung des Handys nicht, merkt sich die App den Grund
+(`wasgibts.pushanmeldung`, nur Code und Zeit) und zeigt einen eigenen Satz;
+„Für Entwickler“ zeigt den Code und ob die Migration gelaufen ist.
+
+| Code | Ursache | Was tun |
+|---|---|---|
+| `schluessel_fehlt` | `/api/push/schluessel` = 503: in Vercel fehlt `SUPABASE_SERVICE_ROLE_KEY` bzw. `SUPABASE_SECRET_KEY` | Vercel → Projekt → Settings → Environment Variables (bzw. Supabase-Integration neu verbinden), dann neu ausliefern |
+| `schluessel_ungueltig` | Supabase lehnt den Server-Schlüssel ab (401/403) | Supabase-Integration in Vercel neu verbinden |
+| `tabelle_fehlt` | `push_config`/`push_abos` fehlen (Migration nicht gelaufen) | Supabase → Database → Migrations prüfen |
+| `push_abgelehnt` | `pushManager.subscribe` scheitert (Apple/Google) | App vom Homescreen löschen, neu hinlegen, Mitteilungen erlauben |
+| `konto_abgelehnt` | Abo-Route 401 (Sitzung abgelaufen) | ab- und wieder anmelden |
+| `abo_abgelehnt` | Abo-Route 403 (RLS: kein Haushalt/fremder Haushalt) | Haushalt prüfen |
+| `kein_service_worker`, `server_fehler`, `offline` | Technik/Netz | neu öffnen bzw. später nochmal |
+
 ### Falls „Zeitplan im Server ist aus“ (Supabase-Dashboard, ohne Schlüssel)
 
 1. supabase.com → Projekt „was-gibts“ öffnen.

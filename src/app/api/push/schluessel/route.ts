@@ -20,6 +20,8 @@ export async function GET(request: Request) {
   const origin = new URL(request.url).origin;
   try {
     const found = await rest<Config[]>("push_config?select=vapid_public,base_url&id=eq.1");
+    // A-069: genau sagen, woran es liegt (Tabelle fehlt = Migration nicht gelaufen, 401/403 = Server-Schlüssel ungültig)
+    if (!found.ok) return Response.json({ error: found.status === 404 ? "tabelle_fehlt" : found.status === 401 || found.status === 403 ? "schluessel_ungueltig" : "fehler" }, { status: 502 });
     let row = found.data?.[0] ?? null;
     if (!row) {
       const keys = webpush.generateVAPIDKeys();

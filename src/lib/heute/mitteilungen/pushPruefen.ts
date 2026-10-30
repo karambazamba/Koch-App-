@@ -8,12 +8,12 @@
 import { getBackend } from "@/lib/konten/backend";
 import { notifyPermission } from "@/lib/heute/mitteilungen/geraet";
 import { loadNotify } from "@/lib/heute/mitteilungen/einstellungen";
-import { syncPushSubscription } from "@/lib/heute/mitteilungen/serverPush";
+import { letzteAnmeldung, syncPushSubscription } from "@/lib/heute/mitteilungen/serverPush";
 import { loadProfile } from "@/lib/einstellungen/profileStore";
 import { helperName } from "@/lib/einstellungen/profile";
 import { loadRoutine } from "@/lib/heute/tagesablauf";
 import { now } from "@/lib/core/now";
-import type { ServerStatus, StatusEingang } from "@/lib/heute/mitteilungen/pushStatus";
+import { anmeldeText, type AnmeldeFehler, type ServerStatus, type StatusEingang } from "@/lib/heute/mitteilungen/pushStatus";
 
 /** Liegt die App auf dem Homescreen (eigenes Fenster)? */
 function aufHomescreen(): boolean {
@@ -59,17 +59,17 @@ export async function pushStatusLaden(): Promise<StatusEingang> {
       server = null;
     }
   }
-  return { homescreen: aufHomescreen(), erlaubt, konto: Boolean(token), server, nowMs: now().getTime() };
+  return { homescreen: aufHomescreen(), erlaubt, konto: Boolean(token), server, anmeldung: letzteAnmeldung()?.code ?? null, nowMs: now().getTime() };
 }
 
-export type TestErgebnis = "ok" | "nicht_erlaubt" | "kein_konto" | "kein_abo" | "fehler";
+export type TestErgebnis = "ok" | "nicht_erlaubt" | "kein_konto" | "kein_abo" | "fehler" | AnmeldeFehler;
 
 /** „Test: in 1 Minute erinnern“ – über den Server, damit man die App schließen kann */
 export async function testErinnern(): Promise<TestErgebnis> {
   if (notifyPermission() !== "granted") return "nicht_erlaubt";
   const token = await sitzung();
   if (!token) return "kein_konto";
-  if (!(await aboAuffrischen())) return "kein_abo";
+  if (!(await aboAuffrischen())) return letzteAnmeldung()?.code ?? "kein_abo";
   const ep = await endpunkt();
   if (!ep) return "kein_abo";
   try {
@@ -80,15 +80,27 @@ export async function testErinnern(): Promise<TestErgebnis> {
   }
 }
 
-/** Antwort auf den Test-Knopf */
-export const testText = (e: TestErgebnis) =>
-  ({
-    ok: "Kommt in einer Minute. Jetzt ruhig die App schließen.",
-    nicht_erlaubt: "Erst Mitteilungen erlauben, dann klappt der Test.",
-    kein_konto: "Für den Test braucht es ein Konto.",
-    kein_abo: "Ich konnte dieses Handy nicht anmelden. Später nochmal.",
-    fehler: "Hat grad nicht geklappt. Nochmal?",
-  })[e];
+const TEST_TEXT: Record<"ok" | "nicht_erlaubt" | "kein_konto" | "kein_abo" | "fehler", string> = {
+  ok: "Kommt in einer Minute. Jetzt ruhig die App schließen.",
+  nicht_erlaubt: "Erst Mitteilungen erlauben, dann klappt der Test.",
+  kein_konto: "Für den Test braucht es ein Konto.",
+  kein_abo: "Ich konnte dieses Handy nicht anmelden. Später nochmal.",
+  fehler: "Hat grad nicht geklappt. Nochmal?",
+};
+
+/** Antwort auf den Test-Knopf – bei einer Anmelde-Ursache der genaue Satz */
+export const testText = (e: TestErgebnis) => (e in TEST_TEXT ? TEST_TEXT[e as keyof typeof TEST_TEXT] : anmeldeText(e as AnmeldeFehler, helperName(loadProfile() ?? null)));
+
+/** „Für Entwickler“: letzter Fehler-Code der Anmeldung dieses Geräts */
+export function anmeldeStand(): { code: string; at: string } | null {
+  const a = letzteAnmeldung();
+  return a ? { code: a.code ?? "ok", at: a.at } : null;
+}
+
+/** „Für Entwickler“: was der Server meldet (Migration, Zeitplan, Adresse) */
+export async function serverStandLaden(): Promise<ServerStatus | null> {
+  return (await pushStatusLaden()).server;
+}
 
 export type PushProtokoll = { letzterLauf: string | null; abos: number; versaende: { at: string; art: string; status: string }[] };
 

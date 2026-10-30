@@ -4,7 +4,8 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { planPushes, type PushAbo, type PushEntryRow } from "@/lib/heute/mitteilungen/versand";
-import { artVon, laeuftVersand, schicktGeschlossen, statusZeilen, testNachricht, type ServerStatus } from "@/lib/heute/mitteilungen/pushStatus";
+import { migrateAnmeldung } from "@/lib/heute/mitteilungen/serverPush";
+import { ANMELDE_FEHLER, anmeldeText, artVon, laeuftVersand, schicktGeschlossen, statusZeilen, testNachricht, type AnmeldeFehler, type ServerStatus } from "@/lib/heute/mitteilungen/pushStatus";
 
 const HH = "hh-1";
 const T = "2026-10-21";
@@ -107,5 +108,43 @@ describe("Test und Protokoll", () => {
     expect(sql).toMatch(/create extension if not exists pg_net with schema extensions/);
     expect(sql).toMatch(/cron\.schedule\('mia-push-senden', '\* \* \* \* \*'/);
     for (const t of ["push_laeufe", "push_protokoll", "push_tests"]) expect(sql).toMatch(new RegExp(`alter table public\\.${t} enable row level security;\\nrevoke all on public\\.${t} from anon, authenticated;`));
+  });
+});
+
+describe("Anmeldung: genauer Satz je Ursache", () => {
+  const NOW = Date.parse("2026-10-21T15:30:00+02:00");
+  const ohneAbo = (anmeldung: AnmeldeFehler | null, server: Partial<ServerStatus> = {}) =>
+    statusZeilen({ homescreen: true, erlaubt: true, konto: true, nowMs: NOW, anmeldung, server: { migration: true, zeitplan: true, ziel: true, letzterLauf: new Date(NOW).toISOString(), abo: false, ...server } }, "Mia").find((z) => z.id === "zu")!.hilfe;
+
+  it("Schlüssel fehlt in Vercel, Tabelle/Migration fehlt, Konto/RLS abgelehnt, Apple lehnt ab", () => {
+    expect(ohneAbo("schluessel_fehlt")).toMatch(/Vercel/);
+    expect(ohneAbo("tabelle_fehlt")).toMatch(/Migration nicht gelaufen/);
+    expect(ohneAbo("abo_abgelehnt")).toMatch(/nicht angenommen/);
+    expect(ohneAbo("konto_abgelehnt")).toMatch(/ab- und wieder anmelden/);
+    expect(ohneAbo("push_abgelehnt")).toMatch(/Homescreen löschen/);
+    expect(ohneAbo(null)).toMatch(/Test/);
+    // Migration nicht gelaufen: das sagt der Server selbst
+    expect(ohneAbo(null, { migration: false })).toMatch(/Migration nicht gelaufen/);
+  });
+
+  it("der Code bleibt nur als Code und Zeit auf dem Gerät", () => {
+    expect(migrateAnmeldung({ version: 1, code: "push_abgelehnt", at: "2026-10-21T10:00:00.000Z" })).toEqual({ version: 1, code: "push_abgelehnt", at: "2026-10-21T10:00:00.000Z" });
+    expect(migrateAnmeldung({ version: 1, code: "quatsch", at: "2026-10-21T10:00:00.000Z" })?.code).toBeNull();
+    expect(migrateAnmeldung({ version: 2 })).toBeNull();
+  });
+
+  it("jede Ursache hat einen eigenen Satz ohne Druck-Wörter", () => {
+    const saetze = ANMELDE_FEHLER.map((c) => anmeldeText(c, "Mia"));
+    expect(new Set(saetze).size).toBe(ANMELDE_FEHLER.length);
+    for (const s of saetze) expect(s).not.toMatch(/(?<![a-zäöüß])(offen|fehlt dir|du musst|du solltest)(?![a-zäöüß])/i);
+  });
+
+  it("Routen sagen genau, woran es liegt", () => {
+    expect(readFileSync("src/app/api/push/schluessel/route.ts", "utf8")).toMatch(/found\.status === 404 \? "tabelle_fehlt"/);
+    expect(readFileSync("src/app/api/push/abo/route.ts", "utf8")).toMatch(/saved\.status === 404 \? "tabelle_fehlt"/);
+    expect(readFileSync("src/app/api/push/status/route.ts", "utf8")).toMatch(/migration: zeitplan\.ok/);
+    const sync = readFileSync("src/lib/heute/mitteilungen/serverPush.ts", "utf8");
+    expect(sync).toMatch(/status === 503 \? "schluessel_fehlt"/);
+    expect(sync).toMatch(/merke\("push_abgelehnt"\)/);
   });
 });
