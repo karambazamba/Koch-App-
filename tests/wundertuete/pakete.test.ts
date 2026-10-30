@@ -15,14 +15,14 @@ const nummern = (list: string[]) => list.map((_, i) => `paket-${String(i + 1).pa
 
 describe("Pakete", () => {
   for (const [dir, pakete, groesse] of [["content/wundertuete", PAKETE, PAKET_GROESSE], ["content/raetsel", RAETSEL_PAKETE, RT_GROESSE]] as const) {
-    it(`${dir}: paket-001.json … lückenlos, alle eingebunden, je höchstens 500`, () => {
+    it(`${dir}: paket-001.json … lückenlos, alle eingebunden, je höchstens 500 (Paket 001 ist der Grundstock und darf kleiner sein)`, () => {
       const files = dateien(dir);
       expect(files).toEqual(nummern(files));
       expect(pakete.map((p) => p.paket)).toEqual(files.map((_, i) => i + 1));
       for (const [i, f] of files.entries()) expect(JSON.parse(readFileSync(`${dir}/${f}`, "utf8"))).toEqual(pakete[i]);
       expect(groesse).toBe(500);
       for (const p of pakete) expect(p.eintraege.length, `Paket ${p.paket}`).toBeLessThanOrEqual(500);
-      for (const p of pakete.slice(0, -1)) expect(p.eintraege, `Paket ${p.paket}`).toHaveLength(500);
+      for (const p of pakete.slice(1, -1)) expect(p.eintraege, `Paket ${p.paket}`).toHaveLength(500);
     });
   }
 

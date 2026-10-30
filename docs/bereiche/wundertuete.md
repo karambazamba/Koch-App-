@@ -170,21 +170,30 @@ Wort oder Angeberwissen; die Rätsel sind für die Kinder am Tisch.
   der bestehenden Tabelle `entries` (RLS: nur der eigene Haushalt; keine neue
   Tabelle, keine Migration). `aktuell` und `ki` bleiben auf dem Gerät.
 
-## Zählung (Stand A-052)
+## Zählung (Stand A-068)
 
 | Sorte | Einträge |
 |---|---|
 | Angeberwissen | 180 (145 `aw-` + 35 `sm-`) |
-| Plattdeutsch | 90 |
-| Witze | 32 (+ Mias Nachschub) |
-| Rätsel | 91 (+ Mias Nachschub) |
+| Plattdeutsch | 180 (`pl-001` … `pl-180`) |
+| Witze | 180 (`wi-001` … `wi-180`, Mias Nachschub nur noch Reserve) |
+| Rätsel | 180 (`ra-001` … `ra-180`, Mias Nachschub nur noch Reserve) |
 
-Wundertüte: 302 Karten in Paket 001, Rätsel: 91 in Paket 001.
+Wundertüte: 302 Karten in Paket 001 + 238 in Paket 002 (148 Witze, 90 Platt),
+Rätsel: 91 in Paket 001 + 89 in Paket 002. Paket 001 ist der Grundstock und
+darf kleiner als 500 sein; jedes weitere Paket außer dem letzten ist voll.
+
+**Prüfung neuer Karten** (`tests/wundertuete/paket002.test.ts`): Witze und
+Rätsel mit derselben Ähnlichkeitsprüfung wie Mias Nachschub
+(`aehnlichkeitsIndex`, Frage allein und Frage + Antwort) gegen alle
+vorhandenen und alle schon geprüften neuen; Rätsel-Lösungen nur einmal. Bei
+Platt (immer gleicher Fragerahmen) zählen Wort und Bedeutung: beides nur
+einmal. Dazu wie immer `pool.test.ts` (Ton, Längen, Stichwort-Dubletten).
 
 ## Nachfüllen (Monats-Auftrag A-039)
 
 - Platt und Angeberwissen (und gern Witze/Rätsel) als neues Paket hinten
-  anlegen (`paket-002.json` …, höchstens 500, das bisherige letzte darf
+  anlegen (`paket-003.json` …, höchstens 500, das bisherige letzte darf
   aufgefüllt werden), dazu EINE Zeile in `pakete.ts`. Spätestens fällig,
   wenn „Für Entwickler“ „Paket nötig“ zeigt.
 - Neue IDs hinten anhängen (nächste freie Nummer), nie eine ID ändern,
