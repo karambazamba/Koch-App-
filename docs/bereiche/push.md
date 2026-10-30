@@ -110,6 +110,9 @@ Nichts geht verloren.
   weniger als 5 Min, `pushStatus.ts`), bei jedem „nein“ ein Satz. Knopf
   „Test: in 1 Minute erinnern“ (`POST /api/push/test`, über den Server – App
   schließen und warten). Öffnen der Seite frischt das Abo auf.
+- Abo speichern (v0.179): `POST /api/push/abo` ruft `push_abo_speichern()`
+  auf – Konto und Haushalt setzt die Funktion selbst, gehört das Gerät noch
+  einem anderen Konto, wird dessen Eintrag ersetzt.
 - „Für Entwickler“ → „Mitteilungen (Server)“ (`GET /api/push/protokoll`):
   letzter Lauf, Abos im Haushalt, letzte 10 Versände (Zeit, Art, Status).
 - Antippen einer Erinnerung öffnet den Termin selbst (`/tag?datum=…&eintrag=…`).
@@ -128,7 +131,7 @@ Klappt die Anmeldung des Handys nicht, merkt sich die App den Grund
 | `tabelle_fehlt` | `push_config`/`push_abos` fehlen (Migration nicht gelaufen) | Supabase → Database → Migrations prüfen |
 | `push_abgelehnt` | `pushManager.subscribe` scheitert (Apple/Google) | App vom Homescreen löschen, neu hinlegen, Mitteilungen erlauben |
 | `konto_abgelehnt` | Abo-Route 401 (Sitzung abgelaufen) | ab- und wieder anmelden |
-| `abo_abgelehnt` | Abo-Route 403 (RLS: kein Haushalt/fremder Haushalt) | Haushalt prüfen |
+| `abo_abgelehnt` | Abo-Route 403. Bis v0.178 auch bei allen im Haushalt: das Upsert über PostgREST setzte `endpoint`, dafür gab es kein UPDATE-Recht (42501). Seit v0.179 speichert `push_abo_speichern()` (security definer, Migration `20261113120000_push_abo_speichern.sql`) | Haushalt prüfen |
 | `kein_service_worker`, `server_fehler`, `offline` | Technik/Netz | neu öffnen bzw. später nochmal |
 
 ### Falls „Zeitplan im Server ist aus“ (Supabase-Dashboard, ohne Schlüssel)

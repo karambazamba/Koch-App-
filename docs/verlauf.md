@@ -6,6 +6,14 @@ ist inzwischen anders. Den aktuellen Stand je Bereich beschreibt
 `docs/bereiche/<bereich>.md`, die festen Regeln stehen in `CLAUDE.md`.
 Ältere Pfadangaben meinen die Orte vor dem Umzug (siehe CLAUDE.md, „Ordner“).
 
+## Abo speichern ohne Rechte-Fehler (A-069, v0.179.0)
+
+- Ursache von „abo_abgelehnt“: Das Upsert über PostgREST setzte im
+  ON CONFLICT DO UPDATE auch `endpoint`; „authenticated“ hat dafür kein
+  UPDATE-Recht → 42501 → 403. Jetzt speichert `push_abo_speichern()`
+  (security definer): Konto und Haushalt setzt die Funktion selbst, ein
+  Eintrag eines anderen Kontos auf demselben Gerät wird ersetzt.
+
 ## Anmelde-Fehler mit genauem Satz (A-069 Nachtrag, v0.178.0)
 
 - „Ich konnte dieses Handy nicht anmelden“ wird genauer: Server-Schlüssel
