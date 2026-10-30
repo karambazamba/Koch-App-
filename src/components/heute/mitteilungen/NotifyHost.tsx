@@ -16,7 +16,7 @@ import { pushAllowed } from "@/lib/heute/push";
 import { loadProfile } from "@/lib/einstellungen/profileStore";
 import { helperName } from "@/lib/einstellungen/profile";
 import { askDecision, changeNotify, loadNotify, useNotify, type AskMoment } from "@/lib/heute/mitteilungen/einstellungen";
-import { syncPushSubscription } from "@/lib/heute/mitteilungen/serverPush";
+import { aboAuffrischen } from "@/lib/heute/mitteilungen/pushPruefen";
 import { pauseOn, remindersToSend } from "@/lib/heute/mitteilungen/erinnerungen";
 import { loadSport } from "@/lib/sport/store";
 import { proaktivHeute, sportVorabend } from "@/lib/sport/erinnerung";
@@ -60,12 +60,7 @@ async function tick() {
 }
 
 /** Abo beim Server auffrischen (Einstellungen, Pause, Tagesablauf) */
-function syncServer() {
-  const s = loadNotify();
-  const profile = loadProfile();
-  const r = loadRoutine();
-  void syncPushSubscription({ kinds: s.kinds, pause: profile?.pause ?? null, routine: { ruhe: r.ruhe, morgenBis: r.morgenBis, feierabendAb: r.feierabendAb, nachArbeit: r.nachArbeit, arbeitstage: r.arbeitstage }, name: helperName(profile ?? null) });
-}
+const syncServer = () => void aboAuffrischen();
 
 export function NotifyHost() {
   const notify = useNotify();

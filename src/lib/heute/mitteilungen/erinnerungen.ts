@@ -16,7 +16,7 @@ export type ReminderMoment = {
   minute: number;
   title: string;
   body: string;
-  /** Antippen öffnet genau diesen Eintrag (Tag-Ansicht) */
+  /** Antippen öffnet genau diesen Eintrag (Tag-Ansicht, Fenster des Eintrags: `&eintrag=`) */
   href: string;
   kind: "termin-familie" | "termin-arbeit" | "aufgabe";
 };
@@ -34,7 +34,7 @@ function body(item: DayItem, lead: string): string {
 
 function moment(item: DayItem, date: string, minute: number, lead: string): ReminderMoment {
   const kind = item.entry.typ === "aufgabe" ? "aufgabe" : item.room === "arbeit" ? "termin-arbeit" : "termin-familie";
-  return { key: item.key, date, minute, title: item.title, body: body(item, lead), href: `/tag?datum=${item.date}`, kind };
+  return { key: item.key, date, minute, title: item.title, body: body(item, lead), href: `/tag?datum=${item.date}&eintrag=${encodeURIComponent(item.entry.id)}`, kind };
 }
 
 /** Wann (und wie) ein Eintrag an seinem Tag erinnert – null = gar nicht */

@@ -21,6 +21,7 @@ import { TempoSection } from "@/components/einstellungen/settings/TempoSection";
 import { AnsagenStand } from "@/components/durchatmen/AnsagenStand";
 import { WundertueteNachschub } from "@/components/wundertuete/WundertueteNachschub";
 import { WasLosStatus } from "@/components/region/WasLosStatus";
+import { PushProtokoll } from "@/components/heute/mitteilungen/PushProtokoll";
 
 export function AdminView() {
   // Erst im Browser (beim Vorrendern gibt es kein „heute“ und keinen Speicher)
@@ -53,6 +54,7 @@ export function AdminView() {
         <TempoSection />
         <WundertueteNachschub />
         <WasLosStatus />
+        <PushProtokoll />
         <div className={`${CARD} overflow-hidden`}>
           <MicLogList as="section" />
         </div>

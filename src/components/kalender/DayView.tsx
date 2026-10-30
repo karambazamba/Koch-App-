@@ -2,9 +2,11 @@
 
 // Ein Tag (/tag?datum=YYYY-MM-DD): Titel = Wochentag, darunter „22. Oktober ·
 // morgen“, dann die Termine des Tages und „Termin am …“ (`DayPanel`, wie im
-// Kalender). Plus = das Fenster „Neuer Termin“ für diesen Tag.
+// Kalender). Plus = das Fenster „Neuer Termin“ für diesen Tag. Mit
+// `&eintrag=<id>` (Mitteilung antippen) öffnet sich gleich das Fenster des Eintrags.
 
-import { useSearchParams } from "next/navigation";
+import { useEffect, useRef } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { PagePlus } from "@/components/ui/QuickButton";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { CARD, PAGE_MAIN } from "@/components/ui/styles";
@@ -12,7 +14,8 @@ import { useCalendarEntries } from "@/lib/kalender/useCalendarEntries";
 import { useToday, toIsoDate } from "@/lib/core/now";
 import { DayPanel } from "@/components/kalender/DayPanel";
 import { dayHeading } from "@/components/kalender/CalendarPage";
-import { neuEintragen } from "@/lib/kalender/eintragen/oeffnen";
+import { eintragAendern, neuEintragen } from "@/lib/kalender/eintragen/oeffnen";
+import { expectReplace } from "@/lib/core/navigation";
 
 const WEEKDAY = new Intl.DateTimeFormat("de-DE", { weekday: "long", timeZone: "UTC" });
 
@@ -24,6 +27,18 @@ export function DayView() {
   const raw = params.get("datum") ?? "";
   const date = /^\d{4}-\d{2}-\d{2}$/.test(raw) ? raw : today;
   const title = date ? WEEKDAY.format(new Date(`${date}T12:00:00Z`)) : "Tag";
+  // A-069: Mitteilung antippen (`&eintrag=`) öffnet gleich das Fenster des Termins – einmal
+  const router = useRouter();
+  const eintrag = params.get("eintrag");
+  const offen = useRef(false);
+  useEffect(() => {
+    if (!eintrag || !entries || offen.current) return;
+    offen.current = true;
+    const e = entries.find((x) => x.id === eintrag);
+    if (e) eintragAendern(e);
+    expectReplace();
+    router.replace(date ? `/tag?datum=${date}` : "/tag");
+  }, [eintrag, entries, date, router]);
   return (
     <>
       <PageHeader title={title} subtitle={date && today ? dayHeading(date, today) : undefined} backHref="/?seite=kalender" action={date ? <PagePlus label="Neuer Termin an diesem Tag" onClick={() => neuEintragen("termin", date)} /> : undefined} />

@@ -43,6 +43,7 @@ berechtigtes Interesse.
 | Familie: Name, Region | Server (`households`) | Familie, Spendentopf-Region | bis die letzte Person austritt | Familie | lit. b |
 | Einladungs-Links | Server (`invite_links`) | Einladen | 14 Tage | Erwachsene der Familie | lit. b |
 | Push-Abos | Server (`push_abos`) | Erinnerungen | bis abbestellt | nur Server | lit. a (Browser-Erlaubnis) |
+| Push-Versand-Protokoll (`push_laeufe`, `push_protokoll`, `push_tests`, A-069): Zeit jedes Versand-Laufs mit Anzahl Abos/gesendet/Fehler; je Versand Zeit, Art („erinnerung“, „test“ …) und Status mit Haushalt; Test-Erinnerung = Abo + Fälligkeit | Server (nur Service-Rolle) | Nachweis, dass Erinnerungen bei geschlossener App rausgehen; Status und „Für Entwickler“ | Läufe 1 Tag, Protokoll 7 Tage, Test bis gesendet | nur Server; die App sieht nur den eigenen Haushalt; nie Inhalte | lit. b |
 | Mails an Mia: Adressen, Vorschläge, gelernte Absender | Server (`mail_addresses`, `mail_items`, `mail_senders`) | Vorschläge aus Mails | Vorschläge 7 Tage, „angekommen“ 24 Std.; Rohmail nie | Familie bzw. nur Person (Arbeit) | lit. a (Einschalten des Bausteins) |
 | Mia-Wünsche („Kann ich noch nicht“) | Server (`mia_wuensche`), nur Text + Datum | sehen, was gefragt wird | **bitte festlegen** (Vorschlag 12 Monate) | nur Betreiber | lit. f |
 | Bekannte Stimmen (`wasgibts.stimmen`) | Gerät, nur Kennungen der Systemstimmen | „Neue Stimme gefunden … Nehmen?“ | bis gelöscht | nur Gerät | lit. b |
