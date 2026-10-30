@@ -14,6 +14,7 @@ import { saveAccessCode } from "@/lib/begleitung/zugang";
 import { CODE_TEXTE, closeCodeScreen, setCodeLater } from "@/lib/begleitung/codeAbfrage";
 import { helperName } from "@/lib/einstellungen/profile";
 import { useBackCloses } from "@/lib/core/useBackCloses";
+import { RechtLinks } from "@/components/datenschutz/RechtstextView";
 
 export function CodeScreen({ change = false }: { change?: boolean }) {
   const [code, setCode] = useState("");
@@ -88,6 +89,7 @@ export function CodeScreen({ change = false }: { change?: boolean }) {
               {change ? "Abbrechen" : "Später"}
             </button>
           </p>
+          <RechtLinks dicht nur={["/impressum", "/datenschutz"]} className="mt-1 text-faint" />
         </div>
       </form>
     </section>

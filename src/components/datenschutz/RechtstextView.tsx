@@ -2,7 +2,8 @@
 // großer Titel, optional „Kurz gesagt“ in Karten, darunter die Abschnitte,
 // unten Stand und Entwurfs-Hinweis. Links zu den beiden anderen Seiten.
 // Solange Betreiber-Angaben Platzhalter sind, oben ein leises Band „Entwurf“.
-// Ohne Leiste und Mia-Knopf (in Ruhe lesen, `leisteVersteckt`).
+// Ohne Leiste und Mia-Knopf (in Ruhe lesen, `leisteVersteckt`), ohne
+// Anmeldung erreichbar. Das Impressum ist fertig (A-070): ohne Entwurfs-Satz.
 
 import Link from "next/link";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -11,28 +12,41 @@ import { APP_VERSION } from "@/lib/core/app";
 import { ENTWURF, KURZ_GESAGT, RECHTSTEXTE_STAND, entwurfOffen, type Abschnitt } from "@/lib/datenschutz/rechtstexte";
 
 const SEITEN = [
-  { href: "/datenschutz", label: "Datenschutz" },
   { href: "/impressum", label: "Impressum" },
+  { href: "/datenschutz", label: "Datenschutz" },
   { href: "/nutzungsbedingungen", label: "Nutzungsbedingungen" },
 ];
 
-/** Kleine Links zu den drei Seiten (Einstellungen, Begrüßung, Anmelden) */
+/** Kleine Links „Impressum · Datenschutz · …“ (Einstellungen, Begrüßung, Anmelden, Erster Start, Einladung) */
 export function RechtLinks({ className = "", dicht = false, nur }: { className?: string; dicht?: boolean; nur?: string[] }) {
   return (
-    <nav aria-label="Rechtliches" className={`flex flex-wrap items-center justify-center gap-x-3 text-xs font-semibold text-muted ${className}`}>
-      {SEITEN.filter((s) => !nur || nur.includes(s.href)).map((s) => (
-        <Link key={s.href} href={s.href} className={`hit inline-flex items-center ${dicht ? "h-4" : "h-11"}`}>
-          {s.label}
-        </Link>
+    <nav aria-label="Rechtliches" className={`flex flex-wrap items-center justify-center gap-x-1.5 text-xs font-semibold text-muted ${className}`} data-recht-links>
+      {SEITEN.filter((s) => !nur || nur.includes(s.href)).map((s, i) => (
+        <span key={s.href} className="inline-flex items-center gap-x-1.5">
+          {i > 0 && <span aria-hidden>·</span>}
+          <Link href={s.href} className={`hit inline-flex items-center ${dicht ? "h-4" : "h-11"}`}>
+            {s.label}
+          </Link>
+        </span>
       ))}
     </nav>
   );
 }
 
-export function RechtstextView({ title, abschnitte, kurz = false }: { title: string; abschnitte: Abschnitt[]; kurz?: boolean }) {
+type Props = {
+  title: string;
+  abschnitte: Abschnitt[];
+  kurz?: boolean;
+  /** Zurück ohne Verlauf (direkt geöffnet) */
+  backHref?: string;
+  /** Text noch Entwurf (Satz unten); das Impressum ist fertig */
+  entwurf?: boolean;
+};
+
+export function RechtstextView({ title, abschnitte, kurz = false, backHref = "/profil", entwurf = true }: Props) {
   return (
     <div className="mx-auto flex w-full max-w-lg flex-1 flex-col">
-      <PageHeader title={title} backHref="/profil" />
+      <PageHeader title={title} backHref={backHref} />
       <main className={PAGE_MAIN}>
         {entwurfOffen() && (
           <p role="note" data-entwurf className="rounded-field border border-line bg-fill px-4 py-2 text-center text-[13px] font-semibold text-muted">
@@ -56,14 +70,14 @@ export function RechtstextView({ title, abschnitte, kurz = false }: { title: str
           <section key={a.titel} className="flex flex-col gap-1.5 px-1" aria-label={a.titel}>
             <h2 className={SECTION_TITLE}>{a.titel}</h2>
             {a.absaetze.map((t) => (
-              <p key={t} className="text-[15px] leading-relaxed">
+              <p key={t} className="whitespace-pre-line text-[15px] leading-relaxed">
                 {t}
               </p>
             ))}
           </section>
         ))}
         <p className={NOTE}>
-          Stand {RECHTSTEXTE_STAND.datum} · App {APP_VERSION}. {ENTWURF}
+          Stand {RECHTSTEXTE_STAND.datum} · App {APP_VERSION}.{entwurf && ` ${ENTWURF}`}
         </p>
         <RechtLinks />
       </main>

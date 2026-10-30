@@ -1,6 +1,6 @@
 // Datenschutz, Impressum, Nutzungsbedingungen (Platz 23) – ENTWURF, vor
 // Veröffentlichung juristisch prüfen lassen. Angaben zum Betreiber stehen
-// nur hier (Platzhalter in eckigen Klammern, Felix füllt sie aus). Die
+// nur hier (offene Punkte in eckigen Klammern, Felix füllt sie aus). Die
 // Anbieter entsprechen docs/datenschutz/anbieter.md – neuer Anbieter oder
 // neue Datenart: dort, in datenkarte.md und hier im selben PR ergänzen. Rein.
 
@@ -10,13 +10,11 @@ import { APP_NAME } from "@/lib/core/app";
 export const RECHTSTEXTE_STAND = { version: 1, datum: "29. Oktober 2026" };
 
 export const BETREIBER = {
-  name: "[Verantwortlicher]",
-  anschrift: "[Anschrift]",
-  mail: "[Datenschutz-Kontakt-Mail]",
-  telefon: "[Telefon]",
-  vertreten: "[vertreten durch]",
-  register: "[Registergericht und -nummer, falls vorhanden]",
-  ustid: "[USt-IdNr., falls vorhanden]",
+  name: "KARAMBA Eis GmbH",
+  anschrift: "Am Rosengarten 11, 23701 Eutin",
+  mail: "eis.karamba@gmail.com",
+  web: "www.karamba-eis.de",
+  vertreten: "Felix Gabriel",
   supabaseRegion: "[Supabase-Region]",
 };
 
@@ -98,12 +96,36 @@ export const DATENSCHUTZ: Abschnitt[] = [
   { titel: "Kinder", absaetze: [`${APP_NAME} ist für Erwachsene. Zugänge für Kinder unter 16 Jahren richten nur die Eltern ein; von Kindern speichern wir so wenig wie möglich (meist nur den Vornamen).`] },
 ];
 
+/** Impressum: Wortlaut von Felix (A-070), Zeilenumbrüche per `\n` */
 export const IMPRESSUM: Abschnitt[] = [
-  { titel: "Angaben nach § 5 DDG", absaetze: [BETREIBER.name, BETREIBER.anschrift, BETREIBER.vertreten] },
-  { titel: "Kontakt", absaetze: [`E-Mail: ${BETREIBER.mail}`, `Telefon: ${BETREIBER.telefon}`] },
-  { titel: "Register und Steuer", absaetze: [BETREIBER.register, BETREIBER.ustid] },
-  { titel: "Verantwortlich für den Inhalt", absaetze: [`${BETREIBER.name}, ${BETREIBER.anschrift} [nach § 18 Abs. 2 MStV, falls nötig]`] },
-  { titel: "Gemacht in Eutin", absaetze: ["Eine Idee von KARAMBA Eis."] },
+  {
+    titel: "Angaben gemäß § 5 DDG",
+    absaetze: [
+      `${BETREIBER.name}\nAm Rosengarten 11\n23701 Eutin`,
+      "Handelsregister: HRB 25642 HL\nRegistergericht: Amtsgericht Lübeck",
+      `Vertreten durch den Geschäftsführer:\n${BETREIBER.vertreten}`,
+    ],
+  },
+  { titel: "Kontakt", absaetze: [`E-Mail: ${BETREIBER.mail}\nWeb: ${BETREIBER.web}`] },
+  { titel: "Umsatzsteuer-Identifikationsnummer gemäß § 27a UStG", absaetze: ["DE450967067"] },
+  { titel: "Verantwortlich für den Inhalt nach § 18 Abs. 2 MStV", absaetze: [`${BETREIBER.vertreten}\nAm Rosengarten 11\n23701 Eutin`] },
+  {
+    titel: "Verbraucherstreitbeilegung / Universalschlichtungsstelle",
+    absaetze: ["Wir sind nicht bereit oder verpflichtet, an Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle teilzunehmen."],
+  },
+  {
+    titel: "Haftung für Inhalte",
+    absaetze: [
+      "Als Diensteanbieter sind wir für eigene Inhalte in dieser App nach den allgemeinen Gesetzen verantwortlich. Wir sind jedoch nicht verpflichtet, übermittelte oder gespeicherte fremde Informationen zu überwachen oder nach Umständen zu forschen, die auf eine rechtswidrige Tätigkeit hinweisen. Verpflichtungen zur Entfernung oder Sperrung der Nutzung von Informationen nach den allgemeinen Gesetzen bleiben hiervon unberührt. Eine diesbezügliche Haftung ist jedoch erst ab dem Zeitpunkt der Kenntnis einer konkreten Rechtsverletzung möglich. Bei Bekanntwerden entsprechender Rechtsverletzungen entfernen wir diese Inhalte umgehend.",
+    ],
+  },
+  {
+    titel: "Haftung für Links",
+    absaetze: [
+      // Ab „ohne konkrete Anhaltspunkte“ war der Auftrag abgeschnitten: üblicher Wortlaut ergänzt (Frage an Felix)
+      "Diese App enthält Links zu externen Websites Dritter (z. B. Veranstaltungen bei „Was los?“), auf deren Inhalte wir keinen Einfluss haben. Deshalb können wir für diese fremden Inhalte keine Gewähr übernehmen. Für die Inhalte der verlinkten Seiten ist stets der jeweilige Anbieter oder Betreiber verantwortlich. Die verlinkten Seiten wurden zum Zeitpunkt der Verlinkung auf mögliche Rechtsverstöße überprüft; rechtswidrige Inhalte waren nicht erkennbar. Eine permanente inhaltliche Kontrolle ist ohne konkrete Anhaltspunkte einer Rechtsverletzung nicht zumutbar. Bei Bekanntwerden von Rechtsverletzungen entfernen wir derartige Links umgehend.",
+    ],
+  },
 ];
 
 export const NUTZUNGSBEDINGUNGEN: Abschnitt[] = [

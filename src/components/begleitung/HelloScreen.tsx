@@ -9,7 +9,7 @@
 // geht’s“ erst mit Häkchen, mit Konten „Schon ein Konto? Anmelden“ und unten nur
 // ein ruhiger, mittiger Abschluss (Tafel 84, Variante A – kein kleines Logo,
 // die große Mia reicht): „Gemacht in Eutin von KARAMBA Eis“, darunter leiser
-// „Nutzungsbedingungen · Datenschutz · Impressum“ (Links mit 44-px-Tippfläche). Ablauf:
+// „Impressum · Datenschutz · Nutzungsbedingungen“ (Links mit 44-px-Tippfläche). Ablauf:
 //   0,0 s Mia ploppt auf, 0,95 s Überschrift tippt sich ein (sie spricht
 //   dabei), 1,8 s Zeile, 2,0 s Freudensprung (ducken, eine Drehung, Landung
 //   mit Funken, „Ich bin bereit!“, zwei kleine Hüpfer, „Los geht’s“
@@ -308,16 +308,16 @@ export function HelloScreen() {
           <div className="mt-4 flex flex-col items-center [@media(max-height:620px)]:mt-1" data-hello-marke>
             <span className="whitespace-nowrap text-[clamp(11.5px,3.9vw,13px)] font-semibold text-muted">Gemacht in Eutin von KARAMBA Eis</span>
             <nav aria-label="Rechtliches" className="mt-2 [@media(max-height:620px)]:mt-1 flex items-center gap-1.5 text-[12px] font-semibold text-faint">
-              <Link href="/nutzungsbedingungen" className="hit inline-flex h-4 items-center">
-                Nutzungsbedingungen
+              <Link href="/impressum" className="hit inline-flex h-4 items-center">
+                Impressum
               </Link>
               <span aria-hidden>·</span>
               <Link href="/datenschutz" className="hit inline-flex h-4 items-center">
                 Datenschutz
               </Link>
               <span aria-hidden>·</span>
-              <Link href="/impressum" className="hit inline-flex h-4 items-center">
-                Impressum
+              <Link href="/nutzungsbedingungen" className="hit inline-flex h-4 items-center">
+                Nutzungsbedingungen
               </Link>
             </nav>
           </div>

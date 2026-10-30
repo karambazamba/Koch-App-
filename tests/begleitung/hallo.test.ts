@@ -41,13 +41,13 @@ describe("Freudensprung", () => {
     expect(reduce).toMatch(/\.hello-jump/);
   });
 
-  it("unten ruhig (Tafel 84): „Gemacht in Eutin von KARAMBA Eis“, darunter Datenschutz · Impressum, kein kleines Logo", () => {
+  it("unten ruhig (Tafel 84): „Gemacht in Eutin von KARAMBA Eis“, darunter Impressum · Datenschutz, kein kleines Logo", () => {
     const src = readFileSync("src/components/begleitung/HelloScreen.tsx", "utf8");
     expect(src).toContain("Gemacht in Eutin von KARAMBA Eis");
     expect(src).not.toContain("Gemacht in Eutin · von");
     expect(src).not.toContain("möglich gemacht von KARAMBA");
     expect(src).not.toMatch(/<BrandMark/);
-    expect(src).toMatch(/href="\/datenschutz"[\s\S]*href="\/impressum"/);
+    expect(src).toMatch(/href="\/impressum"[\s\S]*href="\/datenschutz"/);
     expect(src).toMatch(/Erzähl einfach, was ansteht\.\s*<br \/>\s*Ich sortier das\./);
   });
 });

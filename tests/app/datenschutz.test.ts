@@ -49,9 +49,44 @@ describe("Seiten Datenschutz, Impressum, Nutzungsbedingungen", () => {
     for (const list of [DATENSCHUTZ, IMPRESSUM, NUTZUNGSBEDINGUNGEN]) expect(list.length).toBeGreaterThan(2);
   });
 
-  it("Platzhalter statt erfundener Angaben", () => {
-    const all = JSON.stringify([DATENSCHUTZ, IMPRESSUM]);
-    for (const p of ["[Verantwortlicher]", "[Anschrift]", "[Datenschutz-Kontakt-Mail]", "[Supabase-Region]"]) expect(all).toContain(p);
+  it("Platzhalter statt erfundener Angaben (Datenschutz), Impressum ohne Platzhalter", () => {
+    expect(JSON.stringify(DATENSCHUTZ)).toContain("[Supabase-Region]");
+    for (const a of IMPRESSUM) for (const t of [a.titel, ...a.absaetze]) expect(t).not.toMatch(/\[[^\]]*\]/);
+  });
+
+  it("Impressum im Wortlaut von Felix (A-070)", () => {
+    const text = IMPRESSUM.map((a) => [a.titel, ...a.absaetze].join("\n")).join("\n");
+    for (const z of [
+      "Angaben gemäß § 5 DDG",
+      "KARAMBA Eis GmbH\nAm Rosengarten 11\n23701 Eutin",
+      "Handelsregister: HRB 25642 HL\nRegistergericht: Amtsgericht Lübeck",
+      "Vertreten durch den Geschäftsführer:\nFelix Gabriel",
+      "E-Mail: eis.karamba@gmail.com\nWeb: www.karamba-eis.de",
+      "Umsatzsteuer-Identifikationsnummer gemäß § 27a UStG\nDE450967067",
+      "Verantwortlich für den Inhalt nach § 18 Abs. 2 MStV\nFelix Gabriel\nAm Rosengarten 11\n23701 Eutin",
+      "Verbraucherstreitbeilegung / Universalschlichtungsstelle",
+      "Wir sind nicht bereit oder verpflichtet, an Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle teilzunehmen.",
+      "Haftung für Inhalte",
+      "Bei Bekanntwerden entsprechender Rechtsverletzungen entfernen wir diese Inhalte umgehend.",
+      "Haftung für Links",
+      "(z. B. Veranstaltungen bei „Was los?“)",
+    ])
+      expect(text).toContain(z);
+    const seite = readFileSync("src/app/impressum/page.tsx", "utf8");
+    expect(seite).toMatch(/entwurf=\{false\}/);
+  });
+
+  it("„Impressum · Datenschutz“ überall unten: Einstellungen, Begrüßung, Anmelden, Erster Start, Zugangscode, Einladung", () => {
+    for (const f of [
+      "src/components/einstellungen/FamilyOverview.tsx",
+      "src/components/konten/WelcomeLogin.tsx",
+      "src/components/datenschutz/ZustimmungStep.tsx",
+      "src/components/begleitung/ZeigMalStep.tsx",
+      "src/components/begleitung/CodeScreen.tsx",
+      "src/components/konten/EinladungView.tsx",
+    ])
+      expect(readFileSync(f, "utf8"), f).toMatch(/<RechtLinks/);
+    expect(readFileSync("src/components/begleitung/HelloScreen.tsx", "utf8")).toMatch(/href="\/impressum"/);
   });
 
   it("jeder Anbieter mit Personendaten steht in der Datenschutzerklärung", () => {
@@ -74,10 +109,11 @@ describe("Seiten Datenschutz, Impressum, Nutzungsbedingungen", () => {
   });
 
   it("Band „Entwurf“, solange Verantwortlicher, Anschrift oder Kontakt-Mail Platzhalter sind", () => {
-    expect(entwurfOffen()).toBe(true);
+    expect(entwurfOffen()).toBe(false);
     const fertig = { name: "Felix Muster", anschrift: "Musterweg 1, 23701 Eutin", mail: "hallo@example.de" };
     expect(entwurfOffen(fertig)).toBe(false);
-    for (const k of ["name", "anschrift", "mail"] as const) expect(entwurfOffen({ ...fertig, [k]: BETREIBER[k] })).toBe(true);
+    for (const k of ["name", "anschrift", "mail"] as const) expect(entwurfOffen({ ...fertig, [k]: "[offen]" })).toBe(true);
+    expect(BETREIBER.name).toBe("KARAMBA Eis GmbH");
     expect(readFileSync("src/components/datenschutz/RechtstextView.tsx", "utf8")).toMatch(/entwurfOffen\(\) &&/);
   });
 

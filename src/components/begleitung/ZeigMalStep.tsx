@@ -10,6 +10,7 @@
 
 import { useRef } from "react";
 import { BegleitungAvatar } from "@/components/begleitung/BegleitungAvatar";
+import { RechtLinks } from "@/components/datenschutz/RechtstextView";
 import { ERSTER_START } from "@/lib/mia/persona";
 import { HAUSHALT_WAHL, type Haushalt } from "@/lib/core/haushalt";
 import { helperName } from "@/lib/einstellungen/profile";
@@ -43,6 +44,7 @@ export function ZeigMalStep({ onDone }: { onDone: (mia: DOMRect | null, haushalt
           ))}
           <p className="text-center text-[13px] text-muted">{ERSTER_START.leise}</p>
         </div>
+        <RechtLinks dicht nur={["/impressum", "/datenschutz"]} className="mt-3 text-faint" />
       </div>
     </section>
   );

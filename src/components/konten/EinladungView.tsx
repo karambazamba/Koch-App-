@@ -9,6 +9,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { BegleitungAvatar } from "@/components/begleitung/BegleitungAvatar";
+import { RechtLinks } from "@/components/datenschutz/RechtstextView";
 import { buttonClass } from "@/components/ui/styles";
 import { avatarHex } from "@/lib/einstellungen/profile";
 import { inviteInfo } from "@/lib/konten/account";
@@ -43,6 +44,7 @@ export function EinladungView() {
       <Link href="/" className={`${buttonClass("secondary", "lg")} mt-2`}>
         Zur App
       </Link>
+      <RechtLinks nur={["/impressum", "/datenschutz"]} className="absolute inset-x-0 bottom-[max(0.5rem,env(safe-area-inset-bottom))]" />
     </main>
   );
 }

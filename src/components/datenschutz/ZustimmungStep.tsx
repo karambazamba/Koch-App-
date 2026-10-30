@@ -33,7 +33,7 @@ export function ZustimmungStep({ onDone }: { onDone: () => void }) {
               {s}
             </p>
           ))}
-          <RechtLinks nur={["/datenschutz", "/nutzungsbedingungen"]} className="mt-1 !justify-start text-[14px]" />
+          <RechtLinks className="mt-1 !justify-start text-[14px]" />
         </div>
         <div className="mt-6 flex flex-col gap-4">
           <label className="flex min-h-11 cursor-pointer items-start gap-3 text-left text-[15px] text-muted">

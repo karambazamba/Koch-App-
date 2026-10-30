@@ -38,7 +38,7 @@
      Häkchen „Ich akzeptiere die Nutzungsbedingungen und hab die
      Datenschutzerklärung gelesen.“ (`BedingungenHaken`, speichert sofort
      Fassung und Zeit). „Los geht’s“ erst mit Häkchen. Unten „Gemacht in Eutin
-     von KARAMBA Eis“, „Nutzungsbedingungen · Datenschutz · Impressum“.
+     von KARAMBA Eis“, „Impressum · Datenschutz · Nutzungsbedingungen“.
   2. „Für wen soll ich sortieren?“ (`ZeigMalStep`, nur beim allerersten
      Start: drei gleichwertige Knöpfe „Nur für mich“ / „Für uns zwei“ / „Für
      die Familie“, nichts vorausgewählt).

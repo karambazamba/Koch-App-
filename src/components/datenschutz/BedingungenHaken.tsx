@@ -39,7 +39,7 @@ export function BedingungenHaken({ links = true }: { links?: boolean }) {
       </label>
       {links && (
         <RechtLinks
-          nur={["/nutzungsbedingungen", "/datenschutz"]}
+          nur={["/impressum", "/datenschutz", "/nutzungsbedingungen"]}
           className="-mt-1"
         />
       )}
