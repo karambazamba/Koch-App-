@@ -6,6 +6,12 @@ ist inzwischen anders. Den aktuellen Stand je Bereich beschreibt
 `docs/bereiche/<bereich>.md`, die festen Regeln stehen in `CLAUDE.md`.
 Ältere Pfadangaben meinen die Orte vor dem Umzug (siehe CLAUDE.md, „Ordner“).
 
+## Wundertüte: eine Farbe, wählbar (A-071, v0.181.0)
+
+- `farbWaehlbar("wundertuete")` = true; Kachel, „Kommt bald“ und die Karte
+  auf `/wundertuete` tragen `data-tone={WT_TONE} data-farbe={farbe}`.
+  `SorteMeta.tone` entfällt, Symbole: Geschenk, Anker, Glühbirne, Puzzle.
+
 ## Impressum (A-070, v0.180.0)
 
 - `/impressum` mit Felix’ Wortlaut aus `IMPRESSUM` (`datenschutz/rechtstexte.ts`),

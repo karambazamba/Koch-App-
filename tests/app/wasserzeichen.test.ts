@@ -177,10 +177,10 @@ describe("freier Text ohne Kärtchen → 9 % (data-art=frei), weiße Liste → v
 });
 
 describe("Wundertüte (A-036, Tafel 140)", () => {
-  it("Geschenk über KachelWasserzeichen (leise, die Schrift steht frei), bei Platt ein Anker im selben Stil", () => {
+  it("Geschenk über KachelWasserzeichen (leise, die Schrift steht frei), sonst Anker, Glühbirne, Puzzle im selben Stil", () => {
     const s = readFileSync("src/components/wundertuete/WundertueteTile.tsx", "utf8");
-    expect(s).toContain('{meta.symbol === "anchor" ? <Anker /> : <KachelWasserzeichen kachel="wundertuete" size={size} frei />}');
-    expect(s).toMatch(/data-symbol="anchor" data-art="frei"/);
+    expect(s).toContain('{meta.symbol === "gift" ? <KachelWasserzeichen kachel="wundertuete" size={size} frei /> : <Zeichen meta={meta} />}');
+    expect(s).toMatch(/data-symbol=\{meta\.symbol\} data-art="frei"/);
     expect(s).toContain('className="kachel-frei"');
   });
 });

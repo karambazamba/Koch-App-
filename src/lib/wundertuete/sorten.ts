@@ -1,8 +1,11 @@
 // Mias Wundertüte (A-022, neu mit A-052): vier Sorten – Witze, Plattdeutsch,
 // Angeberwissen und seit A-064 Rätsel (ihr Vorrat bleibt in `lib/raetsel`,
-// gemischt wird in `wundertuete/mischung.ts`). Je Sorte
-// Kopf, Farbe aus der Kachel-Palette (Tafel 108, `data-tone`), Symbol und
-// Wasserzeichen. Rein, ohne Oberfläche.
+// gemischt wird in `wundertuete/mischung.ts`). Je Sorte Kopf, Symbol und
+// Wasserzeichen; die Farbe ist für alle Sorten gleich (A-071): Standard
+// `WT_TONE` (Sand-Gelb), sonst die gewählte Kachel-Farbe. Rein, ohne Oberfläche.
+
+/** Farbton der Wundertüte ohne eigene Wahl (Tokens der Notizen-Kachel) */
+export const WT_TONE = "notizen";
 
 import type { Karte } from "@/lib/wundertuete/vorrat";
 
@@ -21,10 +24,8 @@ export type SorteMeta = {
   filter: string;
   /** Kurzform des Titels, wenn er nicht in die Zeile passt (nie „…“) */
   kurz: string;
-  /** Symbol im Kopf und als Wasserzeichen (Tafel 140: Platt = Anker, sonst Geschenk) */
-  symbol: "gift" | "anchor";
-  /** Farbton der Palette (Tafel 108) und wessen Tokens er trägt */
-  tone: "notizen" | "aufgaben" | "sport" | "essen";
+  /** Symbol im Kopf und als Wasserzeichen: Geschenk, Anker, Glühbirne, Puzzle */
+  symbol: "gift" | "anchor" | "bulb" | "puzzle";
   /** Hat eine Lösung zum Aufdecken (sonst steht die Pointe gleich darunter) */
   frage: boolean;
   /** Quelle Pflicht (Fakten, Platt-Bedeutungen) – nie angezeigt */
@@ -34,11 +35,11 @@ export type SorteMeta = {
 };
 
 export const SORTEN: SorteMeta[] = [
-  { id: "witz", titel: "Wundertüte", label: "Witz", filter: "Witze", kurz: "Wundertüte", symbol: "gift", tone: "notizen", frage: false, quellePflicht: false, ki: true },
-  { id: "platt", titel: "Platt för Plietsche", label: null, filter: "Platt", kurz: "Platt", symbol: "anchor", tone: "aufgaben", frage: true, quellePflicht: true, ki: false },
-  { id: "angeberwissen", titel: "Wundertüte", label: "Angeberwissen", filter: "Wissen", kurz: "Wundertüte", symbol: "gift", tone: "sport", frage: true, quellePflicht: true, ki: false },
-  // A-064: Rätsel als vierte Sorte (Farbe Pfirsich wie früher der Rätsel-Kreis)
-  { id: "raetsel", titel: "Wundertüte", label: "Rätsel", filter: "Rätsel", kurz: "Wundertüte", symbol: "gift", tone: "essen", frage: true, quellePflicht: false, ki: true },
+  { id: "witz", titel: "Wundertüte", label: "Witz", filter: "Witze", kurz: "Wundertüte", symbol: "gift", frage: false, quellePflicht: false, ki: true },
+  { id: "platt", titel: "Platt för Plietsche", label: null, filter: "Platt", kurz: "Platt", symbol: "anchor", frage: true, quellePflicht: true, ki: false },
+  { id: "angeberwissen", titel: "Wundertüte", label: "Angeberwissen", filter: "Wissen", kurz: "Wundertüte", symbol: "bulb", frage: true, quellePflicht: true, ki: false },
+  // A-064: Rätsel als vierte Sorte
+  { id: "raetsel", titel: "Wundertüte", label: "Rätsel", filter: "Rätsel", kurz: "Wundertüte", symbol: "puzzle", frage: true, quellePflicht: false, ki: true },
 ];
 
 export const SORTE_IDS: Sorte[] = SORTEN.map((s) => s.id);

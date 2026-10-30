@@ -11,7 +11,7 @@
 
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Anchor, ChevronRight, Gift, RotateCw, Share } from "lucide-react";
+import { Anchor, ChevronRight, Gift, Lightbulb, Puzzle, RotateCw, Share } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { QuickButton } from "@/components/ui/QuickButton";
 import { CARD, PAGE_MAIN, buttonClass, chipClass } from "@/components/ui/styles";
@@ -26,7 +26,11 @@ import { rtLaden, useRaetsel } from "@/lib/raetsel/store";
 import { lageAus } from "@/lib/wundertuete/lage";
 import { loadWt, useWundertuete, wtNoch, wtZeigen } from "@/lib/wundertuete/store";
 import { istAufgedeckt, merkeAufgedeckt } from "@/lib/wundertuete/aufgedeckt";
-import { ANTIPPEN, FILTER, KOMMT_BALD, antwortTeile, sorteMeta, teilText, type Eintrag, type Filter } from "@/lib/wundertuete/sorten";
+import { ANTIPPEN, FILTER, KOMMT_BALD, WT_TONE, antwortTeile, sorteMeta, teilText, type Eintrag, type Filter } from "@/lib/wundertuete/sorten";
+import { useHomeTiles } from "@/lib/core/homeLayout";
+import type { KachelFarbe } from "@/lib/heute/kachelFarben";
+
+const SYMBOL = { gift: Gift, anchor: Anchor, bulb: Lightbulb, puzzle: Puzzle };
 
 /** Antwort mit EINEM fetten Wort */
 const Antwort = ({ text }: { text: string }) => <>{antwortTeile(text).map((t, i) => (t.fett ? <strong key={i} className="font-extrabold">{t.text}</strong> : <span key={i}>{t.text}</span>))}</>;
@@ -34,9 +38,9 @@ const Antwort = ({ text }: { text: string }) => <>{antwortTeile(text).map((t, i)
 /** Überschrift des Lösungsfelds je Sorte */
 const loesungsWort = (karte: Eintrag) => (karte.sorte === "platt" ? "Heißt" : karte.sorte === "witz" ? "Pointe" : "Lösung");
 
-function KarteGross({ karte, name, gezeigt, onAufdecken }: { karte: Eintrag; name: string; gezeigt: boolean; onAufdecken: () => void }) {
+function KarteGross({ karte, name, gezeigt, onAufdecken, farbe }: { karte: Eintrag; name: string; gezeigt: boolean; onAufdecken: () => void; farbe?: KachelFarbe }) {
   const meta = sorteMeta(karte.sorte);
-  const Icon = meta.symbol === "anchor" ? Anchor : Gift;
+  const Icon = SYMBOL[meta.symbol];
   const teilen = async () => {
     const text = teilText(karte, name);
     try {
@@ -48,7 +52,7 @@ function KarteGross({ karte, name, gezeigt, onAufdecken }: { karte: Eintrag; nam
     }
   };
   return (
-    <section className={`${CARD} wt-neu flex flex-col gap-4 p-5`} key={karte.id} data-wt-karte={karte.id} data-sorte={karte.sorte} data-tone={meta.tone} data-gezeigt={gezeigt || undefined} aria-live="polite">
+    <section className={`${CARD} wt-neu flex flex-col gap-4 p-5`} key={karte.id} data-wt-karte={karte.id} data-sorte={karte.sorte} data-tone={WT_TONE} data-farbe={farbe} data-gezeigt={gezeigt || undefined} aria-live="polite">
       <div className="flex items-center gap-2">
         <Icon className="h-4 w-4 shrink-0 text-tile-accent" strokeWidth={2} aria-hidden />
         <span className="flex-1 text-[12px] font-extrabold uppercase tracking-wider text-tile-accent">{meta.label ?? meta.titel}</span>
@@ -105,6 +109,8 @@ export function WundertueteSeite() {
     if (lage && !(karte && (f === "alles" || karte.sorte === f))) wtNoch(lage, f);
   };
   const name = helperName(profile);
+  // Farbe der Kachel gilt auch hier, für jede Sorte gleich (A-071)
+  const farbe = useHomeTiles()?.find((t) => t.id === "wundertuete")?.farbe;
   // Lösung erst nach Antippen; von der umgedrehten Kachel kommend schon aufgedeckt
   const [gezeigtId, setGezeigtId] = useState<string | null>(null);
   const gezeigt = Boolean(sichtbar && (gezeigtId === sichtbar.id || istAufgedeckt(sichtbar.id) || !sichtbar.hinten));
@@ -127,7 +133,7 @@ export function WundertueteSeite() {
         {!stand || !rt || !bereit ? (
           <div className={`${CARD} h-64 animate-pulse`} />
         ) : sichtbar ? (
-          <KarteGross key={sichtbar.id} karte={sichtbar} name={name} gezeigt={gezeigt} onAufdecken={aufdecken} />
+          <KarteGross key={sichtbar.id} karte={sichtbar} name={name} gezeigt={gezeigt} onAufdecken={aufdecken} farbe={farbe} />
         ) : (
           <section className={`${CARD} flex min-h-40 items-center justify-center p-6 text-center`} data-kommt-bald>
             <p className="text-[20px] font-extrabold leading-snug">{KOMMT_BALD[filter]}</p>

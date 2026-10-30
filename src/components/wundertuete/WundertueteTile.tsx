@@ -11,16 +11,19 @@
 // und unten rechts „Mehr ›“ (eigene Tippfläche ≥ 44 px) – nur darüber geht es
 // zur Seite /wundertuete. Nochmal antippen = zurück. Schrift immer in voller
 // Farbe (Tinte oder Kachel-Akzent, ≥ 4,5:1). An einem neuen Tag kommt von
-// selbst die nächste Karte, nie doppelt. Wasserzeichen: Anker bzw. Geschenk.
+// selbst die nächste Karte, nie doppelt. Eine Farbe für alle Sorten (A-071:
+// gewählte Kachel-Farbe, sonst Sand-Gelb `WT_TONE`); je Sorte wechseln nur
+// Symbol und Wasserzeichen (Geschenk, Anker, Glühbirne, Puzzle).
 // Beispiel-Tag: „Was heißt ‚Kiek mol an‘?“ (nie gespeichert); „Beispiel“ nur
 // für VoiceOver – sichtbar steht das eine leise Schild an der Pinnwand (Tafel 119).
 
 import Link from "next/link";
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
-import { Anchor, ChevronRight, Gift, RotateCw, type LucideIcon } from "lucide-react";
+import { Anchor, ChevronRight, Gift, Lightbulb, Puzzle, RotateCw, type LucideIcon } from "lucide-react";
 import { TILE, TILE_LABEL } from "@/components/ui/styles";
 import { KachelWasserzeichen, WASSERZEICHEN_STRICH } from "@/components/ui/KachelWasserzeichen";
 import type { TileSize } from "@/lib/core/homeLayout";
+import type { KachelFarbe } from "@/lib/heute/kachelFarben";
 import { clearDemoTile } from "@/lib/core/demo";
 import { SATZ_KURZ, useNameEinpassen, useSchriftEinpassen, type Versuch } from "@/components/wundertuete/useEinpassen";
 import { merkeAufgedeckt } from "@/lib/wundertuete/aufgedeckt";
@@ -31,9 +34,9 @@ import { lageAus } from "@/lib/wundertuete/lage";
 import type { Haushalt } from "@/lib/core/haushalt";
 import { useForecast } from "@/lib/wetter/client";
 import { BEISPIEL_KARTE } from "@/lib/wundertuete/pool";
-import { ANTIPPEN, KOMMT_BALD, antwortTeile, ohneFett, sorteMeta, type Eintrag, type SorteMeta } from "@/lib/wundertuete/sorten";
+import { ANTIPPEN, KOMMT_BALD, WT_TONE, antwortTeile, ohneFett, sorteMeta, type Eintrag, type SorteMeta } from "@/lib/wundertuete/sorten";
 
-const SYMBOL: Record<SorteMeta["symbol"], LucideIcon> = { gift: Gift, anchor: Anchor };
+const SYMBOL: Record<SorteMeta["symbol"], LucideIcon> = { gift: Gift, anchor: Anchor, bulb: Lightbulb, puzzle: Puzzle };
 
 /** Schriftstufen (px), von groß nach klein: die erste, bei der alles ganz zu sehen ist (M breiter, also größer) */
 export const TEXT_STUFEN: Record<"S" | "M", readonly number[]> = { S: [19, 17, 15.5, 14, 13, 12, 11.5], M: [23, 21, 19, 17, 15.5, 14, 13] };
@@ -57,14 +60,15 @@ const Antwort = ({ text }: { text: string }) => <>{antwortTeile(text).map((t, i)
 const ANTIPPEN_KURZ = "Antippen: Lösung";
 
 /**
- * Wasserzeichen bei „Platt för Plietsche“ (Tafel 140): ein Anker im Stil von
- * `KachelWasserzeichen` (leise, die Schrift steht frei); sonst das Geschenk
- * über `KachelWasserzeichen` direkt in der Kachel.
+ * Wasserzeichen je Sorte: das Geschenk über `KachelWasserzeichen`, sonst
+ * Anker (Platt, Tafel 140), Glühbirne (Wissen) bzw. Puzzle (Rätsel) im selben
+ * Stil (leise, die Schrift steht frei).
  */
-function Anker() {
+function Zeichen({ meta }: { meta: SorteMeta }) {
+  const Icon = SYMBOL[meta.symbol];
   return (
-    <span className="kachel-wasserzeichen pointer-events-none absolute -bottom-[30px] -right-[30px] -z-10 flex h-[150px] w-[150px] -rotate-[8deg] select-none [&>svg]:h-full [&>svg]:w-full" data-kachel="wundertuete" data-symbol="anchor" data-art="frei" aria-hidden>
-      <Anchor strokeWidth={WASSERZEICHEN_STRICH} aria-hidden />
+    <span className="kachel-wasserzeichen pointer-events-none absolute -bottom-[30px] -right-[30px] -z-10 flex h-[150px] w-[150px] -rotate-[8deg] select-none [&>svg]:h-full [&>svg]:w-full" data-kachel="wundertuete" data-symbol={meta.symbol} data-art="frei" aria-hidden>
+      <Icon strokeWidth={WASSERZEICHEN_STRICH} aria-hidden />
     </span>
   );
 }
@@ -101,10 +105,10 @@ function Kopf({ meta }: { meta: SorteMeta }) {
 }
 
 /** Alles gesehen, Mia hat (noch) nichts Neues: freundlich, nie eine Wiederholung */
-function KommtBald({ size }: { size: TileSize }) {
+function KommtBald({ size, farbe }: { size: TileSize; farbe?: KachelFarbe }) {
   return (
     <Link href="/wundertuete" className="block h-full" data-wundertuete data-kommt-bald aria-label={`Wundertüte: ${KOMMT_BALD.alles}`}>
-      <section className={`${TILE} isolate flex h-full flex-col overflow-hidden p-3`} data-tone="notizen" data-groesse={size}>
+      <section className={`${TILE} isolate flex h-full flex-col overflow-hidden p-3`} data-tone={WT_TONE} data-farbe={farbe} data-groesse={size}>
         <KachelWasserzeichen kachel="wundertuete" size={size} frei />
         <div className="flex h-[26px] shrink-0 items-center gap-1.5">
           <Gift className="h-3.5 w-3.5 shrink-0 text-tile-accent" strokeWidth={2} aria-hidden />
@@ -118,7 +122,7 @@ function KommtBald({ size }: { size: TileSize }) {
   );
 }
 
-export function WundertueteTile({ size = "S", today, minutes, haushalt, gericht, demo = false }: { size?: TileSize; today: string; minutes: number; haushalt: Haushalt; gericht: string | null; demo?: boolean; name: string }) {
+export function WundertueteTile({ size = "S", today, minutes, haushalt, gericht, demo = false, farbe }: { size?: TileSize; today: string; minutes: number; haushalt: Haushalt; gericht: string | null; demo?: boolean; name: string; farbe?: KachelFarbe }) {
   const stand = useWundertuete();
   const rt = useRaetsel();
   const { forecast } = useForecast();
@@ -131,13 +135,13 @@ export function WundertueteTile({ size = "S", today, minutes, haushalt, gericht,
   }, [demo, key]);
   const vonHeute = stand?.aktuell?.tag === lage.heute ? stand.aktuell : null;
   const karte: Eintrag | undefined = demo ? BEISPIEL_KARTE : stand && rt && vonHeute ? karteMix({ wt: stand, rt }) : undefined;
-  if (!karte && stand && !stand.aktuell && stand.gesehen.length) return <KommtBald size={size} />;
-  if (!karte) return <section className={`${TILE} h-full animate-pulse`} data-tone="notizen" aria-label="Wundertüte" data-groesse={size} />;
-  return <Karte key={karte.id} karte={karte} size={size} demo={demo} />;
+  if (!karte && stand && !stand.aktuell && stand.gesehen.length) return <KommtBald size={size} farbe={farbe} />;
+  if (!karte) return <section className={`${TILE} h-full animate-pulse`} data-tone={WT_TONE} data-farbe={farbe} aria-label="Wundertüte" data-groesse={size} />;
+  return <Karte key={karte.id} karte={karte} size={size} demo={demo} farbe={farbe} />;
 }
 
 /** Die Karte zum Umdrehen: vorn die Frage, hinten die Lösung im weißen Feld und „Mehr ›“ */
-function Karte({ karte, size, demo }: { karte: Eintrag; size: TileSize; demo: boolean }) {
+function Karte({ karte, size, demo, farbe }: { karte: Eintrag; size: TileSize; demo: boolean; farbe?: KachelFarbe }) {
   const [gedreht, setGedreht] = useState(false);
   const meta = sorteMeta(karte.sorte);
   const stufe = size === "M" ? "M" : "S";
@@ -168,8 +172,8 @@ function Karte({ karte, size, demo }: { karte: Eintrag; size: TileSize; demo: bo
     <div className="wt-karte wt-neu relative block h-full min-h-0 select-none" data-karte={karte.id} data-sorte={karte.sorte} data-groesse={size} data-gedreht={gedreht || undefined} data-wundertuete>
       <div role="button" tabIndex={0} aria-pressed={gedreht} aria-label={label} onClick={drehen} onKeyDown={taste} className="wt-buehne absolute inset-0 rounded-card outline-none" data-drehen>
         <div className="wt-dreh relative h-full w-full">
-          <section className={`wt-seite wt-vorne isolate ${flaeche}`} data-tone={meta.tone} inert={gedreht} data-seite-karte="vorn">
-            {meta.symbol === "anchor" ? <Anker /> : <KachelWasserzeichen kachel="wundertuete" size={size} frei />}
+          <section className={`wt-seite wt-vorne isolate ${flaeche}`} data-tone={WT_TONE} data-farbe={farbe} inert={gedreht} data-seite-karte="vorn">
+            {meta.symbol === "gift" ? <KachelWasserzeichen kachel="wundertuete" size={size} frei /> : <Zeichen meta={meta} />}
             {kopf}
             <Eingepasst stufen={TEXT_STUFEN[stufe]} text={`${karte.id}|${size}|vorn`} versuche={VORN}>
               <p className="font-extrabold leading-[1.2]" data-frage>
@@ -186,8 +190,8 @@ function Karte({ karte, size, demo }: { karte: Eintrag; size: TileSize; demo: bo
               </span>
             </span>
           </section>
-          <section className={`wt-seite wt-hinten isolate ${flaeche}`} data-tone={meta.tone} inert={!gedreht} data-seite-karte="hinten">
-            {meta.symbol === "anchor" ? <Anker /> : <KachelWasserzeichen kachel="wundertuete" size={size} frei />}
+          <section className={`wt-seite wt-hinten isolate ${flaeche}`} data-tone={WT_TONE} data-farbe={farbe} inert={!gedreht} data-seite-karte="hinten">
+            {meta.symbol === "gift" ? <KachelWasserzeichen kachel="wundertuete" size={size} frei /> : <Zeichen meta={meta} />}
             {kopf}
             <Eingepasst stufen={HINTEN_STUFEN[stufe]} text={`${karte.id}|${size}|hinten`} versuche={HINTEN}>
               <p className="text-[0.8em] font-extrabold leading-[1.2]" data-frage>
