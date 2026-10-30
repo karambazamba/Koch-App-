@@ -148,3 +148,16 @@ describe("Anmeldung: genauer Satz je Ursache", () => {
     expect(sync).toMatch(/merke\("push_abgelehnt"\)/);
   });
 });
+
+describe("Abo speichern (Ursache von abo_abgelehnt)", () => {
+  it("die Abo-Route speichert über push_abo_speichern(), nicht mehr per Upsert auf der Tabelle", () => {
+    const route = readFileSync("src/app/api/push/abo/route.ts", "utf8");
+    expect(route).toMatch(/rpc\/push_abo_speichern/);
+    expect(route).not.toMatch(/on_conflict=endpoint/);
+    const sql = readFileSync("supabase/migrations/20261113120000_push_abo_speichern.sql", "utf8");
+    expect(sql).toMatch(/security definer/);
+    expect(sql).toMatch(/uid uuid := auth\.uid\(\);\n  hh uuid := public\.my_household\(\);/);
+    expect(sql).toMatch(/delete from public\.push_abos where endpoint = p_endpoint and user_id <> uid;/);
+    expect(sql).toMatch(/grant execute on function public\.push_abo_speichern\(text, text, text, jsonb\) to authenticated;/);
+  });
+});

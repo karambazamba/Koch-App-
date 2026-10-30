@@ -1,6 +1,7 @@
 // Abo eines Geräts speichern (POST) bzw. löschen (DELETE) – mit der Sitzung
-// des Kontos („Authorization: Bearer …“). Geschrieben wird ALS dieses Konto,
-// RLS sorgt dafür, dass nur eigene Abos im eigenen Haushalt gehen. Nichts
+// des Kontos („Authorization: Bearer …“). Gespeichert wird ALS dieses Konto
+// über push_abo_speichern() (setzt Konto und Haushalt selbst, ersetzt den
+// Eintrag eines anderen Kontos auf demselben Gerät); gelöscht mit RLS. Nichts
 // wird protokolliert.
 
 import { clientIp } from "@/lib/begleitung/guard";
@@ -30,12 +31,11 @@ export async function POST(request: Request) {
   if (!endpoint?.startsWith("https://") || !p256dh || !auth) return Response.json({ error: "ungueltig" }, { status: 400 });
   const settings = body.settings && typeof body.settings === "object" ? body.settings : {};
   try {
-    const me = await user.rest<{ household_id: string }[]>("members?select=household_id&limit=1");
-    if (!me.ok) return Response.json({ error: "nicht_angemeldet" }, { status: 401 });
-    // RLS zeigt nur Mitglieder des eigenen Haushalts – alle haben denselben
-    const household = me.data?.[0]?.household_id ?? null;
-    const saved = await user.rest("push_abos?on_conflict=endpoint", { method: "POST", prefer: "resolution=merge-duplicates,return=minimal", body: { endpoint, p256dh, auth, household_id: household, settings } });
+    // A-069: über push_abo_speichern() (security definer) – das Upsert über PostgREST setzte auch endpoint,
+    // dafür hat „authenticated“ kein UPDATE-Recht (42501 → 403). Konto und Haushalt setzt die Funktion selbst.
+    const saved = await user.rest("rpc/push_abo_speichern", { method: "POST", body: { p_endpoint: endpoint, p_p256dh: p256dh, p_auth: auth, p_settings: settings } });
     if (saved.ok) return Response.json({ ok: true });
+    if ((saved.data as { code?: string } | null)?.code === "28000") return Response.json({ error: "nicht_angemeldet" }, { status: 401 });
     // A-069: genau sagen, woran es liegt (Tabelle fehlt, RLS/Konto abgelehnt)
     const error = saved.status === 404 ? "tabelle_fehlt" : saved.status === 401 || saved.status === 403 ? "abgelehnt" : "fehler";
     return Response.json({ error }, { status: saved.status === 401 || saved.status === 403 ? 403 : 502 });
