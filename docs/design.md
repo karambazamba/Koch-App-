@@ -16,7 +16,7 @@ Grundregeln stehen in CLAUDE.md, Abschnitt 7.
   Aufgaben Mint, Einkauf Salbei, Pinnwand Rosé, Notizen Vanille, Im Haus Aqua,
   Sport Flieder, Timer Sand; im Bearbeiten unter XS · S · M „A“ (bei XS hinter dem Farb-Knopf) (automatisch) +
   diese 8 Töne, ein Tipp = übernommen, keine freie Farbwahl, Schrift kommt mit
-  dem Ton; Wetter und Essen ohne Auswahl; gespeichert pro Person in der
+  dem Ton; Wetter und Essen ohne Auswahl (die Wundertüte hat seit A-071 eine Farbe für alle Sorten); gespeichert pro Person in der
   Startseiten-Anordnung (`farbe`, `data-farbe`), bei „Schlicht“ nur für
   Überschrift/Symbol.
 - Wasserzeichen (Tafel 124 A/125, `ui/KachelWasserzeichen`; A-048/Tafel 135:

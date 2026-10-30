@@ -2,7 +2,8 @@
 // Kachel (Termine Lavendel, Aufgaben Mint …). Wer mag, gibt einer Kachel im
 // Bearbeiten-Modus einen anderen Ton – nur aus dieser Palette, keine freie
 // Farbwahl; „A“ = automatisch (ihre Standardfarbe). Die Schriftfarbe (-ac)
-// kommt mit dem Ton. Wetter (Himmel) und Essen (Bild) haben keine Auswahl.
+// kommt mit dem Ton. Wetter (Himmel) und Essen (Bild) haben keine Auswahl;
+// die Wundertüte hat eine Farbe für alle Sorten (A-071).
 // Gespeichert pro Person in der Startseiten-Anordnung (`core/homeLayout`).
 // Oberfläche: `data-farbe="<ton>"` (CSS in globals.css nutzt die Tokens der
 // Kachel, deren Standard der Ton ist).
@@ -23,8 +24,8 @@ export const KACHEL_FARBEN: { id: KachelFarbe; label: string; kachel: string }[]
 
 const IDS = KACHEL_FARBEN.map((f) => f.id);
 
-/** Wetter und Essen behalten Himmel bzw. Bild, die Wundertüte wechselt die Farbe mit der Sorte */
-const OHNE_FARBWAHL: readonly string[] = ["wetter", "essen", "wundertuete"];
+/** Wetter und Essen behalten Himmel bzw. Bild (die Wundertüte hat seit A-071 eine Farbe für alle Sorten) */
+const OHNE_FARBWAHL: readonly string[] = ["wetter", "essen"];
 
 /** Darf diese Kachel eine eigene Farbe haben? */
 export const farbWaehlbar = (kachel: string) => !OHNE_FARBWAHL.includes(kachel);

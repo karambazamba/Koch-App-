@@ -449,7 +449,7 @@ export function TodayPage({ data, entries, minutes, realMinutes, onOpenFood }: {
       case "tipps":
         return <TipsTile size={tile.size} today={data.todayIso} />;
       case "wundertuete":
-        return <WundertueteTile size={tile.size} today={data.todayIso} minutes={minutes} haushalt={haushalt} gericht={dish} demo={demoDay.tiles.includes("wundertuete")} name={helperName(data.profile)} />;
+        return <WundertueteTile size={tile.size} today={data.todayIso} minutes={minutes} haushalt={haushalt} gericht={dish} demo={demoDay.tiles.includes("wundertuete")} name={helperName(data.profile)} farbe={tile.farbe} />;
       default:
         return null;
     }

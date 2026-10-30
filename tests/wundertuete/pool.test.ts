@@ -107,7 +107,7 @@ describe("Pakete: Inhalt", () => {
 
 describe("Sorten, Kachel-Texte, Teilen", () => {
   it("vier Sorten (A-064: Rätsel dazu) mit Titel je Sorte (Tafel 140), Symbol, Farbe aus der Palette; KI für Witze und Rätsel", () => {
-    expect(SORTEN.map((s) => `${s.id}:${s.titel}:${s.symbol}:${s.tone}:${s.ki}`)).toEqual(["witz:Wundertüte:gift:notizen:true", "platt:Platt för Plietsche:anchor:aufgaben:false", "angeberwissen:Wundertüte:gift:sport:false", "raetsel:Wundertüte:gift:essen:true"]);
+    expect(SORTEN.map((s) => `${s.id}:${s.titel}:${s.symbol}:${s.ki}`)).toEqual(["witz:Wundertüte:gift:true", "platt:Platt för Plietsche:anchor:false", "angeberwissen:Wundertüte:bulb:false", "raetsel:Wundertüte:puzzle:true"]);
     for (const s of SORTEN) {
       expect(`${s.titel}|${s.kurz}`).not.toMatch(/…|\.\.\./);
       expect(s.kurz.length).toBeLessThanOrEqual(s.titel.length);

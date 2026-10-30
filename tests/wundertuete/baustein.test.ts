@@ -6,7 +6,7 @@
 import { readFileSync } from "node:fs";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { fakeWindow, noBrowser } from "../helpers";
-import { DEFAULT_HOME, ersteStartseite, homeForHaushalt, migrateHome, sanitizeHome, tileMeta, type HomeTile } from "@/lib/core/homeLayout";
+import { DEFAULT_HOME, applyHomeChange, ersteStartseite, homeForHaushalt, migrateHome, sanitizeHome, tileMeta, type HomeTile } from "@/lib/core/homeLayout";
 import { rasterOf } from "@/lib/heute/raster";
 import { farbWaehlbar } from "@/lib/heute/kachelFarben";
 import { BAUSTEINE, LAUNCH_AUS } from "@/lib/core/features";
@@ -15,6 +15,7 @@ import { kontext, rufe } from "../begleitung/werkzeugKontext";
 import { PRUEFSAETZE } from "@/lib/begleitung/pruefstand/saetze";
 import { toolDefinitions } from "@/lib/begleitung/toolset";
 import { TEXT_STUFEN } from "@/components/wundertuete/WundertueteTile";
+import { SORTEN, WT_TONE } from "@/lib/wundertuete/sorten";
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -84,9 +85,29 @@ describe("Kachel: Anordnung", () => {
     expect(shown(homeForHaushalt(neu, "familie", "allein"))).not.toContain("pinnwand:S");
   });
 
-  it("Größen S und M, keine eigene Farbwahl (die Farbe kommt mit der Sorte), NEU in der Auswahl", () => {
+  it("Größen S und M, Farbe wählbar wie bei allen Kacheln (A-071), NEU in der Auswahl", () => {
     expect(tileMeta("wundertuete")).toMatchObject({ sizes: ["S", "M"], size: "S", feature: "wundertuete", fresh: true });
-    expect(farbWaehlbar("wundertuete")).toBe(false);
+    expect(farbWaehlbar("wundertuete")).toBe(true);
+  });
+
+  it("A-071: gewählte Farbe bleibt nach Neustart (Speichern und Laden), „A“ = wieder Sand-Gelb", () => {
+    const mit = applyHomeChange(ersteStartseite("familie"), { tile: "wundertuete", action: "farbe", farbe: "aqua" });
+    const neu = migrateHome(JSON.parse(JSON.stringify({ version: 10, tiles: mit, tipSeen: true, kreise: [] })))!.tiles;
+    expect(neu.find((t) => t.id === "wundertuete")?.farbe).toBe("aqua");
+    const auto = applyHomeChange(neu, { tile: "wundertuete", action: "farbe", farbe: "auto" });
+    expect(auto.find((t) => t.id === "wundertuete")?.farbe).toBeUndefined();
+  });
+
+  it("A-071: eine Farbe für alle Sorten; Kachel und Seite (auch nach „Noch eine“) tragen dieselbe, nur das Symbol wechselt", () => {
+    expect(WT_TONE).toBe("notizen");
+    expect(SORTEN.map((s) => `${s.id}:${s.symbol}`)).toEqual(["witz:gift", "platt:anchor", "angeberwissen:bulb", "raetsel:puzzle"]);
+    expect(SORTEN.some((s) => "tone" in s)).toBe(false);
+    expect(readFileSync("src/components/wundertuete/WundertueteTile.tsx", "utf8")).not.toMatch(/meta\.tone/);
+    expect(readFileSync("src/components/wundertuete/WundertueteTile.tsx", "utf8").match(/data-tone=\{WT_TONE\} data-farbe=\{farbe\}/g)?.length).toBeGreaterThanOrEqual(4);
+    const seite = readFileSync("src/components/wundertuete/WundertueteSeite.tsx", "utf8");
+    expect(seite).toContain("data-tone={WT_TONE} data-farbe={farbe}");
+    expect(seite).toMatch(/useHomeTiles\(\)\?\.find\(\(t\) => t\.id === "wundertuete"\)\?\.farbe/);
+    expect(readFileSync("src/components/heute/TodayPage.tsx", "utf8")).toMatch(/<WundertueteTile[^>]*farbe=\{tile\.farbe\}/);
   });
 
   it("Beispiel-Tag: zeigt die Wundertüte (feste Karte), bis eigenes Antippen sie leert", () => {
@@ -135,11 +156,10 @@ describe("Kachel: Oberfläche (A-052, Tafel 137/140)", () => {
     expect(code).not.toMatch(/hyphens-auto|text-muted|text-faint|text-tile-label|opacity-/);
   });
 
-  it("Wasserzeichen je Sorte: Anker bei Platt, sonst Geschenk; Farben nur über Tokens, kein Emoji", () => {
-    expect(code).toMatch(/SYMBOL: Record<SorteMeta\["symbol"\], LucideIcon> = \{ gift: Gift, anchor: Anchor \}/);
-    expect(code).toContain('{meta.symbol === "anchor" ? <Anker /> : <KachelWasserzeichen kachel="wundertuete" size={size} frei />}');
+  it("Wasserzeichen je Sorte: Geschenk, Anker, Glühbirne, Puzzle; Farben nur über Tokens, kein Emoji", () => {
+    expect(code).toMatch(/SYMBOL: Record<SorteMeta\["symbol"\], LucideIcon> = \{ gift: Gift, anchor: Anchor, bulb: Lightbulb, puzzle: Puzzle \}/);
+    expect(code).toContain('{meta.symbol === "gift" ? <KachelWasserzeichen kachel="wundertuete" size={size} frei /> : <Zeichen meta={meta} />}');
     expect(code).not.toMatch(/#[0-9a-f]{3,6}\b|var\(--color-|rgb\(/i);
-    expect(code).toMatch(/data-tone=\{meta\.tone\}/);
     expect(code).not.toMatch(/\p{Extended_Pictographic}/u);
   });
 

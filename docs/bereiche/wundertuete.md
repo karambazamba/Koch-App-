@@ -48,11 +48,17 @@ Wort oder Angeberwissen; die Rätsel sind für die Kinder am Tisch.
 
 ## Sorten der Wundertüte
 
-| Sorte | ID | Kachel-Titel | Kleine Sorte | Farbe (Tokens) | Symbol/Wasserzeichen | Unten | Quelle | KI |
-|---|---|---|---|---|---|---|---|---|
-| Witze | `witz` | Wundertüte | WITZ | Vanille (`notizen`) | Geschenk | „Antippen für die Lösung“ (Pointe hinten) | – | ja |
-| Plattdeutsch | `platt` | Platt för Plietsche | – | Mint (`aufgaben`) | Anker | „Antippen für die Lösung“ | Pflicht | nein |
-| Angeberwissen | `angeberwissen` | Wundertüte | ANGEBERWISSEN | Flieder (`sport`) | Geschenk | „Antippen für die Lösung“ | Pflicht | nein |
+Farbe (A-071): EINE für alle Sorten, wählbar wie bei jeder Kachel
+(Startseite bearbeiten → Farbpunkte, Tafel 108); ohne eigene Wahl Sand-Gelb
+(`WT_TONE` = Tokens `notizen`). Die Karte auf der Seite (auch nach „Noch
+eine“) trägt dieselbe Farbe. Je Sorte wechseln nur Symbol und Wasserzeichen.
+
+| Sorte | ID | Kachel-Titel | Kleine Sorte | Symbol/Wasserzeichen | Unten | Quelle | KI |
+|---|---|---|---|---|---|---|---|
+| Witze | `witz` | Wundertüte | WITZ | Geschenk | „Antippen für die Lösung“ (Pointe hinten) | – | ja |
+| Plattdeutsch | `platt` | Platt för Plietsche | – | Anker | „Antippen für die Lösung“ | Pflicht | nein |
+| Angeberwissen | `angeberwissen` | Wundertüte | ANGEBERWISSEN | Glühbirne | „Antippen für die Lösung“ | Pflicht | nein |
+| Rätsel | `raetsel` | Wundertüte | RÄTSEL | Puzzle | „Antippen für die Lösung“ | – | ja |
 
 ## Wo im Code
 
