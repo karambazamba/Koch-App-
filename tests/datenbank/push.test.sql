@@ -37,6 +37,11 @@ select erwarte_fehler(format('insert into public.push_abos (household_id, endpoi
 select erwarte_fehler('insert into public.push_abos (endpoint, p256dh, auth) values (''http://unsicher'', ''p256dh-schluessel'', ''auth-geheim'')', 'check', 'nur https');
 select erwarte_fehler('select * from public.push_config', 'permission denied', 'Schlüssel nie für Angemeldete');
 select erwarte_fehler('select * from public.push_gesendet', 'permission denied', 'Versand-Liste nie für Angemeldete');
+-- A-069: Läufe, Protokoll, Tests und Status nur für die Service-Rolle
+select erwarte_fehler('select * from public.push_laeufe', 'permission denied', 'Läufe nie für Angemeldete');
+select erwarte_fehler('select * from public.push_protokoll', 'permission denied', 'Protokoll nie für Angemeldete');
+select erwarte_fehler('select * from public.push_tests', 'permission denied', 'Test-Erinnerungen nie für Angemeldete');
+select erwarte_fehler('select public.push_cron_status()', 'permission denied', 'Zeitplan-Status nie für Angemeldete');
 
 -- Ben sieht Annas Abo nicht und kann es nicht löschen
 select set_config('request.jwt.claim.sub', 'b8888888-2222-2222-2222-222222222222', false);
@@ -53,4 +58,6 @@ reset role;
 set role anon;
 select erwarte_fehler('select * from public.push_abos', 'permission denied', 'anon sieht keine Abos');
 select erwarte_fehler('select * from public.push_config', 'permission denied', 'anon sieht keine Schlüssel');
+select erwarte_fehler('select * from public.push_protokoll', 'permission denied', 'anon sieht kein Protokoll');
 reset role;
+select pruefe((public.push_cron_status() ->> 'ziel') is not null, 'Status für die Service-Rolle lesbar');

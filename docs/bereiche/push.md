@@ -88,9 +88,52 @@ Nichts geht verloren.
   `push_config` und `push_gesendet` (nur Service-Rolle). Test:
   `tests/datenbank/push.test.sql`.
 
+## Zuverlässig und nachprüfbar (A-069)
+
+- Ursache „kommt nur bei offener App“: Server-Versand hängt an drei Dingen,
+  die vorher niemand sehen konnte: pg_cron + pg_net in Supabase, der Zeitplan
+  „mia-push-senden“ und die Adresse in `push_config.base_url` (stand dort
+  eine geschützte Vorschau-Adresse, lief jeder Aufruf ins Leere). Dazu ein
+  Abo dieses Geräts.
+- Migration `20261112120000_push_zuverlaessig.sql`: Erweiterungen mit den
+  Schemas, die Supabase erwartet (`pg_net` in `extensions`), Zeitplan neu,
+  `push_laeufe` (jeder Lauf, Technik-Zahlen), `push_protokoll` (Zeit, Art,
+  Status je Versand, Haushalt, 7 Tage), `push_tests` und
+  `push_cron_status()` – alles nur Service-Rolle.
+- `GET /api/push/schluessel` zieht `base_url` auf der echten App
+  (`VERCEL_ENV=production`) immer nach.
+- `/api/push/senden` schreibt jeden Lauf (auch ohne Abos), schickt fällige
+  Test-Erinnerungen mit, protokolliert jeden Versand (nie Inhalt).
+- Einstellungen → Mitteilungen (`PushStatus`): „Auf dem Homescreen“,
+  „Mitteilungen erlaubt“, „Mit Konto verbunden“, „Mia schickt auch bei
+  geschlossener App“ (= Zeitplan da + Adresse da + Abo + letzter Lauf vor
+  weniger als 5 Min, `pushStatus.ts`), bei jedem „nein“ ein Satz. Knopf
+  „Test: in 1 Minute erinnern“ (`POST /api/push/test`, über den Server – App
+  schließen und warten). Öffnen der Seite frischt das Abo auf.
+- „Für Entwickler“ → „Mitteilungen (Server)“ (`GET /api/push/protokoll`):
+  letzter Lauf, Abos im Haushalt, letzte 10 Versände (Zeit, Art, Status).
+- Antippen einer Erinnerung öffnet den Termin selbst (`/tag?datum=…&eintrag=…`).
+- Verpasst ein Lauf die Minute, kommt die Erinnerung bis 5 Min danach noch.
+
+### Falls „Zeitplan im Server ist aus“ (Supabase-Dashboard, ohne Schlüssel)
+
+1. supabase.com → Projekt „was-gibts“ öffnen.
+2. Links „Database“ → „Extensions“: nach `pg_cron` suchen, Schalter an
+   (Schema bleibt `pg_catalog`). Dann `pg_net` suchen, Schalter an (Schema
+   `extensions`).
+3. Links „Integrations“ → „Cron“ (bzw. „Database“ → „Cron Jobs“): dort muss
+   „mia-push-senden“ mit „* * * * *“ stehen. Fehlt er: den nächsten Merge
+   abwarten (die Migration legt ihn an) oder unter „Database“ → „Migrations“
+   die Migration `20261112120000_push_zuverlaessig` erneut anstoßen.
+4. In der App einmal Einstellungen → Mitteilungen öffnen (meldet das Gerät
+   an und setzt die Adresse), dann „Test: in 1 Minute erinnern“.
+
 ## Tests
 
 - `tests/heute/erinnerungen.test.ts` (Zeitpunkte, Texte, Ruhe, Pause, Frage-
   Zeitpunkt, kein Fragen beim ersten Start, Anleitung ohne Homescreen, Chip).
 - `tests/heute/pushVersand.test.ts` (wer bekommt was, Pause, 1-pro-Tag, nie doppelt).
 - `tests/heute/tagesphasen.test.ts` (`pushAllowed`).
+- `tests/heute/pushZuverlaessig.test.ts` (30 Min vorher, abends 21 Uhr,
+  Pause, „Ich“ nur an mich, Status ohne Abo „nein“, Test, Protokoll-Art).
+- `tests/datenbank/push.test.sql` (Läufe, Protokoll, Tests, Status nur Service-Rolle).

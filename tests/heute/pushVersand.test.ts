@@ -37,7 +37,7 @@ describe("Erinnerungen vom Server", () => {
     const by = (id: string) => out.filter((m) => m.aboId === id).map((m) => m.payload.body).sort();
     expect(by("A")).toEqual(["In 30 Min: Kunde · 16:00", "In 30 Min: Zahnarzt · 16:00", "Jetzt: Wäsche · 15:30"]);
     expect(by("B")).toEqual(["In 30 Min: Zahnarzt · 16:00", "Jetzt: Paket · 15:30"]);
-    expect(out[0].payload).toMatchObject({ title: "Mia", href: `/tag?datum=${T}` });
+    expect(out[0].payload).toMatchObject({ title: "Mia", href: expect.stringMatching(new RegExp(`^/tag\\?datum=${T}&eintrag=`)) });
   });
 
   it("nie doppelt, Pause = Ruhe, Schalter aus = nichts, Absender aus den Einstellungen", () => {

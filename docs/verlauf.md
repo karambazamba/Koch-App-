@@ -6,6 +6,16 @@ ist inzwischen anders. Den aktuellen Stand je Bereich beschreibt
 `docs/bereiche/<bereich>.md`, die festen Regeln stehen in `CLAUDE.md`.
 Ältere Pfadangaben meinen die Orte vor dem Umzug (siehe CLAUDE.md, „Ordner“).
 
+## Erinnerungen bei geschlossener App zuverlässig (A-069, v0.177.0)
+
+- Server-Versand nachprüfbar: jeder Lauf und jeder Versand wird mit
+  Technik-Zahlen bzw. Art und Status festgehalten (nie Inhalt), Zeitplan und
+  Erweiterungen per Migration neu, Adresse für den Zeitplan zieht auf der
+  echten App nach.
+- Einstellungen → Mitteilungen: vier Zeilen ja/nein mit Satz bei „nein“,
+  „Test: in 1 Minute erinnern“ über den Server. Erinnerung antippen öffnet
+  den Termin. „Für Entwickler“: letzter Lauf, Abos, letzte 10 Versände.
+
 ## Großer fester Vorrat: jede Sorte 180 Karten (A-068, v0.176.0)
 
 - Paket 002: 148 Witze, 90 Plattdeutsch (Sass bzw. Duden „norddeutsch“, ohne

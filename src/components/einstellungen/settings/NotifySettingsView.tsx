@@ -3,7 +3,9 @@
 // /profil/mitteilungen (Tafel 77): Status der Erlaubnis (mit Anleitung, wenn
 // abgelehnt bzw. im Safari-Tab), Standard-Erinnerung für neue Termine,
 // Schalter je Art (mit Konto auch „Familie beim Einkaufen Bescheid sagen“),
-// Ruhezeit 20–7 Uhr (fest) und Pause. Pro Gerät.
+// Ruhezeit 20–7 Uhr (fest) und Pause. Pro Gerät. A-069: darunter der
+// ehrliche Status („Mia schickt auch bei geschlossener App: ja/nein“) und
+// „Test: in 1 Minute erinnern“ (`PushStatus`).
 
 import { useState } from "react";
 import { Bell, CalendarClock, HandHelping, Megaphone, Palmtree, Pin, ShoppingBasket, Sunrise } from "lucide-react";
@@ -15,6 +17,7 @@ import { iosTab, requestNotifyPermission, useNotifyPermission } from "@/lib/heut
 import { setBescheidAnswer, useBescheid } from "@/lib/einkauf/unterwegs/unterwegs";
 import { useCachedAccount } from "@/lib/konten/cache";
 import { ChoiceCards, Group, Row, SettingsPage, SwitchRow } from "@/components/einstellungen/settings/SettingsParts";
+import { PushStatus } from "@/components/heute/mitteilungen/PushStatus";
 
 const ICONS: Record<NotifyKind, typeof Bell> = { erinnerungen: CalendarClock, pinnwand: Pin, abgeben: HandHelping, einkauf: ShoppingBasket, morgen: Sunrise };
 
@@ -46,6 +49,9 @@ export function NotifySettingsView() {
                 <p className="text-sm text-muted">{iosTab() ? `Auf dem iPhone geht das, wenn ${APP_NAME} auf dem Home-Bildschirm liegt: Teilen → „Zum Home-Bildschirm“.` : "Dieser Browser kann keine Mitteilungen. Erinnerungen stehen trotzdem oben auf Heute."}</p>
               )}
             </div>
+
+            {/* A-069: ehrlicher Status + Test über den Server */}
+            <PushStatus permission={permission} />
 
             <h2 className={`mt-2 px-1 ${SECTION_TITLE}`}>Neue Termine erinnern</h2>
             <ChoiceCards label="Standard-Erinnerung" value={s.defaultReminder} onChange={(defaultReminder) => changeNotify((x) => ({ ...x, defaultReminder }))} options={REMINDERS.filter((r) => r.value !== "15").map((r) => ({ value: r.value, label: r.label }))} />

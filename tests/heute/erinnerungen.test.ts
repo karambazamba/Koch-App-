@@ -16,7 +16,7 @@ const item = (e: ReturnType<typeof termin>, date = TODAY) => itemsForDay([e], da
 describe("Wann erinnert wird", () => {
   it("Termin: n Minuten vorher, mit Uhrzeit und Ort im Text", () => {
     const m = reminderFor(item(termin({ title: "Zahnarzt Jonne", date: TODAY, start: "16:00", reminder: "30", place: "Praxis Dr. Krüger" })));
-    expect(m).toMatchObject({ date: TODAY, minute: 15 * 60 + 30, body: "In 30 Min: Zahnarzt Jonne · 16:00 · Praxis Dr. Krüger", href: `/tag?datum=${TODAY}`, kind: "termin-familie" });
+    expect(m).toMatchObject({ date: TODAY, minute: 15 * 60 + 30, body: "In 30 Min: Zahnarzt Jonne · 16:00 · Praxis Dr. Krüger", href: expect.stringMatching(new RegExp(`^/tag\\?datum=${TODAY}&eintrag=`)), kind: "termin-familie" });
   });
 
   it("1 Stunde, 10 Minuten, über Mitternacht zurück", () => {
