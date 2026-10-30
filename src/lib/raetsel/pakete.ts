@@ -6,6 +6,7 @@
 
 import type { Paket } from "@/lib/wundertuete/vorrat";
 import paket001 from "@/content/raetsel/paket-001.json";
+import paket002 from "@/content/raetsel/paket-002.json";
 
 /** Ein Rätsel, wie es im Paket steht (die Lösung mit genau einem **fetten** Wort) */
 export type RaetselRoh = { id: string; frage: string; loesung: string };
@@ -14,4 +15,4 @@ export type RaetselRoh = { id: string; frage: string; loesung: string };
 export const PAKET_GROESSE = 500;
 
 /** Alle Pakete, ältestes zuerst */
-export const RAETSEL_PAKETE = [paket001] as Paket<RaetselRoh>[];
+export const RAETSEL_PAKETE = [paket001, paket002] as Paket<RaetselRoh>[];

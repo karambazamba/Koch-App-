@@ -6,6 +6,15 @@ ist inzwischen anders. Den aktuellen Stand je Bereich beschreibt
 `docs/bereiche/<bereich>.md`, die festen Regeln stehen in `CLAUDE.md`.
 Ältere Pfadangaben meinen die Orte vor dem Umzug (siehe CLAUDE.md, „Ordner“).
 
+## Großer fester Vorrat: jede Sorte 180 Karten (A-068, v0.176.0)
+
+- Paket 002: 148 Witze, 90 Plattdeutsch (Sass bzw. Duden „norddeutsch“, ohne
+  ausgedachte Beispielsätze), 89 Rätsel mit eindeutiger Lösung. Damit hat
+  jede Sorte 180 feste Karten; Mias KI-Nachschub ist nur noch Reserve.
+- Neue Karten vorher gegen alle vorhandenen geprüft
+  (`tests/wundertuete/paket002.test.ts`), dazu die bisherigen Ton- und
+  Dubletten-Regeln.
+
 ## Läden einrichten, Mia verteilt automatisch (A-067, Tafel 151 + Nachtrag, v0.175.0)
 
 - Einmal sagen, wo der Haushalt was kauft: drei Schritte beim ersten Öffnen

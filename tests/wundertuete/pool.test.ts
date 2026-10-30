@@ -91,10 +91,11 @@ describe("Pakete: Inhalt", () => {
 
   it("genug für den Anfang: Angeberwissen, Platt, Witze und Rätsel gut gefüllt", () => {
     const zahl = Object.fromEntries(SORTE_IDS.map((s) => [s, eintraegeDer(s).length]));
-    expect(zahl.angeberwissen).toBeGreaterThanOrEqual(175);
-    expect(zahl.platt).toBeGreaterThanOrEqual(90);
-    expect(zahl.witz).toBeGreaterThanOrEqual(30);
-    expect(RAETSEL.length).toBeGreaterThanOrEqual(90);
+    // A-068: jede Sorte mindestens 180 feste Karten
+    expect(zahl.angeberwissen).toBeGreaterThanOrEqual(180);
+    expect(zahl.platt).toBeGreaterThanOrEqual(180);
+    expect(zahl.witz).toBeGreaterThanOrEqual(180);
+    expect(RAETSEL.length).toBeGreaterThanOrEqual(180);
   });
 
   it("„Schietwedder“ nur bei Regen", () => {
