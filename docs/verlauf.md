@@ -6,6 +6,16 @@ ist inzwischen anders. Den aktuellen Stand je Bereich beschreibt
 `docs/bereiche/<bereich>.md`, die festen Regeln stehen in `CLAUDE.md`.
 Ältere Pfadangaben meinen die Orte vor dem Umzug (siehe CLAUDE.md, „Ordner“).
 
+## Impressum (A-070, v0.180.0)
+
+- `/impressum` mit Felix’ Wortlaut aus `IMPRESSUM` (`datenschutz/rechtstexte.ts`),
+  Betreiber-Angaben in `BETREIBER` echt (KARAMBA Eis GmbH) → das Band
+  „Entwurf“ entfällt auf allen Rechtsseiten; der Satz „Entwurf – juristisch
+  prüfen“ bleibt unten auf Datenschutz und Nutzungsbedingungen.
+- `RechtLinks` jetzt „Impressum · Datenschutz · Nutzungsbedingungen“ mit
+  Punkten; neu unten in „Für wen?“, Zugangscode, abgelaufener Einladung und
+  „Bevor’s losgeht“.
+
 ## Abo speichern ohne Rechte-Fehler (A-069, v0.179.0)
 
 - Ursache von „abo_abgelehnt“: Das Upsert über PostgREST setzte im

@@ -271,7 +271,7 @@ export const hallo2 = async (page, check) => {
   const zeile = page.getByText("Gemacht in Eutin von KARAMBA Eis");
   check((await zeile.evaluate((el) => el.getClientRects().length)) === 1, "Zeile 1 bricht nicht um");
   const rechtlich = page.locator("[data-hello-marke] nav");
-  check((await rechtlich.getByRole("link", { name: "Nutzungsbedingungen" }).isVisible()) && (await rechtlich.getByRole("link", { name: "Datenschutz" }).isVisible()) && (await rechtlich.getByRole("link", { name: "Impressum" }).isVisible()), "darunter „Nutzungsbedingungen · Datenschutz · Impressum“");
+  check((await rechtlich.getByRole("link", { name: "Nutzungsbedingungen" }).isVisible()) && (await rechtlich.getByRole("link", { name: "Datenschutz" }).isVisible()) && (await rechtlich.getByRole("link", { name: "Impressum" }).isVisible()), "darunter „Impressum · Datenschutz · Nutzungsbedingungen“");
   const nb = await rechtlich.boundingBox();
   const unten = page.viewportSize().height - (nb.y + nb.height);
   check(unten >= 30 && unten <= 60, `Zeile 2 sitzt ca. 40 px über der Unterkante (${Math.round(unten)} px)`); // große Handys; auf dem SE (≤ 620 px hoch) etwas weniger, damit alles ins Bild passt
