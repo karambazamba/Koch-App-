@@ -35,7 +35,10 @@ export async function POST(request: Request) {
     // RLS zeigt nur Mitglieder des eigenen Haushalts – alle haben denselben
     const household = me.data?.[0]?.household_id ?? null;
     const saved = await user.rest("push_abos?on_conflict=endpoint", { method: "POST", prefer: "resolution=merge-duplicates,return=minimal", body: { endpoint, p256dh, auth, household_id: household, settings } });
-    return saved.ok ? Response.json({ ok: true }) : Response.json({ error: "fehler" }, { status: 502 });
+    if (saved.ok) return Response.json({ ok: true });
+    // A-069: genau sagen, woran es liegt (Tabelle fehlt, RLS/Konto abgelehnt)
+    const error = saved.status === 404 ? "tabelle_fehlt" : saved.status === 401 || saved.status === 403 ? "abgelehnt" : "fehler";
+    return Response.json({ error }, { status: saved.status === 401 || saved.status === 403 ? 403 : 502 });
   } catch {
     return Response.json({ error: "offline" }, { status: 502 });
   }

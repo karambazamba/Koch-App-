@@ -1,7 +1,8 @@
 // Ehrlicher Status für Einstellungen → Mitteilungen (A-069): läuft der
 // Zeitplan im Server (pg_cron + pg_net + „mia-push-senden“), kennt er die
 // Adresse der App, wann war der letzte Versand-Lauf, hat DIESES Gerät ein
-// Abo? Nur mit Sitzung; nur Technik, nie Inhalte.
+// Abo, ist die Migration 20261112120000_push_zuverlaessig gelaufen? Nur mit
+// Sitzung; nur Technik, nie Inhalte.
 
 import { supabasePublic, supabaseSecret } from "@/lib/konten/serverEnv";
 import { restClient } from "@/lib/heute/mitteilungen/serverRest";
@@ -23,7 +24,8 @@ export async function GET(request: Request) {
       admin<{ at: string }[]>("push_laeufe?select=at&order=at.desc&limit=1"),
     ]);
     const z = zeitplan.data ?? {};
-    const status: ServerStatus = { zeitplan: Boolean(z.cron && z.net && z.job), ziel: Boolean(z.ziel), letzterLauf: lauf.data?.[0]?.at ?? null, abo: Boolean(abo) };
+    // Fehlt die Status-Abfrage (404), ist die Migration 20261112120000_push_zuverlaessig nicht gelaufen
+    const status: ServerStatus = { migration: zeitplan.ok, zeitplan: Boolean(z.cron && z.net && z.job), ziel: Boolean(z.ziel), letzterLauf: lauf.data?.[0]?.at ?? null, abo: Boolean(abo) };
     return Response.json(status);
   } catch {
     return Response.json({ error: "offline" }, { status: 502 });
